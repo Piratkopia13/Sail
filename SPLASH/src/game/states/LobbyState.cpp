@@ -51,6 +51,9 @@ LobbyState::LobbyState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	m_ready = false;
 
+	m_settingsChanged = false;
+	m_timeSinceLastUpdate = 0.0f;
+
 	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove |
@@ -374,79 +377,7 @@ void LobbyState::renderGameSettings() {
 
 	ImGui::SetNextWindowSize(ImVec2(300,300));
 	if (ImGui::Begin("Settings", NULL, settingsFlags)) {
-		static auto& dynamic = m_app->getSettings().gameSettingsDynamic;
-		static auto& stat = m_app->getSettings().gameSettingsStatic;
-		ImGui::Text("Map Settings");
-		ImGui::Separator();
-		ImGui::Columns(2);
-		ImGui::Text("Setting"); ImGui::NextColumn();
-		ImGui::Text("Value"); ImGui::NextColumn();
-		ImGui::Separator();
-
-		SettingStorage::DynamicSetting* mapSizeX = &m_app->getSettings().gameSettingsDynamic["map"]["sizeX"];
-		SettingStorage::DynamicSetting* mapSizeY = &m_app->getSettings().gameSettingsDynamic["map"]["sizeY"];
-
-		static int size[] = { 0,0 };
-		size[0] = (int)mapSizeX->value;
-		size[1] = (int)mapSizeY->value;
-		ImGui::Text("MapSize"); ImGui::NextColumn();
-		if (ImGui::SliderInt2("##MapSizeXY", size, (int)mapSizeX->minVal, (int)mapSizeX->maxVal)){
-			mapSizeX->value = size[0];
-			mapSizeY->value = size[1];
-			m_settingsChanged = true;
-		}
-		ImGui::NextColumn();
-
-		int seed = dynamic["map"]["seed"].value;
-		ImGui::Text("Seed"); ImGui::NextColumn();
-		if (ImGui::InputInt("##SEED", &seed)) {
-			dynamic["map"]["seed"].setValue(seed);
-			m_settingsChanged = true;
-		}
-		ImGui::NextColumn();
-		ImGui::Text("Clutter"); ImGui::NextColumn();
-		float val = m_app->getSettings().gameSettingsDynamic["map"]["clutter"].value;
-		if (ImGui::SliderFloat("##Clutter", 
-			&val,
-			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].minVal,
-			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].maxVal
-		)) {
-			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].setValue(val);
-			m_settingsChanged = true;
-		}
-		ImGui::NextColumn();
-
-		ImGui::Columns(1);
-		ImGui::Text("Gamemode Settings");
-		ImGui::Separator();
-		ImGui::Columns(2);
-
-		SettingStorage::Setting* sopt = nullptr;
-		SettingStorage::DynamicSetting* dopt = nullptr;
-		unsigned int selected = 0;
-		std::string valueName = "";
-
-		sopt = &stat["gamemode"]["types"];
-		selected = sopt->selected;
-		if (SailImGui::TextButton(std::string("<##gamemode").c_str())) {
-			sopt->setSelected(selected - 1);
-			m_settingsChanged = true;
-		}
-		ImGui::SameLine();
-		valueName = sopt->getSelected().name;
-		ImGui::Text(valueName.c_str());
-		ImGui::SameLine();
-		if (SailImGui::TextButton(std::string(">##gamemode").c_str())) {
-			sopt->setSelected(selected + 1);
-			m_settingsChanged = true;
-		}
-		//ImGui::SameLine();
-		ImGui::NextColumn();
-		ImGui::Text("gamemode");
-
-
-
-		ImGui::Columns(1);
+		
 	}
 	ImGui::End();
 }

@@ -80,7 +80,6 @@ bool MenuState::update(float dt, float alpha) {
 		udpCounter = udpChill;
 	}
 	NWrapperSingleton::getInstance().checkForPackages();
-	
 
 
 	if (m_joiningLobby) {
@@ -398,8 +397,11 @@ void MenuState::renderLobbyCreator() {
 	ImGui::SetNextWindowSize(m_size);
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 	if (ImGui::Begin("##HOSTLOBBY", nullptr, m_backgroundOnlyflags)) {
+		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
 		SailImGui::HeaderText("Lobby Creator");
+		ImGui::PopFont();
 		ImGui::Separator();
+
 
 
 
@@ -411,6 +413,14 @@ void MenuState::renderLobbyCreator() {
 		lobbyName = buf;
 		if (ImGui::BeginChild("##LOBBYOPTIONS", ImVec2(0, -ImGui::GetFrameHeightWithSpacing() - 3))) {
 			// TODO: options
+
+
+			if (m_optionsWindow.renderGameOptions()) {
+
+			}
+
+
+
 			ImGui::EndChild();
 		}
 
@@ -440,7 +450,7 @@ void MenuState::renderLobbyCreator() {
 
 void MenuState::renderServerBrowser() {
 	// Display open lobbies
-
+	const static std::string windowName = "Server browser";
 	static char buf[101] = "";
 	static std::string lobbyName = "";
 	std::string name = NWrapperSingleton::getInstance().getMyPlayerName();
@@ -450,7 +460,9 @@ void MenuState::renderServerBrowser() {
 	ImGui::SetNextWindowSize(m_size);
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 	if (ImGui::Begin("##Hosted Lobbies on LAN", nullptr, m_backgroundOnlyflags)) {
-		SailImGui::HeaderText("Server browser");
+		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		SailImGui::HeaderText(windowName.c_str());
+		ImGui::PopFont();
 		ImGui::Separator();
 
 		strncpy_s(buf, inputIP.c_str(), inputIP.size());
@@ -476,7 +488,8 @@ void MenuState::renderServerBrowser() {
 #endif
 		if (ImGui::BeginChild("Lobbies", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
 			// Per hosted game
-			ImGui::Columns(2, "testColumns", true);
+			ImGui::Columns(2, "testColumns", false);
+			ImGui::SetColumnOffset(1,ImGui::GetWindowContentRegionWidth()-100);
 			ImGui::Separator();
 			ImGui::Text("Lobby"); ImGui::NextColumn();
 			ImGui::Text("Players"); ImGui::NextColumn();
@@ -547,12 +560,15 @@ void MenuState::renderServerBrowser() {
 void MenuState::renderProfile() {
 	std::string name = &NWrapperSingleton::getInstance().getMyPlayerName().front();
 
+	const static std::string windowName = "Profile";
 	ImGui::SetNextWindowPos(m_pos);
 	ImGui::SetNextWindowSize(m_size);
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 
 	if (ImGui::Begin("##Pause Menu", NULL, m_backgroundOnlyflags)) {
-		SailImGui::HeaderText("Profile");
+		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		SailImGui::HeaderText(windowName.c_str());
+		ImGui::PopFont();
 		ImGui::Separator();
 
 		float innerWidth = ImGui::GetWindowContentRegionWidth();
@@ -640,7 +656,10 @@ void MenuState::renderOptions() {
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 
 	if (ImGui::Begin("##Pause Menu", NULL, m_backgroundOnlyflags)) {
+
+		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
 		SailImGui::HeaderText("Options");
+		ImGui::PopFont();
 		ImGui::Separator();
 		m_optionsWindow.renderWindow();
 	}
