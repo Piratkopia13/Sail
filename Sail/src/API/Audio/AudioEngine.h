@@ -102,7 +102,6 @@ private:
 
 	// Represents the audio output device
 	IXAudio2MasteringVoice* m_masterVoice = nullptr;
-	IXAudio2SubmixVoice* m_xAPOSubmixVoice_toMaster = nullptr;
 	IXAudio2SubmixVoice* m_masterSubmixVoice = nullptr;
 	IXAudio2SubmixVoice* m_streamingSubmixVoice = nullptr;
 

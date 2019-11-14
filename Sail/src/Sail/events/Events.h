@@ -10,6 +10,7 @@
 #include "types/PlayerJumpedEvent.h"
 #include "types/PlayerLandedEvent.h"
 #include "types/StartShootingEvent.h"
+#include "types/LoopShootingEvent.h"
 #include "types/StopShootingEvent.h"
 #include "types/ChangeWalkingSoundEvent.h"
 #include "types/StopWalkingEvent.h"
