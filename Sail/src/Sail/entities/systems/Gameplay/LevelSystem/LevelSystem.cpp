@@ -1376,7 +1376,7 @@ glm::vec3 LevelSystem::getSpawnPoint() {
 		spawnPoints.erase(spawnPoints.begin());
 	}
 	else {
-		spawnLocation = glm::vec3((Utils::rnd() * 2.f) - 1.f, 1.f, (Utils::rnd() * 2.f) - 1.f);
+		spawnLocation = glm::vec3(((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (xsize - 1), 1.f, ((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (ysize - 1));
 		SAIL_LOG_ERROR("No more spawn locations available.");
 	}
 
