@@ -25,11 +25,14 @@ struct Event {
 		PLAYER_JUMPED,
 		PLAYER_LANDED,
 		START_SHOOTING,
+		LOOP_SHOOTING,
 		STOP_SHOOTING,
 		CHANGE_WALKING_SOUND,
 		STOP_WALKING,
 		SETTINGS_UPDATED,
 		TORCH_EXTINGUISHED,
+		START_THROWING,
+		STOP_THROWING,
 
 		NR_OF_EVENTS		// Needs to be last, and no type above can set their values manually
 	};

@@ -10,6 +10,7 @@
 
 #include "Network/NWrapperSingleton.h"
 #include "Sail/netcode/ArchiveTypes.h"
+#include "../Sail/src/Sail/events/types/LoopShootingEvent.h"
 
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/systems/physics/UpdateBoundingBoxSystem.h"
@@ -199,25 +200,19 @@ void NetworkReceiverSystem::playerLanded(const Netcode::ComponentID id) {
 
 
 // TODO: Remove info since it's unused or are these functions not finished?
-void NetworkReceiverSystem::shootStart(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void NetworkReceiverSystem::shootStart(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
-	EventDispatcher::Instance().emit(StartShootingEvent(id));
+	EventDispatcher::Instance().emit(StartShootingEvent(id, frequency));
 }
 
-void NetworkReceiverSystem::shootLoop(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void NetworkReceiverSystem::shootLoop(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
-	if (auto e = findFromNetID(id); e) {
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
-		return;
-	}
-	SAIL_LOG_WARNING("shootLoop called but no matching entity found");
+	EventDispatcher::Instance().emit(LoopShootingEvent(id, frequency));
 }
 
-void NetworkReceiverSystem::shootEnd(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void NetworkReceiverSystem::shootEnd(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
-	EventDispatcher::Instance().emit(StopShootingEvent(id));
+	EventDispatcher::Instance().emit(StopShootingEvent(id, frequency));
 }
 
 void NetworkReceiverSystem::runningMetalStart(const Netcode::ComponentID id) {
@@ -239,6 +234,13 @@ void NetworkReceiverSystem::runningStopSound(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(StopWalkingEvent(id));
 }
 
+void NetworkReceiverSystem::throwingStartSound(const Netcode::ComponentID id) {
+	EventDispatcher::Instance().emit(StartThrowingEvent(id));
+}
+
+void NetworkReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {
+	EventDispatcher::Instance().emit(StopThrowingEvent(id));
+}
 
 
 // NOT FROM SERIALIZED MESSAGES

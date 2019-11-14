@@ -34,6 +34,7 @@ static std::ofstream out("LogFiles/KillCamReceiverSystem.cpp.log");
 // TODO: register more components
 KillCamReceiverSystem::KillCamReceiverSystem() : ReceiverBase() {
 	registerComponent<ReplayComponent>(true, false, false);
+	registerComponent<ReplayTransformComponent>(true, true, true);
 
 	//EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
@@ -48,6 +49,13 @@ void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
 	m_replayData[m_currentWriteInd].push(data);
 }
 
+
+// Prepare transform components for the next frame
+void KillCamReceiverSystem::prepareUpdate() {
+	for (auto e : entities) {
+		e->getComponent<ReplayTransformComponent>()->prepareUpdate();
+	}
+}
 
 // Increments the indexes in the ring buffer once per tick and clears the next write-index
 void KillCamReceiverSystem::update(float dt) {
@@ -157,27 +165,27 @@ void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const 
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
 void KillCamReceiverSystem::setLocalPosition(const Netcode::ComponentID id, const glm::vec3& translation) {
-	//if (auto e = findFromNetID(id); e) {
-	//	e->getComponent<TransformComponent>()->setTranslation(translation);
-	//	return;
-	//}
-	//SAIL_LOG_WARNING("setLocalPosition called but no matching entity found");
+	if (auto e = findFromNetID(id); e) {
+		e->getComponent<ReplayTransformComponent>()->setTranslation(translation);
+		return;
+	}
+	SAIL_LOG_WARNING("setLocalPosition called but no matching entity found");
 }
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rotation) {
-	//if (auto e = findFromNetID(id); e) {
-	//	e->getComponent<TransformComponent>()->setRotations(rotation);
-	//	return;
-	//}
-	//SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
+	if (auto e = findFromNetID(id); e) {
+		e->getComponent<ReplayTransformComponent>()->setRotations(rotation);
+		return;
+	}
+	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::quat& rotation) {
-	//if (auto e = findFromNetID(id); e) {
-	//	e->getComponent<TransformComponent>()->setRotations(rotation);
-	//	return;
-	//}
-	//SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
+	if (auto e = findFromNetID(id); e) {
+		e->getComponent<ReplayTransformComponent>()->setRotations(rotation);
+		return;
+	}
+	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
 // If I requested the projectile it has a local owner
@@ -206,12 +214,12 @@ void KillCamReceiverSystem::playerLanded(const Netcode::ComponentID id) {
 
 
 // TODO: Remove info since it's unused or are these functions not finished?
-void KillCamReceiverSystem::shootStart(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void KillCamReceiverSystem::shootStart(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
 	//EventDispatcher::Instance().emit(StartShootingEvent(id));
 }
 
-void KillCamReceiverSystem::shootLoop(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void KillCamReceiverSystem::shootLoop(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
 	//if (auto e = findFromNetID(id); e) {
 	//	e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
@@ -222,7 +230,7 @@ void KillCamReceiverSystem::shootLoop(const Netcode::ComponentID id, const ShotF
 	//SAIL_LOG_WARNING("shootLoop called but no matching entity found");
 }
 
-void KillCamReceiverSystem::shootEnd(const Netcode::ComponentID id, const ShotFiredInfo& info) {
+void KillCamReceiverSystem::shootEnd(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
 	//EventDispatcher::Instance().emit(StopShootingEvent(id));
 }
@@ -247,6 +255,14 @@ void KillCamReceiverSystem::runningStopSound(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(StopWalkingEvent(id));
 }
 
+void KillCamReceiverSystem::throwingStartSound(const Netcode::ComponentID id) {
+	//EventDispatcher::Instance().emit(StartThrowingEvent(id));
+}
+
+void KillCamReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {
+	//EventDispatcher::Instance().emit(StopThrowingEvent(id));
+}
+
 
 
 // These functions are only used by NetworkReceiverSystemHost so their implementations are empty here
@@ -266,13 +282,12 @@ void KillCamReceiverSystem::playerDisconnect(const Netcode::PlayerID playerID)
 
 // Helper function
 
-// TODO: use something other than networkReceiverComponent ?
 Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) const {
-	//for (auto e : entities) {
-	//	if (e->getComponent<NetworkReceiverComponent>()->m_id == id) {
-	//		return e;
-	//	}
-	//}
+	for (auto e : entities) {
+		if (e->getComponent<ReplayComponent>()->m_id == id) {
+			return e;
+		}
+	}
 	return nullptr;
 }
 
