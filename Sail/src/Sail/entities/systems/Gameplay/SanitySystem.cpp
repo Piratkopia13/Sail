@@ -48,7 +48,7 @@ void SanitySystem::update(float dt) {
 		if (candle_entity) {
 			float dist;
 			if (cc->isCarried && cc->isLit) {
-				dist = -8;
+				dist = -12;
 			} else {
 				dist = glm::distance(tc->getTranslation(), c_tc->getTranslation());
 			}

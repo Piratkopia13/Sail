@@ -90,9 +90,24 @@ void SanitySoundSystem::update(float dt) {
 			}
 		}
 
+		if (!m_switch_violin) {
+			if (volume > 0.80f) {
+				m_switch_violin = true;
+			}
+		}
 
-		//TODO: Set Value
-		//ac->setVolume["Insanity"] = volume
+		else if (m_switch_violin) {
+			m_violinTimer += dt;
+
+			if (volume < 0.80f) {
+				m_switch_violin = false;
+				m_violinTimer == 0.0f;
+			}
+			else if (m_violinTimer > m_violinThresh) {
+				m_violinTimer = 0.0f;
+				ac->m_sounds[Audio::INSANITY_VIOLIN].isPlaying = true;
+			}
+		}
 	}
 
 }

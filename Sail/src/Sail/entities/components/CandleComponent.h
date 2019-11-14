@@ -41,7 +41,10 @@ public:
 			wasHitThisTick = true;
 		}
 	}
-	
+#ifdef DEVELOPMENT
+	void imguiRender(Entity** e) override;
+#endif
+
 public:
 	Entity* ptrToOwner = nullptr;
 

@@ -46,13 +46,15 @@ namespace Netcode {
 		CANDLE_ENTITY,
 		GUN_ENTITY,
 		PROJECTILE_ENTITY,
-		MECHA_ENTITY // RIP Mecha-Jörgen (2019-2019)
+		MECHA_ENTITY, // RIP Mecha-Jörgen (2019-2019)
+		INVALID_ENTITY,
 	};
 
 	// TODO: should be one message type for tracked entities and one for events
 	// The message type decides how the subsequent data will be parsed and used
 	enum class MessageType : __int8 {
 		CREATE_NETWORKED_PLAYER = 1,
+		DESTROY_ENTITY,
 		CHANGE_LOCAL_POSITION,
 		CHANGE_LOCAL_ROTATION,
 		CHANGE_ABSOLUTE_POS_AND_ROT,
@@ -73,6 +75,8 @@ namespace Netcode {
 		CANDLE_HELD_STATE,
 		RUNNING_METAL_START,
 		RUNNING_TILE_START,
+		RUNNING_WATER_METAL_START,
+		RUNNING_WATER_TILE_START,
 		RUNNING_STOP_SOUND,
 		IGNITE_CANDLE,
 		UPDATE_SANITY,
@@ -83,9 +87,10 @@ namespace Netcode {
 	}; 
 	
 	static const std::string MessageNames[] = {
-		"CREATE_NETWORKED_PLAYER,	 ",
-		"CHANGE_LOCAL_POSITION,		 ",
-		"CHANGE_LOCAL_ROTATION,		 ",
+		"CREATE_NETWORKED_PLAYER	",
+		"DESTROY_ENTITY				",
+		"CHANGE_LOCAL_POSITION,		",
+		"CHANGE_LOCAL_ROTATION,		",
 		"CHANGE_ABSOLUTE_POS_AND_ROT,",
 		"SPAWN_PROJECTILE,			 ",
 		"ANIMATION,					 ",
@@ -182,13 +187,15 @@ namespace Netcode {
 
 	class MessageSpawnProjectile : public MessageData {
 	public:
-		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, Netcode::ComponentID ownerComponentID)
-			: translation(translation_), velocity(velocity_), ownerPlayerComponentID(ownerComponentID)
+		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, 
+			Netcode::ComponentID projectileCompID, Netcode::ComponentID ownerComponentID)
+			: translation(translation_), velocity(velocity_), projectileComponentID(projectileCompID), ownerPlayerComponentID(ownerComponentID)
 		{}
 		virtual ~MessageSpawnProjectile() {}
 
 		glm::vec3 translation;
 		glm::vec3 velocity;
+		Netcode::ComponentID projectileComponentID;
 		Netcode::ComponentID ownerPlayerComponentID;
 	};
 
@@ -270,7 +277,6 @@ namespace Netcode {
 
 	};
 
-
 	class MessageRunningMetalStart : public MessageData {
 	public:
 		MessageRunningMetalStart(Netcode::ComponentID id) : runningPlayer(id) {}
@@ -285,6 +291,19 @@ namespace Netcode {
 		Netcode::ComponentID runningPlayer;
 	};
 
+	class MessageRunningWaterMetalStart : public MessageData {
+	public:
+		MessageRunningWaterMetalStart(Netcode::ComponentID id) : runningPlayer(id) {}
+		~MessageRunningWaterMetalStart() {}
+		Netcode::ComponentID runningPlayer;
+	};
+
+	class MessageRunningWaterTileStart : public MessageData {
+	public:
+		MessageRunningWaterTileStart(Netcode::ComponentID id) : runningPlayer(id) {}
+		~MessageRunningWaterTileStart() {}
+		Netcode::ComponentID runningPlayer;
+	};
 	class MessageRunningStopSound : public MessageData {
 	public:
 		MessageRunningStopSound(Netcode::ComponentID id) : runningPlayer(id) {}

@@ -99,7 +99,10 @@ void AudioSystem::initialize() {
 	m_audioEngine->loadSound("sanity/insanity_ambiance.wav");
 	m_audioEngine->loadSound("sanity/insanity_breathing.wav");
 	m_audioEngine->loadSound("sanity/insanity_scream.wav");
-	m_audioEngine->loadSound("sanity/insanity_violin_intense.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin1.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin2.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin3.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin4.wav");
 #pragma endregion
 #pragma region IMPACTS
 	m_audioEngine->loadSound("impacts/water_impact_enemy_candle.wav");
@@ -124,6 +127,10 @@ void AudioSystem::initialize() {
 #pragma region MISCELLANEOUS
 	m_audioEngine->loadSound("miscellaneous/re_ignition_candle.wav");
 	m_audioEngine->loadSound("miscellaneous/guitar.wav");
+	m_audioEngine->loadSound("miscellaneous/sprinkler_start1.wav");
+	m_audioEngine->loadSound("miscellaneous/sprinkler_start2.wav");
+	m_audioEngine->loadSound("miscellaneous/sprinkler.wav");
+	m_audioEngine->loadSound("miscellaneous/alarm.wav");
 #pragma endregion
 }
 
