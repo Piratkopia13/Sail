@@ -215,6 +215,10 @@ int Application::startGameLoop() {
 	return (int)msg.wParam;
 }
 
+void Application::setCurrentCamera(Camera* camera) {
+	m_cameraRef = camera;
+}
+
 std::string Application::getPlatformName() {
 	return std::string(SAIL_PLATFORM);
 }
@@ -244,6 +248,10 @@ ConsoleCommands& Application::getConsole() {
 
 SettingStorage& Application::getSettings() {
 	return m_settingStorage;
+}
+
+Camera* Application::getCurrentCamera() const {
+	return m_cameraRef;
 }
 
 MemoryManager& Application::getMemoryManager() {

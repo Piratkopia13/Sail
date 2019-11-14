@@ -17,14 +17,14 @@ void DX12HybridRaytracerRenderer::begin(Camera* camera) {
 	m_rendererRaytrace->begin(camera);
 }
 
-void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID) {
+void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID, bool castShadows) {
 	teamColorID = std::clamp(teamColorID, 0, 12);
 
 	if (flags & RenderFlag::IS_VISIBLE_ON_SCREEN) {
-		m_rendererGbuffer->submit(mesh, modelMatrix, flags, teamColorID);
+		m_rendererGbuffer->submit(mesh, modelMatrix, flags, teamColorID, castShadows);
 	}
 	if (!(flags & RenderFlag::HIDE_IN_DXR)) {
-		m_rendererRaytrace->submit(mesh, modelMatrix, flags, teamColorID);
+		m_rendererRaytrace->submit(mesh, modelMatrix, flags, teamColorID, castShadows);
 	}
 }
 
