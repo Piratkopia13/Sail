@@ -21,7 +21,7 @@ class AudioComponent;
 
 enum AudioType { MUSIC };
 
-class XAUDIO2FX_REVERB_PARAMETERS;
+struct XAUDIO2FX_REVERB_PARAMETERS;
 
 #define X3DAUDIO_PI  3.141592654f
 

@@ -86,7 +86,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
 	myPlayer->addComponent<CollisionComponent>();
-	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = false;
+	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = true;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
 	myPlayer->addComponent<SprintingComponent>();
@@ -97,6 +97,10 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	particleEmitterComp->spawnRate = 0.001f;
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
+
+	// Define the position for the camera
+	ac->is_camFollowingHead = true;
+	ac->headPositionMatrix = glm::translate(glm::identity<glm::mat4>(), ac->headPositionLocalDefault);
 
 	AddCandleComponentsToPlayer(myPlayer, lightIndex, playerID);
 
@@ -250,7 +254,6 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	ac->leftHandPosition = glm::identity<glm::mat4>();
 	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.563f, 1.059f, 0.110f));
 	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
-
 }
 
 
@@ -374,7 +377,7 @@ Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::
 	auto GUIModel = ModelFactory::StringModel::Create(&Application::getInstance()->getResourceManager().getShaderSet<GuiShader>(), textConst);
 	std::string modelName = "TextModel " + std::to_string(num);
 	Application::getInstance()->getResourceManager().addModel(modelName, GUIModel);
-	for (int i = 0; i < GUIModel->getNumberOfMeshes(); i++) {
+	for (UINT i = 0; i < GUIModel->getNumberOfMeshes(); i++) {
 		GUIModel->getMesh(i)->getMaterial()->setAlbedoTexture(GUIText::fontTexture);
 	}
 	GUIEntity->addComponent<GUIComponent>(&Application::getInstance()->getResourceManager().getModel(modelName));

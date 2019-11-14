@@ -6,6 +6,7 @@
 class Model;
 class NodeSystem;
 class Shader;
+class Camera;
 
 namespace EntityFactory {
 	void CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos, size_t lightIndex);
