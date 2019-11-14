@@ -27,9 +27,12 @@ public:
 private:
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_i;
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_toBeDeleted;
-	std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_j;
-	std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_k;
-	std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_streamToBeDeleted;
+	//std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_j;
+	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_j;
+	//std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_k;
+	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_k;
+	//std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_streamToBeDeleted;
+	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_streamToBeDeleted;
 
 	bool m_hasOutputDevices = true;
 
@@ -39,6 +42,7 @@ private:
 	void startPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void stopPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void updateStreamPosition(Entity* e, Camera& cam, float alpha);
+	void updateStreamVolume();
 
 	void updateProjectileLowPass(Audio::SoundInfo_General* general);
 

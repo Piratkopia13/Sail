@@ -27,52 +27,66 @@ void SanitySoundSystem::update(float dt) {
 
 		float volume = (1.0f - (sc->sanity / 100.0f)); //gives value between 0-1. Volume = 1 when sanity = 0
 		
-		if (!switch_ambiance) {
+		if (!m_switch_ambiance) {
 			if (volume > 0.0f) {
-				switch_ambiance = true;
+				m_switch_ambiance = true;
 				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", true, 1.0f, false, true);
 			}
 		}
-		else if (switch_ambiance) {
+		else if (m_switch_ambiance) {
 			if (volume == 0.0f) {
-				switch_ambiance = false;
+				m_switch_ambiance = false;
 				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", false, 1.0f, false, true);
 			}
 			else {
 				float tempX = (1.0f - volume);
 				// Logarithmic increase of volume = linear to our ears
-				//ac->streamVolumeUpdate_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", volume);
+				ac->streamSetVolume_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", volume);
 			}
 		}
 
-		if (!switch_begin) {
+		if (!m_switch_heartBegin) {
 			// Start when insanity isn't full
 			if (volume > 0.1f) {
-				switch_begin = true;
-				heartBeatTimer = 0.0f;
+				m_switch_heartBegin = true;
+				m_heartBeatTimer = 0.0f;
 			}
 		}
-		else if (switch_begin) {
+		else if (m_switch_heartBegin) {
 			// Turn off/reset when insanity is full again
 			if (volume == 0.0f) {
-				switch_begin = false;
-				switch_secondBeat = false;
+				m_switch_heartBegin = false;
+				m_switch_secondBeat = false;
 			}
 			// Play first heart beat
-			if (heartBeatTimer < 0.1f) {
+			if (m_heartBeatTimer < 0.1f) {
 				
 				ac->m_sounds[Audio::HEART_BEAT_FIRST].isPlaying = true;
-				switch_secondBeat = true;
+				m_switch_secondBeat = true;
 			}
 			// Play second heart beat
-			else if (switch_secondBeat && (heartBeatTimer > (heartSecondBeatThresh - ((heartSecondBeatThresh * 0.25f) * (volume * 2.0f))))) {
+			else if (m_switch_secondBeat && (m_heartBeatTimer > (m_heartSecondBeatThresh - ((m_heartSecondBeatThresh * 0.25f) * (volume * 2.0f))))) {
 				ac->m_sounds[Audio::HEART_BEAT_SECOND].isPlaying = true;
-				switch_secondBeat = false;
+				m_switch_secondBeat = false;
 			}
 			// Reset heart-sounds
-			heartBeatTimer += dt;
-			if (heartBeatTimer > (heartBeatResetThresh - ((heartBeatResetThresh * 0.35f) * (volume * 2.0f)))) {
-				heartBeatTimer = 0.0f;
+			m_heartBeatTimer += dt;
+			if (m_heartBeatTimer > (m_heartBeatResetThresh - ((m_heartBeatResetThresh * 0.35f) * (volume * 2.0f)))) {
+				m_heartBeatTimer = 0.0f;
+			}
+		}
+
+		if (!m_switch_breathing) {
+			if (volume > 0.65f) {
+				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_breathing.xwb", true, 1.0f, false, true);
+				m_switch_breathing = true;
+			}
+		}
+
+		else if (m_switch_breathing) {
+			if (volume < 0.65f) {
+				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_breathing.xwb", false, 1.0f, false, true);
+				m_switch_breathing = false;
 			}
 		}
 

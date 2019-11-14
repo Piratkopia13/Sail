@@ -68,6 +68,7 @@ namespace Audio {
 	struct StreamRequestInfo {
 		bool startTRUE_stopFALSE;
 		float volume;
+		float prevVolume;
 		bool isPositionalAudio;
 		bool isLooping;
 		int streamIndex;

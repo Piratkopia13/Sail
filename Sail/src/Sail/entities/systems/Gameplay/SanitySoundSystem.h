@@ -12,11 +12,12 @@ public:
 private:
 	bool onEvent(const Event& event) override;
 
-	bool switch_begin = false;
-	bool switch_secondBeat = false;
-	bool switch_ambiance = false;
+	bool m_switch_heartBegin = false;
+	bool m_switch_secondBeat = false;
+	bool m_switch_ambiance = false;
+	bool m_switch_breathing = false;
 
-	float heartBeatTimer = 0.0f;
-	float heartSecondBeatThresh = 0.45f;
-	float heartBeatResetThresh = 1.5f;
+	float m_heartBeatTimer = 0.0f;
+	float m_heartSecondBeatThresh = 0.45f;
+	float m_heartBeatResetThresh = 1.5f;
 };

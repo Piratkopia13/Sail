@@ -354,7 +354,6 @@ void AudioEngine::setSoundVolume(int index, float value) {
 void AudioEngine::setStreamVolume(int index, float value) {
 	if (this->checkStreamIndex(index)) {
 		m_stream[index].sourceVoice->SetVolume(value);
-		m_stream[index].xAPOsubMixVoice->SetVolume(value);
 	}
 }
 

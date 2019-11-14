@@ -223,8 +223,6 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 				// If the request wants to start
 				if (m_i->second.startTRUE_stopFALSE == true) {
-					std::cout << "#2 FILENAME: " << m_i->first << "\n";
-
 					// Start playing stream
 					startPlayingRequestedStream(e, audioC);
 				}
@@ -242,6 +240,13 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			for (m_k = audioC->m_currentlyStreaming.begin(); m_k != audioC->m_currentlyStreaming.end();) {
 				// Update its position in the world
 				updateStreamPosition(e, cam, alpha);
+				// Update volume if it has changed
+				if (m_k->second.prevVolume != m_k->second.volume) {
+					m_k->second.prevVolume = m_k->second.volume;
+					updateStreamVolume();
+				}
+
+				m_k++;
 			}
 		}
 	}
@@ -258,6 +263,8 @@ void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC)
 	bool isPositionalAudio = m_i->second.isPositionalAudio;
 	bool isLooping = m_i->second.isLooping;
 	int streamIndex = m_audioEngine->getAvailableStreamIndex();
+	// Storing this for later use
+	m_i->second.streamIndex = streamIndex;
 
 	m_toBeDeleted = m_i;
 	m_i++;
@@ -271,7 +278,7 @@ void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC)
 				return m_audioEngine->streamSound(filename, streamIndex, volume, isPositionalAudio, isLooping, audioC);
 			});
 
-		audioC->m_currentlyStreaming.emplace_back(filename, std::pair(streamIndex, isPositionalAudio));
+		audioC->m_currentlyStreaming.emplace_back(filename, m_toBeDeleted->second);
 		audioC->m_streamingRequests.erase(m_toBeDeleted);
 	}
 }
@@ -289,9 +296,9 @@ void AudioSystem::stopPlayingRequestedStream(Entity* e, AudioComponent* audioC) 
 		if (m_streamToBeDeleted->first == filename) {
 
 			bool expectedValue = false;
-			while (!m_audioEngine->m_streamLocks[m_streamToBeDeleted->second.first].compare_exchange_strong(expectedValue, true));
+			while (!m_audioEngine->m_streamLocks[m_streamToBeDeleted->second.streamIndex].compare_exchange_strong(expectedValue, true));
 
-			m_audioEngine->stopSpecificStream(m_streamToBeDeleted->second.first);
+			m_audioEngine->stopSpecificStream(m_streamToBeDeleted->second.streamIndex);
 			audioC->m_currentlyStreaming.erase(m_streamToBeDeleted);
 
 			break;
@@ -301,13 +308,16 @@ void AudioSystem::stopPlayingRequestedStream(Entity* e, AudioComponent* audioC) 
 }
 
 void AudioSystem::updateStreamPosition(Entity* e, Camera& cam, float alpha) {
-	if (m_k->second.second) {
+	if (m_k->second.isPositionalAudio) {
 		m_audioEngine->updateStreamWithCurrentPosition(
-			m_k->second.first, cam, *e->getComponent<TransformComponent>(),
+			m_k->second.streamIndex, cam, *e->getComponent<TransformComponent>(),
 			glm::vec3{ 0.0f, 0.0f, 0.0f }, alpha);
 	}
+}
 
-	m_k++;
+void AudioSystem::updateStreamVolume() {
+
+	m_audioEngine->setStreamVolume(m_k->second.streamIndex, m_k->second.volume);
 }
 
 void AudioSystem::updateProjectileLowPass(Audio::SoundInfo_General* general) {
