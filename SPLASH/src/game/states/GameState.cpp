@@ -157,6 +157,10 @@ GameState::GameState(StateStack& stack)
 
 	}
 	else {
+		// temporarly set player team. remove this when player teams are synced
+		NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayer().id)->team = 1;
+
+
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
 		for (int i = -1; i < id; i++) {

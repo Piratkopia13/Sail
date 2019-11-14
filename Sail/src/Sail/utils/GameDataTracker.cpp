@@ -43,9 +43,10 @@ void GameDataTracker::resetData() {
 
 	m_nPlayersCurrentSession = 0;
 	for (auto player : m_network->getPlayers()) {
+		Logger::Log(std::to_string(player.team).c_str());
 		m_hostPlayerTracker[player.id].nKills = 0;
 		m_hostPlayerTracker[player.id].nDeaths = 0;
-		m_hostPlayerTracker[player.id].placement = 99;
+		m_hostPlayerTracker[player.id].placement = 13;
 		m_hostPlayerTracker[player.id].playerName = player.name;
 		m_nPlayersCurrentSession++;
 	}
@@ -154,12 +155,14 @@ void GameDataTracker::renderImgui() {
 		ImGui::Text("Kills"); ImGui::NextColumn();
 		ImGui::Separator();
 
-
+		int placement = 1;
 		for (int i = 1; i < (int)tempPlacementMap.size() + 1; i++) {
-
-			ImGui::Text(std::to_string(i).c_str()); ImGui::NextColumn();
-			ImGui::Text(tempPlacementMap[i].name.c_str()); ImGui::NextColumn();
-			ImGui::Text(std::to_string(tempPlacementMap[i].nKills).c_str()); ImGui::NextColumn();
+			if (tempPlacementMap[i].name.size() > 0) {
+				ImGui::Text(std::to_string(placement).c_str()); ImGui::NextColumn();
+				placement++;
+				ImGui::Text(tempPlacementMap[i].name.c_str()); ImGui::NextColumn();
+				ImGui::Text(std::to_string(tempPlacementMap[i].nKills).c_str()); ImGui::NextColumn();
+			}
 		}
 
 	}
