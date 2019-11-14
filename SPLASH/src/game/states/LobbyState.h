@@ -75,6 +75,7 @@ private:
 	float m_timeSinceLastUpdate;
 
 	ImGuiWindowFlags m_standaloneButtonflags;
+	ImGuiWindowFlags m_backgroundOnlyflags;
 
 
 

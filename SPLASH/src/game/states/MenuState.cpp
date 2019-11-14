@@ -584,22 +584,22 @@ void MenuState::renderProfile() {
 
 
 		ImGui::Separator();
-		float x[3] = { 0.4f, 0.6f, 0.9 };
-		ImGui::Text(std::string("Extinguishes: ").c_str());
-		ImGui::SameLine(innerWidth * x[0]);
-		ImGui::Text(std::to_string(0).c_str());
-		ImGui::SameLine(innerWidth * x[1]);
-		ImGui::Text(std::string("lunacies: ").c_str());
-		ImGui::SameLine(innerWidth * x[2]);
-		ImGui::Text(std::to_string(0).c_str());
-
-		ImGui::Text(std::string("Wins: ").c_str());
-		ImGui::SameLine(innerWidth * x[0]);
-		ImGui::Text(std::to_string(0).c_str());
-		ImGui::SameLine(innerWidth * x[1]);
-		ImGui::Text(std::string("Losses: ").c_str());
-		ImGui::SameLine(innerWidth * x[2]);
-		ImGui::Text(std::to_string(0).c_str());
+		//float x[3] = { 0.4f, 0.6f, 0.9 };
+		//ImGui::Text(std::string("Extinguishes: ").c_str());
+		//ImGui::SameLine(innerWidth * x[0]);
+		//ImGui::Text(std::to_string(0).c_str());
+		//ImGui::SameLine(innerWidth * x[1]);
+		//ImGui::Text(std::string("lunacies: ").c_str());
+		//ImGui::SameLine(innerWidth * x[2]);
+		//ImGui::Text(std::to_string(0).c_str());
+		//
+		//ImGui::Text(std::string("Wins: ").c_str());
+		//ImGui::SameLine(innerWidth * x[0]);
+		//ImGui::Text(std::to_string(0).c_str());
+		//ImGui::SameLine(innerWidth * x[1]);
+		//ImGui::Text(std::string("Losses: ").c_str());
+		//ImGui::SameLine(innerWidth * x[2]);
+		//ImGui::Text(std::to_string(0).c_str());
 
 
 

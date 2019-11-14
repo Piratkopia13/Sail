@@ -74,6 +74,14 @@ LobbyState::LobbyState(StateStack& stack)
 
 
 
+	m_backgroundOnlyflags = ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoSavedSettings;
+
+
 	// TO DO: Streaming sounds in menu doesn't work because ESC is NOT UPDATED HERE
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
 	//m_lobbyAudio->addComponent<AudioComponent>();
@@ -183,7 +191,21 @@ bool LobbyState::renderImgui(float dt) {
 	}
 	
 	if (m_optionsWindow.isWindowOpen()) {
-		m_optionsWindow.renderWindow();
+		ImGui::SetNextWindowPos(ImVec2(
+			m_outerPadding + 300,
+			m_outerPadding
+		));
+
+		ImGui::SetNextWindowSize(ImVec2(500, 500));
+		if (ImGui::Begin("##Pause Menu", nullptr, m_backgroundOnlyflags)) {
+
+			ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+			SailImGui::HeaderText("Options");
+			ImGui::PopFont();
+			ImGui::Separator();
+			m_optionsWindow.renderWindow();
+		}
+		ImGui::End();
 	}
 
 	ImGui::PopFont();
@@ -444,9 +466,15 @@ void LobbyState::renderGameSettings() {
 		m_outerPadding
 	));
 
-	ImGui::SetNextWindowSize(ImVec2(300,300));
-	if (ImGui::Begin("Settings", NULL, settingsFlags)) {
-		
+	ImGui::SetNextWindowSize(ImVec2(500,500));
+	if (ImGui::Begin("##LOBBYSETTINGS", nullptr, settingsFlags)) {
+		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		SailImGui::HeaderText("Lobby Settings");
+		ImGui::PopFont();
+		ImGui::Separator();
+
+
+		m_optionsWindow.renderGameOptions();
 	}
 	ImGui::End();
 }
