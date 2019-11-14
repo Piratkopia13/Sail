@@ -398,8 +398,8 @@ bool AudioSystem::onEvent(const Event& event) {
 				? Audio::SoundType::WATER_IMPACT_MY_CANDLE 
 				: Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE);
 
-			player->getComponent<AudioComponent>()->m_sounds[soundIndex].isPlaying = true;
-			player->getComponent<AudioComponent>()->m_sounds[soundIndex].playOnce = true;
+			//player->getComponent<AudioComponent>()->m_sounds[soundIndex].isPlaying = true;
+			//player->getComponent<AudioComponent>()->m_sounds[soundIndex].playOnce = true;
 		}
 	};
 
@@ -411,16 +411,17 @@ bool AudioSystem::onEvent(const Event& event) {
 			killSound.playOnce = true;
 		}
 
-		else if (!e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+		//TODO: Find out why death sound is high as fuck!
+		else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
 			auto& insanitySound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::INSANITY_SCREAM];
 			insanitySound.isPlaying = true;
 			insanitySound.playOnce = true;
+		} else {
+			// Play death sound
+			//auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
+			//deathSound.isPlaying = true;
+			//deathSound.playOnce = true;
 		}
-
-		// Play death sound
-		auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
-		deathSound.isPlaying = true;
-		deathSound.playOnce = true;
 	};
 
 	auto onPlayerJumped = [=](const PlayerJumpedEvent& e) {

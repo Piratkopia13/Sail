@@ -33,6 +33,7 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 
 
@@ -145,16 +146,37 @@ GameState::GameState(StateStack& stack)
 
 	// Player creation
 
-	int id = static_cast<int>(playerID);
-	glm::vec3 spawnLocation = glm::vec3(0.f);
-	for (int i = -1; i < id; i++) {
-		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
+	// team -1 = spectator
+	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == -1) {
+		
+		int id = static_cast<int>(playerID);
+		glm::vec3 spawnLocation = glm::vec3(0.f);
+		for (int i = -1; i < id; i++) {
+			spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
+		}
+
+		m_player = EntityFactory::CreateMySpectator(playerID, m_currLightIndex++, spawnLocation).get();
+
+	}
+	else {
+		// temporarly set player team. remove this when player teams are synced
+		NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayer().id)->team = 1;
+
+
+		int id = static_cast<int>(playerID);
+		glm::vec3 spawnLocation = glm::vec3(0.f);
+		for (int i = -1; i < id; i++) {
+			spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
+		}
+
+		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 	}
 
-	m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
-
+	
+	
 	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
 	m_componentSystems.networkReceiverSystem->setGameState(this);
+	
 
 
 
@@ -211,6 +233,7 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 }
 
@@ -361,21 +384,21 @@ bool GameState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(KeyBinds::SPECTATOR_DEBUG)) {
 		// Get position and rotation to look at middle of the map from above
 		{
-			auto parTrans = m_player->getComponent<TransformComponent>();
-			auto pos = glm::vec3(parTrans->getMatrixWithUpdate()[3]);
-			pos.y = 20.f;
-			parTrans->setTranslation(pos);
-			
+		
+			auto transform = m_player->getComponent<TransformComponent>();
+			auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
+			pos.y += 2.0f;
 
-			auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+			for (auto e : m_player->getChildEntities()) {
+				e->removeAllComponents();
+				e->queueDestruction();
+			}
 
-			auto middleOfLevel = glm::vec3(mapSettings["tileSize"].value * mapSettings["sizeX"].value / 2.f, 0.f, mapSettings["tileSize"].value * mapSettings["sizeY"].value / 2.f);
-			auto dir = glm::normalize(middleOfLevel - pos);
-			auto rots = Utils::getRotations(dir);
-			parTrans->setRotations(glm::vec3(0.f, -rots.y, rots.x));
+			m_player->removeAllChildren();
+			m_player->removeAllComponents();
+
+			m_player->addComponent<TransformComponent>()->setStartTranslation(pos);
 			m_player->addComponent<SpectatorComponent>();
-			m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
-			m_player->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
 		}
 	}
 
@@ -453,6 +476,9 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
 	m_componentSystems.gameInputSystem->initialize(&m_cam);
 
+	m_componentSystems.spectateInputSystem = ECS::Instance()->createSystem<SpectateInputSystem>();
+	m_componentSystems.spectateInputSystem->initialize(&m_cam);
+
 	// Create network send and receive systems
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
 
@@ -463,10 +489,18 @@ void GameState::initSystems(const unsigned char playerID) {
 	} else {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
 	}
+
+
+
+
 	m_componentSystems.killCamReceiverSystem = ECS::Instance()->createSystem<KillCamReceiverSystem>();
 
 	m_componentSystems.networkReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
 	m_componentSystems.networkSenderSystem->init(playerID, m_componentSystems.networkReceiverSystem, m_componentSystems.killCamReceiverSystem);
+
+	m_componentSystems.hostSendToSpectatorSystem = ECS::Instance()->createSystem<HostSendToSpectatorSystem>();
+	m_componentSystems.hostSendToSpectatorSystem->init(playerID);
+
 
 	// Create system for handling and updating sounds
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -564,6 +598,8 @@ bool GameState::onEvent(const Event& event) {
 		case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
 		case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
 		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS:	onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
+		case Event::Type::NETWORK_JOINED:	onPlayerJoined((const NetworkJoinedEvent&)event); break;
+
 		default: break;
 	}
 
@@ -602,8 +638,25 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 	return false;
 }
 
-void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
+bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
+
+	if (NWrapperSingleton::getInstance().isHost()) {	
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(-1, event.player.id, false);	
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::Game, event.player.id);	
+	}
 	
+	return true;
+}
+
+void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
+
+	if (NWrapperSingleton::getInstance().isHost() && m_gameStarted) {
+
+		if (event.stateID == States::Game && event.status > 0) {
+			m_componentSystems.hostSendToSpectatorSystem->sendEntityCreationPackage(event.playerID);
+		}
+
+	}
 }
 
 bool GameState::update(float dt, float alpha) {
@@ -774,6 +827,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_runningSystems.clear();
 
 	m_componentSystems.gameInputSystem->fixedUpdate(dt);
+	m_componentSystems.spectateInputSystem->fixedUpdate(dt);
 
 	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	
@@ -823,6 +877,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
+	m_componentSystems.spectateInputSystem->update(dt, alpha);
 
 	// There is an imgui debug toggle to override lights
 	if (!m_lightDebugWindow.isManualOverrideOn()) {
@@ -1152,6 +1207,17 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		saftblandare->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/Saftblandare_NM.tga");
 		saftblandare->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/Saftblandare_Albedo.tga");
 
+		Model* cloningVats = &m_app->getResourceManager().getModel("Clutter/CloningVats.fbx", shader);
+		cloningVats->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/CloningVats_MRAO.tga");
+		cloningVats->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/CloningVats_NM.tga");
+		cloningVats->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/CloningVats_Albedo.tga");
+
+		Model* controlStation = &m_app->getResourceManager().getModel("Clutter/ControlStation.fbx", shader);
+		controlStation->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Clutter/ControlStation_MRAO.tga");
+		controlStation->getMesh(0)->getMaterial()->setNormalTexture("pbr/Clutter/ControlStation_NM.tga");
+		controlStation->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Clutter/ControlStation_Albedo.tga");
+
+
 		tileModels.resize(TileModel::NUMBOFMODELS);
 		tileModels[TileModel::ROOM_FLOOR] = roomFloor;
 		tileModels[TileModel::ROOM_WALL] = roomWall;
@@ -1178,7 +1244,8 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		clutterModels[ClutterModel::SCREEN] = cScreen;
 		clutterModels[ClutterModel::NOTEPAD] = cNotepad;
 		clutterModels[ClutterModel::MICROSCOPE] = cMicroscope;
-
+		clutterModels[ClutterModel::CLONINGVATS] = cloningVats;
+		clutterModels[ClutterModel::CONTROLSTATION] = controlStation;
 	}
 
 	// Create the level generator system and put it into the datatype.

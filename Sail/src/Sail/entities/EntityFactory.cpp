@@ -175,7 +175,12 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 	// Other players have a character model and animations
 
 	auto rec = otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		otherPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerCompID)->m_id = rec->m_id;
+	}
+
 	otherPlayer->addComponent<ReplayComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
+
 	otherPlayer->addComponent<OnlineOwnerComponent>(playerCompID);
 
 	// Create the player
@@ -183,14 +188,26 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 
 	for (Entity* c : otherPlayer->getChildEntities()) {
 		if (c->getName() == otherPlayer->getName() + "WaterGun") {
-			c->addComponent<NetworkReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
+
+			auto rec = c->addComponent<NetworkReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
+			if ( NWrapperSingleton::getInstance().isHost()) {
+				c->addComponent<NetworkSenderComponent>(Netcode::EntityType::GUN_ENTITY, gunCompID)->m_id = rec->m_id;
+			}
+
 			c->addComponent<ReplayComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
+
 			c->addComponent<OnlineOwnerComponent>(playerCompID);
 		}
 
 		if (c->hasComponent<CandleComponent>()) {
-			c->addComponent<NetworkReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
+
+			auto rec = c->addComponent<NetworkReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
+			if (NWrapperSingleton::getInstance().isHost()) {
+				c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, candleCompID)->m_id = rec->m_id;
+			}
+
 			c->addComponent<ReplayComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
+
 			c->addComponent<OnlineOwnerComponent>(playerCompID);
 		}
 	}
@@ -214,7 +231,22 @@ void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t light
 	perfromancePlayerID++;
 }
 
-// Creates a player entity without a candle and without a model
+Entity::SPtr EntityFactory::CreateMySpectator(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation) {
+	
+	auto mySpectator = ECS::Instance()->createEntity("MyPlayer");
+
+	mySpectator->addComponent<TransformComponent>(spawnLocation);
+	mySpectator->addComponent<SpectatorComponent>();
+
+	auto transform = mySpectator->getComponent<TransformComponent>();
+	auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
+	pos.y = 40.f;
+	transform->setStartTranslation(pos * 0.5f);
+
+	return mySpectator;
+}
+
+// Creates a player enitty without a candle and without a model
 void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation, Netcode::PlayerID playerID) {
 	std::string modelName = "Doc.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();

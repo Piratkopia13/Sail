@@ -14,6 +14,7 @@
 #include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
 #include "Sail/events/types/NetworkPlayerChangedTeam.h"
 
+
 bool NWrapperClient::host(int port) {
 	// A client does not host, do nothing.
 	return false;
@@ -91,6 +92,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	unsigned char id_question;
 	Message processedMessage;
 	std::string dataString;
+	bool isSpectator = false;
 
 	switch (nEvent.data->Message.rawMsg[0]) {
 	case ML_CHAT:
@@ -143,7 +145,9 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	case ML_CHANGE_STATE:
 	{
 		States::ID stateID = (States::ID)(nEvent.data->Message.rawMsg[1]);
+
 		EventDispatcher::Instance().emit(NetworkChangeStateEvent(stateID));
+
 	}
 	break;
 	case ML_WELCOME:
