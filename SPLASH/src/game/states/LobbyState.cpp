@@ -395,11 +395,6 @@ void LobbyState::renderPlayerList() {
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
 			bool asd = currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0;
 			ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd); 
-			//if (currentplayer.id == myID) {
-			//	ImGui::Checkbox(std::string("##Player"+std::to_string(currentplayer.id)).c_str(), &m_ready);
-			//}
-			//else {
-			//}
 			ImGui::PopItemFlag();
 			ImGui::PopStyleVar();
 			ImGui::EndGroup();

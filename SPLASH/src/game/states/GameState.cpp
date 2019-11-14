@@ -603,8 +603,9 @@ bool GameState::update(float dt, float alpha) {
 	waitForOtherPlayers();
 
 	//Dont update game if game have not started. This is to sync all players to start at the same time
-	if (!m_gameStarted)
+	if (!m_gameStarted) {
 		return true;
+	}
 
 	// UPDATE REAL TIME SYSTEMS
 	updatePerFrameComponentSystems(dt, alpha);
@@ -627,8 +628,9 @@ bool GameState::fixedUpdate(float dt) {
 	counter += dt * 2.0f;
 
 	//Dont update game if game have not started. This is to sync all players to start at the same time
-	if (!m_gameStarted)
+	if (!m_gameStarted) {
 		return true;
+	}
 
 #ifdef _PERFORMANCE_TEST
 	/* here we shoot the guns */
