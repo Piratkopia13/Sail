@@ -283,16 +283,16 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 
 		switch (quarterIndex) {
 		case 0:
-			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(255, up1, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(std::min(255U, up0 + std::rand() % 50U + 50U), up1, up2, up3);
 			break;
 		case 1:
-			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, 255, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, std::min(255U, up1 + std::rand() % 50U + 50U), up2, up3);
 			break;
 		case 2:
-			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, 255, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, std::min(255U, up2 + std::rand() % 50U + 50U), up3);
 			break;
 		case 3:
-			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, up2, 255);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, up2, std::min(255U, up3 + std::rand() % 50U + 50U));
 			break;
 		}
 
@@ -318,12 +318,7 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 
 	// Ignore water points that are outside the map
 	if (arrIndex >= 0 && arrIndex <= WATER_ARR_SIZE - 1) {
-		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
-		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
-		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 2);
-		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 3);
-
-		returnValue = up0 != 255 || up1 != 255 || up2 != 255 || up3 != 255;
+		returnValue = m_waterDataCPU[arrIndex] != 0;
 	}
 
 	return returnValue;
