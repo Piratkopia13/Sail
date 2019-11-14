@@ -17,7 +17,7 @@ AnimationComponent::AnimationComponent(AnimationStack* animationStack) :
 	is_camFollowingHead(false),
 	rightHandEntity(nullptr),
 	leftHandEntity(nullptr),
-	headPositionLocalDefault(glm::vec3(0.0125f, 1.7878f, -0.0482f)),
+	headPositionLocalDefault(glm::vec3(0.0f, 1.81f, 0.0f)),
 	currentTransition(nullptr),
 	m_stack(animationStack)
 {
