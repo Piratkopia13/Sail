@@ -25,7 +25,7 @@ public: // Functions
 	// TODO: MOVE TO NRS
 	//void pushDataToBuffer(const std::string& data);
 
-	void processData(float dt, std::queue<std::string>& data);
+	void processData(float dt, std::queue<std::string>& data, const bool ignoreFromSelf = true);
 
 	virtual void update(float dt) = 0;
 	virtual void handleIncomingData(const std::string& data) = 0;

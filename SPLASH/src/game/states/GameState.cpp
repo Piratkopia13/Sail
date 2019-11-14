@@ -377,12 +377,12 @@ bool GameState::processInput(float dt) {
 
 void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
-	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem<TransformComponent>>();
 	
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
 
-	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<TransformComponent>>();
 
 	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
 
@@ -425,12 +425,12 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.levelSystem = ECS::Instance()->createSystem<LevelSystem>();
 
 	// Create systems for rendering
-	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
+	m_componentSystems.beginEndFrameSystem     = ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<MetaballComponent>>();
-	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
-	m_componentSystems.renderImGuiSystem = ECS::Instance()->createSystem<RenderImGuiSystem>();
-	m_componentSystems.guiSubmitSystem = ECS::Instance()->createSystem<GUISubmitSystem>();
+	m_componentSystems.metaballSubmitSystem    = ECS::Instance()->createSystem<MetaballSubmitSystem<TransformComponent>>();
+	m_componentSystems.modelSubmitSystem       = ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
+	m_componentSystems.renderImGuiSystem       = ECS::Instance()->createSystem<RenderImGuiSystem>();
+	m_componentSystems.guiSubmitSystem         = ECS::Instance()->createSystem<GUISubmitSystem>();
 
 	// Create system for player input
 	m_componentSystems.gameInputSystem = ECS::Instance()->createSystem<GameInputSystem>();
@@ -467,9 +467,10 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create systems needed for the killcam
 	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
-	//m_componentSystems.killCamModelSubmitSystem = ECS::Instance()->createSystem<KillCamModelSubmitSystem>();
 	m_componentSystems.killCamModelSubmitSystem    = ECS::Instance()->createSystem<ModelSubmitSystem<ReplayTransformComponent>>();
-	m_componentSystems.killCamMetaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<ReplayMetaballComponent>>();
+	m_componentSystems.killCamMetaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<ReplayTransformComponent>>();
+	m_componentSystems.killCamMovementSystem       = ECS::Instance()->createSystem<MovementSystem<ReplayTransformComponent>>();
+	m_componentSystems.killCamMovementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<ReplayTransformComponent>>();
 
 }
 
@@ -715,8 +716,8 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	m_componentSystems.killCamReceiverSystem->prepareUpdate();
 
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
-	
-
+	m_componentSystems.killCamMovementSystem->update(dt);
+	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
 
 }
 

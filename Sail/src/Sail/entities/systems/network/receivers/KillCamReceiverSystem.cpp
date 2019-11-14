@@ -72,7 +72,7 @@ void KillCamReceiverSystem::update(float dt) {
 void KillCamReceiverSystem::processReplayData(float dt) {
 	std::lock_guard<std::mutex> lock(m_replayDataLock);
 
-	processData(dt, m_replayData[m_currentReadInd]);
+	processData(dt, m_replayData[m_currentReadInd], false);
 }
 
 
@@ -161,6 +161,8 @@ void KillCamReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId,
 // The player who puts down their candle does this in CandleSystem and tests collisions
 // The candle will be moved for everyone else in here
 void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const bool isHeld) {
+	SAIL_LOG("setCandleState called");
+
 	//EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld));
 }
 

@@ -15,7 +15,7 @@ template <typename T>
 void MovementSystem<T>::update(float dt) {
 	for (auto& e : entities) {
 
-		T* transform = e->getComponent<TransformComponent>();
+		T* transform = e->getComponent<T>();
 		MovementComponent* movement = e->getComponent<MovementComponent>();
 
 		// Update velocity

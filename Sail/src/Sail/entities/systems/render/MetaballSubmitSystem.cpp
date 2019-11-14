@@ -6,8 +6,8 @@
 
 template <typename T>
 MetaballSubmitSystem<T>::MetaballSubmitSystem() {
-	registerComponent<T>(true, false, false);	// Data is not read, but the component is required for this system anyway
-	registerComponent<TransformComponent>(true, true, false);
+	registerComponent<MetaballComponent>(true, false, false);	// Data is not read, but the component is required for this system anyway
+	registerComponent<T>(true, true, false);
 	registerComponent<CullingComponent>(false, true, false);
 }
 
@@ -17,7 +17,7 @@ void MetaballSubmitSystem<T>::submitAll(const float alpha) {
 	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
 
 	for (auto& e : entities) {
-		TransformComponent* transform = e->getComponent<TransformComponent>();
+		T* transform = e->getComponent<T>();
 		CullingComponent* culling = e->getComponent<CullingComponent>();
 
 		Renderer::RenderFlag flags = Renderer::MESH_STATIC;
@@ -29,5 +29,5 @@ void MetaballSubmitSystem<T>::submitAll(const float alpha) {
 	}
 }
 
-template class MetaballSubmitSystem<MetaballComponent>;
-template class MetaballSubmitSystem<ReplayMetaballComponent>;
+template class MetaballSubmitSystem<TransformComponent>;
+template class MetaballSubmitSystem<ReplayTransformComponent>;
