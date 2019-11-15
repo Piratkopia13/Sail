@@ -62,6 +62,17 @@ LobbyState::LobbyState(StateStack& stack)
 	m_settingsChanged = false;
 	m_timeSinceLastUpdate = 0.0f;
 
+
+	m_menuWidth = 700.0f;
+	m_usePercentage = true;
+	m_percentage = 0.35f;
+
+	m_pos = ImVec2(0, 0);
+	m_size = ImVec2(0, 0);
+	m_minSize = ImVec2(435, 500);
+	m_maxSize = ImVec2(1000, 1000);
+
+	m_windowToRender = 0;
 	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove |
@@ -156,7 +167,7 @@ bool LobbyState::render(float dt, float alpha) {
 bool LobbyState::renderImgui(float dt) {
 
 	//ImGui::ShowDemoWindow();
-	static std::string font = "Beb20";
+	static std::string font = "Beb30";
 	//ImGui::PushFont(m_imGuiHandler->getFont(font));
 	//
 	//if (ImGui::Begin("IMGUISETTINGS")) {
@@ -175,6 +186,16 @@ bool LobbyState::renderImgui(float dt) {
 	//
 	//ImGui::PopFont();
 
+	if (m_usePercentage) {
+		m_menuWidth = m_percentage * m_app->getWindow()->getWindowWidth();
+	}
+
+	m_size.x = m_menuWidth;
+	m_size.y = m_app->getWindow()->getWindowHeight() - m_outerPadding * 2;
+	m_pos.x = m_app->getWindow()->getWindowWidth()*0.66f - m_outerPadding - ((m_size.x < m_minSize.x) ? m_minSize.x : m_size.x);
+	m_pos.y = m_outerPadding;
+
+
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
 	// ------- menu ----------------
 	renderMenu();
@@ -186,18 +207,17 @@ bool LobbyState::renderImgui(float dt) {
 	renderChat();
 
 	// -------- SETTINGS ----------
-	if (m_renderGameSettings) {
+	if (m_windowToRender == 1) {
 		renderGameSettings();
 	}
 	
-	if (m_optionsWindow.isWindowOpen()) {
-		ImGui::SetNextWindowPos(ImVec2(
-			m_outerPadding + 300,
-			m_outerPadding
-		));
+	if (m_windowToRender == 2) {
+		ImGui::SetNextWindowPos(m_pos);
+		ImGui::SetNextWindowSize(m_size);
+		ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 
-		ImGui::SetNextWindowSize(ImVec2(500, 500));
-		if (ImGui::Begin("##Pause Menu", nullptr, m_backgroundOnlyflags)) {
+		//ImGui::SetNextWindowSize(ImVec2(500, 500));
+		if (ImGui::Begin("##OptionsMenu", nullptr, m_backgroundOnlyflags)) {
 
 			ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
 			SailImGui::HeaderText("Options");
@@ -461,12 +481,9 @@ void LobbyState::renderGameSettings() {
 
 
 	// Uncomment when we actually have game settings
-	ImGui::SetNextWindowPos(ImVec2(
-		m_outerPadding + 300,
-		m_outerPadding
-	));
-
-	ImGui::SetNextWindowSize(ImVec2(500,500));
+	ImGui::SetNextWindowPos(m_pos);
+	ImGui::SetNextWindowSize(m_size);
+	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 	if (ImGui::Begin("##LOBBYSETTINGS", nullptr, settingsFlags)) {
 		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
 		SailImGui::HeaderText("Lobby Settings");
@@ -537,11 +554,11 @@ void LobbyState::renderChat() {
 
 void LobbyState::renderMenu() {
 	static ImVec2 pos(m_outerPadding, m_outerPadding );
-	static ImVec2 size(150, 300);
+	static ImVec2 size(350, 400);
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowSize(size);
 
-	ImGui::PushFont(m_imGuiHandler->getFont("Beb30"));
+	ImGui::PushFont(m_imGuiHandler->getFont("Beb60"));
 
 	if (ImGui::Begin("##LOBBYMENU", nullptr, m_standaloneButtonflags)) {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.3f, 0.3f, 1));
@@ -557,13 +574,47 @@ void LobbyState::renderMenu() {
 			this->requestStackPush(States::MainMenu);
 		}
 		ImGui::PopStyleColor(2);
-		if (SailImGui::TextButton("Game Options")) {
-			m_renderGameSettings = !m_renderGameSettings;
-		}
-		if(SailImGui::TextButton("Options")) {
-			m_optionsWindow.toggleWindow();
+		ImGui::Spacing();
+		ImGui::Spacing();
+		ImGui::Spacing();
 
+		if (m_windowToRender == 1) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 		}
+		if (SailImGui::TextButton((m_windowToRender == 1) ? ">Game Options" : "Game Options")) {
+			if (m_windowToRender != 1) {
+				m_windowToRender = 1;
+				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+			}
+			else {
+				m_windowToRender = 0;
+				ImGui::PopStyleColor();
+			}
+		}
+		if (m_windowToRender == 1) {
+			ImGui::PopStyleColor();
+		}
+
+		if (m_windowToRender == 2) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+		}
+		if (SailImGui::TextButton((m_windowToRender == 2) ? ">Options" : "Options")) {
+			if (m_windowToRender != 2) {
+				m_windowToRender = 2;
+				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+			}
+			else {
+				m_windowToRender = 0;
+				ImGui::PopStyleColor();
+			}
+		}
+		if (m_windowToRender == 2) {
+			ImGui::PopStyleColor();
+		}
+
+
+		ImGui::Spacing();
+		ImGui::Spacing();
 		ImGui::Spacing();
 		
 

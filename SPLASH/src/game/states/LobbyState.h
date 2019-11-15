@@ -78,7 +78,7 @@ private:
 	ImGuiWindowFlags m_backgroundOnlyflags;
 
 
-
+	int m_windowToRender;
 	unsigned int m_outerPadding;
 	unsigned int m_screenWidth;
 	unsigned int m_screenHeight;
@@ -86,6 +86,16 @@ private:
 
 	bool m_renderGameSettings;
 	bool m_renderApplicationSettings;
+
+
+
+	float m_menuWidth;
+	ImVec2 m_minSize;
+	ImVec2 m_maxSize;
+	ImVec2 m_size;
+	ImVec2 m_pos;
+	float m_percentage;
+	bool m_usePercentage;
 
 
 	virtual bool onMyTextInput(const TextInputEvent& event) = 0;
