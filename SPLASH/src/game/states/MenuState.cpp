@@ -118,9 +118,9 @@ if (m_usePercentage) {
 	
 
 	static std::string font = "Beb30";
+
+#ifdef DEVELOPMENT
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
-
-
 	if (ImGui::Begin("IMGUISETTINGS")) {
 		if (ImGui::BeginCombo("##FONTS", &font.front())) {
 			for (auto const& [key, val] : m_imGuiHandler->getFontMap()) {
@@ -143,7 +143,7 @@ if (m_usePercentage) {
 	ImGui::End();
 
 	ImGui::PopFont();
-	
+#endif
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
 
 
