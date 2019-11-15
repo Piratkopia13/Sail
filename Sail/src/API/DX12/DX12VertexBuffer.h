@@ -5,6 +5,7 @@
 class DX12VertexBuffer : public VertexBuffer {
 public:
 	DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::Data& modelData);
+	DX12VertexBuffer(const InputLayout& inputLayout, unsigned int numVertices);
 	~DX12VertexBuffer();
 
 	virtual void bind(void* cmdList) const override;
@@ -14,6 +15,9 @@ public:
 	bool hasBeenUpdated() const;
 	void resetHasBeenUpdated();
 	bool init(ID3D12GraphicsCommandList4* cmdList);
+
+private:
+	void init(void* data);
 
 private:
 	DX12API* m_context;

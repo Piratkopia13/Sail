@@ -9,16 +9,16 @@ class PostProcessPipeline;
 #define MULTI_THREADED_COMMAND_RECORDING
 //#define DEBUG_MULTI_THREADED_COMMAND_RECORDING
 
-class DX12ForwardRenderer : public Renderer {
+class DX12ForwardRenderer final : public Renderer {
 public:
 	DX12ForwardRenderer();
 	~DX12ForwardRenderer();
 
 	void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 private:
-	bool onResize(WindowResizeEvent& event);
+	bool onResize(const WindowResizeEvent& event);
 
 private:
 	static const int MAX_RECORD_THREADS = 4;

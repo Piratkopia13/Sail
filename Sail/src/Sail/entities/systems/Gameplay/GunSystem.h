@@ -11,6 +11,8 @@ public:
 
 	void update(float dt) override;
 
+
+
 private:
 	GameDataTracker* m_gameDataTracker = nullptr;
 
@@ -19,6 +21,8 @@ private:
 	bool m_isLoopingShootSound = false;
 	bool m_endSound = false;
 
+	void alterProjectileSpeed(GunComponent* gun);
+
 	void fireGun(Entity* e, GunComponent* gun);
 	void overloadGun(Entity* e, GunComponent* gun);
 
@@ -26,5 +30,5 @@ private:
 	void setGunStateLOOP(Entity* e, GunComponent* gun);
 	void setGunStateEND(Entity* e, GunComponent* gun);
 
-	void playShootingSounds(Entity* e);
+	void sendShootingEvents(Entity* e);
 };

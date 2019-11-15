@@ -5,67 +5,69 @@
 
 class Entity;
 
-#define MAX_HEALTH 20.f
+// TODO: Replace with game settings
+constexpr float MAX_HEALTH = 20.f;
 
 
 // TODO: Remove as many functions as possible
 // This component will eventually contain the health etc of the candles
 class CandleComponent : public Component<CandleComponent> {
 public:
-	CandleComponent();
-	virtual ~CandleComponent();
+	enum class DamageSource{
+		NO_CLUE = 0,
+		PLAYER,
+		SPRINKLER,
+		INSANE,
+	};
 
-	void hitWithWater(float damage, Netcode::PlayerID shooterID);
-	void resetHitByWater();
-	bool wasHitByWater() const;
-	bool getIsAlive() const;
-	bool* getPtrToIsLit();
-	void setIsAlive(bool alive);
-	void addToDownTime(float time);
-	void resetDownTime();
-	bool isCarried() const;
-	void setWasCarriedLastUpdate(const bool wasCarried);
-	bool getWasCarriedLastUpdate() const;
-	void setCarried(bool b);
-	float getDownTime() const;
-	bool getIsLit() const;
-	void setIsLit(const bool isLit);
-	int getNumRespawns() const;
-	void incrementRespawns();
-	void setOwner(Netcode::PlayerID playerEntityID);
-	Netcode::PlayerID getOwner() const;
-	int getDamageTakenLastHit() const;
-	float getInvincibleTimer() const;
-	void decrementInvincibleTimer(const float dt);
-	void setInvincibleTimer(const float time);
-	float getHealth() const;
-	void setHealth(const float health);
-	void decrementHealth(const float health);
-	void setWasHitByNetID(Netcode::PlayerID netIdOfPlayerWhoHitThisCandle);
-	unsigned char getWasHitByNetID();
+	CandleComponent() {}
+	virtual ~CandleComponent() {}
+
+
+
+	void kill(DamageSource source, Netcode::PlayerID shooterID) {
+		health = 0;
+		wasHitThisTick = true;
+		lastDamageSource = source;
+		wasHitByPlayerID = shooterID;
+	}
+
+	// This function is only called by the host
+	void hitWithWater(float damage, DamageSource source, Netcode::PlayerID shooterID) {
+		if (health > 0.0f && invincibleTimer <= 0.0f) {
+			invincibleTimer = 0.4f; // TODO: Replace 0.4f with game settings
+			health -= damage;
+			wasHitByPlayerID = shooterID;
+			wasHitThisTick = true;
+		}
+	}
+#ifdef DEVELOPMENT
+	void imguiRender(Entity** e) override;
+#endif
+
+public:
+	Entity* ptrToOwner = nullptr;
 
 	bool hitByLocalPlayer = false;
-
-	
-	Entity* m_ptrToOwner = nullptr;
-
-private:
-	bool m_wasHitByWater = false;
-	float m_damageTakenLastHit = 0;
-	bool m_isAlive = true;
-	bool m_carried = true;
-	bool m_wasCarriedLastUpdate = true;
-	Netcode::PlayerID wasHitByPlayerID = 0;
-
-	float m_invincibleTimer;
-	// TODO: Replace using game settings when that is implemented
-	float m_health = MAX_HEALTH;
+	bool wasHitByMeThisTick = false;
+	bool wasHitByWater = false;
+	bool isAlive = true;
+	bool isCarried = true;
+	bool wasCarriedLastUpdate = true;
+	bool isLit = true;
+	bool userReignition = false;
 
 	/* Should probably be removed later */
-	float m_downTime = 0.f;
+	float downTime = 0.f;
+	float invincibleTimer = 0.f;
+	// TODO: Replace using game settings when that is implemented
+	float health = MAX_HEALTH;
 
-	bool m_isLit = true;
-	int m_respawns = 0;
+	int respawns = 0;
 
-	Netcode::PlayerID m_playerEntityID;
+	bool wasJustExtinguished = false;
+	bool wasHitThisTick = false;
+	Netcode::PlayerID playerEntityID;
+	Netcode::PlayerID wasHitByPlayerID = 0;
+	DamageSource lastDamageSource;
 };

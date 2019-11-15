@@ -10,25 +10,20 @@
 #include "../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../SPLASH/src/game/events/NetworkDroppedEvent.h"
+#include "../SPLASH/src/game/events/SettingsEvent.h"
 
-class NetworkStartGameEvent;
-
-class LobbyClientState : public LobbyState {
+class LobbyClientState final : public LobbyState {
 public:
 	LobbyClientState(StateStack& stack);
 	~LobbyClientState();
 
-	bool onEvent(Event& event);
+	virtual bool onEvent(const Event& event) override;
 
 private:
 
 	bool m_wasDropped;
-	bool onMyTextInput(TextInputEvent& event);
-	bool onRecievedText(NetworkChatEvent& event);
-	bool onPlayerJoined(NetworkJoinedEvent& event);
-	bool onPlayerDisconnected(NetworkDisconnectEvent& event);
-	bool onPlayerWelcomed(NetworkWelcomeEvent& event);
-	bool onNameRequest(NetworkNameEvent& event);
-	bool onDropped(NetworkDroppedEvent& event);
-	bool onStartGame(NetworkStartGameEvent& event);
+	bool onMyTextInput(const TextInputEvent& event);
+	bool onRecievedText(const NetworkChatEvent& event);
+	bool onDropped(const NetworkDroppedEvent& event);
+	bool onSettingsChanged(const SettingsUpdatedEvent& event);
 };

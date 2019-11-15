@@ -127,8 +127,6 @@ project "Sail"
 	removefiles {
 		"%{prj.name}/src/API/DX12/**",
 		"%{prj.name}/src/API/VULKAN/**",
-
-		"**/Particle*.*",
 	}
 
 	includedirs {

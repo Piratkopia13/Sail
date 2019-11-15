@@ -1,8 +1,7 @@
 #pragma once
 
-class Event {
-public:
-	enum Type {
+struct Event {
+	enum class Type {
 		WINDOW_RESIZE,
 		WINDOW_FOCUS_CHANGED,
 		POTATO,
@@ -14,19 +13,34 @@ public:
 		NETWORK_WELCOME,
 		NETWORK_NAME,
 		NETWORK_DROPPED,
-		NETWORK_START_GAME,
-		NETWORK_BACK_TO_LOBBY,
+		NETWORK_CHANGE_STATE,
+		NETWORK_PLAYER_CHANGED_TEAM,
+		NETWORK_PLAYER_REQUESTED_TEAM_CHANGE,
+		NETWORK_UPDATE_STATE_LOAD_STATUS,
 		NETWORK_SERIALIZED_DATA_RECIEVED,
-		PLAYER_CANDLE_DEATH,
-		GAME_OVER
+		GAME_OVER,
+		RESET_WATER,
+		WATER_HIT_PLAYER,
+		PLAYER_DEATH,
+		IGNITE_CANDLE,
+		HOLDING_CANDLE_TOGGLE,
+		PLAYER_JUMPED,
+		PLAYER_LANDED,
+		START_SHOOTING,
+		LOOP_SHOOTING,
+		STOP_SHOOTING,
+		CHANGE_WALKING_SOUND,
+		STOP_WALKING,
+		SETTINGS_UPDATED,
+		START_THROWING,
+		STOP_THROWING,
+
+		SANITY_SYSTEM_UPDATE_SANITY,
+		NR_OF_EVENTS		// Needs to be last, and no type above can set their values manually
 	};
-public:
-	Event(Type type);
-	~Event();
 
-	Type getType() const;
+	Event(const Type& _type) : type(_type) {}
+	virtual ~Event() = default;
 
-private:
-	Type m_type;
-
+	const Type type;
 };

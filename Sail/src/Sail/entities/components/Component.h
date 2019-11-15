@@ -1,7 +1,10 @@
 #pragma once
 #include <memory>
 #include <bitset>
+#include <typeindex>
+#include "../libraries/imgui/imgui.h"
 
+class Entity;
 #define MAX_NUM_COMPONENTS_TYPES 128
 
 
@@ -50,7 +53,12 @@ public:
 	static int nrOfComponentTypes() {
 		return global_componentID;
 	}
-
+#ifdef DEVELOPMENT
+	virtual void imguiRender(Entity** selected);
+	const std::string getName() {
+		return typeid(*this).name();
+	}
+#endif
 	unsigned int entityID;
 
 protected:
@@ -70,9 +78,15 @@ public:
 
 	static const ComponentTypeID ID;
 	static const ComponentTypeBitID& getBID() {
-		static ComponentTypeBitID BID = static_cast<ComponentTypeBitID>(1ULL << ComponentType::ID);
+		static ComponentTypeBitID BID = GetBIDofID(ComponentType::ID);
 		return BID;
 	}
+#ifdef DEVELOPMENT
+	const std::string getName() {
+		return typeid(ComponentType).name();
+	}
+#endif
+
 protected:
 	Component() {}
 };
@@ -82,3 +96,12 @@ protected:
 */
 template<typename ComponentType>
 const ComponentTypeID Component<ComponentType>::ID = BaseComponent::createID();
+
+
+constexpr ComponentTypeBitID GetBIDofID(const ComponentTypeID id) {
+	return static_cast<ComponentTypeBitID>(1ULL << id);
+}
+
+#ifdef DEVELOPMENT
+
+#endif

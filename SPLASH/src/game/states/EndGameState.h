@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Sail/states/State.h"
-#include "../SPLASH/src/game/events/NetworkBackToLobby.h"
 
-class EndGameState : public State {
+class EndGameState final : public State {
 public:
 	explicit EndGameState(StateStack& stack);
 	~EndGameState();
@@ -18,14 +17,9 @@ public:
 	// Renders imgui
 	bool renderImgui(float dt) override;
 	// Sends events to the state
-	bool onEvent(Event& event) override;
+	bool onEvent(const Event& event) override;
 
 private:
-	bool onReturnToLobby(NetworkBackToLobby& event);
-
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
-
-
-
 };

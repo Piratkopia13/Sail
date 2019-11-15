@@ -2,6 +2,8 @@
 #include "NetworkModule.hpp"
 #include <random>
 #include "Sail/../../libraries/cereal/archives/portable_binary.hpp"
+#include "Sail/utils/Utils.h"
+
 
 //#define _LOG_TO_FILE
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
@@ -190,9 +192,9 @@ bool Network::join(const char* IP_adress, unsigned short hostport)
 	conn->socket = m_soc;
 	conn->ip = "";
 	conn->port = ntohs(m_myAddr.sin_port);
-	conn->id = 0;
+	conn->tcp_id = 0;
 	conn->thread = SAIL_NEW std::thread(&Network::listen, this, conn); //Create new listening thread listening for the host
-	m_connections[conn->id] = conn;
+	m_connections[conn->tcp_id] = conn;
 
 	m_initializedStatus = INITIALIZED_STATUS::IS_CLIENT;
 
@@ -201,6 +203,14 @@ bool Network::join(const char* IP_adress, unsigned short hostport)
 
 bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverID)
 {
+	m_nrOfPacketsSentSinceLast++;
+	m_sizeOfPacketsSentSinceLast += size;
+
+	if (size > 1000) {
+		SAIL_LOG("Packet size: " + std::to_string(size));
+	}
+
+
 	if (receiverID == -1 && m_initializedStatus == INITIALIZED_STATUS::IS_SERVER) {
 		int success = 0;
 		Connection* conn = nullptr;
@@ -413,7 +423,7 @@ void Network::listenForUDP()
 
 					NetworkEvent nEvent;
 					nEvent.eventType = NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND;
-					nEvent.clientID = 0;
+					nEvent.from_tcp_id = 0;
 					NetworkEventData data = NetworkEventData();
 					// Memcpy description before the other shit, as it writes over rawMsg.
 					memcpy(data.HostFoundOnLanData.description, udpdata.package.packageData.hostdata.hostdescription, sizeof(m_serverMetaDesc));
@@ -579,6 +589,39 @@ void Network::startUDP() {
 	startUDPSocket(m_udp_localbroadcastport);
 }
 
+void Network::kickConnection(TCP_CONNECTION_ID tcp_id) {
+	if (m_connections.find(tcp_id) != m_connections.end()) {
+		//TODO: Send Kicked Message to be nice.
+		
+		Connection* conn = m_connections[tcp_id];
+		conn->wasKicked = true;
+		::shutdown(conn->socket, 2);
+		if (closesocket(conn->socket) == SOCKET_ERROR) {
+#ifdef DEBUG_NETWORK
+			printf((std::string("Error closing socket") + std::to_string(conn->id) + "\n").c_str());
+#endif
+		} else if (conn->thread) {
+			conn->thread->join();
+			delete conn->thread;
+			delete conn;
+		}
+	}
+}
+
+bool Network::wasKicked(TCP_CONNECTION_ID tcp_id) {
+	return m_connections[tcp_id]->wasKicked;
+}
+
+size_t Network::averagePacketSizeSinceLastCheck() {
+	size_t averageSize = 0;
+	if (m_nrOfPacketsSentSinceLast > 0) {
+		averageSize = m_sizeOfPacketsSentSinceLast / m_nrOfPacketsSentSinceLast;
+		m_sizeOfPacketsSentSinceLast = 0;
+		m_nrOfPacketsSentSinceLast = 0;
+	}
+	return averageSize;
+}
+
 void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 	std::lock_guard<std::mutex> lock(m_mutex_packages);
 	// delete previous message if there is one
@@ -603,7 +646,7 @@ void Network::addNetworkEvent(NetworkEvent n, int dataSize, const char* data) {
 
 
 	m_awaitingEvents[m_pend].eventType = n.eventType;
-	m_awaitingEvents[m_pend].clientID = n.clientID;
+	m_awaitingEvents[m_pend].from_tcp_id = n.from_tcp_id;
 	m_awaitingEvents[m_pend].data = &m_awaitingMessages[m_pend];
 
 	m_pend = (m_pend + 1) % MAX_AWAITING_PACKAGES;
@@ -638,30 +681,30 @@ void Network::waitForNewConnections()
 
 			bool ok = false;
 			do {
-				conn->id = generateID();
-				if (m_connections.find(conn->id) == m_connections.end()) {
+				conn->tcp_id = generateID();
+				if (m_connections.find(conn->tcp_id) == m_connections.end()) {
 					ok = true;
 				}
 			} while (!ok);
 
 			conn->thread = SAIL_NEW std::thread(&Network::listen, this, conn); //Create new listening thread for the new connection
-			m_connections[conn->id] = conn;
+			m_connections[conn->tcp_id] = conn;
 		}
 	}
 }
 
-void Network::listen(const Connection* conn)
+void Network::listen(Connection* conn)
 {
 	NetworkEvent nEvent;
-	nEvent.clientID = conn->id;
+	nEvent.from_tcp_id = conn->tcp_id;
 	nEvent.eventType = NETWORK_EVENT_TYPE::CONNECTION_ESTABLISHED;
 	addNetworkEvent(nEvent, 0);
 
-	bool connectionIsClosed = false;
+	//bool connectionIsClosed = false;
 	char incomingPackageSize[MSG_SIZE_STR_LEN];
 	int bytesToReceive = 0;
 
-	while (!connectionIsClosed && !m_shutdown) {
+	while (conn->isConnected && !m_shutdown) {
 		ZeroMemory(incomingPackageSize, MSG_SIZE_STR_LEN);
 
 		// Find out how large the incoming packet is
@@ -689,7 +732,7 @@ void Network::listen(const Connection* conn)
 #else
 		case SOCKET_ERROR:
 #endif // DEBUG_NETWORK
-			connectionIsClosed = true;
+			conn->isConnected = false;
 			nEvent.eventType = NETWORK_EVENT_TYPE::CONNECTION_CLOSED;
 			addNetworkEvent(nEvent, 0);
 			break;

@@ -94,7 +94,7 @@ float4 renderDecal(uint index, float3 vsPosition, float3 wPos, float3 wNorm, flo
 		// wNorm = mul(normalize(wNorm * 2.f - 1.f), tbn);
 
         float3 norm = lerp(wNorm, decalNormalWS, albedoColour.w);
-        shade(wPos, wNorm, payloadColour.rgb, metalness, roughness, ao, decalPayload);
+        shade(wPos, wNorm, payloadColour.rgb, false, metalness, roughness, ao, decalPayload);
         //colourToReturn = lerp(float4(albedo, 1.0f), decalPayload.color, albedoColour.w);
         colourToReturn = decalPayload.color;
         // colourToReturn = 1.0f;

@@ -13,11 +13,15 @@
 #include "../DX12Mesh.h"
 #include "../DX12Utils.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
+#include "Sail/entities/systems/Graphics/ParticleSystem.h"
 #include "Sail/entities/ECS.h"
 #include "../DX12VertexBuffer.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
+#include "Sail/events/EventDispatcher.h"
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 
@@ -33,7 +37,7 @@ DX12GBufferRenderer::DX12GBufferRenderer() {
 	auto windowHeight = app->getWindow()->getWindowHeight();
 
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
-		m_gbufferTextures[i] = static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "GBuffer renderer output " + std::to_string(i), (i == 0)));
+		m_gbufferTextures[i] = static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "GBuffer renderer output " + std::to_string(i), Texture::R8G8B8A8, (i == 0)));
 	}
 }
 
@@ -41,6 +45,7 @@ DX12GBufferRenderer::~DX12GBufferRenderer() {
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
 		delete m_gbufferTextures[i];
 	}
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
@@ -49,21 +54,26 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	auto frameIndex = m_context->getFrameIndex();
 	int count = static_cast<int>(commandQueue.size());
 
-	// Run animation updates on the gpu first
 	auto* animationSystem = ECS::Instance()->getSystem<AnimationSystem>();
-	if (animationSystem) {
+	auto* particleSystem = ECS::Instance()->getSystem<ParticleSystem>();
+	if (animationSystem || particleSystem) {
 		m_computeCommand.allocators[frameIndex]->Reset();
 		m_computeCommand.list->Reset(m_computeCommand.allocators[frameIndex].Get(), nullptr);
 
-		// Update animations on compute shader
-		animationSystem->updateMeshGPU(m_computeCommand.list.Get());
+		if (animationSystem) {
+			// Run animation updates on the gpu first
+			animationSystem->updateMeshGPU(m_computeCommand.list.Get());
+		}
+		if (particleSystem) {
+			// Update particles on compute shader
+			particleSystem->updateOnGPU(m_computeCommand.list.Get(), camera->getPosition());
+		}
 
 		m_computeCommand.list->Close();
 		m_context->executeCommandLists({ m_computeCommand.list.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
 		// Force direct queue to wait until the compute queue has finished animations
 		m_context->getDirectQueue()->wait(m_context->getComputeQueue()->signal());
 	}
-
 
 #ifdef MULTI_THREADED_COMMAND_RECORDING
 
@@ -136,9 +146,9 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		// TODO: fix
 		m_context->prepareToRender(cmdList.Get());
 		m_context->clear(cmdList.Get());
-		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Prep to render, and record. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
+		SAIL_LOG("ThreadID: " + std::to_string(threadID) + " - Prep to render, and record. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
 	} else if (threadID < nThreads - 1) {
-		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Recording Only. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
+		SAIL_LOG("ThreadID: " + std::to_string(threadID) + " - Recording Only. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
 	}
 #else
 	if (threadID == 0) {
@@ -197,6 +207,8 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		shaderPipeline->trySetCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
 		shaderPipeline->trySetCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
 
+		cmdList->SetGraphicsRoot32BitConstants(GlobalRootParam::CBV_TEAM_COLOR, 3, &teamColors[command->teamColorID], 0);
+
 		static_cast<DX12Mesh*>(command->model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);
 	}
 
@@ -211,7 +223,7 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		}
 
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
-		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
+		SAIL_LOG("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 	}
 #else
@@ -243,8 +255,11 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 }
 
-bool DX12GBufferRenderer::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12GBufferRenderer::onResize));
+bool DX12GBufferRenderer::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 	return true;
 }
 
@@ -252,9 +267,9 @@ DX12RenderableTexture** DX12GBufferRenderer::getGBufferOutputs() const {
 	return (DX12RenderableTexture**)m_gbufferTextures;
 }
 
-bool DX12GBufferRenderer::onResize(WindowResizeEvent& event) {
+bool DX12GBufferRenderer::onResize(const WindowResizeEvent& event) {
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
-		m_gbufferTextures[i]->resize(event.getWidth(), event.getHeight());
+		m_gbufferTextures[i]->resize(event.width, event.height);
 	}
 	return true;
 }

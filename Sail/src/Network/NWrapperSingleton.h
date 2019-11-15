@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include "NWrapperHost.h"
 #include "NWrapperClient.h"
 
@@ -11,7 +12,7 @@ struct NetworkSenderEvent {
 
 	// All events will by default be handled by NetworkReceiverSystem for
 	// both the people receiving the event and the person sending it.
-	bool alsoSendToSelf = false; // TODO: set to true once #U421 is done
+	bool alsoSendToSelf = true;
 
 	virtual ~NetworkSenderEvent() {
 		if (data) {
@@ -35,17 +36,19 @@ public:
 	void resetNetwork();
 	NWrapper* getNetworkWrapper();
 	void searchForLobbies();
-	void checkFoundPackages();
+	void checkForPackages();
 	void stopUDP();
 	void startUDP();
 
 	void resetPlayerList();
-	bool playerJoined(Player& player);
-	bool playerLeft(Netcode::PlayerID& id);
+	bool playerJoined(const Player& player, bool dispatchEvent = true);
+	bool playerLeft(Netcode::PlayerID& id, bool dispatchEvent = true, PlayerLeftReason reason = PlayerLeftReason::CONNECTION_LOST);
 
 	Player& getMyPlayer();
-	Player* getPlayer(Netcode::PlayerID& id);
+	Player* getPlayer(const Netcode::PlayerID id);
+
 	const std::list<Player>& getPlayers() const;
+
 	void setPlayerName(const char* name);
 	void setPlayerID(const Netcode::PlayerID ID);
 	std::string& getMyPlayerName();
@@ -55,7 +58,11 @@ public:
 
 	// Specifically for One-Time-Events during the gamestate
 	void setNSS(NetworkSenderSystem* NSS);
-	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData, bool alsoSendToSelf = true); // Messages sent to self will be dealt with in NetworkReceiverSystem
+
+	// Messages sent to self will be dealt with in NetworkReceiverSystem
+	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData, bool alsoSendToSelf = true);
+
+	size_t averagePacketSizeSinceLastCheck();
 private:
 	// Specifically for One-Time-Events during the gamestate
 	NetworkSenderSystem* NSS = nullptr;
@@ -67,7 +74,6 @@ private:
 	bool m_isInitialized = false;
 	bool m_isHost = false;
 
-	unsigned int m_playerCount;
 	unsigned int m_playerLimit;
 	unsigned int m_seed;
 

@@ -36,7 +36,7 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload) {
+float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float emissivness, float metalness, float roughness, float ao, float originalAo, inout RayPayload payload) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(invViewDir);
 
@@ -45,48 +45,115 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
     // Reflectance equation
     float3 Lo = 0.0f;
-    for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-		PointLightInput p = CB_SceneData.pointLights[i];
+	// Add emissive materials
+	Lo += albedo * 2.2 * emissivness;
+	
+	float shadowAmount = 0.f;
+	uint numLights = 0;
+	{
 
-        // Ignore point light if color is black
-		if (all(p.color == 0.0f)) {
-			continue;
+		for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
+			PointLightInput p = CB_SceneData.pointLights[i];
+
+			// Ignore point light if color is black
+			if (all(p.color == 0.0f)) {
+				continue;
+			}
+
+			float3 L = normalize(p.position - worldPosition);
+			float3 H = normalize(V + L);
+			float distance = length(p.position - worldPosition);
+
+			numLights++;
+			// Dont do any shading if in shadow
+			if (Utils::rayHitAnything(worldPosition, L, distance)) {
+				shadowAmount++;
+				continue;
+			}
+
+			float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
+			float3 radiance = p.color * attenuation;
+
+			float3 F = fresnelSchlick(max(dot(H, V), 0.0f), F0);
+
+			float NDF = DistributionGGX(N, H, roughness);
+			float G = GeometrySmith(N, V, L, roughness);
+
+			// Calculate the Cook-Torrance BDRF
+			float3 numerator = NDF * G * F;
+			float  denominator = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+			float3 specular = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
+			specular *= attenuation;
+
+			// The fresnel value directly corresponds to the specular contribution
+			float3 kS = F;
+			// The rest is the diffuse contribution (energy conserving)
+			float3 kD = 1.0f - kS;
+			// Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
+			kD *= 1.0f - metalness;
+
+			// Calculate the light's outgoing reflectance value
+			float NdotL = max(dot(N, L), 0.0f);
+			Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 		}
 
-        float3 L = normalize(p.position - worldPosition);
-        float3 H = normalize(V + L);
-        float distance = length(p.position - worldPosition);
-    
-        // Dont do any shading if in shadow or light is black
-        if (Utils::rayHitAnything(worldPosition, L, distance)) {
-            continue;
-        }
+		//Spotlights
+		for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
+			SpotlightInput p = CB_SceneData.spotLights[i];
 
-        float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
-        float3 radiance   = p.color * attenuation;
+			// Ignore point light if color is black
+			if (all(p.color == 0.0f) || p.angle == 0) {
+				continue;
+			}
 
-        float3 F  = fresnelSchlick(max(dot(H, V), 0.0f), F0);
+			float3 L = normalize(p.position - worldPosition);
+			float3 H = normalize(V + L);
+			float distance = length(p.position - worldPosition);
 
-        float NDF = DistributionGGX(N, H, roughness);
-        float G   = GeometrySmith(N, V, L, roughness);
+			float angle = dot(L, normalize(p.direction));
+			if (abs(angle) <= p.angle) {
+				continue;
+			}
 
-        // Calculate the Cook-Torrance BDRF
-        float3 numerator    = NDF * G * F;
-        float  denominator  = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
-        float3 specular     = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
-        specular *= attenuation;
+			numLights++;
+			// Dont do any shading if in shadow
+			if (Utils::rayHitAnything(worldPosition, L, distance)) {
+				shadowAmount++;
+				continue;
+			}
 
-        // The fresnel value directly corresponds to the specular contribution
-        float3 kS = F;
-        // The rest is the diffuse contribution (energy conserving)
-        float3 kD = 1.0f - kS;
-        // Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
-        kD *= 1.0f - metalness;
+			float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
+			float3 radiance = p.color * attenuation;
 
-        // Calculate the light's outgoing reflectance value
-        float NdotL = max(dot(N, L), 0.0f);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-    }
+			float3 F = fresnelSchlick(max(dot(H, V), 0.0f), F0);
+
+			float NDF = DistributionGGX(N, H, roughness);
+			float G = GeometrySmith(N, V, L, roughness);
+
+			// Calculate the Cook-Torrance BDRF
+			float3 numerator = NDF * G * F;
+			float  denominator = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+			float3 specular = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
+			specular *= attenuation;
+
+			// The fresnel value directly corresponds to the specular contribution
+			float3 kS = F;
+			// The rest is the diffuse contribution (energy conserving)
+			float3 kD = 1.0f - kS;
+			// Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
+			kD *= 1.0f - metalness;
+
+			// Calculate the light's outgoing reflectance value
+			float NdotL = max(dot(N, L), 0.0f);
+			Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+		}
+	}
+
+	// Lerp AO depending on shadow
+	// This fixes water being visible in darkness
+	shadowAmount /= max(numLights, 1);
+	shadowAmount = 1 - (shadowAmount * shadowAmount);
+	ao = lerp(originalAo, ao, shadowAmount);
 
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT
     float3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, roughness);
@@ -106,16 +173,13 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 
     float3 ambient = 0.f;
     if (payload.recursionDepth < 2) {
-		// Ray direction for first ray when cast from GBuffer must be calculated using camera position
-		// float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
-
 		// Trace reflection ray
         RayDesc ray;
         ray.Origin = worldPosition;
         ray.Direction = R;
         ray.TMin = 0.0001;
         ray.TMax = 1000;
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 0, 0, ray, payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_DEFAULT | INSTACE_MASK_METABALLS, 0, 0, 0, ray, payload);
         float3 prefilteredColor = payload.color.rgb;
         // float3 prefilteredColor = 0.5f;
 
@@ -134,10 +198,17 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     // Add the (improvised) ambient term to get the final color of the pixel
     float3 color = ambient + Lo;
 
-    // Gamma correction
-    color = color / (color + 1.0f);
-    // Tone mapping using the Reinhard operator
-    color = pow(color, 1.0f / 2.2f);
-
     return float4(color, 1.0f);
+}
+
+float3 tonemap(float3 color) {
+	// Gamma correction
+    float3 output = color / (color + 1.0f);
+    // Tone mapping using the Reinhard operator
+    output = pow(output, 1.0f / 2.2f);
+	return output;
+}
+
+float getBrightness(float3 color) {
+    return dot(color, float3(0.2126f, 0.7152f, 0.0722f));
 }

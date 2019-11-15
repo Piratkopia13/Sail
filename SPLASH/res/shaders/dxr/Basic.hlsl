@@ -12,7 +12,8 @@ Texture2D<float4> decal_texAlbedo 					: register(t14);
 Texture2D<float4> decal_texNormal 					: register(t15);
 Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t16);
 
-RWTexture2D<float4> lOutput : register(u0);
+RWTexture2D<float4> lOutput 	 : register(u0);
+RWTexture2D<float4> lOutputBloom : register(u1);
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);
@@ -21,7 +22,6 @@ ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0);
 StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
-
 StructuredBuffer<uint> waterData : register(t6, space0);
 
 // Texture2DArray<float4> textures : register(t2, space0);
@@ -63,12 +63,15 @@ void rayGen() {
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
 	float3 worldNormal = sys_inTex_normals.SampleLevel(ss, screenTexCoord, 0).rgb * 2.f - 1.f;
-	// float3 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb;
-	float3 albedoColor = pow(sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgb, 2.2f);
-	float3 metalnessRoughnessAO = sys_inTex_texMetalnessRoughnessAO.SampleLevel(ss, screenTexCoord, 0).rgb;
+	float4 albedoColor = sys_inTex_albedo.SampleLevel(ss, screenTexCoord, 0).rgba;
+	
+	albedoColor = pow(albedoColor, 2.2f);
+
+	float4 metalnessRoughnessAO = sys_inTex_texMetalnessRoughnessAO.SampleLevel(ss, screenTexCoord, 0);
 	float metalness = metalnessRoughnessAO.r;
 	float roughness = metalnessRoughnessAO.g;
 	float ao = metalnessRoughnessAO.b;
+	float emissivness = pow(1 - metalnessRoughnessAO.a, 2);
 
 	// ---------------------------------------------------
 	// --- Calculate world position from depth texture ---
@@ -98,10 +101,10 @@ void rayGen() {
 	payload.color = float4(0,0,0,0);
 	if (worldNormal.x == -1 && worldNormal.y == -1) {
 		// Bounding boxes dont need shading
-		lOutput[launchIndex] = float4(albedoColor, 1.0f);
+		lOutput[launchIndex] = float4(albedoColor.rgb, 1.0f);
 		return;
 	} else {
-		shade(worldPosition, worldNormal, albedoColor, metalness, roughness, ao, payload);
+		shade(worldPosition, worldNormal, albedoColor.rgb, emissivness, metalness, roughness, ao, payload);
 	}
 
 
@@ -124,25 +127,33 @@ void rayGen() {
 	payload_metaball.closestTvalue = 0;
 	payload_metaball.color = float4(0, 0, 0, 0);
 
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payload_metaball);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payload_metaball);
 	//===========MetaBalls RT END===========
 
 	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payload_metaball.closestTvalue);
 
+	float3 outputColor;
 	if (metaballDepth <= linearDepth) {
-		lOutput[launchIndex] = payload_metaball.color;	
+		outputColor = payload_metaball.color.rgb;
 	} else {
-		lOutput[launchIndex] = payload.color;
+		outputColor = payload.color.rgb;
 
-		float4 totDecalColour = 0.0f;
-		for (uint i = 0; i < CB_SceneData.nDecals; i++) {
-			totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
-			if (!all(totDecalColour == 0.0f)) {
-				lOutput[launchIndex] = totDecalColour;
-				break;
-			}
-		}
+		// Decals are untested since tonemapping was moved, uncomment at own risk
+		// float4 totDecalColour = 0.0f;
+		// for (uint i = 0; i < CB_SceneData.nDecals; i++) {
+		// 	totDecalColour += renderDecal(i, vsPosition.xyz, worldPosition, worldNormal, payload.color);		
+		// 	if (!all(totDecalColour == 0.0f)) {
+		// 		lOutput[launchIndex] = totDecalColour;
+		// 		break;
+		// 	}
+		// }
 	}
+	// Perform tonemapping if requested
+	// Tonemapping is otherwise done in post processing
+	outputColor = (CB_SceneData.doTonemapping) ? tonemap(outputColor) : outputColor;
+	// Write outputs
+	lOutput[launchIndex] = float4(outputColor, 1.0f);
+	lOutputBloom[launchIndex] = float4((length(outputColor) > 1.0f) ? outputColor : 0.f, 1.0f);
 
 #else
 	// Fully RT
@@ -165,7 +176,7 @@ void rayGen() {
 	payload.closestTvalue = 0;
 
 	payload.color = float4(0, 0, 0, 0);
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_DEFAULT & ~INSTACE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payload);
 
 	lOutput[launchIndex] = payload.color;
 #endif
@@ -173,23 +184,22 @@ void rayGen() {
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
-	payload.color = float4(1.00f, 1.0f, 1.0f, 1.0f);
 	payload.color = float4(0.01f, 0.01f, 0.01f, 1.0f);
 	payload.closestTvalue = 1000;
 }
 
-float3 getAlbedo(MeshData data, float2 texCoords) {
-	float3 color = data.color.rgb;
-	if (data.flags & MESH_HAS_ALBEDO_TEX)
-		// color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb;
-		color *= pow(sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb, 2.2f);
-
+float4 getAlbedo(MeshData data, float2 texCoords) {
+	float4 color = float4(data.color.rgb, 1.0f);
+	if (data.flags & MESH_HAS_ALBEDO_TEX) {		
+		color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0);
+	}
+	
 	return color;
 }
-float3 getMetalnessRoughnessAO(MeshData data, float2 texCoords) {
-	float3 color = data.metalnessRoughnessAoScales;
+float4 getMetalnessRoughnessAO(MeshData data, float2 texCoords) {
+	float4 color = float4(data.metalnessRoughnessAoScales, 1);
 	if (data.flags & MESH_HAS_METALNESS_ROUGHNESS_AO_TEX)
-		color *= sys_texMetalnessRoughnessAO.SampleLevel(ss, texCoords, 0).rgb;
+		color *= sys_texMetalnessRoughnessAO.SampleLevel(ss, texCoords, 0);
 	return color;
 }
 
@@ -199,15 +209,17 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	payload.closestTvalue = RayTCurrent();
 
 	float3 barycentrics = float3(1.0 - attribs.barycentrics.x - attribs.barycentrics.y, attribs.barycentrics.x, attribs.barycentrics.y);
-	uint instanceID = InstanceID();
-	uint primitiveID = PrimitiveIndex();
+	uint blasIndex = InstanceID() & ~(~0U << 10); //Extract vertexbufferID
+	uint teamColorID = (InstanceID() >> 10);//Extract teamColorID
 
+	uint primitiveID = PrimitiveIndex();
+	
 	uint verticesPerPrimitive = 3;
 	uint i1 = primitiveID * verticesPerPrimitive;
 	uint i2 = primitiveID * verticesPerPrimitive + 1;
 	uint i3 = primitiveID * verticesPerPrimitive + 2;
 	// Use indices if available
-	if (CB_MeshData.data[instanceID].flags & MESH_USE_INDICES) {
+	if (CB_MeshData.data[blasIndex].flags & MESH_USE_INDICES) {
 		i1 = indices[i1];
 		i2 = indices[i2];
 		i3 = indices[i3];
@@ -232,22 +244,29 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	  bitangentInWorldSpace,
 	  normalInWorldSpace
 	);
-	if (CB_MeshData.data[instanceID].flags & MESH_HAS_NORMAL_TEX) {
+	if (CB_MeshData.data[blasIndex].flags & MESH_HAS_NORMAL_TEX) {
 		float3 normalSample = sys_texNormal.SampleLevel(ss, texCoords, 0).rgb;
         normalSample.y = 1.0f - normalSample.y;
         normalInWorldSpace = mul(normalize(normalSample * 2.f - 1.f), tbn);
 	}
 
-	float3 albedoColor = getAlbedo(CB_MeshData.data[instanceID], texCoords);
-	float3 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[instanceID], texCoords);
+	float4 albedoColor = getAlbedo(CB_MeshData.data[blasIndex], texCoords);
+	float a = albedoColor.a;
+	float3 teamColor = CB_SceneData.teamColors[teamColorID].rgb;
+	
+	if (a < 1.0f) {
+		float f = 1 - a;
+		albedoColor = float4(albedoColor.rgb * (1 - f) + teamColor * f, a);
+	}
+	albedoColor = float4(pow(albedoColor.rgb, 2.2), a);
+
+	float4 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[blasIndex], texCoords);
 	float metalness = metalnessRoughnessAO.r;
 	float roughness = metalnessRoughnessAO.g;
 	float ao = metalnessRoughnessAO.b;
+	float emissivness = pow(1 - metalnessRoughnessAO.a, 2);
 
-	//payload.color = float4(normalInWorldSpace * 0.5f + 0.5f, 1.0f);
-	//return;
-
-	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor, metalness, roughness, ao, payload, true);
+	shade(Utils::HitWorldPosition(), normalInWorldSpace, albedoColor.rgb, emissivness, metalness, roughness, ao, payload, true);
 }
 
 
@@ -269,8 +288,8 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
 	if (payload.recursionDepth == 1) {
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reflectRaydesc, reflect_payload);
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reftractRaydesc, refract_payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_DEFAULT & ~INSTACE_MASK_METABALLS, 0, 0, 0, reflectRaydesc, reflect_payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_DEFAULT & ~INSTACE_MASK_METABALLS, 0, 0, 0, reftractRaydesc, refract_payload);
 
 	} else {
 		reflect_payload.color = float4(0.0f, 0.0f, 0.1f,1.0f);
@@ -278,16 +297,10 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	}
 
 	float4 reflect_color = reflect_payload.color;
-	//reflect_color.r *= 0.8;
-	//reflect_color.g *= 0.8;
-	//reflect_color.b += 0.2;
 	reflect_color.b += 0.05f;
 	reflect_color =  saturate(reflect_color);
 
 	float4 refract_color = refract_payload.color;
-	//refract_color.r *= 0.8;
-	//refract_color.g *= 0.8;
-	//refract_color.b *= 0.2;
 	refract_color.b += 0.05f;
 	refract_color = saturate(refract_color);
 

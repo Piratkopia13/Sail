@@ -1,19 +1,7 @@
 #pragma once
+#include "Sail/events/Event.h"
 
-
-#include "../../../../Sail/src/Sail/events/Event.h"
-
-class NetworkDroppedEvent : public Event {
-public:
-	NetworkDroppedEvent() : Event(Event::NETWORK_DROPPED)
-	{
-
-	}
-	~NetworkDroppedEvent() {}
-
-	static Type GetStaticType() {
-		return Event::NETWORK_DROPPED;
-	}
-
-private:
+struct NetworkDroppedEvent : public Event {
+	NetworkDroppedEvent() : Event(Event::Type::NETWORK_DROPPED) { }
+	~NetworkDroppedEvent() = default;
 };

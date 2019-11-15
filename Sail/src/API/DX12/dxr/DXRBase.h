@@ -8,10 +8,12 @@
 #include "../shader/DX12StructuredBuffer.h"
 #include "API/DX12/resources/DX12RenderableTexture.h"
 
+#include <bitset>
+
 // Include defines shared with dxr shaders
 #include "Sail/../../SPLASH/res/shaders/dxr/Common_hlsl_cpp.hlsl"
 
-class DXRBase : public IEventListener {
+class DXRBase final : public EventReceiver {
 public:
 	// TODO: somehow allow this to change from different DXRBase instances
 	struct RayPayload {
@@ -31,16 +33,18 @@ public:
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart);
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
+	bool checkWaterAtWorldPosition(const glm::vec3& position);
 	void updateWaterData();
-	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
+	void dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTexture* outputBloomTexture, ID3D12GraphicsCommandList4* cmdList);
+	void simulateWater(float dt);
 
 	void resetWater();
 	void reloadShaders();
 
-	virtual bool onEvent(Event& event) override;
+	virtual bool onEvent(const Event& event) override;
 
 private:
 	struct AccelerationStructureBuffers {
@@ -63,9 +67,16 @@ private:
 			}
 		}
 	};
+	
+	struct PerInstance {
+		glm::mat3x4 transform;
+		char teamColorIndex;
+		bool castShadows;
+	};
+
 	struct InstanceList {
 		AccelerationStructureBuffers blas;
-		std::vector<glm::mat3x4> instanceTransforms;
+		std::vector<PerInstance> instanceList;
 	};
 
 private:
@@ -124,7 +135,12 @@ private:
 	wComPtr<ID3D12DescriptorHeap> m_rtDescriptorHeap = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle[2];
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle[2];
+
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavCPUHandles[2];
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputTextureUavGPUHandles[2];
+	D3D12_CPU_DESCRIPTOR_HANDLE m_rtOutputBloomTextureUavCPUHandles[2];
+	D3D12_GPU_DESCRIPTOR_HANDLE m_rtOutputBloomTextureUavGPUHandles[2];
+
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtBrdfLUTGPUHandle;
 	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartGPUHandles;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_decalTexGPUHandles;
@@ -161,6 +177,10 @@ private:
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
 	std::unordered_map<unsigned int, unsigned int> m_waterDeltas; // Changed water voxels over the last 2 frames
 	unsigned int m_waterDataCPU[WATER_ARR_SIZE];
+	bool m_updateWater[WATER_ARR_SIZE];
 	bool m_waterChanged;
 
+	int m_currWaterZChunk;
+	int m_maxWaterZChunk;
+	int m_waterZChunkSize;
 };

@@ -3,9 +3,9 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <functional>
-#include "Sail/events/Events.h"
+#include "Sail/events/EventReceiver.h"
 
-class Input : public IEventListener {
+class Input : public EventReceiver {
 	friend class Application;
 public:
 	template <typename T>
@@ -27,7 +27,7 @@ public:
 	inline static void SetMouseInput(bool takeInput) { m_HandleMouseInput = takeInput; }
 	inline static void SetKeyInput(bool takeInput) { m_HandleKeyInput = takeInput; }
 
-	virtual bool onEvent(Event& event) { return true; }
+	virtual bool onEvent(const Event& event) override { return true; }
 
 protected:
 	virtual bool isKeyPressedImpl(int keycode) = 0;

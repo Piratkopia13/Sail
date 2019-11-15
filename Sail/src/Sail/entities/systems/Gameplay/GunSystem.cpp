@@ -12,7 +12,10 @@
 #include "Sail/utils/GameDataTracker.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/netcode/NetworkedStructs.h"
+#include <xaudio2.h>
+#include <xaudio2fx.h>
 #include <random>
+
 
 // TODO: Remove, here only for temporary debugging
 #include <iostream>
@@ -22,6 +25,7 @@ GunSystem::GunSystem() : BaseComponentSystem() {
 	registerComponent<GunComponent>(true, true, true);
 	registerComponent<MovementComponent>(true, true, false);
 	registerComponent<NetworkSenderComponent>(false, true, true);
+	registerComponent<NetworkReceiverComponent>(true, true, false);
 
 	m_gameDataTracker = &GameDataTracker::getInstance();
 }
@@ -30,30 +34,17 @@ GunSystem::~GunSystem() {
 
 }
 
-
 void GunSystem::update(float dt) {
 	for (auto& e : entities) {
 		GunComponent* gun = e->getComponent<GunComponent>();
+		
+		// Gun is firing and is not overloaded
+		if (gun->firing && gun->gunOverloadTimer <= 0) {
+			// SHOOT
+			if (gun->projectileSpawnTimer <= 0.f) {
+					// Determine projectileSpeed based on how long the gun has been firing continuously
+					alterProjectileSpeed(gun);
 
-		// Gun is firing
-		if (gun->firing) {
-
-			// Gun is not overloaded
-			if (gun->gunOverloadTimer <= 0) {
-
-				// SHOOT
-				if (gun->projectileSpawnTimer <= 0.f) {
-					for (int i = 0; i < 2; i++) {
-						// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
-						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-							Netcode::MessageType::SPAWN_PROJECTILE,
-							SAIL_NEW Netcode::MessageSpawnProjectile{
-								gun->position,
-								gun->direction * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity,
-								e->getComponent<NetworkSenderComponent>()->m_id
-							}
-						);
-					}
 					m_gameDataTracker->logWeaponFired();
 					fireGun(e, gun);
 				}
@@ -62,14 +53,11 @@ void GunSystem::update(float dt) {
 					gun->firingContinuously = false;
 				}
 
-				// Overload the gun if necessary
-				if ((gun->gunOverloadvalue += dt) > gun->gunOverloadThreshold) {
-					overloadGun(e, gun);
-				}
+			// Overload the gun if necessary
+			if ((gun->gunOverloadvalue += dt) > gun->gunOverloadThreshold) {
+				overloadGun(e, gun);
 			}
-		}
-		// Gun is not firing.
-		else {
+		} else { // Gun is not firing.
 			// Reduce the overload value
 			if (gun->gunOverloadvalue > 0) {
 				gun->gunOverloadvalue -= dt;
@@ -84,14 +72,17 @@ void GunSystem::update(float dt) {
 			gun->firingContinuously = false;
 		}
 
-		// Play shooting sounds based on the GunState
-		playShootingSounds(e);
+		// Send shooting events based on the GunState
+		sendShootingEvents(e);
 
 		gun->gunOverloadTimer -= dt;
 		gun->projectileSpawnTimer -= dt;
 	}
 }
 
+void GunSystem::alterProjectileSpeed(GunComponent* gun) {
+	gun->projectileSpeed = gun->baseProjectileSpeed + (gun->projectileSpeedRange * (gun->gunOverloadvalue/gun->gunOverloadThreshold));
+}
 
 void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 	gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
@@ -99,21 +90,61 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 	// If this is the first shot in this "burst" of projectiles...
 	if (!gun->firingContinuously) {
 		setGunStateSTART(e, gun);
-	}
-	else {
+	} else {
 		setGunStateLOOP(e, gun);
 	}
 
 	gun->firingContinuously = true;
+
+	// Update the frequency of the lowpass based on guns current overload percentage
+	float frequency = 9000 - (9000 - 2000) * (gun->gunOverloadvalue / gun->gunOverloadThreshold);
+	if (e->hasComponent<AudioComponent>()) {
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_START].frequency = frequency;
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_LOOP].frequency = frequency;
+		e->getComponent<AudioComponent>()->m_sounds[Audio::SHOOT_END].frequency = frequency;
+	}
+
+	Netcode::PlayerID myPlayerID = Netcode::getComponentOwner(e->getComponent<NetworkSenderComponent>()->m_id);
+
+	// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
+	for (int i = 0; i < 2; i++) {
+		constexpr float randomSpread = 0.05;
+		const glm::vec3 velocity = gun->direction * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity;
+		glm::vec3 randPos;
+
+		randPos.r = Utils::rnd() * randomSpread * 2 - randomSpread;
+		randPos.g = Utils::rnd() * randomSpread * 2 - randomSpread;
+		randPos.b = Utils::rnd() * randomSpread * 2 - randomSpread;
+
+		randPos += glm::normalize(velocity) * (Utils::rnd() * randomSpread * 2 - randomSpread) * 5.0f;
+
+		// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::SPAWN_PROJECTILE,
+			SAIL_NEW Netcode::MessageSpawnProjectile{
+				gun->position + randPos,
+				velocity,
+				Netcode::generateUniqueComponentID(myPlayerID), // Generate unique ComponentID here for our own projectiles
+				e->getComponent<NetworkSenderComponent>()->m_id,
+				frequency
+			}
+		);
+	}
 }
 
 void GunSystem::overloadGun(Entity* e, GunComponent* gun) {
-	gun->gunOverloadTimer = gun->m_gunOverloadCooldown;
+	// Don't overload the gun at all if the cooldown is '0'
+	if (gun->m_gunOverloadCooldown == 0.0f) {
+		gun->gunOverloadvalue = gun->gunOverloadThreshold;
+		return;
+	} 
+
 	gun->gunOverloadvalue = 0;
+	gun->gunOverloadTimer = 0;
 
+	// If we have some sort of cooldown, behave statewise as usual.
 	setGunStateEND(e, gun);
-
-	gun->firingContinuously = false;
+	gun->firingContinuously = false;	
 }
 
 void GunSystem::setGunStateSTART(Entity* e, GunComponent* gun) {
@@ -136,27 +167,30 @@ void GunSystem::setGunStateEND(Entity* e, GunComponent* gun) {
 	gun->state = GunState::ENDING;
 }
 
-void GunSystem::playShootingSounds(Entity* e) {
+void GunSystem::sendShootingEvents(Entity* e) {
 	GunComponent* gun = e->getComponent<GunComponent>();
 
-	// Play sounds depending on which state the gun is in.
-	if (gun->state == GunState::STARTING) {
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = true;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].playOnce = true;
-	}
-	else if (gun->state == GunState::LOOPING) {
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
-	}
-	else if (gun->state == GunState::ENDING) {
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = false;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].isPlaying = true;
-		e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
-
+	switch (gun->state) {
+	case GunState::STARTING:
+		EventDispatcher::Instance().emit(StartShootingEvent(
+			e->getComponent<NetworkReceiverComponent>()->m_id,
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].frequency
+		));
+		break;
+	case GunState::LOOPING:
+		EventDispatcher::Instance().emit(LoopShootingEvent(
+			e->getComponent<NetworkReceiverComponent>()->m_id,
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].frequency
+		));
+		break;
+	case GunState::ENDING:
+		EventDispatcher::Instance().emit(StopShootingEvent(
+			e->getComponent<NetworkReceiverComponent>()->m_id,
+			e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].frequency
+		));
 		gun->state = GunState::STANDBY;
-	}
-	else {	/* gun->state == GunState::STANDBY */
-
+		break;
+	default:
+		break;
 	}
 }

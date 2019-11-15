@@ -23,13 +23,23 @@ public:
 
 	template<typename ComponentType, typename... Targs>
 	ComponentType* addComponent(Targs... args);
+
 	template<typename ComponentType>
 	void removeComponent();
+
+	void removeComponent(const ComponentTypeID id);
+
 	template<typename ComponentType>
 	ComponentType* getComponent();
+
 	template<typename ComponentType>
 	bool hasComponent() const;
+
+
 	bool hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const;
+#ifdef DEVELOPMENT
+	const BaseComponent::Ptr* getComponents() const;
+#endif
 
 	Entity* getParent();
 
@@ -37,12 +47,12 @@ public:
 	void queueDestruction();
 	void removeAllComponents();
 
-	void addChildEntity(Entity::SPtr child);
-	void removeChildEntity(Entity::SPtr toRemove);
+	void addChildEntity(Entity* child);
+	void removeChildEntity(Entity* toRemove);
 	void removeAllChildren();
 	void removeDeleteAllChildren();
 	/* Currently dangerous, will probably be altered in future */
-	std::vector<Entity::SPtr>& getChildEntities();
+	std::vector<Entity*>& getChildEntities();
 
 	void setName(const std::string& name);
 	const std::string& getName() const;
@@ -73,13 +83,13 @@ private:
 	ECS* m_ecs;
 	Entity* m_parent;
 
-	std::vector<Entity::SPtr> m_children;
+	std::vector<Entity*> m_children;
 };
 
 template<typename ComponentType, typename... Targs>
 inline ComponentType* Entity::addComponent(Targs... args) {
 	if (m_components[ComponentType::ID]) {
-		Logger::Warning("Tried to add a duplicate component to an entity");
+		SAIL_LOG_WARNING("Tried to add a duplicate component to an entity");
 	} else {
 		m_components[ComponentType::ID] = std::make_unique<ComponentType>(args...);
 

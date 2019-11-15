@@ -1,26 +1,15 @@
 #pragma once
-
-#include "../../../../Sail/src/Sail/events/Event.h"
 #include <string>
+#include "Sail/events/Event.h"
+#include "Network/NetworkStructs.hpp"
 
-class NetworkNameEvent : public Event {
-public:
-	NetworkNameEvent(std::string name)
-		: Event(Event::NETWORK_NAME)
-		, m_repliedName(name)
-	{
+struct NetworkNameEvent : public Event {
+	NetworkNameEvent(const std::string& name, const TCP_CONNECTION_ID id)
+		: Event(Event::Type::NETWORK_NAME)
+		, repliedName(name)
+		, idOfSender(id) { }
+	~NetworkNameEvent() = default;
 
-	}
-	~NetworkNameEvent() {}
-
-	// When host calls it replies name, otherwise id.
-	inline std::string getRepliedName() { return m_repliedName; }
-
-	static Type GetStaticType() {
-		return Event::NETWORK_NAME;
-	}
-
-private:
-	std::string m_repliedName;
-
+	const std::string repliedName;
+	const TCP_CONNECTION_ID idOfSender;
 };

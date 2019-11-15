@@ -17,7 +17,7 @@ std::pair<std::string, void*> RedTintShader::getComputeInputForIndex(Shader::Com
 			return { "input", thisInput.inputRenderableTexture };
 		}
 	}
-	Logger::Error("Tried to get compute input from unknown index - " + std::to_string(index));
+	SAIL_LOG_ERROR("Tried to get compute input from unknown index - " + std::to_string(index));
 	return { "", nullptr };
 }
 
@@ -27,7 +27,7 @@ RenderableTexture* RedTintShader::getComputeOutputForIndex(Shader::ComputeShader
 	case 0:
 		return thisOutput.outputTexture;
 	}
-	Logger::Error("Tried to get compute output from unknown index - " + std::to_string(index));
+	SAIL_LOG_ERROR("Tried to get compute output from unknown index - " + std::to_string(index));
 	return nullptr;
 }
 

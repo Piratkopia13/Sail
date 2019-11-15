@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "NWrapper.h"
 #include "Network/NetworkModule.hpp"
+#include "Network/NWrapperSingleton.h"
 
 
 NWrapper::NWrapper(Network* pNetwork) {
@@ -20,13 +21,13 @@ void NWrapper::handleNetworkEvents(NetworkEvent nEvent) {
 	case NETWORK_EVENT_TYPE::NETWORK_ERROR:
 		break;
 	case NETWORK_EVENT_TYPE::CONNECTION_ESTABLISHED:
-		playerJoined(nEvent.clientID);
+		playerJoined(nEvent.from_tcp_id);
 		break;
 	case NETWORK_EVENT_TYPE::CONNECTION_CLOSED:
-		playerDisconnected(nEvent.clientID);
+		playerDisconnected(nEvent.from_tcp_id);
 		break;
 	case NETWORK_EVENT_TYPE::CONNECTION_RE_ESTABLISHED:
-		playerReconnected(nEvent.clientID);
+		playerReconnected(nEvent.from_tcp_id);
 		break;
 	case NETWORK_EVENT_TYPE::MSG_RECEIVED:
 		decodeMessage(nEvent);
@@ -93,42 +94,49 @@ std::string NWrapper::parseName(std::string& data) {
 	}
 }
 
-Message NWrapper::processChatMessage(std::string& message) {
-	std::string remnants = message;
-	unsigned int id_m = this->parseID(remnants);
-	remnants.erase(0, 1);
+Message NWrapper::processChatMessage(const char* data) {
+	Netcode::PlayerID id_m = data[0];
+	std::string msg = &data[1];
 
 	return Message{
-		std::to_string(id_m),
-		remnants
+		id_m,
+		msg
 	};
 }
 
+void NWrapper::updateStateLoadStatus(States::ID state, char status) {
+	Player* myPlayer = NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID());
+	myPlayer->lastStateStatus.state = state;
+	myPlayer->lastStateStatus.status = status;
 
-
-void NWrapper::sendMsg(std::string msg) {
-	m_network->send(msg.c_str(), msg.length() + 1);
+	char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, NWrapperSingleton::getInstance().getMyPlayerID(), state, status, ML_NULL};
+	
+	if (NWrapperSingleton::getInstance().isHost()) {
+		sendMsgAllClients(msg, sizeof(msg));
+	} else {
+		sendMsg(msg, sizeof(msg));
+	}
 }
 
-void NWrapper::checkForPackages() {
-	m_network->checkForPackages(*this);
+void NWrapper::sendMsg(const char* msg, size_t size, TCP_CONNECTION_ID tcp_id) {
+	m_network->send(msg, size, tcp_id);
 }
 
-void NWrapper::sendMsgAllClients(std::string msg) {
-	m_network->send(msg.c_str(), msg.length() + 1, -1);
+void NWrapper::sendMsgAllClients(const char* msg, size_t size) {
+	m_network->send(msg, size, -1);
 }
 
-void NWrapper::sendChatAllClients(std::string msg) {
-	msg = std::string("m") + msg;
-	m_network->send(msg.c_str(), msg.length() + 1, -1);
-}
 
 void NWrapper::sendSerializedDataAllClients(std::string data) {
-	data = std::string("s") + data;
-	m_network->send(data.c_str(), data.length(), -1);
+	std::string msg;
+	msg += ML_SERIALIZED;
+	msg += data;	
+	m_network->send(msg.c_str(), msg.length(), -1);
 }
 
 void NWrapper::sendSerializedDataToHost(std::string data) {
-	data = std::string("s") + data;
-	m_network->send(data.c_str(), data.length());
+	std::string msg;
+	msg += ML_SERIALIZED;
+	msg += data;
+	m_network->send(msg.c_str(), msg.length());
 }
