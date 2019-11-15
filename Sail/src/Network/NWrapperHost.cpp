@@ -12,6 +12,8 @@
 #include "Sail/events/types/NetworkPlayerRequestedTeamChange.h"
 #include "Sail/events/types/NetworkPlayerChangedTeam.h"
 
+#include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
+
 
 bool NWrapperHost::host(int port) {
 	bool result = m_network->host(port);
@@ -42,7 +44,21 @@ void NWrapperHost::updateServerDescription() {
 	m_network->setServerMetaDescription(m_serverDescription.c_str(), m_serverDescription.length() + 1);
 }
 
+void NWrapperHost::sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayeriD) {
+	std::string msg;
+	msg += ML_SERIALIZED;
+	msg += data;
+
+	for (auto p : m_connectionsMap) {
+		if (p.second == PlayeriD) {
+			m_network->send(msg.c_str(), msg.length() + 1, p.first);
+			break;
+		}
+	}
+}
+
 #ifdef DEVELOPMENT
+
 const std::map<TCP_CONNECTION_ID, unsigned char>& NWrapperHost::getConnectionMap() {
 	return m_connectionsMap;
 }
@@ -54,7 +70,8 @@ const std::string& NWrapperHost::getServerDescription() {
 const std::string& NWrapperHost::getLobbyName() {
 	return m_lobbyName;
 }
-#endif //DEVELOPMENT
+
+#endif // DEVELOPMENT
 
 void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 	// Generate an ID for the client that joined and send that information.
@@ -70,7 +87,7 @@ void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 	} else {
 		m_IdDistribution--;
 	}
-
+	
 	updateServerDescription();
 }
 
@@ -179,15 +196,15 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 	p->name = name;
 
 	// Send a welcome package to the new Player, letting them know who's in the party
-	std::string welcomePackage;
-	welcomePackage += ML_WELCOME;
 	for (auto currentPlayer : NWrapperSingleton::getInstance().getPlayers()) {
-		welcomePackage.append(std::to_string(currentPlayer.id));
-		welcomePackage.append(":");
-		welcomePackage.append(currentPlayer.name);
-		welcomePackage.append(":");
+		std::string joinedPackage;
+		joinedPackage += ML_JOIN;
+		joinedPackage += currentPlayer.id; //This will break if playerId == 0
+		joinedPackage += currentPlayer.name;
+
+		sendMsg(joinedPackage.c_str(), joinedPackage.length() + 1, tcp_id);
+
 	}
-	sendMsg(welcomePackage.c_str(), welcomePackage.length() + 1, tcp_id);
 
 	for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
 		char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, p.id, p.lastStateStatus.state, p.lastStateStatus.status, ML_NULL };
@@ -195,6 +212,7 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 
 		char msgTeam[] = { ML_TEAM_REQUEST, NWrapperSingleton::getInstance().getPlayer(p.id)->team, p.id, ML_NULL };
 		sendMsg(msgTeam, sizeof(msgTeam), tcp_id);
+
 	}
 
 	if (p->justJoined) {
@@ -215,7 +233,7 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 		// Send a PlayerJoined message to all other players
 		for (auto player : m_connectionsMap) {
 			if (player.first != tcp_id) {
-				sendMsg(joinedPackage.c_str(), joinedPackage.length(), player.first);
+				sendMsg(joinedPackage.c_str(), joinedPackage.length() + 1, player.first);
 			}
 		}
 
@@ -278,3 +296,4 @@ void NWrapperHost::setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool d
 		}
 	}
 }
+

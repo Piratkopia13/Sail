@@ -5,11 +5,13 @@
 #include "../../components/AnimationComponent.h"
 #include "../../components/MovementComponent.h"
 #include "../../components/ThrowingComponent.h"
+#include "../../components/SprintingComponent.h"
 
 AnimationChangerSystem::AnimationChangerSystem() {
 	registerComponent<AnimationComponent>(true, true, true);
 	registerComponent<MovementComponent>(true, true, false);
 	registerComponent<ThrowingComponent>(true, true, false);
+	registerComponent<SprintingComponent>(true, true, false);
 }
 
 
@@ -65,7 +67,11 @@ void AnimationChangerSystem::update(float dt) {
 				continue;
 			}
 
-
+			auto sprintC = e->getComponent<SprintingComponent>();
+			if (sprintC->doSprint && sprintC->canSprint) {
+				animationC->setAnimation(SPRINTING);
+				continue;
+			}
 
 			
 			if (animationC->animationIndex == IDLEJUMP && animationC->animationTime < 0.1f) {

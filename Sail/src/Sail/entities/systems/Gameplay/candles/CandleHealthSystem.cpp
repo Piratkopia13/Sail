@@ -32,6 +32,9 @@ void CandleHealthSystem::update(float dt) {
 		auto candle = e->getComponent<CandleComponent>();
 		candle->wasHitByMeThisTick = false;
 
+		// Scale fire particles with health
+		auto particles = e->getComponent<ParticleEmitterComponent>();
+		particles->spawnRate = 0.01f * (MAX_HEALTH / candle->health);
 
 #pragma region HOST_ONLY_STUFF
 		if (isHost && candle->isLit) {
@@ -139,10 +142,10 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		// Damage the candle
 		// TODO: Replace 10.0f with game settings damage
 		if (e.senderID == Netcode::MESSAGE_SPRINKLER_ID) {
-			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, e.senderID);
+			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::PLAYER, e.senderID);
 		}
 		else {
-			candle->getComponent<CandleComponent>()->hitWithWater(10.0f, e.senderID);
+			candle->getComponent<CandleComponent>()->hitWithWater(10.0f, CandleComponent::DamageSource::PLAYER, e.senderID);
 
 		}
 	};

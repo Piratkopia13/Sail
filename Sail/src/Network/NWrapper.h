@@ -66,6 +66,7 @@ public:
 
 	void sendSerializedDataAllClients(std::string data);
 	void sendSerializedDataToHost(std::string data);
+	virtual void sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayerId) = 0;
 
 	/*
 		Host Only

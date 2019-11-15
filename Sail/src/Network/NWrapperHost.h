@@ -3,6 +3,8 @@
 #include "NWrapper.h"
 #include <string>
 
+#include "Sail/netcode/NetcodeTypes.h"
+
 class NWrapperHost : public NWrapper {
 public:
 	NWrapperHost(Network* pNetwork) : NWrapper(pNetwork) {}
@@ -35,6 +37,8 @@ private:
 	void decodeMessage(NetworkEvent nEvent);
 	void updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID playerId, std::string& name);
 
+
+	void sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayeriD);
 	/*
 		This will request clients to enter a new state. GameState, EndGameState etc.
 		id == 0 will send to all
@@ -45,4 +49,5 @@ private:
 
 	virtual void requestTeam(char team);
 	virtual void setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch = true);
+
 };

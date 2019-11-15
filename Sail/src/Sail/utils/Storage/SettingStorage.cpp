@@ -181,14 +181,14 @@ void SettingStorage::createGameModeDefault() {
 		{ "Deathmatch", 0.0f },
 		{ "Teamdeathmatch", 1.0f },
 	}));
-	gameSettingsStatic["Teams"]["Deathmatch"] = Setting(0, std::vector<Setting::Option>({
-		{ "Alone", 0.0f },
+	gameSettingsStatic["Teams"]["Deathmatch"] = Setting(1, std::vector<Setting::Option>({
 		{ "Spectator", -1.0f },
+		{ "Alone", 0.0f },
 	}));
-	gameSettingsStatic["Teams"]["Teamdeathmatch"] = Setting(0, std::vector<Setting::Option>({
+	gameSettingsStatic["Teams"]["Teamdeathmatch"] = Setting(1, std::vector<Setting::Option>({
+		{ "Spectator", -1.0f },
 		{ "Team1", 0.0f },
 		{ "Team2", 1.0f },
-		{ "Spectator", -1.0f },
 	}));
 
 

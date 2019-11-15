@@ -54,9 +54,6 @@ void NetworkReceiverSystem::update(float dt) {
 	processData(dt, m_incomingDataBuffer);
 }
 
-
-
-
 void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
 	// Early exit if the entity already exists
 	if (findFromNetID(info.playerCompID)) {
@@ -70,7 +67,7 @@ void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const 
 
 	// lightIndex set to 999, can probably be removed since it no longer seems to be used
 	EntityFactory::CreateOtherPlayer(e, info.playerCompID, info.candleID, info.gunID, 999, pos);
-
+	ECS::Instance()->addAllQueuedEntities();
 }
 
 void NetworkReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
@@ -247,7 +244,6 @@ void NetworkReceiverSystem::throwingStartSound(const Netcode::ComponentID id) {
 void NetworkReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {
 	EventDispatcher::Instance().emit(StopThrowingEvent(id));
 }
-
 
 // NOT FROM SERIALIZED MESSAGES
 
