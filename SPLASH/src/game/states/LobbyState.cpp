@@ -380,7 +380,7 @@ void LobbyState::renderPlayerList() {
 
 	if (ImGui::Begin("players in lobby:", NULL, flags)) {
 
-		ImGui::DragFloat3("##ASDASD", &x[0], 0.1f);
+		//ImGui::DragFloat3("##ASDASD", &x[0], 0.1f);
 		ImGui::Separator();
 		ImGui::Text("Player"); 
 		ImGui::SameLine(x[0]);
