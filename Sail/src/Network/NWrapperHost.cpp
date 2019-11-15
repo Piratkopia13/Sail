@@ -196,8 +196,6 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 	p->name = name;
 
 	// Send a welcome package to the new Player, letting them know who's in the party
-	//std::string welcomePackage;
-	//welcomePackage += ML_WELCOME;
 	for (auto currentPlayer : NWrapperSingleton::getInstance().getPlayers()) {
 		std::string joinedPackage;
 		joinedPackage += ML_JOIN;
@@ -206,12 +204,7 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 
 		sendMsg(joinedPackage.c_str(), joinedPackage.length() + 1, tcp_id);
 
-		/*welcomePackage.append(std::to_string(currentPlayer.id));
-		welcomePackage.append(":");
-		welcomePackage.append(currentPlayer.name);
-		welcomePackage.append(":");**/
 	}
-//	sendMsg(welcomePackage.c_str(), welcomePackage.length() + 1, tcp_id);
 
 	for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
 		char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, p.id, p.lastStateStatus.state, p.lastStateStatus.status, ML_NULL };
