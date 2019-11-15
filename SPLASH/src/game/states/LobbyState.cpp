@@ -365,14 +365,18 @@ void LobbyState::renderPlayerList() {
 	flags |= ImGuiWindowFlags_NoSavedSettings;
 
 	ImGui::SetNextWindowPos(ImVec2(
-		m_screenWidth - m_outerPadding - 330,
+		m_screenWidth - m_outerPadding - 430,
 		m_outerPadding
 	));
-	static ImVec2 windowSize(300, 400);
+	static ImVec2 windowSize(400, 500);
 	ImGui::SetNextWindowSize(windowSize);
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
 	
-	static float x[3] = { 0,0,0 };
+	static float x[3] = {
+		ImGui::GetWindowContentRegionWidth() * 0.5f,
+		ImGui::GetWindowContentRegionWidth() * 0.84f,
+		0
+	};
 
 	if (ImGui::Begin("players in lobby:", NULL, flags)) {
 
@@ -410,7 +414,7 @@ void LobbyState::renderPlayerList() {
 				}
 
 				currentlySelected = std::clamp(currentlySelected, 0, (int)(selectedGameTeams.options.size()) - 1);
-
+				ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.3f);
 				if (ImGui::BeginCombo(unique.c_str(), selectedGameTeams.options[currentlySelected].name.c_str())) {
 					for (auto const& key : selectedGameTeams.options) {
 						std::string name = key.name + unique;
