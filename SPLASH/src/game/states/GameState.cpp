@@ -242,7 +242,7 @@ GameState::~GameState() {
 bool GameState::processInput(float dt) {
 
 
-#ifdef DEVELOPMENT
+//#ifdef DEVELOPMENT
 	constexpr float TOGGLE_TIMER = 0.2f;
 	static float cooldown = 0.0f;
 	cooldown += dt;
@@ -252,7 +252,7 @@ bool GameState::processInput(float dt) {
 		m_isInKillCamMode = !m_isInKillCamMode;
 		cooldown = 0.0f;
 	}
-#endif
+//#endif
 
 
 
