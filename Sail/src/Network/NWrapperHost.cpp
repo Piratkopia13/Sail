@@ -196,15 +196,15 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 	p->name = name;
 
 	// Send a welcome package to the new Player, letting them know who's in the party
-	std::string welcomePackage;
-	welcomePackage += ML_WELCOME;
 	for (auto currentPlayer : NWrapperSingleton::getInstance().getPlayers()) {
-		welcomePackage.append(std::to_string(currentPlayer.id));
-		welcomePackage.append(":");
-		welcomePackage.append(currentPlayer.name);
-		welcomePackage.append(":");
+		std::string joinedPackage;
+		joinedPackage += ML_JOIN;
+		joinedPackage += currentPlayer.id; //This will break if playerId == 0
+		joinedPackage += currentPlayer.name;
+
+		sendMsg(joinedPackage.c_str(), joinedPackage.length() + 1, tcp_id);
+
 	}
-	sendMsg(welcomePackage.c_str(), welcomePackage.length() + 1, tcp_id);
 
 	for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
 		char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, p.id, p.lastStateStatus.state, p.lastStateStatus.status, ML_NULL };
@@ -233,7 +233,7 @@ void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID 
 		// Send a PlayerJoined message to all other players
 		for (auto player : m_connectionsMap) {
 			if (player.first != tcp_id) {
-				sendMsg(joinedPackage.c_str(), joinedPackage.length(), player.first);
+				sendMsg(joinedPackage.c_str(), joinedPackage.length() + 1, player.first);
 			}
 		}
 
