@@ -22,5 +22,5 @@ private:
 	bool m_doRender;
 	GameDataTracker& m_gameDataTracker;
 	float m_maxTimeShowed;
-	std::vector<std::pair<float, std::string>> m_kills;
+	std::vector<std::pair<float, std::pair<bool, std::string>>> m_kills;
 };

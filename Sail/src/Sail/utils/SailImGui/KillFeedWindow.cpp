@@ -22,6 +22,7 @@ KillFeedWindow::~KillFeedWindow() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::TORCH_EXTINGUISHED, this);
 }
 
+
 void KillFeedWindow::renderWindow() {
 	if (m_doRender) {
 		ImVec2 minSize = ImVec2(0.f, 0.f);
@@ -37,8 +38,14 @@ void KillFeedWindow::renderWindow() {
 			alpha = m_maxTimeShowed - m_kills[i].first;
 			alpha = Utils::clamp(alpha, 0.f, 1.f);
 			if (alpha > 0.f) {
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.7f, 0.7f, alpha));
-				ImGui::Text(m_kills[i].second.c_str());
+				// has something to do with the player
+				if (m_kills[i].second.first) {
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 1.f, 0.7f, alpha));
+					// has nothing to do with the player
+				} else {
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.7f, 0.7f, alpha));
+				}
+				ImGui::Text(m_kills[i].second.second.c_str());
 				ImGui::PopStyleColor(1);
 				nothingToDisplay = false;
 			}
@@ -56,8 +63,12 @@ void KillFeedWindow::renderWindow() {
 
 // Update all timings used in the window, also fetches the deaths
 void KillFeedWindow::updateTiming(float dt) {
-	for (auto& kill : m_kills) {
-		kill.first += dt;
+	std::vector<unsigned int> toRemove;
+	for (auto& it = m_kills.begin(); it != m_kills.end(); it++) {
+		it->first += dt;
+		if (it->first > m_maxTimeShowed) {
+			m_kills.erase(it);
+		}
 	}
 }
 
@@ -81,24 +92,31 @@ bool KillFeedWindow::onEvent(const Event& event) {
 	};
 
 	auto onTorchExtinguished = [&] (const TorchExtinguishedEvent& e) {
-		std::string extinguishedOwner = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.netIDextinguished))->name;
+		auto extinguishedOnwer = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.netIDextinguished));
+		auto shooterPlayer = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.shooterID));
 
-		std::string ShooterPlayer;
+		std::string killerName;
 		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
-			ShooterPlayer = "The sprinklers";
+			killerName = "The sprinklers";
 		} else {
-			ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+			killerName = shooterPlayer->name;
 		}
 		std::string extinguishType = "sprayed down";
 
-		std::string message = ShooterPlayer + " " + extinguishType + " " + extinguishedOwner;
+		std::string message = killerName + " " + extinguishType + " " + extinguishedOnwer->name;
 		SAIL_LOG(message);
 
 		if (e.shooterID != Netcode::MESSAGE_SPRINKLER_ID) {
 			GameDataTracker::getInstance().logEnemyKilled(e.shooterID);
 		}
 
-		m_kills.emplace_back(0.f, message);
+		bool playerParticipation = false;
+		auto myID = NWrapperSingleton::getInstance().getMyPlayerID();
+		if (e.shooterID == myID || extinguishedOnwer->id == myID) {
+			playerParticipation = true;
+		}
+
+		m_kills.emplace_back(0.f, std::pair(playerParticipation, message));
 		m_doRender = true;
 	};
 
