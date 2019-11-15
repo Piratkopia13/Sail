@@ -41,14 +41,14 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	candle->addComponent<CullingComponent>();
 
 	auto* particleEmitterComp = candle->addComponent<ParticleEmitterComponent>();
-	particleEmitterComp->size = 0.1f;
-	particleEmitterComp->offset = { 0.0f, 0.44f, 0.0f };
+	particleEmitterComp->size = 0.08f;
+	particleEmitterComp->offset = { 0.0f, 0.37f, 0.0f };
 	particleEmitterComp->constantVelocity = { 0.0f, 0.2f, 0.0f };
-	particleEmitterComp->acceleration = { 0.0f, 1.0f, 0.0f };
-	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
+	particleEmitterComp->acceleration = { 0.0f, 0.3f, 0.0f };
+	particleEmitterComp->spread = { 0.03f, 0.2f, 0.03f };
 	particleEmitterComp->spawnRate = 0.001f;
-	particleEmitterComp->lifeTime = 0.13f;
-	particleEmitterComp->setTexture("particles/fire.tga");
+	particleEmitterComp->lifeTime = 0.2f;
+	particleEmitterComp->setTexture("particles/fire2.tga");
 
 	PointLight pl;
 	pl.setColor(glm::vec3(0.55f, 0.5f, 0.45f));
