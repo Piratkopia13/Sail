@@ -175,8 +175,14 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		EventDispatcher::Instance().emit(NetworkSerializedPackageEvent(dataString));
 		break;
 
-	case ML_UPDATE_SETTINGS: 
-		EventDispatcher::Instance().emit(SettingsUpdatedEvent(std::string(nEvent.data->Message.rawMsg).substr(1,std::string::npos)));
+	case ML_UPDATE_SETTINGS:
+	{
+		auto& stat = m_app->getSettings().gameSettingsStatic;
+		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+		m_app->getSettings().deSerialize(std::string(nEvent.data->Message.rawMsg).substr(1, std::string::npos), stat, dynamic);
+
+		EventDispatcher::Instance().emit(SettingsUpdatedEvent());
+	}
 		break;
 	case ML_TEAM_REQUEST:
 	{
