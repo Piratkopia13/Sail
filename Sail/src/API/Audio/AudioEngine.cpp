@@ -368,7 +368,7 @@ void AudioEngine::updateProjectileLowPass(float frequency, int indexToSource) {
 		m_sound[indexToSource].xAPOsubMixVoice,
 		&lowPassFilter
 	))) {
-		Logger::Error("Failed to update a projectile's low pass filter");
+		SAIL_LOG_ERROR("Failed to update a projectile's low pass filter");
 	}
 }
 
@@ -427,7 +427,7 @@ void AudioEngine::sendVoiceTo(IXAudio2SourceVoice* *source, IXAudio2Voice* *dest
 	sends.SendCount = 1;
 	sends.pSends = &sendDesc;
 	if (FAILED((*source)->SetOutputVoices(&sends))) {
-		Logger::Error("Failed to connect a source voice to xAPO SubmixVoice");
+		SAIL_LOG_ERROR("Failed to connect a source voice to xAPO SubmixVoice");
 	}
 }
 
@@ -441,7 +441,7 @@ void AudioEngine::sendVoiceTosubMixVoice(IXAudio2SourceVoice** source, IXAudio2S
 	sends.SendCount = 1;
 	sends.pSends = &sendDesc;
 	if (FAILED((*source)->SetOutputVoices(&sends))) {
-		Logger::Error("Failed to connect a source voice to xAPO SubmixVoice");
+		SAIL_LOG_ERROR("Failed to connect a source voice to xAPO SubmixVoice");
 	}
 }
 
@@ -452,7 +452,7 @@ void AudioEngine::addLowPassFilterTo(IXAudio2SourceVoice* source, IXAudio2Voice*
 		destination,
 		&lowPassFilter
 	))) {
-		Logger::Error("Failed to apply a low-pass filter!");
+		SAIL_LOG_ERROR("Failed to apply a low-pass filter!");
 	}
 }
 
@@ -535,7 +535,7 @@ void AudioEngine::createXAPOsubMixVoice(IXAudio2SubmixVoice* *source, Microsoft:
 	// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
 	HRESULT hr = m_xAudio2->CreateSubmixVoice(source, 1, 48000, 0, 0, &xAPOsends, &xAPOeffectChain);
 	if (FAILED(hr)) {
-		Logger::Error("Failed to create xAPO submix voice");
+		SAIL_LOG_ERROR("Failed to create xAPO submix voice");
 	}
 }
 

@@ -135,7 +135,7 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		Entity* candle = findCandleFromParentID(e.netCompID);
 
 		if (!candle) {
-			Logger::Warning("CandleHealthSystem::onWaterHitPlayer: no matching entity found");
+			SAIL_LOG_WARNING("CandleHealthSystem::onWaterHitPlayer: no matching entity found");
 			return;
 		}
 
