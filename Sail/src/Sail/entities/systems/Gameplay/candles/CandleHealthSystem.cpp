@@ -64,7 +64,7 @@ void CandleHealthSystem::update(float dt) {
 						e->getComponent<NetworkReceiverComponent>()->m_id,
 						candle->wasHitByPlayerID
 					},
-					true // Host extinguishes candle later in this function so don't send to ourself
+					true
 				);
 
 				// If the player has no more respawns kill them
