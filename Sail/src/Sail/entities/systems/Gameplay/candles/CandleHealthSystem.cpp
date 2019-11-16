@@ -158,8 +158,13 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 				candleC->isLit = false;
 				candleC->wasJustExtinguished = false; // reset for the next tick
 
-				// Log the extinguish in the kill feed
-				auto ownerID = Netcode::getComponentOwner(torchE->getParent()->getComponent<NetworkReceiverComponent>()->m_id);
+				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START) {
+					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
+				}
+
+				else if (candleC->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
+					torchE->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
+				}
 
 				// Play the reignition sound if the player has any candles left
 				if (candleC->respawns < m_maxNumRespawns) {

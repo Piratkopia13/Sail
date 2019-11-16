@@ -64,10 +64,13 @@ void KillFeedWindow::renderWindow() {
 // Update all timings used in the window, also fetches the deaths
 void KillFeedWindow::updateTiming(float dt) {
 	std::vector<unsigned int> toRemove;
-	for (auto& it = m_kills.begin(); it != m_kills.end(); it++) {
+	auto it = m_kills.begin();
+	while (it != m_kills.end()) {
 		it->first += dt;
 		if (it->first > m_maxTimeShowed) {
-			m_kills.erase(it);
+			it = m_kills.erase(it);
+		} else {
+			it++;
 		}
 	}
 }
@@ -97,27 +100,26 @@ bool KillFeedWindow::onEvent(const Event& event) {
 	};
 
 	auto onTorchExtinguished = [&] (const TorchExtinguishedEvent& e) {
-		auto extinguishedOnwer = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.netIDextinguished));
-		auto shooterPlayer = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.shooterID));
+		auto extinguishedOwner = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.netIDextinguished));
 
 		std::string killerName;
+		std::string extinguishType = "sprayed down";
 		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
 			killerName = "The sprinklers";
 		} else {
-			killerName = shooterPlayer->name;
+			killerName = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.shooterID))->name;
 		}
-		std::string extinguishType = "sprayed down";
 
-		std::string message = killerName + " " + extinguishType + " " + extinguishedOnwer->name;
+		std::string message = killerName + " " + extinguishType + " " + extinguishedOwner->name;
 		SAIL_LOG(message);
 
-		if (e.shooterID != Netcode::MESSAGE_SPRINKLER_ID) {
+		if (e.shooterID != Netcode::MESSAGE_SPRINKLER_ID && e.shooterID != Netcode::MESSAGE_INSANITY_ID) {
 			GameDataTracker::getInstance().logEnemyKilled(e.shooterID);
 		}
 
 		bool playerParticipation = false;
 		auto myID = NWrapperSingleton::getInstance().getMyPlayerID();
-		if (e.shooterID == myID || extinguishedOnwer->id == myID) {
+		if (e.shooterID == myID || extinguishedOwner->id == myID) {
 			playerParticipation = true;
 		}
 
