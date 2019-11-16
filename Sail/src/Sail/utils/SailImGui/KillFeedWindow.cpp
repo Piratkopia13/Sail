@@ -11,7 +11,7 @@
 
 KillFeedWindow::KillFeedWindow(bool showWindow)
 	: m_gameDataTracker(GameDataTracker::getInstance())
-	, m_maxTimeShowed(6.f)
+	, m_maxTimeShowed(10.f)
 	, m_doRender(false) {
 	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
 	EventDispatcher::Instance().subscribe(Event::Type::TORCH_EXTINGUISHED, this);
@@ -38,15 +38,33 @@ void KillFeedWindow::renderWindow() {
 			alpha = m_maxTimeShowed - m_kills[i].first;
 			alpha = Utils::clamp(alpha, 0.f, 1.f);
 			if (alpha > 0.f) {
-				// has something to do with the player
-				if (m_kills[i].second.first) {
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 1.f, 0.7f, alpha));
-					// has nothing to do with the player
-				} else {
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.7f, 0.7f, alpha));
+				auto name1Color = ImVec4(0.9882f, 0.6941f, 0.0117f, alpha);
+				auto name2Color = name1Color;
+				auto typeColor = ImVec4(0.8f, 0.8f, 0.8f, alpha);
+				if (m_kills[i].second.relevant == 1) {
+					name1Color.x = 0.3215f;
+					name1Color.y = 0.6705f;
+					name1Color.z = 0.8902f;
+				} else if (m_kills[i].second.relevant == 2) {
+					name2Color.x = 0.3215f;
+					name2Color.y = 0.6705f;
+					name2Color.z = 0.8902f;
 				}
-				ImGui::Text(m_kills[i].second.second.c_str());
+
+				ImGui::PushStyleColor(ImGuiCol_Text, name1Color);
+				ImGui::Text(m_kills[i].second.name1.c_str());
 				ImGui::PopStyleColor(1);
+
+				ImGui::PushStyleColor(ImGuiCol_Text, typeColor);
+				ImGui::SameLine();
+				ImGui::Text(m_kills[i].second.type.c_str());
+				ImGui::PopStyleColor(1);
+
+				ImGui::PushStyleColor(ImGuiCol_Text, name2Color);
+				ImGui::SameLine();
+				ImGui::Text(m_kills[i].second.name2.c_str());
+				ImGui::PopStyleColor(1);
+
 				nothingToDisplay = false;
 			}
 		}
@@ -79,51 +97,53 @@ bool KillFeedWindow::onEvent(const Event& event) {
 	auto onPlayerDied = [&](const PlayerDiedEvent& e) {
 
 		Netcode::PlayerID idOfDeadPlayer = Netcode::getComponentOwner(e.netIDofKilled);
-		std::string deadPlayer = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
+		KillFeedWindow::KillFeedInfo killFeedInfo;
+		killFeedInfo.name2 = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
 
-		std::string ShooterPlayer;
-		std::string deathType;
 		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
-			ShooterPlayer = "The sprinklers";
-			deathType = "sprayed down";
+			killFeedInfo.name1 = "The sprinklers";
+			killFeedInfo.type = "sprayed down";
 		} else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
-			ShooterPlayer = "Insanity";
-			deathType = "devoured";
+			killFeedInfo.name1 = "Insanity";
+			killFeedInfo.type = "devoured";
 		} else {
-			ShooterPlayer = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
-			deathType = "sprayed down";
+			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+			killFeedInfo.type = "sprayed down";
 		}
 
-		SAIL_LOG(ShooterPlayer + " " + deathType + " " + deadPlayer);
+		SAIL_LOG(killFeedInfo.name1 + " " + killFeedInfo.type + " " + killFeedInfo.name2);
 
-		m_gameDataTracker.logPlayerDeath(ShooterPlayer, deadPlayer, deathType);
+
 	};
 
 	auto onTorchExtinguished = [&] (const TorchExtinguishedEvent& e) {
 		auto extinguishedOwner = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.netIDextinguished));
 
-		std::string killerName;
-		std::string extinguishType = "sprayed down";
+		KillFeedWindow::KillFeedInfo killFeedInfo;
 		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
-			killerName = "The sprinklers";
+			killFeedInfo.name1 = "The sprinklers";
 		} else {
-			killerName = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.shooterID))->name;
+			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.shooterID))->name;
 		}
 
-		std::string message = killerName + " " + extinguishType + " " + extinguishedOwner->name;
+		killFeedInfo.type = "sprayed down";
+		killFeedInfo.name2 = extinguishedOwner->name;
+
+		std::string message = killFeedInfo.name1 + " " + killFeedInfo.type + " " + killFeedInfo.name2;
 		SAIL_LOG(message);
 
 		if (e.shooterID != Netcode::MESSAGE_SPRINKLER_ID && e.shooterID != Netcode::MESSAGE_INSANITY_ID) {
 			GameDataTracker::getInstance().logEnemyKilled(e.shooterID);
 		}
 
-		bool playerParticipation = false;
 		auto myID = NWrapperSingleton::getInstance().getMyPlayerID();
-		if (e.shooterID == myID || extinguishedOwner->id == myID) {
-			playerParticipation = true;
+		if (e.shooterID == myID) {
+			killFeedInfo.relevant = 1;
+		} else if (extinguishedOwner->id == myID) {
+			killFeedInfo.relevant = 2;
 		}
 
-		m_kills.emplace_back(0.f, std::pair(playerParticipation, message));
+		m_kills.emplace_back(0.f, killFeedInfo);
 		m_doRender = true;
 	};
 
