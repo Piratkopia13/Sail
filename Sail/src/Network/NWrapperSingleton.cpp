@@ -188,6 +188,10 @@ void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType ty
 	NSS->queueEvent(e);
 }
 
+unsigned char NWrapperSingleton::getPlayerLimit() {
+	return m_playerLimit;
+}
+
 
 size_t NWrapperSingleton::averagePacketSizeSinceLastCheck() {
 	size_t average = 0;
@@ -227,13 +231,25 @@ void NWrapperSingleton::resetNetwork() {
 
 void NWrapperSingleton::handleNetworkEvents(NetworkEvent nEvent) {
 	if (nEvent.eventType == NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND) {
-		NetworkLanHostFoundEvent event0(
-			nEvent.data->HostFoundOnLanData.ip_full,
-			nEvent.data->HostFoundOnLanData.hostPort,
-			nEvent.data->HostFoundOnLanData.description
-		);
-		
-		EventDispatcher::Instance().emit(event0);
+		GameOnLanDescription gameDescription;
+		char ip[16];
+		Network::ip_int_to_ip_string(nEvent.data->HostFoundOnLanData.ip_full, ip, sizeof(ip));
+		gameDescription.ip = std::string(ip);
+		gameDescription.port = nEvent.data->HostFoundOnLanData.hostPort;
+
+		if (std::string(nEvent.data->HostFoundOnLanData.description) != "") {
+			gameDescription.nPlayers = nEvent.data->HostFoundOnLanData.description[0];
+			gameDescription.maxPlayers = nEvent.data->HostFoundOnLanData.description[1];
+			gameDescription.currentState = (States::ID)nEvent.data->HostFoundOnLanData.description[2];
+			gameDescription.name = &nEvent.data->HostFoundOnLanData.description[3];
+		} else {
+			gameDescription.nPlayers = 0;
+			gameDescription.maxPlayers = 0;
+			gameDescription.currentState = States::None;
+			gameDescription.name = "";
+		}
+	
+		EventDispatcher::Instance().emit(NetworkLanHostFoundEvent(gameDescription));
 	}
 
 	if (m_wrapper) {
