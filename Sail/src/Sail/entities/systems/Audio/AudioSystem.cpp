@@ -3,12 +3,17 @@
 #include "AudioSystem.h"
 
 #include "..//Sail/src/API/Audio/AudioEngine.h"
-#include "../Sail/src/Sail/entities/systems/Audio/AudioData.h"
-#include "..//Sail/src/Sail/Application.h"
-#include "..//Sail/src/Sail/entities/components/AudioComponent.h"
-#include "..//Sail/src/Sail/entities/components/TransformComponent.h"
-#include "..//Sail/src/Sail/graphics/camera/Camera.h"
-#include "..//..//Entity.h"
+#include "Sail/Application.h"
+#include "Sail/entities/systems/Audio/AudioData.h"
+#include "Sail/entities/components/AudioComponent.h"
+#include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/CandleComponent.h"
+#include "Sail/entities/components/LocalOwnerComponent.h"
+#include "Sail/entities/Entity.h"
+#include "Sail/graphics/camera/Camera.h"
+#include "Sail/../Network/NWrapperSingleton.h"
+
+#include "Sail/events/Events.h"
 
 #include <iterator>
 
@@ -21,12 +26,36 @@ AudioSystem::AudioSystem() : BaseComponentSystem() {
 	registerComponent<TransformComponent>(true, true, false);
 
 	m_audioEngine = SAIL_NEW AudioEngine();
+
+	EventDispatcher::Instance().subscribe(Event::Type::WATER_HIT_PLAYER, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_JUMPED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_LANDED, this);
+	EventDispatcher::Instance().subscribe(Event::Type::START_SHOOTING, this);
+	EventDispatcher::Instance().subscribe(Event::Type::LOOP_SHOOTING, this);
+	EventDispatcher::Instance().subscribe(Event::Type::STOP_SHOOTING, this);
+	EventDispatcher::Instance().subscribe(Event::Type::CHANGE_WALKING_SOUND, this);
+	EventDispatcher::Instance().subscribe(Event::Type::STOP_WALKING, this);
+	EventDispatcher::Instance().subscribe(Event::Type::START_THROWING, this);
+	EventDispatcher::Instance().subscribe(Event::Type::STOP_THROWING, this);
+
 	initialize();
 }
 
 AudioSystem::~AudioSystem() {
 	m_audioEngine->stopAllSounds();
 	delete m_audioEngine;
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::WATER_HIT_PLAYER, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_JUMPED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_LANDED, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::START_SHOOTING, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_SHOOTING, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::CHANGE_WALKING_SOUND, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_WALKING, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::START_THROWING, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_THROWING, this);
 }
 
 // TO DO: move to constructor?
@@ -59,6 +88,27 @@ void AudioSystem::initialize() {
 	m_audioEngine->loadSound("watergun/watergun_end.wav");
 	m_audioEngine->loadSound("watergun/watergun_reload.wav");
 #pragma endregion
+#pragma region SANITY
+	m_audioEngine->loadSound("sanity/heart_firstbeat1.wav");
+	m_audioEngine->loadSound("sanity/heart_firstbeat2.wav");
+	m_audioEngine->loadSound("sanity/heart_firstbeat3.wav");
+	m_audioEngine->loadSound("sanity/heart_firstbeat4.wav");
+	m_audioEngine->loadSound("sanity/heart_firstbeat5.wav");
+	m_audioEngine->loadSound("sanity/heart_firstbeat6.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat1.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat2.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat3.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat4.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat5.wav");
+	m_audioEngine->loadSound("sanity/heart_secondbeat6.wav");
+	m_audioEngine->loadSound("sanity/insanity_ambiance.wav");
+	m_audioEngine->loadSound("sanity/insanity_breathing.wav");
+	m_audioEngine->loadSound("sanity/insanity_scream.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin1.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin2.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin3.wav");
+	m_audioEngine->loadSound("sanity/insanity_violin4.wav");
+#pragma endregion
 #pragma region IMPACTS
 	m_audioEngine->loadSound("impacts/water_impact_enemy_candle.wav");
 	m_audioEngine->loadSound("impacts/water_impact_my_candle.wav");
@@ -82,6 +132,16 @@ void AudioSystem::initialize() {
 #pragma region MISCELLANEOUS
 	m_audioEngine->loadSound("miscellaneous/re_ignition_candle.wav");
 	m_audioEngine->loadSound("miscellaneous/guitar.wav");
+	// Throwing
+	m_audioEngine->loadSound("miscellaneous/throwing/start_throw.wav");
+	for (int i = 1; i < 8; i++) {
+		m_audioEngine->loadSound("miscellaneous/throwing/throw" + std::to_string(i) + ".wav");
+	}
+  // Sprinkler
+	m_audioEngine->loadSound("miscellaneous/sprinkler_start1.wav");
+	m_audioEngine->loadSound("miscellaneous/sprinkler_start2.wav");
+	m_audioEngine->loadSound("miscellaneous/sprinkler.wav");
+	m_audioEngine->loadSound("miscellaneous/alarm.wav");
 #pragma endregion
 }
 
@@ -102,10 +162,10 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			Audio::SoundInfo_General* soundGeneral;
 			Audio::SoundInfo_Unique* soundUnique;
 
-			for (int i = 0; i < Audio::SoundType::COUNT; i++) {
-				soundGeneral = &audioC->m_sounds[i];
+			for (int soundTypeIndex = 0; soundTypeIndex < Audio::SoundType::COUNT; soundTypeIndex++) {
+				soundGeneral = &audioC->m_sounds[soundTypeIndex];
 
-				soundPoolSize = audioData.m_soundsUnique[i].size();
+				soundPoolSize = audioData.m_soundsUnique[soundTypeIndex].size();
 				if (soundPoolSize > 0) {
 
 					if (soundGeneral->isPlaying) {
@@ -126,24 +186,33 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 							}
 
 							// To make the code easier to read
-							soundUnique = &audioData.m_soundsUnique[i].at(randomSoundIndex);
+							soundUnique = &audioData.m_soundsUnique[soundTypeIndex].at(randomSoundIndex);
+							soundGeneral->volume = soundUnique->volume;
 
-							soundGeneral->soundID = m_audioEngine->initializeSound(soundUnique->fileName, soundUnique->volume);
+							soundGeneral->soundID = m_audioEngine->beginSound(
+								soundUnique->fileName,
+								soundGeneral->effect,
+								soundGeneral->frequency,
+								soundGeneral->volume
+							);
 							soundGeneral->hasStartedPlaying = true;
 							soundGeneral->durationElapsed = 0.0f;
 							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
-						}
-
-						// Start playing the sound if it's not already playing
-						if (soundGeneral->durationElapsed == 0.0f) {
-							m_audioEngine->startSpecificSound(soundGeneral->soundID);
+							m_audioEngine->startSpecificSound(soundGeneral->soundID, soundUnique->volume);
 						}
 
 						// Update the sound with the current positions if it's playing
 						if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
 							m_audioEngine->updateSoundWithCurrentPosition(
 								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
-								soundGeneral->positionalOffset, alpha);
+								soundGeneral->positionalOffset, alpha
+							);
+
+							m_audioEngine->setSoundVolume(soundGeneral->soundID, soundGeneral->volume);
+
+							if (soundGeneral->effect == Audio::EffectType::PROJECTILE_LOWPASS) {
+								updateProjectileLowPass(soundGeneral);
+							}
 
 							soundGeneral->durationElapsed += dt;
 						}
@@ -152,15 +221,13 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 							m_audioEngine->stopSpecificSound(soundGeneral->soundID);
 							soundGeneral->hasStartedPlaying = false;
 
-							// If the sound isn't looping then make it stop
-							if (soundGeneral->playOnce == true) {
-								soundGeneral->isPlaying = false;
-							}
+							soundGeneral->isPlaying = !soundGeneral->playOnce;
 						}
 						// If the sound should no longer be playing stop it and reset its timer
 					}
-					else if (soundGeneral->durationElapsed != 0.0f) {
+					else if (soundGeneral->hasStartedPlaying) {
 						m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+						soundGeneral->hasStartedPlaying = false;
 						soundGeneral->durationElapsed = 0.0f;
 					}
 				}
@@ -169,10 +236,6 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 		// - - - S T R E A M I N G  --------------------------------------------------------------------
 		{
-			m_filename = "";
-			m_volume = 1.0f;
-			m_streamIndex = 0;
-
 			// Deal with requests
 			for (m_i = audioC->m_streamingRequests.begin(); m_i != audioC->m_streamingRequests.end();) {
 
@@ -195,6 +258,13 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			for (m_k = audioC->m_currentlyStreaming.begin(); m_k != audioC->m_currentlyStreaming.end();) {
 				// Update its position in the world
 				updateStreamPosition(e, cam, alpha);
+				// Update volume if it has changed
+				if (m_k->second.prevVolume != m_k->second.volume) {
+					m_k->second.prevVolume = m_k->second.volume;
+					updateStreamVolume();
+				}
+
+				m_k++;
 			}
 		}
 	}
@@ -205,41 +275,34 @@ void AudioSystem::stop() {
 }
 
 void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC) {
-	// Fetch found stream-request's filename
-	m_filename = m_i->first;
-	m_volume = m_i->second.volume;
-	m_isPositionalAudio = m_i->second.isPositionalAudio;
-	m_isLooping = m_i->second.isLooping;
+
+	std::string filename = m_i->first;
+	float volume = m_i->second.volume;
+	bool isPositionalAudio = m_i->second.isPositionalAudio;
+	bool isLooping = m_i->second.isLooping;
+	int streamIndex = m_audioEngine->getAvailableStreamIndex();
+	// Storing this for later use
+	m_i->second.streamIndex = streamIndex;
 
 	m_toBeDeleted = m_i;
 	m_i++;
 
-	m_streamIndex = m_audioEngine->getAvailableStreamIndex();
-
-	std::string filename = m_filename;
-	float volume = m_volume;
-	bool isPositionalAudio = m_isPositionalAudio;
-	bool isLooping = m_isLooping;
-	int streamIndex = m_streamIndex;
-
-	if (m_streamIndex == -1) {
-		Logger::Error("Too many sounds already streaming; failed to stream another one!");
+	if (streamIndex == -1) {
+		SAIL_LOG_ERROR("Too many sounds already streaming; failed to stream another one!");
 	}
 	else {
-
-
 		Application::getInstance()->pushJobToThreadPool(
 			[this, filename, streamIndex, volume, isPositionalAudio, isLooping, audioC](int id) {
-			return m_audioEngine->streamSound(m_filename, m_streamIndex, m_volume, m_isPositionalAudio, m_isLooping, audioC);
-		});
+				return m_audioEngine->streamSound(filename, streamIndex, volume, isPositionalAudio, isLooping, audioC);
+			});
 
-		audioC->m_currentlyStreaming.emplace_back(m_filename, std::pair(m_streamIndex, m_isPositionalAudio));
+		audioC->m_currentlyStreaming.emplace_back(filename, m_toBeDeleted->second);
 		audioC->m_streamingRequests.erase(m_toBeDeleted);
 	}
 }
 
 void AudioSystem::stopPlayingRequestedStream(Entity* e, AudioComponent* audioC) {
-	m_filename = m_i->first;
+	std::string filename = m_i->first;
 	m_toBeDeleted = m_i;
 	m_i++;
 
@@ -248,12 +311,12 @@ void AudioSystem::stopPlayingRequestedStream(Entity* e, AudioComponent* audioC) 
 		m_streamToBeDeleted = m_j;
 		m_j++;
 
-		if (m_streamToBeDeleted->first == m_filename) {
+		if (m_streamToBeDeleted->first == filename) {
 
 			bool expectedValue = false;
-			while (!m_audioEngine->m_streamLocks[m_streamToBeDeleted->second.first].compare_exchange_strong(expectedValue, true));
+			while (!m_audioEngine->m_streamLocks[m_streamToBeDeleted->second.streamIndex].compare_exchange_strong(expectedValue, true));
 
-			m_audioEngine->stopSpecificStream(m_streamToBeDeleted->second.first);
+			m_audioEngine->stopSpecificStream(m_streamToBeDeleted->second.streamIndex);
 			audioC->m_currentlyStreaming.erase(m_streamToBeDeleted);
 
 			break;
@@ -263,13 +326,20 @@ void AudioSystem::stopPlayingRequestedStream(Entity* e, AudioComponent* audioC) 
 }
 
 void AudioSystem::updateStreamPosition(Entity* e, Camera& cam, float alpha) {
-	if (m_k->second.second) {
+	if (m_k->second.isPositionalAudio) {
 		m_audioEngine->updateStreamWithCurrentPosition(
-			m_k->second.first, cam, *e->getComponent<TransformComponent>(),
+			m_k->second.streamIndex, cam, *e->getComponent<TransformComponent>(),
 			glm::vec3{ 0.0f, 0.0f, 0.0f }, alpha);
 	}
+}
 
-	m_k++;
+void AudioSystem::updateStreamVolume() {
+
+	m_audioEngine->setStreamVolume(m_k->second.streamIndex, m_k->second.volume);
+}
+
+void AudioSystem::updateProjectileLowPass(Audio::SoundInfo_General* general) {
+	m_audioEngine->updateProjectileLowPass(general->frequency, general->soundID);
 }
 
 void AudioSystem::hotFixAmbiance(Entity* e, AudioComponent* audioC) {
@@ -284,4 +354,186 @@ void AudioSystem::hotFixAmbiance(Entity* e, AudioComponent* audioC) {
 
 AudioEngine* AudioSystem::getAudioEngine() {
 	return m_audioEngine;
+}
+
+bool AudioSystem::onEvent(const Event& event) {
+	auto findFromID = [=](const Netcode::ComponentID netCompID) {
+		Entity* source = nullptr;
+		for (auto entity : entities) {
+			if (auto recComp = entity->getComponent<NetworkReceiverComponent>(); recComp) {
+				if (recComp->m_id == netCompID) {
+					source = entity;
+					break;
+				}
+			}
+		}
+		return source;
+	};
+	
+	auto onWaterHitPlayer = [=](const WaterHitPlayerEvent& e) {
+		Entity* player = nullptr;
+		Entity* candle = nullptr;
+
+		// Find the entity with the correct ID
+		if (auto entity = findFromID(e.netCompID); entity) {
+			// Find the candle child of that entity
+			for (auto child : entity->getChildEntities()) {
+				if (child->hasComponent<CandleComponent>()) {
+					player = entity;
+					candle = child;
+					break;
+				}
+			}
+		}
+
+		if (!candle) {
+			SAIL_LOG_WARNING("AudioSystem::onWaterHitPlayer: no matching entity found");
+			return;
+		}
+		
+		// Play relevant sound if candle is hit
+		if (candle->getComponent<CandleComponent>()->isLit) {
+			// Check if my candle or other candle
+			const auto soundIndex = (player->hasComponent<LocalOwnerComponent>()
+				? Audio::SoundType::WATER_IMPACT_MY_CANDLE 
+				: Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE);
+
+			//player->getComponent<AudioComponent>()->m_sounds[soundIndex].isPlaying = true;
+			//player->getComponent<AudioComponent>()->m_sounds[soundIndex].playOnce = true;
+		}
+	};
+
+	auto onPlayerDied = [](const PlayerDiedEvent& e) {
+		// Play kill sound if the player was the one who shot
+		if (e.shooterID == NWrapperSingleton::getInstance().getMyPlayerID()) {
+			auto& killSound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::KILLING_BLOW];
+			killSound.isPlaying = true;
+			killSound.playOnce = true;
+		}
+
+		//TODO: Find out why death sound is high as fuck!
+		else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+			auto& insanitySound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::INSANITY_SCREAM];
+			insanitySound.isPlaying = true;
+			insanitySound.playOnce = true;
+		} else {
+			// Play death sound
+			//auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
+			//deathSound.isPlaying = true;
+			//deathSound.playOnce = true;
+		}
+	};
+
+	auto onPlayerJumped = [=](const PlayerJumpedEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::JUMP].isPlaying = true;
+		} else {
+			SAIL_LOG_WARNING("AudioSystem : player jumped but no matching entity found");
+		}
+	};
+
+	auto onPlayerLanded = [=](const PlayerLandedEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::LANDING_GROUND].isPlaying = true;
+		} else {
+			SAIL_LOG_WARNING("AudioSystem : player landed but no matching entity found");
+		}
+	};
+
+	auto onStartShooting = [=](const StartShootingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].frequency = e.lowPassFrequency;
+		} else {
+			SAIL_LOG_WARNING("AudioSystem : started shooting but no matching entity found");
+		}
+	};
+
+	auto onLoopShooting = [=](const LoopShootingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].frequency = e.lowPassFrequency;
+		}
+		else {
+			SAIL_LOG_WARNING("AudioSystem : looped shooting but no matching entity found");
+		}
+	};
+
+	auto onStopShooting = [=](const StopShootingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].isPlaying = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].frequency = e.lowPassFrequency;
+		} else {
+			SAIL_LOG_WARNING("AudioSystem : stopped shooting but no matching entity found");
+		}
+	};
+
+	auto onChangeWalkingSound = [=](const ChangeWalkingSoundEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			// Disable all walking sounds
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].isPlaying = false;
+
+			// Play the correct walking sound
+			player->getComponent<AudioComponent>()->m_sounds[e.soundType].playOnce = false;
+			player->getComponent<AudioComponent>()->m_sounds[e.soundType].isPlaying = true;
+		} else {
+			SAIL_LOG_WARNING("AudioSystem : changed walking sound but no matching entity found");
+		}
+	};
+
+	auto onStopWalking = [=](const StopWalkingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_METAL].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_TILE].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_METAL].isPlaying = false;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::RUN_WATER_TILE].isPlaying = false;
+		} else {
+			SAIL_LOG_WARNING("AudioSystem : stopped walking but no matching entity found");
+		}
+	};
+
+	auto onStartThrowing = [=] (const StartThrowingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::START_THROWING].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::START_THROWING].isPlaying = true;
+		} else {
+			SAIL_LOG_WARNING("AudioSystem : started throwing but no matching entity found");
+		}
+	};
+
+	auto onStopThrowing = [=] (const StopThrowingEvent& e) {
+		if (auto player = findFromID(e.netCompID); player) {
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::STOP_THROWING].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::STOP_THROWING].isPlaying = true;
+		} else {
+			SAIL_LOG_WARNING("AudioSystem : stopped throwing but no matching entity found");
+		}
+	};
+
+	switch (event.type) {
+	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
+	case Event::Type::PLAYER_DEATH: onPlayerDied((const PlayerDiedEvent&)event); break;
+	case Event::Type::PLAYER_JUMPED: onPlayerJumped((const PlayerJumpedEvent&)event); break;
+	case Event::Type::PLAYER_LANDED: onPlayerLanded((const PlayerLandedEvent&)event); break;
+	case Event::Type::START_SHOOTING: onStartShooting((const StartShootingEvent&)event); break;
+	case Event::Type::LOOP_SHOOTING: onLoopShooting((const LoopShootingEvent&)event); break;
+	case Event::Type::STOP_SHOOTING: onStopShooting((const StopShootingEvent&)event); break;
+	case Event::Type::CHANGE_WALKING_SOUND: onChangeWalkingSound((const ChangeWalkingSoundEvent&)event); break;
+	case Event::Type::STOP_WALKING: onStopWalking((const StopWalkingEvent&)event); break;
+	case Event::Type::START_THROWING: onStartThrowing((const StartThrowingEvent&)event); break;
+	case Event::Type::STOP_THROWING: onStopThrowing((const StopThrowingEvent&)event); break;
+	default: break;
+	}
+
+	return true;
 }

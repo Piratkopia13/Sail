@@ -10,8 +10,8 @@ GuiShader::GuiShader()
 	shaderPipeline->getInputLayout().pushVec2(InputLayout::TEXCOORD, "TEXCOORD", 0);
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
-	shaderPipeline->useDepthStencil(false);
-	shaderPipeline->useAlphaBlending(true);
+	shaderPipeline->enableDepthStencil(false);
+	shaderPipeline->setBlending(GraphicsAPI::ALPHA);
 
 	// Finish the shader creation
 	finish();

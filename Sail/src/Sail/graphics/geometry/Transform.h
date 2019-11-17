@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/vec3.hpp>
+#include <glm/ext/quaternion_float.hpp>
 
 // Structs for storing transform data from two consecutive updates
 // so that they can be interpolated between.
@@ -65,6 +66,7 @@ public:
 
 	void setRotations(const glm::vec3& rotations);
 	void setRotations(const float x, const float y, const float z);
+	void setRotations(const glm::quat& rotations);
 	void setScale(const float scale);
 	void setScale(const float x, const float y, const float z);
 	void setScale(const glm::vec3& scale);

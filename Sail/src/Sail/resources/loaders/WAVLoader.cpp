@@ -16,11 +16,11 @@ namespace Fileloader {
 		}
 
 		else {
-			Logger::Warning("The audio file extension \"" + fileExt + "\" could not be read!");
+			SAIL_LOG_WARNING("The audio file extension \"" + fileExt + "\" could not be read!");
 		}
 
 		if (!result) {
-			Logger::Warning("Sound file \"" + filename + "\" could not be read!");
+			SAIL_LOG_WARNING("Sound file \"" + filename + "\" could not be read!");
 		}
 	}
 
@@ -56,7 +56,7 @@ namespace Fileloader {
 		DWORD filetype = 0;
 
 		if (hr != S_OK) {
-			Logger::Error("Failed to create the internal audio file!");
+			SAIL_LOG_ERROR("Failed to create the internal audio file!");
 		}
 
 #pragma region SPECIAL_CASE_ERROR_CHECK
@@ -77,12 +77,12 @@ namespace Fileloader {
 
 		hr = findChunk(hFile, fourccRIFF, dwChunkSize, dwChunkPosition);
 		if (hr != S_OK) {
-			Logger::Error("Failed to find the audio file's 'RIFF' data chunk!");
+			SAIL_LOG_ERROR("Failed to find the audio file's 'RIFF' data chunk!");
 		}
 
 		hr = readChunkData(hFile, &filetype, sizeof(DWORD), dwChunkPosition);
 		if (hr != S_OK) {
-			Logger::Error("Failed to read data chunk!");
+			SAIL_LOG_ERROR("Failed to read data chunk!");
 		}
 
 #pragma region SPECIAL_CASE_ERROR_CHECK
@@ -103,7 +103,7 @@ namespace Fileloader {
 
 		hr = findChunk(hFile, fourccFMT, dwChunkSize, dwChunkPosition);
 		if (hr != S_OK) {
-			Logger::Error("Failed to find the desired data chunk!");
+			SAIL_LOG_ERROR("Failed to find the desired data chunk!");
 		}
 
 		// reading data from WAV files
@@ -111,19 +111,19 @@ namespace Fileloader {
 		// reading data from ADPC-WAV files (compressed)
 		/*hr = ReadChunkData(hFile, &adpcwf, dwChunkSize, dwChunkPosition);*/
 		if (hr != S_OK) {
-			Logger::Error("Failed to read data chunk!");
+			SAIL_LOG_ERROR("Failed to read data chunk!");
 		}
 
 		hr = findChunk(hFile, fourccDATA, dwChunkSize, dwChunkPosition);
 		if (hr != S_OK) {
-			Logger::Error("Failed to find the desired data chunk!");
+			SAIL_LOG_ERROR("Failed to find the desired data chunk!");
 		}
 
 		BYTE* pDataBuffer = SAIL_NEW BYTE[dwChunkSize];
 
 		hr = readChunkData(hFile, pDataBuffer, dwChunkSize, dwChunkPosition);
 		if (hr != S_OK) {
-			Logger::Error("Failed to read data chunk!");
+			SAIL_LOG_ERROR("Failed to read data chunk!");
 		}
 
 		audioData.m_soundBuffer.AudioBytes = dwChunkSize;  //size of the audio buffer in bytes

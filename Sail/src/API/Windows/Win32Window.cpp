@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Win32Window.h"
 #include "Sail/Application.h"
+#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/WindowFocusChangedEvent.h"
 #include "imgui.h"
 #include "Win32Input.h"
 #include <dxgi.h>
@@ -107,7 +109,7 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		HINSTANCE hInstance = ((LPCREATESTRUCT)lParam)->hInstance;
 		HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(101));
 		if (!hIcon) {
-			Logger::Error("Window icon could not be loaded");
+			SAIL_LOG_ERROR("Window icon could not be loaded");
 		} else
 			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	}
@@ -124,7 +126,7 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	case WM_ACTIVATE:
 		isWindowFocused = (wParam == WA_ACTIVE || wParam == WA_CLICKACTIVE);
 		// Dispatch event
-		Application::getInstance()->dispatchEvent(WindowFocusChangedEvent(isWindowFocused));
+		EventDispatcher::Instance().emit(WindowFocusChangedEvent(isWindowFocused));
 		break;
 	case WM_SIZE:
 	{

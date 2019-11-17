@@ -7,8 +7,10 @@
 #include "API/DX12/resources/DX12Texture.h"
 #include "Sail/graphics/light/LightSetup.h"
 #include "../renderer/DX12GBufferRenderer.h"
-#include "Sail/entities/components/MapComponent.h"
-#include "../SPLASH/src/game/events/GameOverEvent.h"
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
+#include "../SPLASH/src/game/events/ResetWaterEvent.h"
+
+#include "Sail/events/EventDispatcher.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
 	: m_shaderFilename(shaderFilename)
@@ -17,6 +19,10 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	, m_waterChanged(false)
 	, m_frameCount(0)
 {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().subscribe(Event::Type::RESET_WATER, this);
+
 	m_decalTexPaths[0] = "pbr/splash/PuddleAlbedo.tga";
 	m_decalTexPaths[1] = "pbr/splash/PuddleNM.tga";
 	m_decalTexPaths[2] = "pbr/splash/puddleMRAo.tga";
@@ -55,11 +61,15 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	unsigned int numElements = WATER_ARR_SIZE;
 	unsigned int waterDataSize = sizeof(unsigned int) * numElements;
 	unsigned int* initData = new unsigned int[WATER_ARR_SIZE];
-	memset(initData, UINT_MAX, waterDataSize);
-	memset(m_waterDataCPU, UINT_MAX, waterDataSize);
+	memset(initData, 0, waterDataSize);
+	memset(m_waterDataCPU, 0, waterDataSize);
+	memset(m_updateWater, 0, sizeof(bool) * numElements);
 	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, numElements, sizeof(unsigned int));
 	delete initData;
 
+	m_currWaterZChunk = 0;
+	m_maxWaterZChunk = 5;
+	m_waterZChunkSize = WATER_GRID_Z / m_maxWaterZChunk;
 }
 
 DXRBase::~DXRBase() {
@@ -89,6 +99,9 @@ DXRBase::~DXRBase() {
 	for (auto& resource : m_aabb_desc_resource) {
 		resource->Release();
 	}
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::RESET_WATER, this);
 }
 
 void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
@@ -107,7 +120,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 	// Clear old instance lists
 	for (auto& it : m_bottomBuffers[frameIndex]) {
-		it.second.instanceTransforms.clear();
+		it.second.instanceList.clear();
 	}
 
 	// Iterate all static meshes
@@ -130,7 +143,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 				createBLAS(renderCommand, flagFastTrace, cmdList);
 			} else {
 				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
-					Logger::Warning("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
+					SAIL_LOG_WARNING("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
 					// Destroy old blas
 					searchResult->second.blas.release();
 					m_bottomBuffers[frameIndex].erase(searchResult);
@@ -138,7 +151,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 					createBLAS(renderCommand, flagFastTrace, cmdList);
 				} else {
 					// Mesh already has a BLAS - add transform to instance list
-					searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+					searchResult->second.instanceList.emplace_back(PerInstance{(glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID , renderCommand.castShadows});
 				}
 			}
 
@@ -170,7 +183,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
 				}
 				// Add transform to instance list
-				searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+				searchResult->second.instanceList.emplace_back(PerInstance{ (glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID , renderCommand.castShadows});
 			}
 
 			totalNumInstances++;
@@ -204,7 +217,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
 	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
 	updateMetaballpositions(metaballs, m_next_metaball_aabb);
 
@@ -218,12 +231,22 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
 	newData.nMetaballs = m_metaballsToRender;
 	newData.nDecals = m_decalsToRender;
+	newData.doTonemapping = doToneMapping;
 	newData.mapSize = mapSize;
 	newData.mapStart = mapStart;
 	newData.frameCount = m_frameCount++;
 
+	int nTeams = teamColors.size();
+	for (int i = 0; i < nTeams && i < NUM_TEAM_COLORS; i++) {
+		newData.teamColors[i] = glm::vec4(teamColors[i], 1.0f);
+	}
+
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
+
+	auto& slData = lights.getSpotLightsData();
+	memcpy(newData.spotLights, slData.sLights, sizeof(slData));
+
 	m_sceneCB->updateData(&newData, sizeof(newData));
 }
 
@@ -236,43 +259,77 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 }
 
 void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
-	static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
-	static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
-	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
+	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
+	static const glm::vec3 arrSize(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
 
+	// Convert position to index, stored as floats
 	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
-	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
+	// Convert triple-number index to a single index value
+	int quarterIndex = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
+	// Convert triple-number (float) to triple-number (int)
 	glm::i32vec3 ind = floor(floatInd);
-	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
+	// Convert to final 1-D index
+	int arrIndex = Utils::to1D(ind, arrSize.x, arrSize.y);
 
 	// Ignore water points that are outside the map
-	if (i >= 0 && i <= WATER_ARR_SIZE - 1) {
-		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
-		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
-		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
-		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
+	if (arrIndex >= 0 && arrIndex <= WATER_ARR_SIZE - 1) {
+		// Make sure to update this water
+		m_updateWater[arrIndex] = true;
+		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
+		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
+		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 2);
+		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 3);
 
-		switch (index) {
+		switch (quarterIndex) {
 		case 0:
-			m_waterDeltas[i] = Utils::packQuarterFloat(0, up1, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(std::min(255U, up0 + std::rand() % 50U + 50U), up1, up2, up3);
 			break;
 		case 1:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, 0, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, std::min(255U, up1 + std::rand() % 50U + 50U), up2, up3);
 			break;
 		case 2:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, 0, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, std::min(255U, up2 + std::rand() % 50U + 50U), up3);
 			break;
 		case 3:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, up2, 0);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, up2, std::min(255U, up3 + std::rand() % 50U + 50U));
 			break;
 		}
 
-		m_waterDataCPU[i] = m_waterDeltas[i];
+		m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
 		m_waterChanged = true;
 	}
 }
 
+bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
+	bool returnValue = false;
+
+	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
+	static const glm::vec3 arrSize(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
+
+	// Convert position to index, stored as floats
+	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
+	// Convert triple-number (float) to triple-number (int)
+	glm::i32vec3 ind = floor(floatInd);
+	// Convert to final 1-D index
+	int arrIndex = Utils::to1D(ind, arrSize.x, arrSize.y);
+
+	// Ignore water points that are outside the map
+	if (arrIndex >= 0 && arrIndex <= WATER_ARR_SIZE - 1) {
+		returnValue = m_waterDataCPU[arrIndex] != 0;
+	}
+
+	return returnValue;
+}
+
 void DXRBase::updateWaterData() {
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["water simulation"].getSelected().value) {
+		simulateWater(Application::getInstance()->getDelta());
+	}
+
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
 		unsigned int& data = pair.second;
@@ -284,6 +341,56 @@ void DXRBase::updateWaterData() {
 		m_waterDeltas.clear();
 	}
 	m_waterChanged = false;
+}
+
+void DXRBase::simulateWater(float dt) {
+	for (unsigned int z = 0; z < WATER_GRID_Z; z++) {
+		for (unsigned int y = 1; y < WATER_GRID_Y; y++) {
+			for (unsigned int x = 0; x < WATER_GRID_X; x++) {
+				auto arrIndex = Utils::to1D(glm::i32vec3(x, y, z), WATER_GRID_X, WATER_GRID_Y);
+				if (m_updateWater[arrIndex]) {
+					auto arrIndexBelow = arrIndex - WATER_GRID_X;
+
+					bool change = false;
+					uint32_t vals[8];
+					bool keepUpdating = false;
+					for (unsigned int quarterIndex = 0; quarterIndex < 4; quarterIndex++) {
+						int quarterVal = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], quarterIndex);
+						uint32_t belowQuarterVal = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], quarterIndex);
+
+						// Below
+						int deltaVal = 0;
+
+						deltaVal = static_cast<int>(7.f * ((float)(quarterVal) / 255.f) + 1.f);
+
+						if (quarterVal < 21) {
+							deltaVal = quarterVal;
+						}
+						quarterVal -= deltaVal;
+						if (quarterVal > 0) {
+							keepUpdating = true;
+						}
+						vals[quarterIndex] = static_cast<uint32_t>(quarterVal);
+						belowQuarterVal += deltaVal;
+						if (belowQuarterVal > 100U) {
+							m_updateWater[arrIndexBelow] = true;
+						}
+						vals[quarterIndex + 4] = std::min(belowQuarterVal, 255U);
+					}
+
+					if (!keepUpdating) {
+						m_updateWater[arrIndex] = false;
+					}
+
+					m_waterDeltas[arrIndex] = Utils::packQuarterFloat(vals[0], vals[1], vals[2], vals[3]);
+					m_waterDeltas[arrIndexBelow] = Utils::packQuarterFloat(vals[4], vals[5], vals[6], vals[7]);
+					m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
+					m_waterDataCPU[arrIndexBelow] = m_waterDeltas[arrIndexBelow];
+					m_waterChanged = true;
+				}
+			}
+		}
+	}
 }
 
 void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb) {
@@ -324,7 +431,7 @@ void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, co
 	res->Unmap(0, nullptr);
 }
 
-void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* shadowsLastFrameInput, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* outputBloomTexture, DX12RenderableTexture* shadowsLastFrameInput, ID3D12GraphicsCommandList4* cmdList) {
 
 	assert(m_gbufferInputTextures); // Input textures not set!
 	
@@ -333,9 +440,10 @@ void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* shadowsLastF
 
 	auto copyDescriptor = [&](DX12RenderableTexture* texture, D3D12_CPU_DESCRIPTOR_HANDLE* cdh) {
 		// Copy output texture uav to heap
-		//texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE); // This is done in RaytracingRenderer:runShading()
+		texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 		m_context->getDevice()->CopyDescriptorsSimple(1, cdh[frameIndex], texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	};
+	copyDescriptor(outputBloomTexture, m_rtOutputBloomTextureUavCPUHandles);
 	copyDescriptor(output.albedo.get(), m_rtOutputAlbedoUavCPUHandles);
 	copyDescriptor(output.normal.get(), m_rtOutputNormalsUavCPUHandles);
 	copyDescriptor(output.metalnessRoughnessAO.get(), m_rtOutputMetalnessRoughnessAoUavCPUHandles);
@@ -395,7 +503,7 @@ void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* shadowsLastF
 void DXRBase::resetWater() {
 	// TODO: make faster by updates the whole buffer at once
 	for (unsigned int i = 0; i < WATER_ARR_SIZE; i++) {
-		m_waterDataCPU[i] = m_waterDeltas[i] = UINT_MAX;
+		m_waterDataCPU[i] = m_waterDeltas[i] = 0;
 	}
 	m_waterChanged = true;
 }
@@ -410,20 +518,23 @@ void DXRBase::reloadShaders() {
 	createRaytracingPSO();
 }
 
-bool DXRBase::onEvent(Event& event) {
-	auto onResize = [&](WindowResizeEvent& event) {
+bool DXRBase::onEvent(const Event& event) {
+	auto onResize = [&](const WindowResizeEvent& event) {
 		// Window changed size, resize output UAV
 		createInitialShaderResources(true);
 		return true;
 	};
 
-	auto onGameOver = [&](GameOverEvent& event) {
+	auto onResetWater = [&](const ResetWaterEvent& event) {
 		resetWater();
 		return true;
 	};
 
-	EventHandler::dispatch<WindowResizeEvent>(event, onResize);
-	EventHandler::dispatch<GameOverEvent>(event, onGameOver);
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	case Event::Type::RESET_WATER: onResetWater((const ResetWaterEvent&)event); break;
+	default: break;
+	}
 	return true;
 }
 
@@ -468,19 +579,25 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 	unsigned int instanceID_metaballs = 0;
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		auto& instanceList = it.second;
-		for (auto& transform : instanceList.instanceTransforms) {
+		for (auto& instance : instanceList.instanceList) {
 			if (it.first == nullptr) {
 				pInstanceDesc->InstanceID = instanceID_metaballs++;	// exposed to the shader via InstanceID() - currently same for all instances of same material
-				pInstanceDesc->InstanceMask = 0x01;
+				pInstanceDesc->InstanceMask = INSTACE_MASK_METABALLS;
 			} else {
-				pInstanceDesc->InstanceID = blasIndex;
-				pInstanceDesc->InstanceMask = 0xFF &~ 0x01;
+#ifdef DEVELOPMENT
+				if (blasIndex >= 1 << 10) {
+					SAIL_LOG_WARNING("BlasIndex is to high and will interfere with team color index.");
+				}
+#endif
+				pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
+				UINT shadowMask = (instance.castShadows) ? INSTACE_MASK_CAST_SHADOWS : 0;
+				pInstanceDesc->InstanceMask = INSTACE_MASK_DEFAULT | shadowMask;
 			}
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
-			memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
+			memcpy(pInstanceDesc->Transform, &instance.transform, sizeof(pInstanceDesc->Transform));
 
 			pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
 
@@ -517,7 +634,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
 
 	InstanceList instance;
-	instance.instanceTransforms.emplace_back(renderCommand.transform);
+	instance.instanceList.emplace_back(PerInstance{ renderCommand.transform , (char)renderCommand.teamColorID, renderCommand.castShadows});
 	AccelerationStructureBuffers& bottomBuffer = instance.blas;
 	if (performInplaceUpdate) {
 		bottomBuffer = *sourceBufferForUpdate;
@@ -640,6 +757,8 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		storeHandle(m_rtOutputNormalsUavCPUHandles, m_rtOutputNormalsUavGPUHandles);
 		// Metalness/roughness/ao UAV output
 		storeHandle(m_rtOutputMetalnessRoughnessAoUavCPUHandles, m_rtOutputMetalnessRoughnessAoUavGPUHandles);
+		// Bloom (to be bloomed) UAV output
+		storeHandle(m_rtOutputBloomTextureUavCPUHandles, m_rtOutputBloomTextureUavGPUHandles);
 		// Shadows UAV output
 		storeHandle(m_rtOutputShadowsUavCPUHandles, m_rtOutputShadowsUavGPUHandles);
 		// First bounce world positions output
@@ -855,6 +974,7 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addDescriptor(m_rtOutputAlbedoUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputNormalsUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputMetalnessRoughnessAoUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputBloomTextureUavGPUHandles[frameIndex].ptr); // Right position?
 		tableBuilder.addDescriptor(m_rtOutputShadowsUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputPositionsOneUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputPositionsTwoUavGPUHandles[frameIndex].ptr);
@@ -908,7 +1028,7 @@ void DXRBase::updateShaderTables() {
 					else if (parameterName == "sys_brdfLUT") {
 						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
-						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
+						SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
 					}
 					});
 			} else {
@@ -930,7 +1050,7 @@ void DXRBase::updateShaderTables() {
 					} else if (parameterName == "sys_brdfLUT") {
 						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
-						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
+						SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
 					}
 
 					});
@@ -983,11 +1103,13 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen->addDescriptorTable("OutputAlbedoUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 3);
 	m_localSignatureRayGen->addDescriptorTable("OutputNormalsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 4);
 	m_localSignatureRayGen->addDescriptorTable("OutputMetalnessRoughnessAOUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 5);
+	m_localSignatureRayGen->addDescriptorTable("OutputBloomUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1); // TODO: fix slot
 	m_localSignatureRayGen->addDescriptorTable("OutputShadowsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 6);
 	m_localSignatureRayGen->addDescriptorTable("OutputPositionsOneUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 7);
 	m_localSignatureRayGen->addDescriptorTable("OutputPositionsTwoUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 8);
 	m_localSignatureRayGen->addDescriptorTable("InputShadowsLastFrameSRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 20);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputOutputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 0U, 3);
+
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, 2);
 	m_localSignatureRayGen->addDescriptorTable("decalTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 17, 0U, 3U);
 	m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);

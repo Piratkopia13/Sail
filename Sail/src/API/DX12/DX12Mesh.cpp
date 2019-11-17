@@ -11,6 +11,10 @@ Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 	return SAIL_NEW DX12Mesh(buildData, shader);
 }
 
+Mesh* Mesh::Create(unsigned int numVertices, Shader* shader) {
+	return SAIL_NEW DX12Mesh(numVertices, shader);
+}
+
 DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
 	: Mesh(buildData, shader) {
 	m_context = Application::getInstance()->getAPI<DX12API>();
@@ -21,6 +25,14 @@ DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
 	if (buildData.numIndices > 0) {
 		indexBuffer = std::unique_ptr<IndexBuffer>(IndexBuffer::Create(buildData));
 	}
+}
+
+DX12Mesh::DX12Mesh(unsigned int numVertices, Shader* shader)
+	: Mesh(numVertices, shader) {
+	m_context = Application::getInstance()->getAPI<DX12API>();
+	material = std::make_shared<PBRMaterial>(shader);
+	// Create vertex buffer
+	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shader->getPipeline()->getInputLayout(), numVertices));
 }
 
 DX12Mesh::~DX12Mesh() {

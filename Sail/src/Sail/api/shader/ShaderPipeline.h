@@ -40,8 +40,9 @@ public:
 	virtual void setWireframe(bool wireframeState);
 	virtual void setCullMode(GraphicsAPI::Culling newCullMode);
 	virtual void setNumRenderTargets(unsigned int numRenderTargets);
-	virtual void useDepthStencil(bool enable);
-	virtual void useAlphaBlending(bool enable);
+	virtual void enableDepthStencil(bool enable);
+	virtual void enableDepthWriting(bool enable);
+	virtual void setBlending(GraphicsAPI::Blending blendMode);
 
 	bool isComputeShader() const;
 	InputLayout& getInputLayout();
@@ -67,12 +68,12 @@ protected:
 	std::unique_ptr<InputLayout> inputLayout;
 	std::string filename;
 
-	// Shader settings
 	bool wireframe;
 	GraphicsAPI::Culling cullMode;
 	unsigned int numRenderTargets;
-	bool enableDepthStencil;
-	bool enableAlphaBlending;
+	bool enableDepth;
+	bool enableDepthWrite;
+	GraphicsAPI::Blending blendMode;
 
 	void* vsBlob; // Used for the input layout
 	void* gsBlob;
@@ -103,10 +104,10 @@ protected:
 		std::unique_ptr<ShaderComponent::ConstantBuffer> cBuffer;
 	};
 	struct ShaderStructuredBuffer {
-		ShaderStructuredBuffer(const std::string& name, void* initData, UINT size, UINT numElements, UINT stride, ShaderComponent::BIND_SHADER bindShader, UINT slot) 
+		ShaderStructuredBuffer(const std::string& name, void* initData, UINT size, UINT numElements, UINT stride, ShaderComponent::BIND_SHADER bindShader, UINT slot, bool isRW) 
 			: name(name)
 		{
-			sBuffer = std::unique_ptr<ShaderComponent::StructuredBuffer>(ShaderComponent::StructuredBuffer::Create(initData, size, numElements, stride, bindShader, slot));
+			sBuffer = std::unique_ptr<ShaderComponent::StructuredBuffer>(ShaderComponent::StructuredBuffer::Create(initData, size, numElements, stride, bindShader, slot, isRW));
 		}
 		std::unique_ptr<ShaderComponent::StructuredBuffer> sBuffer;
 		std::string name;
@@ -122,10 +123,10 @@ protected:
 		std::unique_ptr<ShaderComponent::Sampler> sampler;
 	};
 	struct ShaderRenderableTexture {
-		ShaderRenderableTexture(ShaderResource res)
+		ShaderRenderableTexture(ShaderResource res, Texture::FORMAT format)
 			: res(res)
 		{
-			renderableTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(320, 180, "Renderable Texture owned by a ShaderPipeline"));
+			renderableTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(320, 180, "Renderable Texture owned by a ShaderPipeline", format));
 		}
 		ShaderResource res;
 		std::unique_ptr<RenderableTexture> renderableTexture;
@@ -159,7 +160,7 @@ private:
 	void parseSampler(const char* source);
 	void parseTexture(const char* source);
 	void parseRWTexture(const char* source);
-	void parseStructuredBuffer(const char* source);
+	void parseStructuredBuffer(const char* source, bool isRW);
 	std::string nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray = false) const;
 	std::string nextTokenAsType(const char* source, UINT& outTokenSize) const;
 	ShaderComponent::BIND_SHADER getBindShaderFromName(const std::string& name) const;

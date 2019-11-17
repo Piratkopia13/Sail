@@ -4,12 +4,14 @@
 
 namespace States {
 
-	enum ID {
+	enum ID : char{
 		None,
+		SplashScreen,
 		MainMenu,
 		Lobby,
 		HostLobby,
 		JoinLobby,
+		LoadingScreen,
 		Game,
 		InGameMenu,
 		EndGame,

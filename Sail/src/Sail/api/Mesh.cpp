@@ -11,6 +11,9 @@ Mesh::Mesh(Data& buildData, Shader* shader)
 {
 }
 
+Mesh::Mesh(unsigned int numVertices, Shader* shader) {
+	meshData.numVertices = numVertices;
+}
 
 
 
@@ -25,6 +28,10 @@ Mesh::~Mesh() {
 }
 
 
+
+float Mesh::getSize() {
+	return meshData.numVertices * sizeof(glm::vec3) * 4 + meshData.numVertices * sizeof(glm::vec2);
+}
 
 const Mesh::Data& Mesh::getMeshData() {
 	return meshData;

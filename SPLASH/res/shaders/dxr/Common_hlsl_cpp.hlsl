@@ -29,6 +29,7 @@ namespace DXRShaderCommon {
 #define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 12
+#define NUM_TEAM_COLORS 12
 #define MAX_NUM_METABALLS 500
 #define METABALL_RADIUS 0.12f
 #define MAX_DECALS 100
@@ -43,6 +44,10 @@ static const uint MESH_USE_INDICES 						= 	1 << 0;
 static const uint MESH_HAS_ALBEDO_TEX 					= 	1 << 1;
 static const uint MESH_HAS_NORMAL_TEX 					= 	1 << 2;
 static const uint MESH_HAS_METALNESS_ROUGHNESS_AO_TEX	= 	1 << 3;
+
+#define INSTACE_MASK_DEFAULT 0xF0
+#define INSTACE_MASK_METABALLS 0x01
+#define INSTACE_MASK_CAST_SHADOWS 0x02
 
 struct RayPayload {
 	float4 albedoOne;
@@ -80,13 +85,25 @@ struct PointLightInput {
 	float2 padding2;
 };
 
+struct SpotlightInput {
+	float3 color;
+	float attConstant;
+	float3 position;
+	float attLinear;
+	float3 direction;
+	float attQuadratic;
+
+	float angle;
+	float padding1, padding2, padding3;
+};
+
 // Properties set once for the scene
 struct SceneCBuffer {
 	float4x4 projectionToWorld;
 	float4x4 viewToWorld;
 	float4x4 clipToView;
 	float3 cameraPosition;
-	float padding1;
+	bool doTonemapping;
 	float3 cameraDirection;
 	uint nMetaballs;
     uint nDecals;
@@ -94,6 +111,8 @@ struct SceneCBuffer {
 	float farZ;
 	float padding2;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
+    SpotlightInput spotLights[NUM_POINT_LIGHTS];
+	float4 teamColors[NUM_TEAM_COLORS];
 
 	// Water voxel data
 	float3 mapSize;

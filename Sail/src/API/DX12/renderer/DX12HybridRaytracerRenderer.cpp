@@ -17,12 +17,14 @@ void DX12HybridRaytracerRenderer::begin(Camera* camera) {
 	m_rendererRaytrace->begin(camera);
 }
 
-void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) {
+void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID, bool castShadows) {
+	teamColorID = std::clamp(teamColorID, 0, 12);
+
 	if (flags & RenderFlag::IS_VISIBLE_ON_SCREEN) {
-		m_rendererGbuffer->submit(mesh, modelMatrix, flags);
+		m_rendererGbuffer->submit(mesh, modelMatrix, flags, teamColorID, castShadows);
 	}
 	if (!(flags & RenderFlag::HIDE_IN_DXR)) {
-		m_rendererRaytrace->submit(mesh, modelMatrix, flags);
+		m_rendererRaytrace->submit(mesh, modelMatrix, flags, teamColorID, castShadows);
 	}
 }
 
@@ -65,8 +67,21 @@ void DX12HybridRaytracerRenderer::present(PostProcessPipeline* postProcessPipeli
 	m_rendererRaytrace->present(postProcessPipeline, output);
 }
 
-bool DX12HybridRaytracerRenderer::onEvent(Event& event) {
+bool DX12HybridRaytracerRenderer::onEvent(const Event& event) {
 	m_rendererGbuffer->onEvent(event);
 	m_rendererRaytrace->onEvent(event);
 	return true;
+}
+
+void DX12HybridRaytracerRenderer::setTeamColors(const std::vector<glm::vec3>& teamColors) {
+	m_rendererGbuffer->setTeamColors(teamColors);
+	m_rendererRaytrace->setTeamColors(teamColors);
+}
+
+bool DX12HybridRaytracerRenderer::checkIfOnWater(const glm::vec3& pos) {
+	return m_rendererRaytrace->checkIfOnWater(pos);
+}
+
+DX12GBufferRenderer* DX12HybridRaytracerRenderer::getGBufferRenderer() const {
+	return m_rendererGbuffer.get();
 }

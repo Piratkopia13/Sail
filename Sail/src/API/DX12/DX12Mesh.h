@@ -6,6 +6,7 @@
 class DX12Mesh : public Mesh {
 public:
 	DX12Mesh(Data& buildData, Shader* shader);
+	DX12Mesh(unsigned int numVertices, Shader* shader);
 	virtual ~DX12Mesh();
 
 	/*[Depricated]*/

@@ -59,7 +59,7 @@ int DX12InputLayout::convertInputClassification(InputClassification inputSlotCla
 		return D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
 		break;
 	default:
-		Logger::Error("Invalid input classifier specified");
+		SAIL_LOG_ERROR("Invalid input classifier specified");
 		return 0;
 		break;
 	}

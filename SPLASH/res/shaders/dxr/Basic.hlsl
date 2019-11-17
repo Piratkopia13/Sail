@@ -18,6 +18,7 @@ Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19); // NOT USED
 RWTexture2D<float4> lOutputAlbedo		 		: register(u3);		// RGB
 RWTexture2D<float4> lOutputNormals 				: register(u4); 	// XYZ
 RWTexture2D<float4> lOutputMetalnessRoughnessAO : register(u5); 	// Metalness/Roughness/AO
+RWTexture2D<float4> lOutputBloom : register(u1); // TODO: fix slot
 RWTexture2D<float2> lOutputShadows 				: register(u6); 	// Shadows first bounce/shadows second bounce
 RWTexture2D<float4> lOutputPositionsOne			: register(u7);		// XYZ - world space positions for first bounce
 RWTexture2D<float4> lOutputPositionsTwo			: register(u8);		// XYZ - world space positions for second bounce
@@ -187,7 +188,7 @@ void rayGen() {
 	payloadMetaball.worldPositionOne = 0.f;
 	payloadMetaball.worldPositionTwo = 0.f;
 
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0x01, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payload_metaball);
 	//===========MetaBalls RT END===========
 
 	// lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
@@ -264,10 +265,10 @@ float3 getAlbedo(MeshData data, float2 texCoords) {
 
 	return color;
 }
-float3 getMetalnessRoughnessAO(MeshData data, float2 texCoords) {
-	float3 color = data.metalnessRoughnessAoScales;
+float4 getMetalnessRoughnessAO(MeshData data, float2 texCoords) {
+	float4 color = float4(data.metalnessRoughnessAoScales, 1);
 	if (data.flags & MESH_HAS_METALNESS_ROUGHNESS_AO_TEX)
-		color *= sys_texMetalnessRoughnessAO.SampleLevel(ss, texCoords, 0).rgb;
+		color *= sys_texMetalnessRoughnessAO.SampleLevel(ss, texCoords, 0);
 	return color;
 }
 
@@ -277,15 +278,17 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	payload.closestTvalue = RayTCurrent();
 
 	float3 barycentrics = float3(1.0 - attribs.barycentrics.x - attribs.barycentrics.y, attribs.barycentrics.x, attribs.barycentrics.y);
-	uint instanceID = InstanceID();
-	uint primitiveID = PrimitiveIndex();
+	uint blasIndex = InstanceID() & ~(~0U << 10); //Extract vertexbufferID
+	uint teamColorID = (InstanceID() >> 10);//Extract teamColorID
 
+	uint primitiveID = PrimitiveIndex();
+	
 	uint verticesPerPrimitive = 3;
 	uint i1 = primitiveID * verticesPerPrimitive;
 	uint i2 = primitiveID * verticesPerPrimitive + 1;
 	uint i3 = primitiveID * verticesPerPrimitive + 2;
 	// Use indices if available
-	if (CB_MeshData.data[instanceID].flags & MESH_USE_INDICES) {
+	if (CB_MeshData.data[blasIndex].flags & MESH_USE_INDICES) {
 		i1 = indices[i1];
 		i2 = indices[i2];
 		i3 = indices[i3];
@@ -310,11 +313,21 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	  bitangentInWorldSpace,
 	  normalInWorldSpace
 	);
-	if (CB_MeshData.data[instanceID].flags & MESH_HAS_NORMAL_TEX) {
+	if (CB_MeshData.data[blasIndex].flags & MESH_HAS_NORMAL_TEX) {
 		float3 normalSample = sys_texNormal.SampleLevel(ss, texCoords, 0).rgb;
         normalSample.y = 1.0f - normalSample.y;
         normalInWorldSpace = mul(normalize(normalSample * 2.f - 1.f), tbn);
 	}
+
+	float4 albedoColor = getAlbedo(CB_MeshData.data[blasIndex], texCoords);
+	float a = albedoColor.a;
+	float3 teamColor = CB_SceneData.teamColors[teamColorID].rgb;
+	
+	if (a < 1.0f) {
+		float f = 1 - a;
+		albedoColor = float4(albedoColor.rgb * (1 - f) + teamColor * f, a);
+	}
+	albedoColor = float4(pow(albedoColor.rgb, 2.2), a);
 
 	float3 albedoColor = getAlbedo(CB_MeshData.data[instanceID], texCoords);
 	float3 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[instanceID], texCoords);
@@ -350,8 +363,8 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
 	if (payload.recursionDepth == 1) {
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reflectRaydesc, reflect_payload);
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF & ~0x01, 0, 0, 0, reftractRaydesc, refract_payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_DEFAULT & ~INSTACE_MASK_METABALLS, 0, 0, 0, reflectRaydesc, reflect_payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_DEFAULT & ~INSTACE_MASK_METABALLS, 0, 0, 0, reftractRaydesc, refract_payload);
 
 		float4 reflect_color = reflect_payload.albedoTwo;
 		reflect_color.b += 0.05f;

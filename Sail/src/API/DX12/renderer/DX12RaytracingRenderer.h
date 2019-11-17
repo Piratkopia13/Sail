@@ -20,12 +20,14 @@ public:
 	void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
 	virtual void begin(Camera* camera) override;
 
-	virtual bool onEvent(Event& event) override;
-	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags) override;
+	virtual bool onEvent(const Event& event) override;
+	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID, bool castShadows) override;
 	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) override;
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;
 	virtual void submitWaterPoint(const glm::vec3& pos) override;
+	virtual bool checkIfOnWater(const glm::vec3& pos) override;
 
+	virtual void setTeamColors(const std::vector<glm::vec3>& teamColors);
 	virtual void updateMetaballAABB();
 
 	void setGBufferInputs(DX12RenderableTexture** inputs);
@@ -33,7 +35,7 @@ public:
 private:
 	DX12RenderableTexture* runDenoising(ID3D12GraphicsCommandList4* cmdList);
 	DX12RenderableTexture* runShading(ID3D12GraphicsCommandList4* cmdList, DX12RenderableTexture* shadows);
-	bool onResize(WindowResizeEvent& event);
+	bool onResize(const WindowResizeEvent& event);
 
 private:
 	DX12API* m_context;
@@ -45,6 +47,7 @@ private:
 	Texture* m_brdfTexture;
 
 	DXRBase::BounceOutput m_outputTextures;
+	std::unique_ptr<DX12RenderableTexture> m_outputBloomTexture;
 	std::unique_ptr<DX12RenderableTexture> m_shadedOuput;
 	std::unique_ptr<DX12RenderableTexture> m_shadowsLastFrame;
 	std::unique_ptr<Model> m_fullscreenModel;
