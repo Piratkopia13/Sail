@@ -57,14 +57,16 @@ float4 PSMain(PSIn input) : SV_Target0 {
     float3 albedoOne = albedoBounceOne.Sample(PSss, input.texCoord).rgb;
     float3 albedoTwo = albedoBounceTwo.Sample(PSss, input.texCoord).rgb;
 
-    float3 metalnessRoughnessAoOne = metalnessRoughnessAoBounceOne.Sample(PSss, input.texCoord).xyz;
-    float3 metalnessRoughnessAoTwo = metalnessRoughnessAoBounceTwo.Sample(PSss, input.texCoord).xyz;
-    float metalnessOne = metalnessRoughnessAoOne.x;
-    float metalnessTwo = metalnessRoughnessAoTwo.x;
-    float roughnessOne = metalnessRoughnessAoOne.y;
-    float roughnessTwo = metalnessRoughnessAoTwo.y;
-    float aoOne = metalnessRoughnessAoOne.z;
-    float aoTwo = metalnessRoughnessAoTwo.z;
+    float4 metalnessRoughnessAoOne = metalnessRoughnessAoBounceOne.Sample(PSss, input.texCoord);
+    float4 metalnessRoughnessAoTwo = metalnessRoughnessAoBounceTwo.Sample(PSss, input.texCoord);
+    float metalnessOne = metalnessRoughnessAoOne.r;
+    float metalnessTwo = metalnessRoughnessAoTwo.r;
+    float roughnessOne = metalnessRoughnessAoOne.g;
+    float roughnessTwo = metalnessRoughnessAoTwo.g;
+    float aoOne = metalnessRoughnessAoOne.b;
+    float aoTwo = metalnessRoughnessAoTwo.b;
+    float emissivenessOne = pow(1 - metalnessRoughnessAoOne.a, 2);
+    float emissivenessTwo = pow(1 - metalnessRoughnessAoTwo.a, 2);
 
     float2 shadowAmount = shadows.Sample(PSss, input.texCoord).rg;
     float shadowOne = shadowAmount.r;
@@ -77,11 +79,12 @@ float4 PSMain(PSIn input) : SV_Target0 {
     float3 invViewDirOne = cameraPosition - worldPositionOne;
     float3 invViewDirTwo = worldPositionOne - worldPositionTwo;
 
-	float4 secondBounceColor = pbrShade(worldPositionTwo, worldNormalTwo, invViewDirTwo, albedoTwo, metalnessTwo, roughnessTwo, aoTwo, shadowTwo, -1.f);
-    return pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor.rgb);
+	float4 secondBounceColor = pbrShade(worldPositionTwo, worldNormalTwo, invViewDirTwo, albedoTwo, emissivenessTwo, metalnessTwo, roughnessTwo, aoTwo, shadowTwo, -1.f);
+    return pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, emissivenessOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor.rgb);
     
     // Debug stuff
-    // return float4(albedoOne, 1.0f);
+    // return float4(metalnessRoughnessAoOne, 1.0f);
+    // return float4(worldNormalOne, 1.0f);
     // return float4(shadowAmount.x, 0.f, 0.f, 1.0f);
     // return float4(shadowAmount.x, 0.f, 0.f, 1.0f) * 0.5 + pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor) * 0.5;
 }

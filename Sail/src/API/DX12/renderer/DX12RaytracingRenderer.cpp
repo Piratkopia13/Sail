@@ -42,6 +42,8 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_shadedOuput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
 	// Init raytracing input texture
 	m_shadowsLastFrame = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "LastFrameShadowTexture", Texture::R8G8)));
+	// Init bloom output texture
+	m_outputBloomTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Raytracing renderer bloom output texture", Texture::R16G16B16A16_FLOAT)));
 
 	m_brdfTexture = &app->getResourceManager().getTexture("pbr/brdfLUT.tga");
 
@@ -61,12 +63,12 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	if (postProcessPipeline) {
 		// Make sure output textures are in a higher precision format to accomodate values > 1
-		m_outputTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
+		m_outputTextures.albedo->changeFormat(Texture::R16G16B16A16_FLOAT);
 		m_outputBloomTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
 	} else {
 		// Make sure output textures are in a format that can be directly copied to the back buffer
 		// Please note that no tone mapping is applied when post process is turned off.
-		m_outputTexture->changeFormat(Texture::R8G8B8A8);
+		m_outputTextures.albedo->changeFormat(Texture::R8G8B8A8);
 		m_outputBloomTexture->changeFormat(Texture::R8G8B8A8);
 	}
 
@@ -178,6 +180,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	if (postProcessPipeline) {
 		// Run post processing
 		postProcessPipeline->setBloomInput(m_outputBloomTexture.get());
+		// Transition shaded output to a state readable by the compute pipeline
+		shadedOutput->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		RenderableTexture* ppOutput = postProcessPipeline->run(shadedOutput, cmdListCompute.Get());
 		if (ppOutput) {
 			renderOutput = ppOutput;
@@ -300,6 +304,8 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 	m_outputTextures.albedo->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	m_outputTextures.normal->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	m_outputTextures.metalnessRoughnessAO->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	m_outputTextures.positionsOne->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	m_outputTextures.positionsTwo->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	shadows->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
 	return m_shadedOuput.get();
@@ -377,14 +383,14 @@ void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {
 }
 
 bool DX12RaytracingRenderer::onResize(const WindowResizeEvent& event) {
-	m_outputTextures.albedo->resize(event.getWidth(), event.getHeight());
-	m_outputTextures.normal->resize(event.getWidth(), event.getHeight());
-	m_outputTextures.metalnessRoughnessAO->resize(event.getWidth(), event.getHeight());
-	m_outputTextures.shadows->resize(event.getWidth(), event.getHeight());
-	m_outputTextures.positionsOne->resize(event.getWidth(), event.getHeight());
-	m_outputTextures.positionsTwo->resize(event.getWidth(), event.getHeight());
-	m_shadowsLastFrame->resize(event.getWidth(), event.getHeight());
-	m_shadedOuput->resize(event.getWidth(), event.getHeight());
+	m_outputTextures.albedo->resize(event.width, event.height);
+	m_outputTextures.normal->resize(event.width, event.height);
+	m_outputTextures.metalnessRoughnessAO->resize(event.width, event.height);
+	m_outputTextures.shadows->resize(event.width, event.height);
+	m_outputTextures.positionsOne->resize(event.width, event.height);
+	m_outputTextures.positionsTwo->resize(event.width, event.height);
+	m_shadowsLastFrame->resize(event.width, event.height);
+	m_shadedOuput->resize(event.width, event.height);
 	m_outputBloomTexture->resize(event.width, event.height);
 	return true;
 }

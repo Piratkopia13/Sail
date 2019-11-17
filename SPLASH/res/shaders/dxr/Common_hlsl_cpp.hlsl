@@ -54,8 +54,8 @@ struct RayPayload {
 	float4 albedoTwo;
 	float3 normalOne;
 	float3 normalTwo;
-	float3 metalnessRoughnessAOOne;
-	float3 metalnessRoughnessAOTwo;
+	float4 metalnessRoughnessAOOne;
+	float4 metalnessRoughnessAOTwo;
 	float3 worldPositionOne;
 	float3 worldPositionTwo;
 	float shadowTwo;

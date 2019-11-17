@@ -28,6 +28,8 @@ public:
 	void setCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex);
 	bool trySetCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex);
 
+	void setRenderTargetFormat(unsigned int rtIndex, DXGI_FORMAT format);
+	
 private:
 	void createGraphicsPipelineState();
 	void createComputePipelineState();
@@ -39,6 +41,7 @@ protected:
 private:
 	DX12API* m_context;
 
+	std::unordered_map<unsigned int, DXGI_FORMAT> m_rtFormats;
 	static std::unique_ptr<DXILShaderCompiler> m_dxilCompiler; // Class Singleton
 	wComPtr<ID3D12PipelineState> m_pipelineState;
 };

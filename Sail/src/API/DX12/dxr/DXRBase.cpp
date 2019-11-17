@@ -440,7 +440,7 @@ void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* outputBloomT
 
 	auto copyDescriptor = [&](DX12RenderableTexture* texture, D3D12_CPU_DESCRIPTOR_HANDLE* cdh) {
 		// Copy output texture uav to heap
-		texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+		//texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE); // This transition is done in RaytracingRenderer::runShading()
 		m_context->getDevice()->CopyDescriptorsSimple(1, cdh[frameIndex], texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	};
 	copyDescriptor(outputBloomTexture, m_rtOutputBloomTextureUavCPUHandles);
@@ -974,10 +974,10 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addDescriptor(m_rtOutputAlbedoUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputNormalsUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputMetalnessRoughnessAoUavGPUHandles[frameIndex].ptr);
-		tableBuilder.addDescriptor(m_rtOutputBloomTextureUavGPUHandles[frameIndex].ptr); // Right position?
 		tableBuilder.addDescriptor(m_rtOutputShadowsUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputPositionsOneUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputPositionsTwoUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputBloomTextureUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtInputShadowsLastFrameUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartUAVGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartSRVGPUHandles[frameIndex].ptr);
@@ -1103,10 +1103,10 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen->addDescriptorTable("OutputAlbedoUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 3);
 	m_localSignatureRayGen->addDescriptorTable("OutputNormalsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 4);
 	m_localSignatureRayGen->addDescriptorTable("OutputMetalnessRoughnessAOUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 5);
-	m_localSignatureRayGen->addDescriptorTable("OutputBloomUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1); // TODO: fix slot
 	m_localSignatureRayGen->addDescriptorTable("OutputShadowsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 6);
 	m_localSignatureRayGen->addDescriptorTable("OutputPositionsOneUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 7);
 	m_localSignatureRayGen->addDescriptorTable("OutputPositionsTwoUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 8);
+	m_localSignatureRayGen->addDescriptorTable("OutputBloomUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 9);
 	m_localSignatureRayGen->addDescriptorTable("InputShadowsLastFrameSRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 20);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputOutputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 0U, 3);
 

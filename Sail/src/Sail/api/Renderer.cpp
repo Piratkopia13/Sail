@@ -13,9 +13,9 @@ void Renderer::submit(Model* model, const glm::mat4& modelMatrix, RenderFlag fla
 	}
 }
 
-void Renderer::submit(Model* model, const glm::mat4& modelMatrix, const glm::mat4& modelMatrixLastFrame, RenderFlag flags, int teamColorID, bool castShadows) {
+void Renderer::submit(Model* model, const glm::mat4& modelMatrix, const glm::mat4& modelMatrixLastFrame, RenderFlag flags, int teamColorID) {
 	for (unsigned int i = 0; i < model->getNumberOfMeshes(); i++) {
-		submit(model->getMesh(i), modelMatrix, modelMatrixLastFrame, flags);
+		submit(model->getMesh(i), modelMatrix, modelMatrixLastFrame, flags, teamColorID, model->castsShadows());
 	}
 }
 

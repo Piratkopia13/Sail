@@ -304,7 +304,11 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 
 	// Specify render target and depthstencil usage
 	for (unsigned int i = 0; i < numRenderTargets; i++) {
-		gpsd.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		if (m_rtFormats.find(i) != m_rtFormats.end()) {
+			gpsd.RTVFormats[i] = m_rtFormats[i];
+		} else {
+			gpsd.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
 	}
 	gpsd.NumRenderTargets = numRenderTargets;
 
@@ -409,6 +413,10 @@ void DX12ShaderPipeline::createComputePipelineState() {
 	cpsd.CS.BytecodeLength = csD3DBlob->GetBufferSize();
 
 	ThrowIfFailed(m_context->getDevice()->CreateComputePipelineState(&cpsd, IID_PPV_ARGS(&m_pipelineState)));
+}
+
+void DX12ShaderPipeline::setRenderTargetFormat(unsigned rtIndex, DXGI_FORMAT format) {
+	m_rtFormats[rtIndex] = format;
 }
 
 void DX12ShaderPipeline::finish() {

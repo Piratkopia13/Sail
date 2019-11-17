@@ -8,7 +8,7 @@ ShadePassShader::ShadePassShader()
 	shaderPipeline->getInputLayout().pushVec3(InputLayout::POSITION, "POSITION", 0);
 	shaderPipeline->getInputLayout().create(shaderPipeline->getVsBlob());
 
-	shaderPipeline->useDepthStencil(false);
+	shaderPipeline->enableDepthStencil(false);
 
 	// Finish the shader creation
 	finish();

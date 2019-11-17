@@ -113,9 +113,6 @@ GameState::GameState(StateStack& stack)
 
 	m_lightDebugWindow.setLightSetup(&m_lights);
 
-	// Disable culling for testing purposes
-	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
-
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 
 	m_app->getResourceManager().setDefaultShader(shader);
@@ -880,10 +877,15 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
+	
+	m_cam.newFrame(); // Has to run before the camera update
+	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
+	
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 	m_componentSystems.spectateInputSystem->update(dt, alpha);
+
 
 	// There is an imgui debug toggle to override lights
 	if (!m_lightDebugWindow.isManualOverrideOn()) {
@@ -898,7 +900,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 	m_componentSystems.animationSystem->updatePerFrame();
-	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
+	//m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
 
 	// Will probably need to be called last

@@ -18,10 +18,10 @@ Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19); // NOT USED
 RWTexture2D<float4> lOutputAlbedo		 		: register(u3);		// RGB
 RWTexture2D<float4> lOutputNormals 				: register(u4); 	// XYZ
 RWTexture2D<float4> lOutputMetalnessRoughnessAO : register(u5); 	// Metalness/Roughness/AO
-RWTexture2D<float4> lOutputBloom : register(u1); // TODO: fix slot
 RWTexture2D<float2> lOutputShadows 				: register(u6); 	// Shadows first bounce/shadows second bounce
 RWTexture2D<float4> lOutputPositionsOne			: register(u7);		// XYZ - world space positions for first bounce
 RWTexture2D<float4> lOutputPositionsTwo			: register(u8);		// XYZ - world space positions for second bounce
+RWTexture2D<float4> lOutputBloom 				: register(u9); 	// RGB - Writes all colors that should later be bloomed
 Texture2D<float2> 	lInputShadowsLastFrame 		: register(t20); 	// last frame Shadows first bounce/last frame shadows second bounce
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
@@ -133,13 +133,14 @@ void rayGen() {
 
 	// Material
 	float3 albedoOne = gbuffer_albedo[launchIndex].rgb;
-	float3 mrao = gbuffer_texMetalnessRoughnessAO[launchIndex].rgb;
-	float metalnessOne = mrao.x;
-	float roughnessOne = mrao.y;
-	float aoOne = mrao.z;
+	float4 mrao = gbuffer_texMetalnessRoughnessAO[launchIndex];
+	float metalnessOne = mrao.r;
+	float roughnessOne = mrao.g;
+	float aoOne = mrao.b;
+	float emisivenessOne = mrao.a;
 	float originalAoOne = aoOne;
 	// Change material if first bounce color should be water on a surface
-	getWaterMaterialOnSurface(albedoOne, metalnessOne, roughnessOne, aoOne, worldNormal, worldPosition);
+	// getWaterMaterialOnSurface(albedoOne, metalnessOne, roughnessOne, aoOne, worldNormal, worldPosition); // TODO: fix and uncomment
 
 	RayDesc ray;
 	ray.Origin = worldPosition;
@@ -188,7 +189,7 @@ void rayGen() {
 	payloadMetaball.worldPositionOne = 0.f;
 	payloadMetaball.worldPositionTwo = 0.f;
 
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payload_metaball);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
 	//===========MetaBalls RT END===========
 
 	// lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
@@ -209,7 +210,7 @@ void rayGen() {
 	float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal);
 
 	// Temporal filtering via an exponential moving average
-	float alpha = 0.5f; // Temporal fade, trading temporal stability for lag
+	float alpha = 0.3f; // Temporal fade, trading temporal stability for lag
 	// Reproject screenTexCoord to where it was last frame
 	float2 motionVector = gbuffer_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg;
 	motionVector.y = 1.f - motionVector.y;
@@ -217,36 +218,36 @@ void rayGen() {
 
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
 	// float2 reprojectedTexCoord = screenTexCoord;
-	// float cLast = lInputHistory.SampleLevel(ss, screenTexCoord, 0).r;
 	float2 cLast = lInputShadowsLastFrame.SampleLevel(motionSS, reprojectedTexCoord, 0).rg;
-	// float cLast = 0.0f;
+	// float2 cLast = 0.0f;
 	float2 shadow = float2(firstBounceShadow, payload.shadowTwo);
 	shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
 	lOutputShadows[launchIndex] = shadow;
-	// lOutputShadows[launchIndex] = 1.0f - payload.shadow;
 
 
 
 	float3 albedoTwo = finalPayload.albedoTwo.rgb;
 	float3 worldNormalTwo = finalPayload.normalTwo.rgb;
-	mrao = finalPayload.metalnessRoughnessAOTwo.rgb;
-	float metalnessTwo = mrao.x;
-	float roughnessTwo = mrao.y;
-	float aoTwo = mrao.z;
+	mrao = finalPayload.metalnessRoughnessAOTwo;
+	float metalnessTwo = mrao.r;
+	float roughnessTwo = mrao.g;
+	float aoTwo = mrao.b;
+	float emisivenessTwo = mrao.a;
 	float3 worldPositionTwo = finalPayload.worldPositionTwo;
 	// Change material if second bounce color should be water on a surface
 	getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
 
-	float interpAoOne = lerp(originalAoOne, aoOne, shadow);
+	float interpAoOne = lerp(originalAoOne, aoOne, shadow.x);
+	// float interpAoOne = aoOne;
 
 	// Overwrite gbuffers
 	gbuffer_albedo[launchIndex] = float4(albedoOne, 1.0f);
 	gbuffer_normals[launchIndex] = float4(worldNormal * 0.5f + 0.5f, 1.0f);
-	gbuffer_texMetalnessRoughnessAO[launchIndex] = float4(metalnessOne, roughnessOne, interpAoOne, 1.0f);
+	gbuffer_texMetalnessRoughnessAO[launchIndex] = float4(metalnessOne, roughnessOne, interpAoOne, emisivenessOne);
 	// Write outputs
 	lOutputAlbedo[launchIndex] = float4(albedoTwo, 1.0f);
 	lOutputNormals[launchIndex] = float4(worldNormalTwo * 0.5f + 0.5f, 1.0f);
-	lOutputMetalnessRoughnessAO[launchIndex] = float4(metalnessTwo, roughnessTwo, aoTwo, 1.0f);
+	lOutputMetalnessRoughnessAO[launchIndex] = float4(metalnessTwo, roughnessTwo, aoTwo, emisivenessTwo);
 	lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
 	lOutputPositionsTwo[launchIndex] = float4(worldPositionTwo, 1.0f);
 }
@@ -257,11 +258,14 @@ void miss(inout RayPayload payload) {
 	payload.closestTvalue = 100000;
 }
 
-float3 getAlbedo(MeshData data, float2 texCoords) {
-	float3 color = data.color.rgb;
-	if (data.flags & MESH_HAS_ALBEDO_TEX)
-		// color *= sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb; // Not SRGB
-		color *= pow(sys_texAlbedo.SampleLevel(ss, texCoords, 0).rgb, 2.2f); // SRGB
+float4 getAlbedo(MeshData data, float2 texCoords) {
+	float4 color = float4(data.color.rgb, 0.f);
+	if (data.flags & MESH_HAS_ALBEDO_TEX) {
+		float4 sampled = sys_texAlbedo.SampleLevel(ss, texCoords, 0);
+		// color.rgb *= pow(sampled.rgb, 2.2f); // SRGB conversion
+		color.rgb *= sampled.rgb; // No SRGB conversion
+		color.a = sampled.a; // Team color amount is stored in alpha, dont do SRGB conversion
+	}
 
 	return color;
 }
@@ -320,17 +324,15 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	}
 
 	float4 albedoColor = getAlbedo(CB_MeshData.data[blasIndex], texCoords);
-	float a = albedoColor.a;
 	float3 teamColor = CB_SceneData.teamColors[teamColorID].rgb;
 	
-	if (a < 1.0f) {
-		float f = 1 - a;
-		albedoColor = float4(albedoColor.rgb * (1 - f) + teamColor * f, a);
+	// Apply teamcolor depending on alpha. 0 = fully team color
+	if (albedoColor.a < 1.0f) {
+		float f = 1 - albedoColor.a;
+		albedoColor = float4(albedoColor.rgb * (1 - f) + teamColor * f, albedoColor.a);
 	}
-	albedoColor = float4(pow(albedoColor.rgb, 2.2), a);
 
-	float3 albedoColor = getAlbedo(CB_MeshData.data[instanceID], texCoords);
-	float3 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[instanceID], texCoords);
+	float4 metalnessRoughnessAO = getMetalnessRoughnessAO(CB_MeshData.data[blasIndex], texCoords);
 
 	float3 worldPosition = Utils::HitWorldPosition();
 	
@@ -338,7 +340,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
 	
 	payload.shadowTwo = getShadowAmount(randSeed, worldPosition, normalInWorldSpace);
-	payload.albedoTwo.rgb = albedoColor;
+	payload.albedoTwo.rgb = albedoColor.rgb; // TODO: store alpha and use as team color amount
 	payload.normalTwo = normalInWorldSpace;
 	payload.metalnessRoughnessAOTwo = metalnessRoughnessAO;
 	payload.worldPositionTwo = worldPosition;
@@ -381,7 +383,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 		/////////////////////////
 		payload.albedoOne = float4(finaldiffusecolor.rgb, 1.0f);
 		payload.normalOne = normalInWorldSpace;
-		payload.metalnessRoughnessAOOne = float3(1.f, 1.f, 1.f);
+		payload.metalnessRoughnessAOOne = float4(1.f, 1.f, 1.f, 1.f);
 		payload.worldPositionOne = Utils::HitWorldPosition();
 
 		payload.albedoTwo = reflect_payload.albedoTwo;
@@ -392,7 +394,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	} else {
 		payload.albedoTwo = float4(0.0f, 0.0f, .01f, 1.0f);
 		payload.normalTwo = normalInWorldSpace;
-		payload.metalnessRoughnessAOTwo = float3(1.f, 1.f, 1.f);
+		payload.metalnessRoughnessAOTwo = float4(1.f, 1.f, 1.f, 1.f);
 		payload.worldPositionTwo = Utils::HitWorldPosition();
 	}
 }
