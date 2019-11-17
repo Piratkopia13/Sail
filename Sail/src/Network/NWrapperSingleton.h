@@ -63,7 +63,6 @@ public:
 	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData, bool alsoSendToSelf = true);
 	unsigned char getPlayerLimit();
 	size_t averagePacketSizeSinceLastCheck();
-	Netcode::PlayerID findFreePlayerID();
 
 private:
 	// Specifically for One-Time-Events during the gamestate

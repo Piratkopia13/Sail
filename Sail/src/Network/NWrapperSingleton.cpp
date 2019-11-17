@@ -15,7 +15,7 @@
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
 		delete m_wrapper;
-		
+
 	}
 
 	Memory::SafeDelete(m_network);
@@ -49,7 +49,7 @@ bool NWrapperSingleton::host(int port) {
 
 bool NWrapperSingleton::connectToIP(char* adress) {
 	this->initialize(false);
-	
+
 	if (!m_isHost) {
 		if (m_wrapper->connectToIP(adress) == true) {
 			return true;
@@ -57,7 +57,7 @@ bool NWrapperSingleton::connectToIP(char* adress) {
 			resetWrapper();
 		}
 	}
-	
+
 	return false;
 }
 
@@ -81,7 +81,7 @@ void NWrapperSingleton::stopUDP() {
 	m_network->stopUDP();
 }
 
-void NWrapperSingleton::startUDP(){
+void NWrapperSingleton::startUDP() {
 	m_network->startUDP();
 }
 
@@ -91,16 +91,13 @@ void NWrapperSingleton::resetPlayerList() {
 
 bool NWrapperSingleton::playerJoined(const Player& player, bool dispatchEvent) {
 	Player newPlayer(player.id, player.name.c_str());	// This will fix currupt string size.
-	
-	if (m_players.size() < m_playerLimit) {
-		m_players.push_back(newPlayer);
-		if (dispatchEvent) {
-			EventDispatcher::Instance().emit(NetworkJoinedEvent(player));
-		}
-		return true;
-	}
 
-	return false;
+	m_players.push_back(newPlayer);
+	if (dispatchEvent) {
+		EventDispatcher::Instance().emit(NetworkJoinedEvent(player));
+	}
+	return true;
+
 }
 
 bool NWrapperSingleton::playerLeft(Netcode::PlayerID& id, bool dispatchEvent, PlayerLeftReason reason) {
@@ -208,8 +205,7 @@ void NWrapperSingleton::initialize(bool asHost) {
 		if (asHost) {
 			m_isHost = true;
 			m_wrapper = SAIL_NEW NWrapperHost(m_network);
-		}
-		else {
+		} else {
 			m_isHost = false;
 			m_wrapper = SAIL_NEW NWrapperClient(m_network);
 		}
@@ -248,7 +244,7 @@ void NWrapperSingleton::handleNetworkEvents(NetworkEvent nEvent) {
 			gameDescription.currentState = States::None;
 			gameDescription.name = "";
 		}
-	
+
 		EventDispatcher::Instance().emit(NetworkLanHostFoundEvent(gameDescription));
 	}
 
