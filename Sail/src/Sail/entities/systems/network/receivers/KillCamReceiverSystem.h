@@ -89,4 +89,6 @@ private:
 	size_t m_currentReadInd = 1;
 
 	std::mutex m_replayDataLock;
+
+	bool hasStarted = false;
 };

@@ -53,4 +53,4 @@ void MovementPostCollisionSystem<T>::update(float dt) {
 
 
 template class MovementPostCollisionSystem<TransformComponent>;
-template class MovementPostCollisionSystem<ReplayTransformComponent>;
+//template class MovementPostCollisionSystem<ReplayTransformComponent>;

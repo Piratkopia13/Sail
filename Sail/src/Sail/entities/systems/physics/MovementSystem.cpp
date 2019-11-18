@@ -35,4 +35,4 @@ void MovementSystem<T>::update(float dt) {
 }
 
 template class MovementSystem<TransformComponent>;
-template class MovementSystem<ReplayTransformComponent>;
+//template class MovementSystem<ReplayTransformComponent>;

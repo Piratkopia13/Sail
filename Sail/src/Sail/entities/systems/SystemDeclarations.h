@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../components/TransformComponent.h"
-#include "../components/ReplayTransformComponent.h"
+//#include "../components/TransformComponent.h"
+//#include "../components/ReplayTransformComponent.h"
+#include "../components/RenderInActiveGameComponent.h"
+#include "../components/RenderInReplayComponent.h"
 
 // Ordered by name
 
@@ -102,12 +104,21 @@ struct Systems {
 
 
 	// Systems that need duplicate versions for the killcam
-	MetaballSubmitSystem<TransformComponent>*              metaballSubmitSystem               = nullptr;
+	/*MetaballSubmitSystem<TransformComponent>*              metaballSubmitSystem               = nullptr;
 	MetaballSubmitSystem<ReplayTransformComponent>*        killCamMetaballSubmitSystem        = nullptr;
 	MovementSystem<TransformComponent>*                    movementSystem                     = nullptr;
 	MovementSystem<ReplayTransformComponent>*              killCamMovementSystem              = nullptr;
 	MovementPostCollisionSystem<TransformComponent>*       movementPostCollisionSystem        = nullptr;
 	MovementPostCollisionSystem<ReplayTransformComponent>* killCamMovementPostCollisionSystem = nullptr;
 	ModelSubmitSystem<TransformComponent>*                 modelSubmitSystem                  = nullptr;
-	ModelSubmitSystem<ReplayTransformComponent>*           killCamModelSubmitSystem           = nullptr;
+	ModelSubmitSystem<ReplayTransformComponent>*           killCamModelSubmitSystem           = nullptr;*/
+
+	MetaballSubmitSystem<RenderInActiveGameComponent>*     metaballSubmitSystem               = nullptr;
+	MetaballSubmitSystem<RenderInReplayComponent>*         killCamMetaballSubmitSystem        = nullptr;
+	MovementSystem<TransformComponent>*                    movementSystem                     = nullptr;
+	//MovementSystem<Transform>*              killCamMovementSystem              = nullptr;
+	MovementPostCollisionSystem<TransformComponent>*       movementPostCollisionSystem        = nullptr;
+	//MovementPostCollisionSystem<ReplayTransformComponent>* killCamMovementPostCollisionSystem = nullptr;
+	ModelSubmitSystem<RenderInActiveGameComponent>*        modelSubmitSystem                  = nullptr;
+	ModelSubmitSystem<RenderInReplayComponent>*            killCamModelSubmitSystem           = nullptr;
 };

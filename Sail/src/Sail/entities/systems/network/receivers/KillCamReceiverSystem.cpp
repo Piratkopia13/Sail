@@ -33,8 +33,8 @@ static std::ofstream out("LogFiles/KillCamReceiverSystem.cpp.log");
 
 // TODO: register more components
 KillCamReceiverSystem::KillCamReceiverSystem() : ReceiverBase() {
-	registerComponent<ReplayComponent>(true, false, false);
-	registerComponent<ReplayTransformComponent>(true, true, true);
+	registerComponent<ReplayReceiverComponent>(true, false, false);
+	//registerComponent<ReplayTransformComponent>(true, true, true);
 
 	//EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
@@ -54,7 +54,8 @@ void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
 void KillCamReceiverSystem::prepareUpdate() {
 	for (auto e : entities) {
 
-		e->getComponent<ReplayTransformComponent>()->prepareUpdate();
+		//e->getComponent<ReplayTransformComponent>()->prepareUpdate();
+		e->getComponent<TransformComponent>()->prepareUpdate();
 	}
 }
 
@@ -70,6 +71,16 @@ void KillCamReceiverSystem::update(float dt) {
 
 // Should only be called when the killcam is active
 void KillCamReceiverSystem::processReplayData(float dt) {
+	// Add the entities to all relevant systems so that they for example will have their animations updated
+	if (!hasStarted) {
+		for (auto e : entities) {
+			e->tryToAddToSystems = true;
+			e->addComponent<RenderInReplayComponent>();
+		}
+		hasStarted = true;
+	}
+	
+	
 	std::lock_guard<std::mutex> lock(m_replayDataLock);
 
 	processData(dt, m_replayData[m_currentReadInd], false);
@@ -139,13 +150,13 @@ void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKil
 }
 
 void KillCamReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
-	//if (auto e = findFromNetID(id); e) {
-	//	auto animation = e->getComponent<AnimationComponent>();
-	//	animation->setAnimation(info.index);
-	//	animation->animationTime = info.time;
-	//	return;
-	//}
-	//SAIL_LOG_WARNING("setAnimation called but no matching entity found");
+	if (auto e = findFromNetID(id); e) {
+		auto animation = e->getComponent<AnimationComponent>();
+		animation->setAnimation(info.index);
+		animation->animationTime = info.time;
+		return;
+	}
+	SAIL_LOG_WARNING("setAnimation called but no matching entity found");
 }
 
 void KillCamReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId, const float health) {
@@ -169,7 +180,8 @@ void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const 
 // Might need some optimization (like sorting) if we have a lot of networked entities
 void KillCamReceiverSystem::setLocalPosition(const Netcode::ComponentID id, const glm::vec3& translation) {
 	if (auto e = findFromNetID(id); e) {
-		e->getComponent<ReplayTransformComponent>()->setTranslation(translation);
+		//e->getComponent<ReplayTransformComponent>()->setTranslation(translation);
+		e->getComponent<TransformComponent>()->setTranslation(translation);
 		return;
 	}
 	SAIL_LOG_WARNING("setLocalPosition called but no matching entity found");
@@ -177,7 +189,8 @@ void KillCamReceiverSystem::setLocalPosition(const Netcode::ComponentID id, cons
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rotation) {
 	if (auto e = findFromNetID(id); e) {
-		e->getComponent<ReplayTransformComponent>()->setRotations(rotation);
+		//e->getComponent<ReplayTransformComponent>()->setRotations(rotation);
+		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
 	}
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
@@ -185,7 +198,8 @@ void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::quat& rotation) {
 	if (auto e = findFromNetID(id); e) {
-		e->getComponent<ReplayTransformComponent>()->setRotations(rotation);
+		//e->getComponent<ReplayTransformComponent>()->setRotations(rotation);
+		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
 	}
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
@@ -293,7 +307,7 @@ void KillCamReceiverSystem::playerDisconnect(const Netcode::PlayerID playerID)
 
 Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) const {
 	for (auto e : entities) {
-		if (e->getComponent<ReplayComponent>()->m_id == id) {
+		if (e->getComponent<ReplayReceiverComponent>()->m_id == id) {
 			return e;
 		}
 	}
