@@ -30,8 +30,8 @@ public:
 	void pushDataToBuffer(const std::string& data);
 
 #ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
 	void imguiPrint(Entity** selectedEntity = nullptr) {
-		
 		ImGui::Text(std::string("ID: " + std::to_string((int)m_playerID)).c_str());
 	}
 #endif

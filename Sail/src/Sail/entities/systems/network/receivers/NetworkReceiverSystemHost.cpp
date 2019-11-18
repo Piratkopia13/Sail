@@ -21,6 +21,12 @@ void NetworkReceiverSystemHost::handleIncomingData(const std::string& data) {
 	m_netSendSysPtr->pushDataToBuffer(data);
 }
 
+#ifdef DEVELOPMENT
+unsigned int NetworkReceiverSystemHost::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
+
 void NetworkReceiverSystemHost::endMatch() {
 	m_startEndGameTimer = true;
 }

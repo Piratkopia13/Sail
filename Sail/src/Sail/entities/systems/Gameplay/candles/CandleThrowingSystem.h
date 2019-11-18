@@ -13,8 +13,9 @@ public:
 
 	void update(float dt) override;
 
+#ifdef DEVELOPMENT
 	unsigned int getByteSize() const override;
-
+#endif
 private:
 	void throwCandle(Entity* e);
 

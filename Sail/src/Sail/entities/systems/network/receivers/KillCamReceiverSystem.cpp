@@ -75,6 +75,18 @@ void KillCamReceiverSystem::processReplayData(float dt) {
 	processData(dt, m_replayData[m_currentReadInd], false);
 }
 
+#ifdef DEVELOPMENT
+unsigned int KillCamReceiverSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	for (int i = 0; i < REPLAY_BUFFER_SIZE; i++) {
+		const auto& queue = m_replayData[i];
+		const size_t queueSize = queue.size();
+		size += queueSize * sizeof(std::string);								// string structure size
+		size += queueSize * queue.front().capacity() * sizeof(unsigned char);	// approximate string character length
+	}
+	return size;
+}
+#endif
 
 void KillCamReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
 	//// Early exit if the entity already exists

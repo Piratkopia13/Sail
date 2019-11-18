@@ -24,6 +24,10 @@ public:
 	void initialize(Camera* cam);
 	void clean();
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
+
 private:
 	void processKeyboardInput(const float& dt);
 	void processMouseInput(const float& dt);

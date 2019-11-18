@@ -538,6 +538,8 @@ bool AudioSystem::onEvent(const Event& event) {
 	return true;
 }
 
+#ifdef DEVELOPMENT
 unsigned int AudioSystem::getByteSize() const {
 	return BaseComponentSystem::getByteSize() + sizeof(*this);
 }
+#endif

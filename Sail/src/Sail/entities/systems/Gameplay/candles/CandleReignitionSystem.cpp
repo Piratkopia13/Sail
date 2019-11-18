@@ -45,9 +45,11 @@ void CandleReignitionSystem::update(float dt) {
 	}
 }
 
+#ifdef DEVELOPMENT
 unsigned int CandleReignitionSystem::getByteSize() const {
 	return BaseComponentSystem::getByteSize() + sizeof(*this);
 }
+#endif
 
 bool CandleReignitionSystem::onEvent(const Event& event) {
 	auto onIgniteCandle = [&](const IgniteCandleEvent& e) {

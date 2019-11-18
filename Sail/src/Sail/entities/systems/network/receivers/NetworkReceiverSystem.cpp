@@ -54,6 +54,15 @@ void NetworkReceiverSystem::update(float dt) {
 	processData(dt, m_incomingDataBuffer);
 }
 
+#ifdef DEVELOPMENT
+unsigned int NetworkReceiverSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	size += m_incomingDataBuffer.size() * sizeof(std::string);
+	size += m_incomingDataBuffer.size() * m_incomingDataBuffer.front().capacity() * sizeof(unsigned char);	// Approximate string length
+	return 0;
+}
+#endif
+
 void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
 	// Early exit if the entity already exists
 	if (findFromNetID(info.playerCompID)) {

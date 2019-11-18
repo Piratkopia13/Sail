@@ -37,7 +37,9 @@ public:
 
 	NodeSystem* getNodeSystem();
 
+#ifdef DEVELOPMENT
 	unsigned int getByteSize() const override;
+#endif
 
 private:
 	void updatePath(Entity* e);

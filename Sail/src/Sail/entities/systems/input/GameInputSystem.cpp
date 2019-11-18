@@ -452,6 +452,14 @@ CameraController* GameInputSystem::getCamera() const {
 	return m_cam;
 }
 
+#ifdef DEVELOPMENT
+unsigned int GameInputSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	size += sizeof(CameraController);
+	return size;
+}
+#endif
+
 void GameInputSystem::toggleCandleCarry(Entity* entity) {
 	// No need to do anything since it's to soon since last action
 	if (m_candleToggleTimer < CANDLE_TIMER) { return; }
