@@ -102,7 +102,14 @@ public:
 private:
 	const std::string getSuitableName(const std::string& name);
 
-	unsigned int m_totalByteSize;
+	enum RMDataType {
+		Models = 0,
+		Animations,
+		Audio,
+		Textures,
+		Generic
+	};
+	unsigned int m_byteSize[5];
 
 private:
 	// Audio files/data mapped to their filenames
