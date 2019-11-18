@@ -13,6 +13,8 @@ public:
 
 	void update(float dt) override;
 
+	unsigned int getByteSize() const override;
+
 private:
 	void throwCandle(Entity* e);
 

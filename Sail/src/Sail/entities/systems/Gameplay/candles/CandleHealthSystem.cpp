@@ -177,3 +177,7 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 
 	return true;
 }
+
+unsigned int CandleHealthSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}

@@ -6,19 +6,19 @@ Model::Model(Mesh::Data& buildData, Shader* shader)
 	, m_castShadows(true)
 {
 	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(buildData, shader)));
-	m_totalByteSize = sizeof(this) + m_meshes[0]->getByteSize();
+	m_totalByteSize = sizeof(*this) + m_meshes[0]->getByteSize();
 }
 
 Model::Model(unsigned int numVertices, Shader* shader) 
 	: m_isAnimated(false)
 {
 	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(numVertices, shader)));
-	m_totalByteSize = sizeof(this) + m_meshes[0]->getByteSize();
+	m_totalByteSize = sizeof(*this) + m_meshes[0]->getByteSize();
 }
 Model::Model() 
 	: m_isAnimated(false) 
 { 
-	m_totalByteSize = sizeof(this);
+	m_totalByteSize = sizeof(*this);
 }
 
 Model::~Model() {

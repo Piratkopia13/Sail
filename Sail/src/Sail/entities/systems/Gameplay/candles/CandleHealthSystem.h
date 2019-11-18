@@ -11,6 +11,8 @@ public:
 	void update(float dt) override;
 	bool onEvent(const Event& event) override;
 
+	unsigned int getByteSize() const override;
+
 private:
 	// TODO: Replace using game settings when that is implemented
 	int m_maxNumRespawns = 2;

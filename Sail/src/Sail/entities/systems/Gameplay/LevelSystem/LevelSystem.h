@@ -81,6 +81,8 @@ public:
 	const int getRoomID(int posX, int posY);
 	const RoomInfo getRoomInfo(int ID);
 
+	unsigned int getByteSize() const override;
+
 	int xsize;
 	int ysize;
 	int*** tileArr; //0 is tileID, 1 is typeID, 2 is door

@@ -37,6 +37,8 @@ public:
 
 	NodeSystem* getNodeSystem();
 
+	unsigned int getByteSize() const override;
+
 private:
 	void updatePath(Entity* e);
 	void updatePhysics(Entity* e, float dt);

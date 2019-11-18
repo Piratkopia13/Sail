@@ -129,6 +129,12 @@ NodeSystem* AiSystem::getNodeSystem() {
 	return m_nodeSystem.get();
 }
 
+unsigned int AiSystem::getByteSize() const {
+	unsigned int size = sizeof(*this);
+	size += sizeof(NodeSystem);
+	return size;
+}
+
 
 void AiSystem::aiUpdateFunc(Entity* e, const float dt) {
 	e->getComponent<FSMComponent>()->update(dt, e);

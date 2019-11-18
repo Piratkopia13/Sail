@@ -45,6 +45,10 @@ void CandleReignitionSystem::update(float dt) {
 	}
 }
 
+unsigned int CandleReignitionSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+
 bool CandleReignitionSystem::onEvent(const Event& event) {
 	auto onIgniteCandle = [&](const IgniteCandleEvent& e) {
 		Entity* candle = nullptr;

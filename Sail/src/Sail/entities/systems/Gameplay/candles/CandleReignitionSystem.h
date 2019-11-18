@@ -10,6 +10,8 @@ public:
 
 	void update(float dt) override;
 
+	unsigned int getByteSize() const override;
+
 private:
 	bool onEvent(const Event& event) override;
 

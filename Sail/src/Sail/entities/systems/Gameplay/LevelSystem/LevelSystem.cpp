@@ -1439,6 +1439,24 @@ const RoomInfo LevelSystem::getRoomInfo(int ID) {
 	return info;
 }
 
+unsigned int LevelSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	
+	size += spawnPoints.size() * sizeof(glm::vec3);
+	size += chunks.size() * sizeof(Rect);
+	size += blocks.size() * sizeof(Rect);
+	size += hallways.size() * sizeof(Rect);
+	size += rooms.size() * sizeof(Rect);
+	size += matched.size() * sizeof(Rect);
+	size += largeClutter.size() * sizeof(Clutter);
+	size += mediumClutter.size() * sizeof(Clutter);
+	size += smallClutter.size() * sizeof(Clutter);
+	size += specialClutter.size() * sizeof(Clutter);
+
+	size += xsize * ysize * sizeof(int) * 3;
+	return size;
+}
+
 void LevelSystem::stop() {
 	destroyWorld();
 	spawnPoints.clear();

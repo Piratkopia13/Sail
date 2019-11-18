@@ -24,6 +24,7 @@ public:
 
 	bool onEvent(const Event& event) override;
 
+	unsigned int getByteSize() const override;
 private:
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_i;
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_toBeDeleted;
