@@ -427,6 +427,7 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		AnimationComponent* animation = e->getComponent<AnimationComponent>();
 
 		playerTrans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
+		animation->pitch = glm::radians(-m_pitch);
 
 		const glm::vec3 finalPos = playerTrans->getRenderMatrix(alpha) * glm::vec4(animation->headPositionLocalCurrent, 1.f);
 		const glm::vec3 camPos = glm::vec3(finalPos);
