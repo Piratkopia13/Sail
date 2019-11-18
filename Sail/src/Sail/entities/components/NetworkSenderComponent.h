@@ -68,6 +68,10 @@ public:
 	std::vector<Netcode::MessageType> m_dataTypes;
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		/* TODO: Fix component size */
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Text(std::string("m_id: " + std::to_string(m_id)).c_str());
 		ImGui::Text(std::string("m_entityType: " + (m_entityType == Netcode::EntityType::PLAYER_ENTITY) ? "PLAYER_ENTITY" : "MECHA_ENTITY").c_str());

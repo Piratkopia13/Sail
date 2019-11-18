@@ -28,6 +28,13 @@ public:
 	float spawnRate;
 	float spawnTimer;
 
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		/* TODO: Fix component size */
+		return sizeof(*this);
+	}
+#endif
+
 private:
 	void init();
 

@@ -13,6 +13,9 @@ public:
 	int team;
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 		if (ImGui::DragInt("##TEAM", &team, 0.1, 0 , 11)) {

@@ -14,6 +14,12 @@ public:
 
 	void draw()/* override*/;
 
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+#endif
+
 private:
 	SailFont m_font;
 	std::vector<Text::Ptr> m_texts;

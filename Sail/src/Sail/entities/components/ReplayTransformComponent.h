@@ -16,6 +16,9 @@ public:
 	virtual ~ReplayTransformComponent() {}
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Text("Position"); ImGui::SameLine();
 		glm::vec3 pos = getTranslation();

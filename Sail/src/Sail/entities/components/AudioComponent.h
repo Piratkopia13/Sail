@@ -27,6 +27,10 @@ public:
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>> m_currentlyStreaming;
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		/* TODO: Fix component size */
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Text("Streams");
 		ImGui::Indent(10.0f);

@@ -11,6 +11,13 @@ public:
 		return m_pls;
 	}
 
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		/* TODO: Fix component size */
+		return sizeof(*this);
+	}
+#endif
+
 private:
 	//contains a number of point lights in order to have multiple lights per entity
 	std::vector<PointLight> m_pls;
