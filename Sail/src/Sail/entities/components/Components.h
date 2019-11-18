@@ -28,6 +28,7 @@
 #include "ParticleEmitterComponent.h"
 #include "PlayerComponent.h"
 #include "ProjectileComponent.h"
+#include "RagdollComponent.h"
 #include "RealTimeComponent.h"
 #include "ReplayComponent.h"
 #include "ReplayTransformComponent.h"
