@@ -159,12 +159,12 @@ void GameDataTracker::renderImgui() {
 		ImGui::Separator();
 
 		int placement = 1;
-		for (int i = 1; i < (int)tempPlacementMap.size() + 1; i++) {
-			if (tempPlacementMap[i].name.size() > 0) {
+		for (auto& p : tempPlacementMap) {
+			if (p.second.name.size() > 0) {
 				ImGui::Text(std::to_string(placement).c_str()); ImGui::NextColumn();
 				placement++;
-				ImGui::Text(tempPlacementMap[i].name.c_str()); ImGui::NextColumn();
-				ImGui::Text(std::to_string(tempPlacementMap[i].nKills).c_str()); ImGui::NextColumn();
+				ImGui::Text(p.second.name.c_str()); ImGui::NextColumn();
+				ImGui::Text(std::to_string(p.second.nKills).c_str()); ImGui::NextColumn();
 			}
 		}
 
