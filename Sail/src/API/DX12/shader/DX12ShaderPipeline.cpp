@@ -438,7 +438,6 @@ unsigned DX12ShaderPipeline::getMeshIndex() {
 }
 
 void DX12ShaderPipeline::newFrame() {
-	// TODO: call this method form newFrame event
 	const auto swapIndex = m_context->getSwapIndex();
 	m_meshIndex[swapIndex].store(0);
 }
