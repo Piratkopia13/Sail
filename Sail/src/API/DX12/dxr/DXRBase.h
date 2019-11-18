@@ -41,6 +41,8 @@ public:
 	void dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTexture* outputBloomTexture, ID3D12GraphicsCommandList4* cmdList);
 	void simulateWater(float dt);
 
+	void rebuildWater();
+
 	void resetWater();
 	void reloadShaders();
 
@@ -176,9 +178,11 @@ private:
 	// Water voxel grid stuff
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
 	std::unordered_map<unsigned int, unsigned int> m_waterDeltas; // Changed water voxels over the last 2 frames
-	unsigned int m_waterDataCPU[WATER_ARR_SIZE];
-	bool m_updateWater[WATER_ARR_SIZE];
+	std::vector<unsigned int> m_waterDataCPU;
+	std::vector<bool> m_updateWater;
 	bool m_waterChanged;
+	glm::vec3 m_waterArrSizes;
+	unsigned int m_waterArrSize;
 
 	int m_currWaterZChunk;
 	int m_maxWaterZChunk;
