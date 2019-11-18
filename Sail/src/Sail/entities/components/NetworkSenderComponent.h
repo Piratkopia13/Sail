@@ -69,8 +69,7 @@ public:
 
 #ifdef DEVELOPMENT
 	const unsigned int getByteSize() const override {
-		/* TODO: Fix component size */
-		return sizeof(*this);
+		return sizeof(*this) + sizeof(Netcode::MessageType) * m_dataTypes.size();
 	}
 	void imguiRender(Entity** selected) {
 		ImGui::Text(std::string("m_id: " + std::to_string(m_id)).c_str());

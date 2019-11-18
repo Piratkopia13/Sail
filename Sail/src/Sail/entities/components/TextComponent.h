@@ -16,7 +16,7 @@ public:
 
 #ifdef DEVELOPMENT
 	const unsigned int getByteSize() const override {
-		return sizeof(*this);
+		return sizeof(*this) + sizeof(Text) * m_texts.size();
 	}
 #endif
 

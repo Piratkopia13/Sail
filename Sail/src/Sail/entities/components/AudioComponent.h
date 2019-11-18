@@ -28,8 +28,10 @@ public:
 
 #ifdef DEVELOPMENT
 	const unsigned int getByteSize() const override {
-		/* TODO: Fix component size */
-		return sizeof(*this);
+		unsigned int size = sizeof(*this);
+		size += sizeof(std::pair<std::string, Audio::StreamRequestInfo>) * m_streamingRequests.size();
+		size += sizeof(std::pair<std::string, Audio::StreamRequestInfo>) * m_currentlyStreaming.size();
+		return size;
 	}
 	void imguiRender(Entity** selected) {
 		ImGui::Text("Streams");

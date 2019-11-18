@@ -17,8 +17,9 @@ public:
 
 #ifdef DEVELOPMENT
 	const unsigned int getByteSize() const override {
-		/* TODO: Fix component size */
-		return sizeof(*this);
+		unsigned int size = sizeof(*this);
+		size += sizeof(Octree::CollisionInfo) * collisions.size();
+		return size;
 	}
 	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);

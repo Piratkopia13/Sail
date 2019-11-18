@@ -161,15 +161,6 @@ void Profiler::renderWindow() {
 				header = "\n\n\n" + m_fixedUpdateCount + "(ms)";
 				ImGui::PlotLines(header.c_str(), m_fixedUpdateHistory, 100, 0, "", 0.f, 0.015f, ImVec2(0, 100));
 			}
-			if (ImGui::CollapsingHeader("Virtual RAM Graph")) {
-				header = "\n\n\n" + m_virtCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_virtRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-
-			}
-			if (ImGui::CollapsingHeader("Physical RAM Graph")) {
-				header = "\n\n\n" + m_physCount + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_physRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-			}
 			if (ImGui::CollapsingHeader("VRAM Graph")) {
 				header = "\n\n\n" + m_vramUCount + "(MB)";
 				ImGui::PlotLines(header.c_str(), m_vramUsageHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
@@ -178,10 +169,22 @@ void Profiler::renderWindow() {
 				header = "\n\n\n" + m_averageSentPacketSize + "(B/s)";
 				ImGui::PlotLines(header.c_str(), m_averageSentPacketSizeHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
 			}
-			if (ImGui::CollapsingHeader("Resource Manager Graph")) {
-				header = "\n\n\n" + m_rmMB + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_rmSizeMBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));				
+			if (ImGui::CollapsingHeader("Memory usage")) {
+				ImGui::Text(("ECS Components " + std::to_string((float)ECS::Instance()->getByteSizeComponents() / (1024.f * 1024.f)) + "(MB)").c_str());
+				if (ImGui::CollapsingHeader("Virtual RAM Graph")) {
+					header = "\n\n\n" + m_virtCount + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_virtRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+				}
+				if (ImGui::CollapsingHeader("Physical RAM Graph")) {
+					header = "\n\n\n" + m_physCount + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_physRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+				}
+				if (ImGui::CollapsingHeader("Resource Manager Graph")) {
+					header = "\n\n\n" + m_rmMB + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_rmSizeMBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
+				}
 			}
+			
 
 			ImGui::EndChild();
 
