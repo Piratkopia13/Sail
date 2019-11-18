@@ -641,12 +641,6 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 
 	if (NWrapperSingleton::getInstance().isHost()) {
-
-		//TODO: Make a function that does the following 3 rows
-		auto& stat = m_app->getSettings().gameSettingsStatic;
-		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
-		NWrapperSingleton::getInstance().getNetworkWrapper()->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
-
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(-1, event.player.id, false);	
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::Game, event.player.id);	
 	}
