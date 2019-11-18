@@ -109,6 +109,7 @@ bool SplashScreenState::loadModels(Application* app) {
 
 
 	textureThread.get();
+	rm->clearSceneData();
 	return true;
 }
 
