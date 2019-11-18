@@ -50,6 +50,7 @@ void Profiler::init() {
 	m_frameTimesHistory = SAIL_NEW float[100];
 	m_fixedUpdateHistory = SAIL_NEW float[100];
 	m_averageSentPacketSizeHistory = SAIL_NEW float[100];
+	m_rmSizeMBHistory = SAIL_NEW float[100];
 
 	for (int i = 0; i < 100; i++) {
 		m_virtRAMHistory[i] = 0.f;
@@ -59,6 +60,7 @@ void Profiler::init() {
 		m_frameTimesHistory[i] = 0.f;
 		m_fixedUpdateHistory[i] = 0.f;
 		m_averageSentPacketSizeHistory[i] = 0.f;
+		m_rmSizeMBHistory[i] = 0.f;
 	}
 }
 
@@ -176,6 +178,10 @@ void Profiler::renderWindow() {
 				header = "\n\n\n" + m_averageSentPacketSize + "(B/s)";
 				ImGui::PlotLines(header.c_str(), m_averageSentPacketSizeHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
 			}
+			if (ImGui::CollapsingHeader("Resource Manager Graph")) {
+				header = "\n\n\n" + m_rmMB + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_rmSizeMBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));				
+			}
 
 			ImGui::EndChild();
 
@@ -189,7 +195,8 @@ void Profiler::renderWindow() {
 			if (m_profilerTimer > 1/updateFrequency) {
 				m_profilerTimer = 0.f;
 
-				size_t averagePacketSize = NWrapperSingleton::getInstance().averagePacketSizeSinceLastCheck();;
+				size_t averagePacketSize = NWrapperSingleton::getInstance().averagePacketSizeSinceLastCheck();
+				size_t rmByteSize = Application::getInstance()->getResourceManager().getByteSize();
 				if (m_profilerCounter < 100) {
 
 					m_virtRAMHistory[m_profilerCounter] = (float)virtMemUsage();
@@ -198,6 +205,7 @@ void Profiler::renderWindow() {
 					m_frameTimesHistory[m_profilerCounter] = dt;
 					m_fixedUpdateHistory[m_profilerCounter] = latestFixedUpdate;
 					m_averageSentPacketSizeHistory[m_profilerCounter] = (float)averagePacketSize;
+					m_rmSizeMBHistory[m_profilerCounter] = (float)rmByteSize / (1024.f * 1024.f);
 					m_cpuHistory[m_profilerCounter++] = (float)processUsage();
 					m_virtCount = std::to_string(virtMemUsage());
 					m_physCount = std::to_string(workSetUsage());
@@ -207,6 +215,7 @@ void Profiler::renderWindow() {
 					m_fixedUpdateCount = std::to_string(latestFixedUpdate*1000.f);
 					m_potentialFixedUpdateRate = std::to_string(static_cast<int>(1.0f / latestFixedUpdate));
 					m_averageSentPacketSize = std::to_string(static_cast<size_t>(averagePacketSize * updateFrequency));
+					m_rmMB = std::to_string(static_cast<float>(rmByteSize) / (1024.f * 1024.f));
 
 				} else {
 					// Copying all the history to a new array because ImGui is stupid
@@ -260,6 +269,13 @@ void Profiler::renderWindow() {
 					delete m_averageSentPacketSizeHistory;
 					m_averageSentPacketSizeHistory = tempFloatArr7;
 					m_averageSentPacketSize = std::to_string(static_cast<size_t>(averagePacketSize*updateFrequency));
+
+					float* tempFloatArr8 = SAIL_NEW float[100];
+					std::copy(m_rmSizeMBHistory + 1, m_rmSizeMBHistory + 100, tempFloatArr8);
+					tempFloatArr8[99] = (float)rmByteSize / (1024.f * 1024.f);
+					delete m_rmSizeMBHistory;
+					m_rmSizeMBHistory = tempFloatArr8;
+					m_rmMB = std::to_string(static_cast<float>(rmByteSize) / (1024.f * 1024.f));
 				}
 			}
 			ImGui::End();

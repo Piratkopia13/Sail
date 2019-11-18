@@ -9,10 +9,12 @@
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
 
-ResourceManager::ResourceManager() {
+ResourceManager::ResourceManager()
+	: m_totalByteSize(0U) {
 	//m_soundManager = std::make_unique<SoundManager>();
-	m_assimpLoader = std::make_unique<AssimpLoader>();
+	//m_assimpLoader = std::make_unique<AssimpLoader>();
 	m_fbxLoader = std::make_unique<FBXLoader>();
+	m_totalByteSize += sizeof(m_fbxLoader);
 	m_defaultShader = nullptr;
 }
 ResourceManager::~ResourceManager() {
@@ -33,10 +35,12 @@ bool ResourceManager::setDefaultShader(Shader* shader) {
 	return false;
 }
 
-void ResourceManager::loadAudioData(const std::string& filename, IXAudio2* xAudio2) {
-	
+void ResourceManager::loadAudioData(const std::string& filename, IXAudio2* xAudio2) {	
 	if (!this->hasAudioData(filename)) {
-		m_audioDataAll.insert({ filename, std::make_unique<AudioData>(SAIL_DEFAULT_SOUND_LOCATION + filename, xAudio2) });
+		auto inserted = m_audioDataAll.insert({ filename, std::make_unique<AudioData>(SAIL_DEFAULT_SOUND_LOCATION + filename, xAudio2) });
+		if (inserted.second) {
+			m_totalByteSize += inserted.first->second->getByteSize();
+		}
 	} 
 }
 
@@ -58,7 +62,10 @@ bool ResourceManager::hasAudioData(const std::string& filename) {
 //
 
 void ResourceManager::loadTextureData(const std::string& filename) {
-	m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename) });
+	auto inserted = m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename) });
+	if (inserted.second) {
+		m_totalByteSize += inserted.first->second->getByteSize();
+	}
 }
 TextureData& ResourceManager::getTextureData(const std::string& filename) {
 	auto pos = m_textureDatas.find(filename);
@@ -103,6 +110,7 @@ void ResourceManager::addModel(const std::string& modelName, Model* model) {
 	SAIL_LOG("Added model: " + modelName);
 	model->setName(modelName);
 	m_models.insert({modelName, std::unique_ptr<Model>(model)});
+	m_totalByteSize += model->getByteSize();
 }
 
 bool ResourceManager::loadModel(const std::string& filename, Shader* shader, const ImporterType type) {
@@ -124,11 +132,11 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 	}
 
 	if (temp) {
-		float size = 0.f;
+		/*unsigned int size = 0U;
 		for (int i = 0; i < temp->getNumberOfMeshes(); i++) {
-			size += temp->getMesh(i)->getSize();
-		}
-		SAIL_LOG("Loaded model: " + filename + " (" + std::to_string(size / (1024 * 1024)) + "MB)");
+			size += temp->getMesh(i)->getByteSize();
+		}*/
+		SAIL_LOG("Loaded model: " + filename + " (" + std::to_string((float)temp->getByteSize() / (1024.f * 1024.f)) + "MB)");
 		temp->setName(filename);
 		m_modelMutex.lock();
 		m_models.insert({ filename, std::unique_ptr<Model>(temp) });
@@ -167,6 +175,7 @@ Model& ResourceManager::getModelCopy(const std::string& filename, Shader* shader
 	std::string nameCopy = getSuitableName(filename);
 	tempModel->setName(nameCopy);
 	SAIL_LOG("copied model: " + filename + ", using name: " + nameCopy);
+	m_totalByteSize += tempModel->getByteSize();
 	m_models.insert({ nameCopy, std::unique_ptr<Model>(tempModel) });
 
 	return *m_models.find(nameCopy)->second;
@@ -192,11 +201,8 @@ void ResourceManager::loadAnimationStack(const std::string& fileName, const Impo
 
 	if (temp) {
 		m_animationStacks.insert({fileName, std::unique_ptr<AnimationStack>(temp)});
-		float size = 0.f;
-		for (int i = 0; i < m_animationStacks[fileName]->getAnimationCount(); i++) {
-			size += m_animationStacks[fileName]->getAnimation(i)->getMaxAnimationFrame() * m_animationStacks[fileName]->boneCount() * sizeof(glm::mat4);
-		}
-		Logger::Log("Animation size of '" + fileName + "' : " + std::to_string(size / (1024 * 1024)) + "MB");
+		Logger::Log("Animation size of '" + fileName + "' : " + std::to_string((float)m_animationStacks[fileName]->getByteSize() / (1024.f * 1024.f)) + "MB");
+		m_totalByteSize += m_animationStacks[fileName]->getByteSize();
 	}
 	else {
 #ifdef _DEBUG
@@ -224,6 +230,10 @@ const unsigned int ResourceManager::numberOfModels() const {
 
 const unsigned int ResourceManager::numberOfTextures() const {
 	return m_textures.size();
+}
+
+const unsigned int ResourceManager::getByteSize() const {
+	return m_totalByteSize;
 }
 
 
