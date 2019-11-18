@@ -23,8 +23,10 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	lightSetup = nullptr;
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
-	m_context->initCommand(m_commandDirect, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Raytracing Renderer DIRECT command list or allocator");
+	m_context->initCommand(m_commandDirectCopy, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Raytracing Renderer copy DIRECT command list or allocator");
+	m_context->initCommand(m_commandDirectShading, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Raytracing Renderer shading DIRECT command list or allocator");
 	m_context->initCommand(m_commandCompute, D3D12_COMMAND_LIST_TYPE_COMPUTE, L"Raytracing Renderer main COMPUTE command list or allocator");
+	m_context->initCommand(m_commandComputePostProcess, D3D12_COMMAND_LIST_TYPE_COMPUTE, L"Raytracing Renderer post process COMPUTE command list or allocator");
 
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
@@ -32,14 +34,14 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	// Initialize raytracing output textures
 	// m_outputTextures contains all reflection bounce information
 	// gbuffer textures contains first "bounce" information
-	m_outputTextures.albedo = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
-	m_outputTextures.metalnessRoughnessAO = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
-	m_outputTextures.normal = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+	m_outputTextures.albedo = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT albedo secound boucne output")));
+	m_outputTextures.metalnessRoughnessAO = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT mrao secound boucne output")));
+	m_outputTextures.normal = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT normal secound boucne output")));
 	m_outputTextures.shadows = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "CurrentFrameShadowTexture", Texture::R8G8)));
 	m_outputTextures.positionsOne = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "PositionOneTexture", Texture::R16G16B16A16_FLOAT)));
 	m_outputTextures.positionsTwo = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "PositionTwoTexture", Texture::R16G16B16A16_FLOAT)));
 	// init shaded output texture - this is written to in a rasterisation pass
-	m_shadedOuput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight)));
+	m_shadedOuput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT shaded output")));
 	// Init raytracing input texture
 	m_shadowsLastFrame = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "LastFrameShadowTexture", Texture::R8G8)));
 	// Init bloom output texture
@@ -74,15 +76,23 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	// There is one allocator per swap buffer
 	auto& allocatorCompute = m_commandCompute.allocators[m_context->getFrameIndex()];
-	auto& allocatorDirect = m_commandDirect.allocators[m_context->getFrameIndex()];
+	auto& allocatorComputePostProess = m_commandComputePostProcess.allocators[m_context->getFrameIndex()];
+	auto& allocatorDirectCopy = m_commandDirectCopy.allocators[m_context->getFrameIndex()];
+	auto& allocatorDirectShading = m_commandDirectShading.allocators[m_context->getFrameIndex()];
 	auto& cmdListCompute = m_commandCompute.list;
-	auto& cmdListDirect = m_commandDirect.list;
+	auto& cmdListComputePostProcess = m_commandComputePostProcess.list;
+	auto& cmdListDirectCopy = m_commandDirectCopy.list;
+	auto& cmdListDirectShading = m_commandDirectShading.list;
 
 	// Reset allocators and lists for this frame
 	allocatorCompute->Reset();
-	allocatorDirect->Reset();
+	allocatorComputePostProess->Reset();
+	allocatorDirectCopy->Reset();
+	allocatorDirectShading->Reset();
 	cmdListCompute->Reset(allocatorCompute.Get(), nullptr);
-	cmdListDirect->Reset(allocatorDirect.Get(), nullptr);
+	cmdListComputePostProcess->Reset(allocatorComputePostProess.Get(), nullptr);
+	cmdListDirectCopy->Reset(allocatorDirectCopy.Get(), nullptr);
+	cmdListDirectShading->Reset(allocatorDirectShading.Get(), nullptr);
 
 	// Wait for the G-Buffer pass to finish execution on the direct queue
 	auto fenceVal = m_context->getDirectQueue()->signal();
@@ -172,7 +182,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	auto filteredShadows = runDenoising(cmdListCompute.Get());
 
-	auto shadedOutput = runShading(cmdListDirect.Get(), filteredShadows);
+	auto shadedOutput = runShading(cmdListDirectShading.Get(), filteredShadows);
 
 	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue
 
@@ -181,8 +191,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		// Run post processing
 		postProcessPipeline->setBloomInput(m_outputBloomTexture.get());
 		// Transition shaded output to a state readable by the compute pipeline
-		shadedOutput->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		RenderableTexture* ppOutput = postProcessPipeline->run(shadedOutput, cmdListCompute.Get());
+		shadedOutput->transitionStateTo(cmdListDirectShading.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		RenderableTexture* ppOutput = postProcessPipeline->run(shadedOutput, cmdListComputePostProcess.Get());
 		if (ppOutput) {
 			renderOutput = ppOutput;
 		}
@@ -191,32 +201,48 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	//DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(shadedOutput);
 	
 
-	// Execute compute command list
+	// Execute compute command list to do AS updates and ray dispatching
 	cmdListCompute->Close();
 	m_context->executeCommandLists({ cmdListCompute.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
 	// Place a signal to syncronize copying the raytracing output to the backbuffer when it is available
 	fenceVal = m_context->getComputeQueue()->signal();
 
-	// Copy post processing output to back buffer
-	dxRenderOutput->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
-	auto* renderTarget = m_context->getCurrentRenderTargetResource();
-	DX12Utils::SetResourceTransitionBarrier(cmdListDirect.Get(), renderTarget, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
-	cmdListDirect->CopyResource(renderTarget, dxRenderOutput->getResource());
-	// Lastly - transition back buffer to present
-	DX12Utils::SetResourceTransitionBarrier(cmdListDirect.Get(), renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
-
-	// Copy output shadow texture to last shadow texture
-	m_outputTextures.shadows->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
-	m_shadowsLastFrame->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_COPY_DEST);
-	cmdListDirect->CopyResource(m_shadowsLastFrame->getResource(), m_outputTextures.shadows->getResource());
-	m_outputTextures.shadows->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	m_shadowsLastFrame->transitionStateTo(cmdListDirect.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-
-	// Wait for compute to finish before executing the direct queue
+	// Wait for compute to finish before executing the direct queue to do shading
 	m_context->getDirectQueue()->wait(fenceVal);
 	// Execute direct command list
-	cmdListDirect->Close();
-	m_context->executeCommandLists({ cmdListDirect.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	cmdListDirectShading->Close();
+	fenceVal = m_context->getDirectQueue()->signal();
+	m_context->executeCommandLists({ cmdListDirectShading.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+	// Wait for the direct queue to finish (doing shading) before executing the post processing
+	cmdListComputePostProcess->Close();
+	m_context->getComputeQueue()->wait(fenceVal);
+	fenceVal = m_context->getComputeQueue()->signal();
+	m_context->executeCommandLists({ cmdListComputePostProcess.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+
+	// Copy post processing output to back buffer
+	dxRenderOutput->transitionStateTo(cmdListDirectCopy.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+	auto* renderTarget = m_context->getCurrentRenderTargetResource();
+	DX12Utils::SetResourceTransitionBarrier(cmdListDirectCopy.Get(), renderTarget, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_COPY_DEST);
+	cmdListDirectCopy->CopyResource(renderTarget, dxRenderOutput->getResource());
+	// Lastly - transition back buffer to present
+	DX12Utils::SetResourceTransitionBarrier(cmdListDirectCopy.Get(), renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
+
+	// Copy output shadow texture to last shadow texture
+	m_outputTextures.shadows->transitionStateTo(cmdListDirectCopy.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+	m_shadowsLastFrame->transitionStateTo(cmdListDirectCopy.Get(), D3D12_RESOURCE_STATE_COPY_DEST);
+	cmdListDirectCopy->CopyResource(m_shadowsLastFrame->getResource(), m_outputTextures.shadows->getResource());
+	m_outputTextures.shadows->transitionStateTo(cmdListDirectCopy.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	m_shadowsLastFrame->transitionStateTo(cmdListDirectCopy.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
+	cmdListDirectCopy->Close();
+	// Wait for the compute queue to finish (doing post processing) befor executing resource copying
+	m_context->getDirectQueue()->wait(fenceVal);
+	m_context->executeCommandLists({ cmdListDirectCopy.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+	// Next direct queue execution must wait on this post processing to finish
+	/*fenceVal = m_context->getComputeQueue()->signal();
+	m_context->getDirectQueue()->wait(fenceVal);*/
 }
 
 DX12RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsCommandList4* cmdList) {

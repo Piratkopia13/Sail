@@ -40,8 +40,10 @@ private:
 private:
 	DX12API* m_context;
 	DXRBase m_dxr;
-	DX12API::Command m_commandDirect;
+	DX12API::Command m_commandDirectShading;
+	DX12API::Command m_commandDirectCopy;
 	DX12API::Command m_commandCompute;
+	DX12API::Command m_commandComputePostProcess;
 
 	DX12RenderableTexture** m_gbufferTextures;
 	Texture* m_brdfTexture;
