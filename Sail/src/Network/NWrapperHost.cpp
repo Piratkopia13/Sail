@@ -219,6 +219,11 @@ void NWrapperHost::decodeMessage(NetworkEvent nEvent) {
 
 void NWrapperHost::updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID playerId, std::string& name) {
 	
+	//TODO: Make a function that does the following 3 rows
+	auto& stat = m_app->getSettings().gameSettingsStatic;
+	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+	NWrapperSingleton::getInstance().getNetworkWrapper()->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
+
 	Player* p = NWrapperSingleton::getInstance().getPlayer(playerId);
 	p->name = name;
 

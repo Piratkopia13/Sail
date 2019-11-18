@@ -494,8 +494,9 @@ void LobbyState::renderGameSettings() {
 		ImGui::PopFont();
 		ImGui::Separator();
 
-
-		m_optionsWindow.renderGameOptions();
+		if (m_optionsWindow.renderGameOptions()) {
+			m_settingsChanged = true;
+		}
 	}
 	ImGui::End();
 }
