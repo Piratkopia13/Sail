@@ -11,6 +11,7 @@ struct Rect {
 	int sizex;
 	int sizey;
 	int doors = 0;
+	bool isCloning = false;
 };
 struct Clutter {
 	float posx;
