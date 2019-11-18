@@ -226,3 +226,15 @@ void NWrapperClient::requestTeam(char team) {
 	char msg[] = { ML_TEAM_REQUEST, team, ML_NULL };
 	sendMsg(msg, sizeof(msg));
 }
+
+void NWrapperClient::updateStateLoadStatus(States::ID state, char status) {
+	m_lastReportedState = state;
+
+	Player* myPlayer = NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID());
+	myPlayer->lastStateStatus.state = state;
+	myPlayer->lastStateStatus.status = status;
+
+	char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, NWrapperSingleton::getInstance().getMyPlayerID(), state, status, ML_NULL };
+
+	sendMsg(msg, sizeof(msg));
+}

@@ -17,6 +17,12 @@
 
 bool NWrapperHost::host(int port) {
 	bool result = m_network->host(port);
+
+	m_unusedPlayerIds.clear();
+	for (Netcode::PlayerID id = 1; id < NWrapperSingleton::getInstance().getPlayerLimit(); id++) {
+		m_unusedPlayerIds.push_back(id);
+	}
+
 	return result;
 }
 
@@ -39,8 +45,15 @@ void NWrapperHost::sendChatMsg(std::string msg) {
 }
 
 void NWrapperHost::updateServerDescription() {
-	m_serverDescription = m_lobbyName + " (" + std::to_string(NWrapperSingleton::getInstance().getPlayers().size()) + "/12)";
+	m_serverDescription.clear();
+	int neededSize = 3 + m_lobbyName.length() + 1;
+	m_serverDescription.resize(neededSize);
 
+	m_serverDescription[0] = (unsigned char)NWrapperSingleton::getInstance().getPlayers().size();
+	m_serverDescription[1] = NWrapperSingleton::getInstance().getPlayerLimit();
+	m_serverDescription[2] = (unsigned char)m_lastReportedState;
+
+	memcpy(&m_serverDescription[3], &m_lobbyName[0], m_lobbyName.length() + 1);
 	m_network->setServerMetaDescription(m_serverDescription.c_str(), m_serverDescription.length() + 1);
 }
 
@@ -76,23 +89,37 @@ const std::string& NWrapperHost::getLobbyName() {
 void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 	// Generate an ID for the client that joined and send that information.
 
-	m_IdDistribution++;
-	unsigned char newPlayerId = m_IdDistribution;
-
-	if (NWrapperSingleton::getInstance().playerJoined(Player{ newPlayerId, "NoName" }, false)) {
-		m_connectionsMap.insert(std::pair<TCP_CONNECTION_ID, unsigned char>(tcp_id, newPlayerId));
-		//Send the newPlayerId to the new player and request a name, which upon retrieval will be sent to all clients.
-		char msg[3] = {ML_NAME_REQUEST, newPlayerId, ML_NULL};
-		m_network->send(msg, sizeof(msg), tcp_id);
+	if (m_unusedPlayerIds.empty()) {
+		m_network->kickConnection(tcp_id);
+		return;
 	} else {
-		m_IdDistribution--;
-	}
+		Netcode::PlayerID newPlayerId = m_unusedPlayerIds.front();
+		SAIL_LOG("New PLayer ID: " + std::to_string(newPlayerId));
+
+		if (NWrapperSingleton::getInstance().playerJoined(Player{ newPlayerId, "NoName" }, false)) {
+			m_unusedPlayerIds.pop_front();
+			m_connectionsMap.insert(std::pair<TCP_CONNECTION_ID, unsigned char>(tcp_id, newPlayerId));
+			//Send the newPlayerId to the new player and request a name, which upon retrieval will be sent to all clients.
+			char msg[3] = {ML_NAME_REQUEST, newPlayerId, ML_NULL};
+			m_network->send(msg, sizeof(msg), tcp_id);
+		} else {
+			m_network->kickConnection(tcp_id);
+		}
 	
-	updateServerDescription();
+		updateServerDescription();
+	}
 }
 
 void NWrapperHost::playerDisconnected(TCP_CONNECTION_ID tcp_id) {
+
+	if (m_connectionsMap.count(tcp_id) == 0) {
+		return;
+	}
+
 	Netcode::PlayerID playerID = m_connectionsMap.at(tcp_id);
+	m_connectionsMap.erase(tcp_id);
+
+	m_unusedPlayerIds.push_back(playerID);
 	PlayerLeftReason reason = m_network->wasKicked(tcp_id) ? PlayerLeftReason::KICKED : PlayerLeftReason::CONNECTION_LOST;
 	
 	char msg[] = { ML_DISCONNECT, playerID, (char)reason, ML_NULL};
@@ -300,5 +327,18 @@ void NWrapperHost::setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool d
 			EventDispatcher::Instance().emit(NetworkPlayerChangedTeam(playerID));
 		}
 	}
+}
+
+void NWrapperHost::updateStateLoadStatus(States::ID state, char status) {
+	m_lastReportedState = state;
+
+	Player* myPlayer = NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID());
+	myPlayer->lastStateStatus.state = state;
+	myPlayer->lastStateStatus.status = status;
+
+	char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, NWrapperSingleton::getInstance().getMyPlayerID(), state, status, ML_NULL };
+	
+	updateServerDescription();
+	sendMsgAllClients(msg, sizeof(msg));
 }
 
