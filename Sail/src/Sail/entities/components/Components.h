@@ -11,6 +11,7 @@
 #include "CollisionComponent.h"
 #include "CollisionSpheresComponent.h"
 #include "CullingComponent.h"
+#include "CrosshairComponent.h"
 #include "FSMComponent.h"
 #include "GunComponent.h"
 #include "LifeTimeComponent.h"
