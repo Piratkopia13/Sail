@@ -15,6 +15,7 @@ CandlePlacementSystem::CandlePlacementSystem() {
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<NetworkSenderComponent>(false, true, false);
+	//registerComponent<RenderInActiveGameComponent>(true, false, false);
 
 	registerComponent<AnimationComponent>(false, true, true);
 	registerComponent<CollisionComponent>(false, true, true);

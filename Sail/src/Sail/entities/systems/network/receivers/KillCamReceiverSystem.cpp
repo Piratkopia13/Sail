@@ -116,16 +116,13 @@ void KillCamReceiverSystem::enableSprinklers() {
 }
 
 void KillCamReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId, const Netcode::PlayerID shooterID) {
-	//for (auto& e : entities) {
-	//	if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
+	if (auto e = findFromNetID(candleId); e) {
+		e->getComponent<CandleComponent>()->wasJustExtinguished = true;
+		e->getComponent<CandleComponent>()->wasHitByPlayerID = shooterID;
 
-	//		e->getComponent<CandleComponent>()->wasJustExtinguished = true;
-	//		e->getComponent<CandleComponent>()->wasHitByPlayerID = shooterID;
-
-	//		return;
-	//	}
-	//}
-	//SAIL_LOG_WARNING("extinguishCandle called but no matching candle entity found");
+		return;
+	}
+	SAIL_LOG_WARNING("extinguishCandle called but no matching candle entity found");
 }
 
 void KillCamReceiverSystem::hitBySprinkler(const Netcode::ComponentID candleOwnerID) {
@@ -134,6 +131,21 @@ void KillCamReceiverSystem::hitBySprinkler(const Netcode::ComponentID candleOwne
 
 void KillCamReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 	//EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
+
+	if (auto candle = findFromNetID(candleID); candle) {
+
+		auto candleComp = candle->getComponent<CandleComponent>();
+		if (!candleComp->isLit) {
+			candleComp->health = MAX_HEALTH;
+			candleComp->respawns++;
+			candleComp->downTime = 0.f;
+			candleComp->isLit = true;
+			candleComp->userReignition = false;
+			candleComp->invincibleTimer = 1.5f;
+		}
+	} else {
+		SAIL_LOG_WARNING("igniteCandle called but no matching entity found");
+	}
 }
 
 void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
@@ -160,13 +172,30 @@ void KillCamReceiverSystem::setAnimation(const Netcode::ComponentID id, const An
 }
 
 void KillCamReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId, const float health) {
-	//for (auto& e : entities) {
-	//	if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
-	//		e->getComponent<CandleComponent>()->health = health;
-	//		return;
-	//	}
-	//}
-	//SAIL_LOG_WARNING("setCandleHelath called but no matching candle entity found");
+	for (auto& e : entities) {
+		if (e->getComponent<ReplayReceiverComponent>()->m_id == candleId) {
+			auto candle = e->getComponent<CandleComponent>();
+			candle->health = health;
+			// Scale fire particles with health
+			auto particles = e->getComponent<ParticleEmitterComponent>();
+			particles->spawnRate = 0.01f * (MAX_HEALTH / candle->health);
+
+			if (candle->wasJustExtinguished) {
+				candle->health = 0.0f;
+				candle->isLit = false;
+				candle->wasJustExtinguished = false; // reset for the next tick
+			}
+
+			// COLOR/INTENSITY
+			float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
+
+			LightComponent* lc = e->getComponent<LightComponent>();
+
+			lc->getPointLight().setColor(tempHealthRatio * lc->defaultColor);
+			return;
+		}
+	}
+	SAIL_LOG_WARNING("setCandleHelath called but no matching candle entity found");
 }
 
 // The player who puts down their candle does this in CandleSystem and tests collisions
@@ -174,6 +203,45 @@ void KillCamReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId,
 void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const bool isHeld) {
 
 	//EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld));
+
+
+	Entity* player = nullptr;
+	Entity* candle = nullptr;
+
+	// Find the candle whose parent has the correct ID
+	for (auto candleEntity : entities) {
+		if (auto parentEntity = candleEntity->getParent(); parentEntity) {
+			if (parentEntity->getComponent<ReplayReceiverComponent>()->m_id == id) {
+				player = parentEntity;
+				candle = candleEntity;
+				break;
+			}
+		}
+	}
+
+	// candle exists => player exists (only need to check candle)
+	if (!candle) {
+		Logger::Warning("Holding candle toggled but no matching entity found");
+		return;
+	}
+
+	auto candleComp = candle->getComponent<CandleComponent>();
+	auto candleTransComp = candle->getComponent<TransformComponent>();
+
+	candleComp->isCarried = isHeld;
+	candleComp->wasCarriedLastUpdate = isHeld;
+	if (isHeld) {
+		candleTransComp->setTranslation(glm::vec3(10.f, 2.0f, 0.f));
+		candleTransComp->setParent(player->getComponent<TransformComponent>());
+
+		player->getComponent<AnimationComponent>()->rightHandEntity = candle;
+	} else {
+		candleTransComp->removeParent();
+		player->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
+
+		// Might be needed
+		ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+	}
 
 }
 
