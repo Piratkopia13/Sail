@@ -121,6 +121,7 @@ void NetworkReceiverSystem::setAnimation(const Netcode::ComponentID id, const An
 		auto animation = e->getComponent<AnimationComponent>();
 		animation->setAnimation(info.index);
 		animation->animationTime = info.time;
+		animation->pitch = info.pitch;
 		return;
 	}
 	SAIL_LOG_WARNING("setAnimation called but no matching entity found");

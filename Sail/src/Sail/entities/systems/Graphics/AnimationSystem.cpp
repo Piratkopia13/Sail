@@ -166,11 +166,12 @@ void AnimationSystem::updateTransforms(const float dt) {
 			// weight = time - time(0) / time(1) - time(0)
 
 			const float w = (animationC->animationTime - frame0Time) / (frame1Time - frame0Time);
-			glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				interpolate(animationC->transforms[transformIndex], transforms00[transformIndex], transforms01[transformIndex], w);
 				// Rotate the upper body in relation to camera pitch
 				if (transformIndex > 0 && transformIndex < 31) {
+					// Origin of root bone - "hips"
+					const glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
 					auto trans = glm::translate(transOrig) * glm::rotate(animationC->pitch, glm::vec3(1.f, 0.f, 0.f)) * glm::translate(-transOrig);
 					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
 				}
