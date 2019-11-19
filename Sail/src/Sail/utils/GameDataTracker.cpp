@@ -76,12 +76,7 @@ void GameDataTracker::logDistanceWalked(glm::vec3 vector) {
 	if (m_trackLocalStats) {
 		float distanceOfVector = sqrt(pow(vector.x, 2) + pow(vector.y, 2) + pow(vector.z, 2));
 		m_loggedData.distanceWalked += distanceOfVector;
-	}
-	
-}
-
-void GameDataTracker::logPlayerDeath(const std::string& killer, const std::string& killed, const std::string& deathType) {
-	m_killFeed.emplace_back(killer + " " + deathType + " " + killed);
+	}	
 }
 
 void GameDataTracker::logPlacement(Netcode::PlayerID playerID) {

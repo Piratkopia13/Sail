@@ -43,7 +43,6 @@ public:
 	void logEnemyKilled(Netcode::PlayerID playerID);// CandleSystem::update
 	void logJump();								// ...GameInputSystem::update()
 	void logDistanceWalked(glm::vec3 vector);	// ...PhysicsSystem::update()
-	void logPlayerDeath(const std::string& killer, const std::string& killed, const std::string& deathType); // used to log when a player is killed
 	void logPlacement(Netcode::PlayerID playerID);// CandleSystem::update
 	void logMessage(const std::string& message);// CandleSystem::update
 
