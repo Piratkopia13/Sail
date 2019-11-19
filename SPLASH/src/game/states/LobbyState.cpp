@@ -118,10 +118,6 @@ LobbyState::~LobbyState() {
 }
 
 bool LobbyState::processInput(float dt) {
-	//if (m_input->IsMouseButtonPressed(0)) {
-	//	m_chatFocus = false;
-	//}
-
 	return false;
 }
 
@@ -166,6 +162,7 @@ bool LobbyState::render(float dt, float alpha) {
 
 bool LobbyState::renderImgui(float dt) {
 
+	//Keep all this
 	//ImGui::ShowDemoWindow();
 	static std::string font = "Beb30";
 	//ImGui::PushFont(m_imGuiHandler->getFont(font));
@@ -216,7 +213,6 @@ bool LobbyState::renderImgui(float dt) {
 		ImGui::SetNextWindowSize(m_size);
 		ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 
-		//ImGui::SetNextWindowSize(ImVec2(500, 500));
 		if (ImGui::Begin("##OptionsMenu", nullptr, m_backgroundOnlyflags)) {
 
 			ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
@@ -484,7 +480,6 @@ void LobbyState::renderGameSettings() {
 	settingsFlags |= ImGuiWindowFlags_NoSavedSettings;
 
 
-	// Uncomment when we actually have game settings
 	ImGui::SetNextWindowPos(m_pos);
 	ImGui::SetNextWindowSize(m_size);
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
@@ -522,7 +517,7 @@ void LobbyState::renderChat() {
 
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowSize(size);
-	//ImGui::SetNextWindowSizeConstraints(size);
+	//ImGui::SetNextWindowSizeConstraints(size); Keep
 	if (ImGui::Begin("##CHATWINDOW", nullptr, chatFlags)) {
 
 		if(ImGui::BeginChild("##CHATTEXT", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
@@ -571,50 +566,6 @@ void LobbyState::renderChat() {
 
 
 
-	//// ------- message BOX ------- 
-	//ImGui::SetNextWindowPos(ImVec2(
-	//	m_outerPadding,
-	//	m_screenHeight - (m_outerPadding + m_textHeight)
-	//));
-	//ImGui::Begin(
-	//	"Write Here",
-	//	NULL,
-	//	chatFlags
-	//);
-
-	//if (m_firstFrame) {
-	//	m_firstFrame = false;
-	//	m_chatFocus = false;
-	//}
-	//ImGui::Text("Enter message:");
-	//if (ImGui::InputText("", m_currentmessage, m_messageSizeLimit, ImGuiInputTextFlags_EnterReturnsTrue)) {
-	//	
-	//}
-
-
-	//ImGui::End();
-
-	//// ------- CHAT LOG ------- 
-	//ImGui::SetNextWindowSize(ImVec2(
-	//	400,
-	//	300
-	//));
-	//ImGui::SetNextWindowPos(ImVec2(
-	//	m_outerPadding,
-	//	m_screenHeight - (300 + m_outerPadding)
-	//));
-
-	//// Render message history
-	//ImGui::Begin("Chat Log", NULL, chatFlags);
-	//ImGui::SameLine();
-	//ImGui::BeginChild("messages");
-	//for (auto currentmessage : m_messages) {
-	//	ImGui::Text(
-	//		currentmessage.c_str()
-	//	);
-	//}
-	//ImGui::EndChild();
-	//ImGui::End();
 }
 
 void LobbyState::renderMenu() {
