@@ -128,6 +128,8 @@ void LevelSystem::destroyWorld() {
 		}
 		Memory::SafeDeleteArr(tileArr);
 	}
+	spawnPoints.clear();
+	extraSpawnPoints.clear();
 
 	while(chunks.size()>0){
 		chunks.pop();
