@@ -123,7 +123,7 @@ bool KillFeedWindow::onEvent(const Event& event) {
 		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
 			killFeedInfo.name1 = "The sprinklers";
 		} else {
-			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.shooterID))->name;
+			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
 		}
 
 		killFeedInfo.type = "sprayed down";
@@ -131,10 +131,6 @@ bool KillFeedWindow::onEvent(const Event& event) {
 
 		std::string message = killFeedInfo.name1 + " " + killFeedInfo.type + " " + killFeedInfo.name2;
 		SAIL_LOG(message);
-
-		if (e.shooterID != Netcode::MESSAGE_SPRINKLER_ID && e.shooterID != Netcode::MESSAGE_INSANITY_ID) {
-			GameDataTracker::getInstance().logEnemyKilled(e.shooterID);
-		}
 
 		auto myID = NWrapperSingleton::getInstance().getMyPlayerID();
 		if (e.shooterID == myID) {
