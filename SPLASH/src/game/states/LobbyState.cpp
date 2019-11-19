@@ -41,10 +41,13 @@ LobbyState::LobbyState(StateStack& stack)
 	m_textHeight = 52;
 	m_outerPadding = 15;
 
-	m_messageLimit = 14;		// Should be based on size of chatbox instead of fixed
+	m_messageLimit = 30;		// Should be based on size of chatbox instead of fixed
 	m_messageCount = 0;
 	m_settingBotCount = new int;
 	*m_settingBotCount = 0;
+	m_timeSinceLastMessage = 0.0f;
+	m_fadeTime = 3.0f;
+	m_fadeThreshold = 3.0f;
 
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
@@ -151,7 +154,7 @@ bool LobbyState::update(float dt, float alpha) {
 		m_timeSinceLastUpdate = 0.0f;
 	}
 	m_timeSinceLastUpdate += dt;
-
+	m_timeSinceLastMessage += dt;
 	return false;
 }
 
@@ -272,17 +275,8 @@ std::string LobbyState::fetchMessage()
 void LobbyState::addMessageToChat(const Message& message) {
 	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
 	// Add sender to the text
-
-	std::string msg;
-	if (message.senderID != 255) {
-		Player* playa = NWrapperSingleton::getInstance().getPlayer(message.senderID);
-		msg = playa->name + ": ";
-	}
-	msg += message.content;
-	// Add message to chatlog
-	m_messages.push_back(msg);
-
-	// New messages replace old
+	m_timeSinceLastMessage = 0.0f;
+	m_messages.emplace_back(message);
 	if (m_messages.size() > m_messageLimit) {
 		m_messages.pop_front();
 	}
@@ -314,6 +308,17 @@ bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 }
 
 bool LobbyState::onPlayerDisconnected(const NetworkDisconnectEvent& event) {
+	
+	//event.player.id
+	auto it = m_messages.begin();
+	while (it != m_messages.end()) {
+		if (it->senderID == event.player.id) {
+			it->content = event.player.name+": "+it->content;
+			it->senderID = char(254);
+		}
+		it++;
+	}
+
 	Message message;
 	message.content = event.player.name;
 	message.content += (event.reason == PlayerLeftReason::KICKED) ? " was kicked!" : " left the game!";
@@ -627,17 +632,61 @@ void LobbyState::renderChat() {
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowSize(size);
 	//ImGui::SetNextWindowSizeConstraints(size); Keep
-	if (ImGui::Begin("##CHATWINDOW", nullptr, chatFlags)) {
+	static bool focus = false;
+	static bool pop = false;
+	pop = false;
+	if (focus) {
+		m_timeSinceLastMessage = 0.0f;
+	}
+	static float alpha = 1.0f;
+	alpha = 1.0f;
+	if (m_timeSinceLastMessage > m_fadeThreshold) {
+		pop = true;
+		alpha = 1.0f - ((m_timeSinceLastMessage - m_fadeThreshold) / m_fadeTime);
+		alpha = alpha < 0.02f ? 0.02f : alpha;
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
+		//ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
 
-		if(ImGui::BeginChild("##CHATTEXT", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
-			for (auto currentmessage : m_messages) {
-				ImGui::Text(
-					currentmessage.c_str()
-				);
+	}
+
+
+	if (ImGui::Begin("##CHATWINDOW", nullptr, chatFlags)) {
+		ImGui::PushFont(m_imGuiHandler->getFont("Beb20"));
+		if(ImGui::BeginChild("##CHATTEXT", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()-10))) {
+			for (auto currentMessage : m_messages) {
+				//System or player which has left
+				if (currentMessage.senderID == 255 || currentMessage.senderID == 254) {
+					ImGui::Text(currentMessage.content.c_str());
+				}
+				//Player
+				else {
+					if (auto * player = NWrapperSingleton::getInstance().getPlayer(currentMessage.senderID)) {
+						int team = player->team;
+						glm::vec3 temp = m_settings->getColor(m_settings->teamColorIndex(team));
+						ImVec4 col(
+							temp.r,
+							temp.g,
+							temp.b,
+							1
+						);
+						ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
+						ImGui::PushStyleColor(ImGuiCol_Text, col);
+						ImGui::Text(player->name.c_str());
+						ImGui::PopStyleColor();
+						ImGui::SameLine();
+						ImGui::Text(std::string(": " + currentMessage.content).c_str());
+						ImGui::PopStyleVar();
+					}
+
+
+				}
+				
+				
 			}
 		}
 		ImGui::EndChild();
-		static bool focus = false;
+		ImGui::PopFont();
+		
 		static bool justSent = false;
 		static bool releasedEnter = true;
 		justSent = false;
@@ -652,6 +701,8 @@ void LobbyState::renderChat() {
 		if (ImGui::IsKeyReleased(SAIL_KEY_RETURN)) {
 			releasedEnter = true;
 		}
+		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.9f);
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
 		if (ImGui::InputTextWithHint("##ChatInput", (focus ? "" : "Press enter to chat"), buf, m_messageSizeLimit, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			m_message = buf;
 			if (m_message != "" && releasedEnter) {
@@ -667,8 +718,23 @@ void LobbyState::renderChat() {
 		else {
 			m_message = buf;
 		}
+		ImGui::PopStyleVar();
 		focus = ImGui::IsItemActive() || justSent;
+		ImGui::SameLine();
+		if (ImGui::Button(" >  ")) {
+			if (m_message != "") {
+				EventDispatcher::Instance().emit(ChatSent(m_message));
+				m_message = "";
+				justSent = true;
+			}
+		}
+
+
 	}
+	if (pop) {
+		ImGui::PopStyleVar();
+	}
+
 
 	ImGui::End();
 

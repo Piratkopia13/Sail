@@ -232,11 +232,11 @@ void SettingStorage::createGameColorsDefault() {
 	std::vector<glm::vec3> col({
 		{183,23,33}, // red
 		{0,68,253}, // Blue
+		{21,131,0}, // Green
+		{253,222,45}, // Yellow
 		{37,172,238}, // Teal
 		{83,3,130}, // Purple
-		{253,222,45}, // Yellow
 		{255,142,20}, // Orange
-		{21,131,0}, // Green
 		{234,95,176}, // Pink
 		{33,4,193}, // Violet
 		{82,83,147}, // light grey
@@ -264,11 +264,11 @@ void SettingStorage::createGameColorsDefault() {
 		gameSettingsStatic["team" + std::to_string(i)]["color"] = Setting(i, std::vector<Setting::Option>({
 			{ "Red", 0.0f },
 			{ "Blue", 1.0f },
-			{ "Teal", 2.0f },
-			{ "Purple", 3.0f },
-			{ "Yellow", 4.0f },
-			{ "Orange", 5.0f },
-			{ "Green", 6.0f },
+			{ "Green", 2.0f },
+			{ "Yellow", 3.0f },
+			{ "Teal", 4.0f },
+			{ "Purple", 5.0f },
+			{ "Orange", 6.0f },
 			{ "Pink", 7.0f },
 			{ "Violet", 8.0f },
 			{ "Grey", 9.0f },

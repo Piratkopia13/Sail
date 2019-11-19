@@ -46,7 +46,7 @@ protected:
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
 	std::string m_message;
-	std::list<std::string> m_messages;
+	std::list<Message> m_messages;
 
 	// Front-End Functions
 	bool inputToChatLog(const MSG& msg);
@@ -71,6 +71,9 @@ private:
 	bool m_firstFrame = true;	// Used solely for ImGui
 	bool m_chatFocus = true;	// Used solely for ImGui
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
+	float m_timeSinceLastMessage;
+	float m_fadeTime;
+	float m_fadeThreshold;
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	bool m_settingsChanged;
