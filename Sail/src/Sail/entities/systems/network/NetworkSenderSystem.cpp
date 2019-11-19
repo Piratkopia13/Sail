@@ -215,8 +215,11 @@ void NetworkSenderSystem::pushDataToBuffer(const std::string& data) {
 unsigned int NetworkSenderSystem::getByteSize() const {
 	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
 	size += m_eventQueue.size() * sizeof(NetworkSenderEvent*);
-	size += m_HOSTONLY_dataToForward.size() * sizeof(std::string);
-	size += m_HOSTONLY_dataToForward.size() * m_HOSTONLY_dataToForward.front().capacity() * sizeof(unsigned char);		// Approximate string length
+	const size_t queueSize = m_HOSTONLY_dataToForward.size();
+	size += queueSize * sizeof(std::string);
+	if (queueSize) {
+		size += queueSize * m_HOSTONLY_dataToForward.front().capacity() * sizeof(unsigned char);		// Approximate string length
+	}
 	return size;
 }
 #endif

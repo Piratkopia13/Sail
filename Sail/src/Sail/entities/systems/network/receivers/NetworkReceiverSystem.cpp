@@ -57,8 +57,11 @@ void NetworkReceiverSystem::update(float dt) {
 #ifdef DEVELOPMENT
 unsigned int NetworkReceiverSystem::getByteSize() const {
 	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
-	size += m_incomingDataBuffer.size() * sizeof(std::string);
-	size += m_incomingDataBuffer.size() * m_incomingDataBuffer.front().capacity() * sizeof(unsigned char);	// Approximate string length
+	const size_t queueSize = m_incomingDataBuffer.size();
+	size += queueSize * sizeof(std::string);
+	if (queueSize) {
+		size += queueSize * m_incomingDataBuffer.front().capacity() * sizeof(unsigned char);	// Approximate string length
+	}
 	return 0;
 }
 #endif

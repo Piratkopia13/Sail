@@ -82,7 +82,9 @@ unsigned int KillCamReceiverSystem::getByteSize() const {
 		const auto& queue = m_replayData[i];
 		const size_t queueSize = queue.size();
 		size += queueSize * sizeof(std::string);								// string structure size
-		size += queueSize * queue.front().capacity() * sizeof(unsigned char);	// approximate string character length
+		if (queueSize) {
+			size += queueSize * queue.front().capacity() * sizeof(unsigned char);	// approximate string character length
+		}
 	}
 	return size;
 }
