@@ -9,7 +9,7 @@ public:
 	~DX12ComputeShaderDispatcher();
 
 	virtual void begin(void* cmdList = nullptr) override;
-	virtual Shader::ComputeShaderOutput& dispatch(Shader& computeShader, Shader::ComputeShaderInput& input, int meshIndex, void* cmdList) override;
+	virtual Shader::ComputeShaderOutput& dispatch(Shader& computeShader, Shader::ComputeShaderInput& input, void* cmdList) override;
 
 private:
 	DX12API* m_context;

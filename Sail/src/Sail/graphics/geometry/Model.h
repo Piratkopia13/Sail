@@ -24,6 +24,7 @@ public:
 
 	Mesh* getMesh(unsigned int index);
 	UINT getNumberOfMeshes() const;
+	unsigned int getByteSize() const;
 
 	void setIsAnimated(bool animated);
 	bool isAnimated() const;
@@ -37,4 +38,5 @@ private:
 	bool m_isAnimated;
 	bool m_castShadows;
 
+	unsigned int m_totalByteSize;
 };

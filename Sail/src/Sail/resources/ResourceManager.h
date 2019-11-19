@@ -52,6 +52,7 @@ public:
 	Model& getModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
 	Model& getModelCopy(const std::string& filename, Shader* shader = nullptr);
 	bool hasModel(const std::string& filename);
+	void clearSceneData();
 
 	// Animations
 	void loadAnimationStack(const std::string& fileName, const ImporterType type = SAIL_FBXSDK);
@@ -95,11 +96,21 @@ public:
 
 	const unsigned int numberOfModels() const;
 	const unsigned int numberOfTextures() const;
+	const unsigned int getByteSize() const;
 	// SoundManager
 	//SoundManager* getSoundManager();
 
 private:
 	const std::string getSuitableName(const std::string& name);
+
+	enum RMDataType {
+		Models = 0,
+		Animations,
+		Audio,
+		Textures,
+		Generic
+	};
+	unsigned int m_byteSize[5];
 
 private:
 	// Audio files/data mapped to their filenames
