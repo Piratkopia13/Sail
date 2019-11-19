@@ -89,3 +89,9 @@ void ProjectileSystem::update(float dt) {
 		projComp->timeSinceLastDecal += dt;
 	}
 }
+
+#ifdef DEVELOPMENT
+unsigned int ProjectileSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif

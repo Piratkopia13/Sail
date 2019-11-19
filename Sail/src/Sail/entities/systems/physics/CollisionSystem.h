@@ -11,6 +11,10 @@ public:
 	void provideOctree(Octree* octree);
 	void update(float dt);
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
+
 private:
 	bool collisionUpdatePart(float dt, size_t start, size_t end);
 	bool surfaceFromCollisionPart(float dt, size_t start, size_t end);

@@ -82,6 +82,10 @@ public:
 	const int getRoomID(int posX, int posY);
 	const RoomInfo getRoomInfo(int ID);
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
+
 	int xsize;
 	int ysize;
 	int*** tileArr; //0 is tileID, 1 is typeID, 2 is door
@@ -122,7 +126,7 @@ private:
 	void addSpawnPoints();
 	void addDoors();
 	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize,float tileHeight, int tileOffset, int i, int j, Model* bb);
-	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize,float tileHeight, float tileOffset, int i, int j, Model* bb);
+	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize,float tileHeight, int tileOffset, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);
 	void generateClutter();
 };

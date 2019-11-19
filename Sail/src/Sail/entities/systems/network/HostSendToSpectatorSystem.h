@@ -22,6 +22,11 @@ public:
 	void init(Netcode::PlayerID playerID);
 
 	void sendEntityCreationPackage(Netcode::PlayerID PlayerId) const;
+
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
+
 private:
 	Netcode::PlayerID m_playerID;
 };

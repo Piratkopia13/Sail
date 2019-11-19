@@ -24,6 +24,9 @@ public:
 	void enableSprinklers();
 	void setOctree(Octree* octree);
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
 private:
 	bool m_addNewSprinklers = true;
 	bool m_enableSprinklers = false;

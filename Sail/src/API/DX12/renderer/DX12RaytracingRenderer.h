@@ -25,6 +25,7 @@ public:
 	virtual void updateMetaballAABB();
 
 	void setGBufferInputs(DX12RenderableTexture** inputs);
+	DXRBase* getDXRBase();
 
 private:
 	bool onResize(const WindowResizeEvent& event);

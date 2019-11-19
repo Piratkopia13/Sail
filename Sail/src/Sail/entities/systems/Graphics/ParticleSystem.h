@@ -1,7 +1,7 @@
 #pragma once
 #include "..//BaseComponentSystem.h"
 
-class ID3D12GraphicsCommandList4;
+struct ID3D12GraphicsCommandList4;
 
 class ParticleSystem final : public BaseComponentSystem {
 public:
