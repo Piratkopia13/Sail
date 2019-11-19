@@ -18,6 +18,8 @@
 
 #include "DDSTextureLoader12.h"
 
+#include "API/DX12/DX12Utils.h"
+
 #include <assert.h>
 #include <algorithm>
 #include <memory>
@@ -131,7 +133,7 @@ namespace
     inline HANDLE safe_handle(HANDLE h) { return (h == INVALID_HANDLE_VALUE) ? nullptr : h; }
 
     template<UINT TNameLength>
-    inline void SetDebugObjectName(_In_ ID3D12DeviceChild* resource, _In_z_ const wchar_t(&name)[TNameLength])
+    inline void SetDebugObjectName(_In_ ID3D12Device5Child* resource, _In_z_ const wchar_t(&name)[TNameLength])
     {
         #if !defined(NO_D3D12_DEBUG_NAME) && ( defined(_DEBUG) || defined(PROFILE) )
             resource->SetName(name);
@@ -1084,7 +1086,7 @@ namespace
 
     //--------------------------------------------------------------------------------------
     HRESULT CreateTextureResource(
-        _In_ ID3D12Device* d3dDevice,
+        _In_ ID3D12Device5* d3dDevice,
         D3D12_RESOURCE_DIMENSION resDim,
         size_t width,
         size_t height,
@@ -1125,13 +1127,13 @@ namespace
 		defaultHeapProperties.CreationNodeMask = 1;
 		defaultHeapProperties.VisibleNodeMask = 1;
 
-        hr = d3dDevice->CreateCommittedResource(
+		DX12Utils::CreateBuffer(d3dDevice, desc.DepthOrArraySize, desc.Flags, D3D12_RESOURCE_STATE_COPY_DEST, &defaultHeapProperties, &desc);/*d3dDevice->CreateCommittedResource(
             &defaultHeapProperties,
             D3D12_HEAP_FLAG_NONE,
             &desc,
             D3D12_RESOURCE_STATE_COPY_DEST,
             nullptr,
-            IID_ID3D12Resource, reinterpret_cast<void**>(texture));
+            IID_ID3D12Resource, reinterpret_cast<void**>(texture));*/
         if (SUCCEEDED(hr))
         {
             _Analysis_assume_(*texture != nullptr);
@@ -1143,7 +1145,7 @@ namespace
     }
 
     //--------------------------------------------------------------------------------------
-    HRESULT CreateTextureFromDDS(_In_ ID3D12Device* d3dDevice,
+    HRESULT CreateTextureFromDDS(_In_ ID3D12Device5* d3dDevice,
         _In_ const DDS_HEADER* header,
         _In_reads_bytes_(bitSize) const uint8_t* bitData,
         size_t bitSize,
@@ -1467,7 +1469,7 @@ namespace
 //--------------------------------------------------------------------------------------
 _Use_decl_annotations_
 HRESULT DirectX::LoadDDSTextureFromMemory(
-    ID3D12Device* d3dDevice,
+    ID3D12Device5* d3dDevice,
     const uint8_t* ddsData,
     size_t ddsDataSize,
     ID3D12Resource** texture,
@@ -1492,7 +1494,7 @@ HRESULT DirectX::LoadDDSTextureFromMemory(
 
 _Use_decl_annotations_
 HRESULT DirectX::LoadDDSTextureFromMemoryEx(
-    ID3D12Device* d3dDevice,
+    ID3D12Device5* d3dDevice,
     const uint8_t* ddsData,
     size_t ddsDataSize,
     size_t maxsize,
@@ -1558,7 +1560,7 @@ HRESULT DirectX::LoadDDSTextureFromMemoryEx(
 //--------------------------------------------------------------------------------------
 _Use_decl_annotations_
 HRESULT DirectX::LoadDDSTextureFromFile(
-    ID3D12Device* d3dDevice,
+    ID3D12Device5* d3dDevice,
     const wchar_t* fileName,
     ID3D12Resource** texture,
     std::unique_ptr<uint8_t[]>& ddsData,
@@ -1582,7 +1584,7 @@ HRESULT DirectX::LoadDDSTextureFromFile(
 
 _Use_decl_annotations_
 HRESULT DirectX::LoadDDSTextureFromFileEx(
-    ID3D12Device* d3dDevice,
+    ID3D12Device5* d3dDevice,
     const wchar_t* fileName,
     size_t maxsize,
     D3D12_RESOURCE_FLAGS resFlags,
