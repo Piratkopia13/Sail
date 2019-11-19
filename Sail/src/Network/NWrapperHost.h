@@ -24,9 +24,9 @@ public:
 
 private:
 	std::map<TCP_CONNECTION_ID, Netcode::PlayerID> m_connectionsMap;
-	unsigned char m_IdDistribution = 0;
 	std::string m_lobbyName = "";
 	std::string m_serverDescription = "";
+	std::deque<Netcode::PlayerID> m_unusedPlayerIds;
 
 	void sendChatMsg(std::string msg);
 
@@ -49,5 +49,7 @@ private:
 
 	virtual void requestTeam(char team);
 	virtual void setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch = true);
+
+	virtual void updateStateLoadStatus(States::ID state, char status) override;
 
 };

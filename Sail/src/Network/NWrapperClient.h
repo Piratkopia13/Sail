@@ -24,4 +24,6 @@ private:
 
 	virtual void requestTeam(char team);
 
+	virtual void updateStateLoadStatus(States::ID state, char status) override;
+
 };

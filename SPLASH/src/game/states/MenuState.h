@@ -59,8 +59,8 @@ private:
 	 
 
 	struct FoundLobby {
-		std::string ip;
-		std::string description;
+		GameOnLanDescription gameDescription;
+		std::string serverIdentifier;
 		double duration = 20;
 		void resetDuration() { duration = 20; }
 	};

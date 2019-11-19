@@ -215,7 +215,7 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		context->getDevice()->CreateUnorderedAccessView(m_physicsBufferDefaultHeap[context->getSwapIndex()].Get(), nullptr, &uavDesc, cdh);
 		//-------------------------------------
 
-		m_dispatcher->dispatch(*m_particleShader, Shader::ComputeShaderInput(), 0, cmdList);
+		m_dispatcher->dispatch(*m_particleShader, Shader::ComputeShaderInput(), cmdList);
 
 		context->getComputeGPUDescriptorHeap()->getAndStepIndex(11);
 
