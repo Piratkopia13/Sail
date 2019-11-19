@@ -1445,9 +1445,9 @@ void LevelSystem::generateClutter() {
 			vats.rot = 270;
 			vats.posx = (room.posx+0.5f )  * tileSize + tileOffset - tileSize / 2.f;
 			vats.posy = (room.posy + (room.sizey)/2.0f ) * tileSize + tileOffset - tileSize / 2.f;
-			extraSpawnPoints.push_back(glm::vec3(vats.posx, 0.1f, vats.posy));
+			extraSpawnPoints.push_back(glm::vec3(vats.posx, 0.5f, vats.posy));
 			specialClutter.push(vats);
-			room.isCloning = true;
+			matched.at(i).isCloning = true;
 		}
 		else if (room.sizey > 2 && makeRoomCloningChance > 60) {
 			Clutter vats;
@@ -1467,14 +1467,14 @@ void LevelSystem::generateClutter() {
 			vats.posx = (room.posx + (room.sizex) / 2.0f) * tileSize + tileOffset - tileSize / 2.f;
 			extraSpawnPoints.push_back(glm::vec3(vats.posx, 0.1f, vats.posy));
 			specialClutter.push(vats);
-			room.isCloning = true;
+			matched.at(i).isCloning = true;
 		}
 #endif
 		else {
 			for (int x = 0; x < room.sizex; x++) {
 				for (int y = 0; y < room.sizey; y++) {
 					if ((x+0.5f)!=room.sizex/2.f || (y + 0.5f) != room.sizey / 2.f) {
-						extraSpawnPoints.push_back(glm::vec3((room.posx + x) * tileSize, 0.1f, (room.posy + y) * tileSize));
+						extraSpawnPoints.push_back(glm::vec3((room.posx + x) * tileSize, 0.5f, (room.posy + y) * tileSize));
 					}
 					if (tileArr[x + room.posx][y + room.posy][2] < 17) {
 						if (rand() % 100 < clutterModifier) {
@@ -1694,6 +1694,15 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 			EntityFactory::CreateStaticMapObject("ClutterSpecial", clutterModels[ClutterModel::CONTROLSTATION], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
 		}
 	}
+
+#ifdef _DEBUG
+	for (int i = 0; i < spawnPoints.size(); i++) {
+		EntityFactory::CreateStaticMapObject("Spawnpoint", clutterModels[ClutterModel::CONTROLSTATION], bb, spawnPoints[i], glm::vec3(0.f,0, 0.f), glm::vec3(0.1f, 0.1f, 0.1f));
+	}
+	for (int i = 0; i < extraSpawnPoints.size(); i++) {
+		EntityFactory::CreateStaticMapObject("Spawnpoint", clutterModels[ClutterModel::NOTEPAD], bb, extraSpawnPoints[i], glm::vec3(0.f, 0, 0.f), glm::vec3(1,1, 1));
+	}
+#endif
 
 	for (int i = 0; i < numberOfRooms; i++) {
 		Rect room = matched.at(i);
