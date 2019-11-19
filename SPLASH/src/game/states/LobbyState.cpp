@@ -99,6 +99,7 @@ LobbyState::LobbyState(StateStack& stack)
 	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
 
 	if (NWrapperSingleton::getInstance().isHost()) {
+		//NW
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 1);
 	}
 
@@ -295,8 +296,12 @@ bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	
 	if (NWrapperSingleton::getInstance().isHost()) {
-
-		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+		if (m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().value == 0.0f) {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)event.player.id, event.player.id);
+		}
+		else {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+		}
 
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
 	}
@@ -345,9 +350,9 @@ bool LobbyState::onPlayerTeamChanged(const NetworkPlayerChangedTeam& event) {
 	Message message;
 	message.senderID = 255;
 	message.content = NWrapperSingleton::getInstance().getMyPlayerID() == event.playerID ? "You" : NWrapperSingleton::getInstance().getPlayer(event.playerID)->name;
-	message.content += " changed team to " + selectedGameTeams.options[currentlySelected].name;
+	message.content += " changed team to " + selectedGameTeams.options[currentlySelected > 0].name;
 	addMessageToChat(message);
-
+	
 	return true;
 }
 
@@ -369,9 +374,9 @@ void LobbyState::renderPlayerList() {
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
 	
 	static float x[3] = {
-		ImGui::GetWindowContentRegionWidth() * 0.5f,
-		ImGui::GetWindowContentRegionWidth() * 0.84f,
-		0
+		ImGui::GetWindowContentRegionWidth() * 0.3f,
+		ImGui::GetWindowContentRegionWidth() * 0.7f,
+		ImGui::GetWindowContentRegionWidth() * 0.88f,
 	};
 
 	if (ImGui::Begin("players in lobby:", NULL, flags)) {
@@ -380,21 +385,36 @@ void LobbyState::renderPlayerList() {
 		ImGui::Separator();
 		ImGui::Text("Player"); 
 		ImGui::SameLine(x[0]);
-
+		
 		ImGui::Text("Team"); 
 		ImGui::SameLine(x[1]);
+
+		ImGui::Text("Color");
+		ImGui::SameLine(x[2]);
 
 		ImGui::Text("Ready"); 
 		ImGui::Separator();
 
 		//(windowSize.x) * 0.42f
 		std::unordered_map<std::string, SettingStorage::Setting>& gamemodeSettings = m_settings->gameSettingsStatic["gamemode"];
-
+		unsigned int type = (unsigned int)(int)gamemodeSettings["types"].getSelected().value;
 		SettingStorage::Setting& selectedGameTeams = m_settings->gameSettingsStatic["Teams"][gamemodeSettings["types"].getSelected().name];
 		unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
 		for (auto currentplayer : NWrapperSingleton::getInstance().getPlayers()) {			
 			ImGui::BeginGroup();
+
+			int index = m_settings->teamColorIndex((int)currentplayer.team);
+			glm::vec4 temp(m_settings->getColor(index), 1);
+
+			ImVec4 col(
+				temp.x,
+				temp.y,
+				temp.z,
+				temp.a
+			);
+			ImGui::PushStyleColor(ImGuiCol_Text, col);
 			ImGui::Text(std::string(currentplayer.name + std::string((currentplayer.id == myID) ? "*" : "")).c_str());
+			ImGui::PopStyleColor();
 			ImGui::SameLine(x[0]);
 			// TEAM
 			if (currentplayer.id == myID || myID == HOST_ID) {
@@ -417,9 +437,30 @@ void LobbyState::renderPlayerList() {
 
 						if (ImGui::Selectable(name.c_str(), selectedTeam == (char)key.value)) {
 							if (currentplayer.id == myID) {
-								NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeam(key.value);
+								if (type == 0) {
+									if (key.value == -1.0f) {
+										NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeam(key.value);
+									}
+									else {
+										NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeam((char)currentplayer.id);
+									}
+								}
+								else {
+									NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeam(key.value);
+								}
 							} else {
-								NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(key.value, currentplayer.id);						
+								if (type == 0) {
+									if (key.value == -1.0f) {
+										NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(key.value, currentplayer.id);
+									}
+									else {
+										NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(currentplayer.id, currentplayer.id);
+									}
+								}
+								else {
+									NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(key.value, currentplayer.id);
+								}
+													
 							}
 						}
 					}
@@ -438,7 +479,74 @@ void LobbyState::renderPlayerList() {
 
 				ImGui::Text(s.c_str());
 			}
+
+			//Color
 			ImGui::SameLine(x[1]);
+			//Keep
+			/*if (currentplayer.id == myID || myID == HOST_ID) {*/
+			if (myID == HOST_ID) {
+				std::string unique = "##ColorLABEL" + std::to_string(currentplayer.id);
+				int team = (int)currentplayer.team;
+				int index = m_settings->teamColorIndex(team);
+				m_settings->gameSettingsStatic["team"+std::to_string(index)]["color"];
+				glm::vec4 temp(m_settings->getColor(index), 1);
+
+				ImVec4 col(
+					temp.x,
+					temp.y,
+					temp.z,
+					temp.a
+				);
+				ImGui::PushStyleColor(ImGuiCol_Text, col);
+
+				ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.1f);
+				if (ImGui::BeginCombo(unique.c_str(), m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().name.c_str())) {
+					ImGui::PopStyleColor();
+					for (auto const& key : m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].options) {
+						std::string name = key.name + unique;
+						col = ImVec4(
+							m_settings->gameSettingsDynamic["Color"+std::to_string((int)key.value)]["r"].value,
+							m_settings->gameSettingsDynamic["Color"+std::to_string((int)key.value)]["g"].value,
+							m_settings->gameSettingsDynamic["Color"+std::to_string((int)key.value)]["b"].value,
+							1
+						);
+						ImGui::PushStyleColor(ImGuiCol_Text, col);
+						if (ImGui::Selectable(name.c_str(), index == (char)key.value)) {
+							if (currentplayer.id == myID) {
+								m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected((int)key.value);
+
+								m_settingsChanged = true;
+							}
+							else {
+								m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected((int)key.value);
+								SAIL_LOG(std::to_string(key.value));
+
+								m_settingsChanged = true;
+							}
+						}
+						ImGui::PopStyleColor();
+					}
+					ImGui::EndCombo();
+				}
+				else {
+					ImGui::PopStyleColor();
+				}
+			}
+			else {
+				std::string s = selectedGameTeams.options.back().name;
+
+				for (auto t : selectedGameTeams.options) {
+					if ((int)(t.value) == (int)(currentplayer.team)) {
+						s = t.name;
+						break;
+					}
+				}
+
+				ImGui::Text(s.c_str());
+			}
+
+
+			ImGui::SameLine(x[2]);
 
 			// READY 
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
@@ -459,8 +567,9 @@ void LobbyState::renderPlayerList() {
 			
 			//ImGui::OpenPopupOnItemClick(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str(), 1);
 
-			if (ImGui::IsItemHovered())
-				ImGui::SetTooltip("First group hovered");
+			//if (ImGui::IsItemHovered()) {
+				//ImGui::SetTooltip("First group hovered");
+			// }
 			ImGui::Separator(); 
 		}
 	}

@@ -41,7 +41,7 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 	m_gameStarted = m_isSingleplayer; //Delay gamestart untill everyOne is ready if playing multiplayer
-
+	
 	if (!m_isSingleplayer) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
 		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
@@ -50,9 +50,13 @@ GameState::GameState(StateStack& stack)
 	initConsole();
 	m_app->setCurrentCamera(&m_cam);
 
+	
+	
+	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+	auto& settings = m_app->getSettings();
 	std::vector<glm::vec3> m_teamColors;
 	for (int i = 0; i < 12; i++) {
-		m_teamColors.push_back(TeamColorSystem::getTeamColor(i));
+		m_teamColors.emplace_back(settings.getColor(settings.teamColorIndex(i)));
 	}
 	m_app->getRenderWrapper()->getCurrentRenderer()->setTeamColors(m_teamColors);
 

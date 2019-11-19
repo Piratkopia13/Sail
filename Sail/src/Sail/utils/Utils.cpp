@@ -103,6 +103,7 @@ glm::i32vec3 Utils::to3D(int ind, int xMax, int yMax) {
 	return ind3d;
 }
 
+
 uint32_t Utils::packQuarterFloat(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
 	uint32_t out = (a << 24) | (b << 16) | (c << 8) | d;
 	return out;
