@@ -22,6 +22,9 @@
 #include "../SPLASH/src/game/events/ResetWaterEvent.h"
 #include "API/DX12/DX12API.h"
 
+// TEST
+#include "API/DX12/resources/DX12DDSTexture.h" 
+
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
@@ -140,8 +143,10 @@ GameState::GameState(StateStack& stack)
 	//EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f));
 
 
+	// TEST
+	m_testDDSTexture = new DX12DDSTexture("res/textures/pbr/Character/CF_Albedo.dds");
 	// Level Creation
-
+	
 	createLevel(shader, boundingBoxModel);
 
 	// Player creation
@@ -219,7 +224,6 @@ GameState::GameState(StateStack& stack)
 	if (!m_isSingleplayer) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.
 	}
-
 
 	m_inGameGui.setPlayer(m_player);
 }
