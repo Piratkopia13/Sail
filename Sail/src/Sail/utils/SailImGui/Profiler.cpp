@@ -25,6 +25,7 @@ Profiler::~Profiler() {
 	delete m_frameTimesHistory;
 	delete m_fixedUpdateHistory;
 	delete m_averageSentPacketSizeHistory;
+	delete m_rmSizeMBHistory;
 }
 
 void Profiler::init() {
