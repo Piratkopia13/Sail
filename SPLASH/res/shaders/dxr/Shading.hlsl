@@ -163,7 +163,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float emissi
 
 	if (sum > 0.8f) {
 #ifdef WATER_DEBUG
-		payload.color = float4(1.0f, 0.f, 0.f, 1.0f);
+		payload.color = float4(0.0f, 1.f, 0.f, 1.0f);
 		return;
 #endif
 		float waterOpacity = clamp(sum / 1.f, 0.f, 0.8f);

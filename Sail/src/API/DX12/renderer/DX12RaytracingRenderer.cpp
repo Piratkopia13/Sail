@@ -129,11 +129,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}
 
 	if (camera && lightSetup) {
-		auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
-
-		auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
-		auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart, teamColors, (postProcessPipeline) ? false : true);
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, teamColors, (postProcessPipeline) ? false : true);
 	}
 
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);

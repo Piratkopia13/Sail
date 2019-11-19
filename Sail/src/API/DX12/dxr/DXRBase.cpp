@@ -16,7 +16,12 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	: m_shaderFilename(shaderFilename)
 	, m_gbufferInputTextures(inputs)
 	, m_brdfLUTPath("pbr/brdfLUT.tga")
-	, m_waterChanged(false) {
+	, m_waterChanged(false)
+	, m_waterDataCPU(nullptr)
+	, m_updateWater(nullptr)
+	, m_mapSize(1.f)
+	, m_mapStart(1.f)
+{
 
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::RESET_WATER, this);
@@ -63,6 +68,9 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 }
 
 DXRBase::~DXRBase() {
+	Memory::SafeDeleteArr(m_waterDataCPU);
+	Memory::SafeDeleteArr(m_updateWater);
+
 	m_rtPipelineState->Release();
 	for (auto& blasList : m_bottomBuffers) {
 		for (auto& blas : blasList) {
@@ -207,7 +215,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
 	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
 	updateMetaballpositions(metaballs, m_next_metaball_aabb);
 
@@ -223,8 +231,8 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.nDecals = m_decalsToRender;
 	newData.doTonemapping = doToneMapping;
 	newData.waterArraySize = m_waterArrSizes;
-	newData.mapSize = mapSize;
-	newData.mapStart = mapStart;
+	newData.mapSize = m_mapSize;
+	newData.mapStart = m_mapStart;
 
 	int nTeams = teamColors.size();
 	for (int i = 0; i < nTeams && i < NUM_TEAM_COLORS; i++) {
@@ -337,7 +345,7 @@ void DXRBase::simulateWater(float dt) {
 			for (unsigned int x = 0; x < m_waterArrSizes.x; x++) {
 				auto arrIndex = Utils::to1D(glm::i32vec3(x, y, z), m_waterArrSizes.x, m_waterArrSizes.y);
 				if (m_updateWater[arrIndex]) {
-					auto arrIndexBelow = arrIndex - m_waterArrSizes.x;
+					unsigned int arrIndexBelow = arrIndex - m_waterArrSizes.x;
 
 					bool change = false;
 					uint32_t vals[8];
@@ -382,24 +390,37 @@ void DXRBase::simulateWater(float dt) {
 }
 
 void DXRBase::rebuildWater() {
-	float mapSizeX = Application::getInstance()->getSettings().gameSettingsDynamic["map"]["sizeX"].value;
-	float mapSizeZ = Application::getInstance()->getSettings().gameSettingsDynamic["map"]["sizeY"].value;
+	// Get some map settings
+	auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	m_mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	m_mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
+	auto tileSize = mapSettings["tileSize"].value;
+	float mapSizeX = mapSettings["sizeX"].value * tileSize;
+	float mapSizeZ = mapSettings["sizeY"].value * tileSize;
 
-	m_waterArrSizes.x = glm::floor(mapSizeX * 5 / 4);
-	m_waterArrSizes.y = glm::floor(mapSizeZ * 5);
-	m_waterArrSizes.z = 37;
+	// Water voxel apperance setting, increase to improve water resolution
+	const float voxelCellsPerWorldUnit = 5.f;
+	// How many values are packed into each X, don't change this
+	const int valuesPerX = 4;
+
+	m_waterArrSizes.x = glm::floor(mapSizeX * voxelCellsPerWorldUnit / valuesPerX);
+	m_waterArrSizes.y = 37;
+	m_waterArrSizes.z = glm::floor(mapSizeZ * voxelCellsPerWorldUnit);
 	
 	m_waterArrSize = m_waterArrSizes.x * m_waterArrSizes.y * m_waterArrSizes.z;
 
 	// Init water "decals"
 	unsigned int numElements = m_waterArrSize;
-	unsigned int waterDataSize = sizeof(unsigned int) * numElements;
-	m_waterDataCPU.resize(m_waterArrSize);
-	m_updateWater.resize(m_waterArrSize);
-	std::fill(m_waterDataCPU.begin(), m_waterDataCPU.end(), 0);
-	std::fill(m_updateWater.begin(), m_updateWater.end(), 0);
-	m_waterStructuredBuffer->updateData(m_waterDataCPU.data(), numElements);
+	Memory::SafeDeleteArr(m_waterDataCPU);
+	Memory::SafeDeleteArr(m_updateWater);
+	m_waterDataCPU = new unsigned int[numElements];
+	m_updateWater = new bool[numElements];
+	memset(m_waterDataCPU, 0, sizeof(unsigned int) * numElements);
+	memset(m_updateWater, 0, sizeof(bool) * numElements);
+	// Recreate sbuffer to resize it
+	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(m_waterDataCPU, numElements, sizeof(unsigned int));
 
+	// Reset simulation data
 	m_currWaterZChunk = 0;
 	m_maxWaterZChunk = 5;
 	m_waterZChunkSize = m_waterArrSizes.z / m_maxWaterZChunk;

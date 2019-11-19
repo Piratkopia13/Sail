@@ -33,7 +33,8 @@ public:
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
+
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	bool checkWaterAtWorldPosition(const glm::vec3& position);
@@ -178,11 +179,13 @@ private:
 	// Water voxel grid stuff
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
 	std::unordered_map<unsigned int, unsigned int> m_waterDeltas; // Changed water voxels over the last 2 frames
-	std::vector<unsigned int> m_waterDataCPU;
-	std::vector<bool> m_updateWater;
+	unsigned int* m_waterDataCPU;
+	bool* m_updateWater;
 	bool m_waterChanged;
 	glm::vec3 m_waterArrSizes;
 	unsigned int m_waterArrSize;
+	glm::vec3 m_mapSize;
+	glm::vec3 m_mapStart;
 
 	int m_currWaterZChunk;
 	int m_maxWaterZChunk;
