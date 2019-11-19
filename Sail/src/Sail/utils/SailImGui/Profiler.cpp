@@ -18,13 +18,17 @@ Profiler::Profiler()
 }
 
 Profiler::~Profiler() {
-	delete m_virtRAMHistory;
-	delete m_physRAMHistory;
-	delete m_vramUsageHistory;
-	delete m_cpuHistory;
-	delete m_frameTimesHistory;
-	delete m_fixedUpdateHistory;
-	delete m_averageSentPacketSizeHistory;
+	delete[] m_virtRAMHistory;
+	delete[] m_physRAMHistory;
+	delete[] m_vramUsageHistory;
+	delete[] m_cpuHistory;
+	delete[] m_frameTimesHistory;
+	delete[] m_fixedUpdateHistory;
+	delete[] m_averageSentPacketSizeHistory;
+	delete[] m_rmSizeMBHistory;
+#ifdef DEVELOPMENT
+	delete[] m_ecsSizeKBHistory;
+#endif
 }
 
 void Profiler::init() {
