@@ -61,8 +61,9 @@ public:
 
 	// Messages sent to self will be dealt with in NetworkReceiverSystem
 	void queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* messageData, bool alsoSendToSelf = true);
-
+	unsigned char getPlayerLimit();
 	size_t averagePacketSizeSinceLastCheck();
+
 private:
 	// Specifically for One-Time-Events during the gamestate
 	NetworkSenderSystem* NSS = nullptr;
@@ -74,7 +75,7 @@ private:
 	bool m_isInitialized = false;
 	bool m_isHost = false;
 
-	unsigned int m_playerLimit;
+	unsigned char m_playerLimit;
 	unsigned int m_seed;
 
 	Player m_me;

@@ -11,7 +11,6 @@
 PostProcessPipeline::PostProcessPipeline() 
 	: m_bloomTexture(nullptr)
 {
-
 	m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
 
 	add<FXAAShader>("FXAA", 1.0f);
@@ -23,7 +22,6 @@ PostProcessPipeline::PostProcessPipeline()
 	add<GaussianBlurHorizontal>("BloomBlur3H", 0.5f);
 	add<BlendShader>("BloomBlend", 1.0f, 1.f / 2.f);
 	add<TonemapShader>("Tonemapper", 1.0f);
-	//add<RedTintShader>(0.5f);
 
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 }
@@ -101,8 +99,6 @@ PostProcessPipeline::PostProcessOutput* PostProcessPipeline::runStage(PostProces
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
 
-	//app->getSettings().applicationSettingsStatic["graphics"]["bloom"].getSelected().value;
-
 	m_dispatcher->begin(cmdList);
 
 	PostProcessOutput* output;
@@ -117,7 +113,7 @@ PostProcessPipeline::PostProcessOutput* PostProcessPipeline::runStage(PostProces
 	glm::u32vec2 textureSize = glm::u32vec2(input.outputWidth, input.outputHeight);
 	stage.shader->getPipeline()->trySetCBufferVar("textureSize", &textureSize, sizeof(glm::u32vec2));
 	
-	output = static_cast<PostProcessOutput*>(&m_dispatcher->dispatch(*stage.shader, input, 0, cmdList));
+	output = static_cast<PostProcessOutput*>(&m_dispatcher->dispatch(*stage.shader, input, cmdList));
 	return output;
 }
 
