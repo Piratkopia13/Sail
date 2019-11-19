@@ -51,7 +51,7 @@ LobbyState::LobbyState(StateStack& stack)
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
 
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHAT, this);
-	EventDispatcher::Instance().subscribe(Event::Type::TEXTINPUT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::CHATSENT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
@@ -108,7 +108,7 @@ LobbyState::~LobbyState() {
 	delete[] m_currentmessage;
 	delete m_settingBotCount;
 
-	EventDispatcher::Instance().unsubscribe(Event::Type::TEXTINPUT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::CHATSENT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_CHAT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
@@ -118,10 +118,6 @@ LobbyState::~LobbyState() {
 }
 
 bool LobbyState::processInput(float dt) {
-	if (m_input->IsMouseButtonPressed(0)) {
-		m_chatFocus = false;
-	}
-
 	return false;
 }
 
@@ -166,6 +162,7 @@ bool LobbyState::render(float dt, float alpha) {
 
 bool LobbyState::renderImgui(float dt) {
 
+	//Keep all this
 	//ImGui::ShowDemoWindow();
 	static std::string font = "Beb30";
 	//ImGui::PushFont(m_imGuiHandler->getFont(font));
@@ -216,7 +213,6 @@ bool LobbyState::renderImgui(float dt) {
 		ImGui::SetNextWindowSize(m_size);
 		ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 
-		//ImGui::SetNextWindowSize(ImVec2(500, 500));
 		if (ImGui::Begin("##OptionsMenu", nullptr, m_backgroundOnlyflags)) {
 
 			ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
@@ -238,7 +234,7 @@ bool LobbyState::onEvent(const Event& event) {
 
 	switch (event.type) {
 
-	case Event::Type::TEXTINPUT:			onMyTextInput((const TextInputEvent&)event); break;
+	case Event::Type::CHATSENT:				onMyTextInput((const ChatSent&)event); break;
 	case Event::Type::NETWORK_CHAT:			onRecievedText((const NetworkChatEvent&)event); break;
 	case Event::Type::NETWORK_JOINED:		onPlayerJoined((const NetworkJoinedEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
@@ -484,7 +480,6 @@ void LobbyState::renderGameSettings() {
 	settingsFlags |= ImGuiWindowFlags_NoSavedSettings;
 
 
-	// Uncomment when we actually have game settings
 	ImGui::SetNextWindowPos(m_pos);
 	ImGui::SetNextWindowSize(m_size);
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
@@ -502,59 +497,75 @@ void LobbyState::renderGameSettings() {
 }
 
 void LobbyState::renderChat() {
+
 	ImGuiWindowFlags chatFlags = ImGuiWindowFlags_NoCollapse;
 	chatFlags |= ImGuiWindowFlags_NoResize;
 	chatFlags |= ImGuiWindowFlags_NoMove;
 	chatFlags |= ImGuiWindowFlags_NoNav;
-	chatFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 	chatFlags |= ImGuiWindowFlags_NoTitleBar;
-	chatFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 	chatFlags |= ImGuiWindowFlags_NoSavedSettings;
-	chatFlags |= ImGuiWindowFlags_NoFocusOnAppearing;
-	chatFlags |= ImGuiWindowFlags_NoInputs;
-
-	// ------- message BOX ------- 
-	ImGui::SetNextWindowPos(ImVec2(
+	
+	ImVec2 size(
+		400.0f,
+		300.0f
+	);
+	ImVec2 pos(
 		m_outerPadding,
-		m_screenHeight - (m_outerPadding + m_textHeight)
-	));
-	ImGui::Begin(
-		"Write Here",
-		NULL,
-		chatFlags
+		m_screenHeight - (m_outerPadding + m_textHeight) - size.y
 	);
 
-	if (m_firstFrame) {
-		m_firstFrame = false;
-		m_chatFocus = false;
+
+	ImGui::SetNextWindowPos(pos);
+	ImGui::SetNextWindowSize(size);
+	//ImGui::SetNextWindowSizeConstraints(size); Keep
+	if (ImGui::Begin("##CHATWINDOW", nullptr, chatFlags)) {
+
+		if(ImGui::BeginChild("##CHATTEXT", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
+			for (auto currentmessage : m_messages) {
+				ImGui::Text(
+					currentmessage.c_str()
+				);
+			}
+		}
+		ImGui::EndChild();
+		static bool focus = false;
+		static bool justSent = false;
+		static bool releasedEnter = true;
+		justSent = false;
+		static char buf[101] = "";
+		strncpy_s(buf, m_message.c_str(), m_message.size());
+		if (ImGui::IsKeyPressed(SAIL_KEY_RETURN, false)) {
+			focus = true;
+			ImGui::SetKeyboardFocusHere(-1); 
+			justSent = true;
+
+		}
+		if (ImGui::IsKeyReleased(SAIL_KEY_RETURN)) {
+			releasedEnter = true;
+		}
+		if (ImGui::InputTextWithHint("##ChatInput", (focus ? "" : "Press enter to chat"), buf, m_messageSizeLimit, ImGuiInputTextFlags_EnterReturnsTrue)) {
+			m_message = buf;
+			if (m_message != "" && releasedEnter) {
+				//Send Message
+				EventDispatcher::Instance().emit(ChatSent(m_message));
+				m_message = "";
+			}
+			releasedEnter = false;
+			justSent = true;
+			ImGui::SetKeyboardFocusHere(0);
+
+		}
+		else {
+			m_message = buf;
+		}
+		focus = ImGui::IsItemActive() || justSent;
 	}
-	ImGui::Text("Enter message:");
-	if (ImGui::InputText("", m_currentmessage, m_messageSizeLimit, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_EnterReturnsTrue)) {
-		m_chatFocus = false;
-	}
+
 	ImGui::End();
 
-	// ------- CHAT LOG ------- 
-	ImGui::SetNextWindowSize(ImVec2(
-		400,
-		300
-	));
-	ImGui::SetNextWindowPos(ImVec2(
-		m_outerPadding,
-		m_screenHeight - (300 + m_outerPadding)
-	));
 
-	// Render message history
-	ImGui::Begin("Chat Log", NULL, chatFlags);
-	ImGui::SameLine();
-	ImGui::BeginChild("messages");
-	for (auto currentmessage : m_messages) {
-		ImGui::Text(
-			currentmessage.c_str()
-		);
-	}
-	ImGui::EndChild();
-	ImGui::End();
+
+
 }
 
 void LobbyState::renderMenu() {
