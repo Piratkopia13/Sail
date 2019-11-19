@@ -970,7 +970,7 @@ void LevelSystem::addMapModel(Direction dir, int typeID, int doors, const std::v
 }
 
 
-void LevelSystem::addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize,float tileHeight, float tileOffset, int i, int j, Model* bb) {
+void LevelSystem::addTile(int tileId, int typeId, int doors, const std::vector<Model*>& tileModels, float tileSize, float tileHeight, int tileOffset, int i, int j, Model* bb) {
 
 	addMapModel(Direction::NONE, typeId, doors, tileModels, tileSize,tileHeight, tileOffset, i, j, bb);
 	switch (tileId)
@@ -1416,6 +1416,26 @@ const RoomInfo LevelSystem::getRoomInfo(int ID) {
 	return info;
 }
 
+#ifdef DEVELOPMENT
+unsigned int LevelSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	
+	size += spawnPoints.size() * sizeof(glm::vec3);
+	size += chunks.size() * sizeof(Rect);
+	size += blocks.size() * sizeof(Rect);
+	size += hallways.size() * sizeof(Rect);
+	size += rooms.size() * sizeof(Rect);
+	size += matched.size() * sizeof(Rect);
+	size += largeClutter.size() * sizeof(Clutter);
+	size += mediumClutter.size() * sizeof(Clutter);
+	size += smallClutter.size() * sizeof(Clutter);
+	size += specialClutter.size() * sizeof(Clutter);
+
+	size += xsize * ysize * sizeof(int) * 3;
+	return size;
+}
+#endif
+
 void LevelSystem::stop() {
 	destroyWorld();
 	spawnPoints.clear();
@@ -1530,8 +1550,8 @@ void LevelSystem::generateClutter() {
 		}
 	}
 	//adds clutter on top of large objects
-	int amount = largeClutter.size();
-	for (int i = 0; i < amount; i++) {
+	size_t amount = largeClutter.size();
+	for (size_t i = 0; i < amount; i++) {
 		Clutter clutterLarge = largeClutter.front();
 		largeClutter.pop();
 		if (rand() % 100 < clutterModifier) {
@@ -1600,7 +1620,7 @@ void LevelSystem::generateClutter() {
 	//stacks up to two medium objects on each other
 	std::queue<Clutter> doubleStackedMediumClutter;
 	amount = mediumClutter.size();
-	for (int i = 0; i < amount; i++) {
+	for (size_t i = 0; i < amount; i++) {
 		Clutter clutterMedium = mediumClutter.front();
 		mediumClutter.pop();
 		if (rand() % 100 < clutterModifier) {
@@ -1624,7 +1644,7 @@ void LevelSystem::generateClutter() {
 
 	//adds small clutter on top of medium clutter
 	amount = mediumClutter.size();
-	for (int i = 0; i < amount; i++) {
+	for (size_t i = 0; i < amount; i++) {
 		Clutter clutterMedium = mediumClutter.front();
 		mediumClutter.pop();
 		if (rand() % 100 < clutterModifier) {
