@@ -640,7 +640,7 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 
 bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 
-	if (NWrapperSingleton::getInstance().isHost()) {	
+	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(-1, event.player.id, false);	
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::Game, event.player.id);	
 	}
