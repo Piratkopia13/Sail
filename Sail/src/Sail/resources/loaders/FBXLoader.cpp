@@ -80,6 +80,7 @@ bool FBXLoader::importScene(const std::string& filePath, Shader* shader) {
 		m_sceneData[filePath].hasAnimation = true;
 	}
 	m_sceneDataMutex.unlock();
+	removeScene(filePath);
 	return true;
 }
 bool FBXLoader::initScene(const std::string& filePath) {
@@ -124,7 +125,17 @@ void FBXLoader::clearScene(const std::string& filePath) {
 	m_scenes.erase(filePath);
 }
 void FBXLoader::clearAllScenes() {
-	//todo?	
+	for (auto& [key, val] : m_scenes) {
+		val->Destroy();
+		val = nullptr;
+	}
+	m_scenes.clear();
+}
+void FBXLoader::removeScene(const std::string& name) {
+	if (m_scenes.find(name) != m_scenes.end()) {
+		m_scenes[name]->Destroy();
+		m_scenes.erase(name);
+	}
 }
 #pragma endregion
 
@@ -647,6 +658,7 @@ Model* FBXLoader::fetchModel(const std::string& filePath, Shader* shader) {
 	auto* temp = m_sceneData[filePath].model;
 	m_sceneData[filePath].model = nullptr;
 	m_sceneData[filePath].hasModel = false;
+
 	return temp;
 }
 AnimationStack* FBXLoader::fetchAnimationStack(const std::string& filePath, Shader* shader) {
@@ -659,6 +671,7 @@ AnimationStack* FBXLoader::fetchAnimationStack(const std::string& filePath, Shad
 	auto* temp = m_sceneData[filePath].stack;
 	m_sceneData[filePath].stack = nullptr;
 	m_sceneData[filePath].hasAnimation = false;
+
 	return temp;
 }
 #pragma endregion
@@ -721,6 +734,8 @@ int FBXLoader::getBoneIndex(unsigned int uniqueID, const std::string& name) {
 	return -1;
 }
 
+
+
 #pragma region DEBUG
 //DEBUG
 std::string FBXLoader::GetAttributeTypeName(FbxNodeAttribute::EType type) {
@@ -773,4 +788,5 @@ void FBXLoader::printNodeTree(FbxNode * node, const std::string& indent) {
 }
 void FBXLoader::printAnimationStack(const FbxNode* node) {
 }
+
 #pragma endregion

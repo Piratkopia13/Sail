@@ -22,7 +22,7 @@ public:
 private:
 
 	bool m_wasDropped;
-	bool onMyTextInput(const TextInputEvent& event);
+	bool onMyTextInput(const ChatSent& event);
 	bool onRecievedText(const NetworkChatEvent& event);
 	bool onDropped(const NetworkDroppedEvent& event);
 	bool onSettingsChanged(const SettingsUpdatedEvent& event);
