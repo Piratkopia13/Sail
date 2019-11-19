@@ -10,3 +10,12 @@ struct TextInputEvent : public Event {
 
 	const MSG msg;
 };
+
+
+struct ChatSent : public Event {
+	ChatSent(const std::string& _msg)
+		: Event(Event::Type::CHATSENT)
+		,msg(_msg) { }
+	~ChatSent() = default;
+	std::string msg;
+};

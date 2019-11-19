@@ -132,7 +132,7 @@ NodeSystem* AiSystem::getNodeSystem() {
 #ifdef DEVELOPMENT
 unsigned int AiSystem::getByteSize() const {
 	unsigned int size = sizeof(*this);
-	size += sizeof(NodeSystem);
+	size += m_nodeSystem->getByteSize();
 	return size;
 }
 #endif

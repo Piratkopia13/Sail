@@ -52,6 +52,7 @@ public:
 	Model& getModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
 	Model& getModelCopy(const std::string& filename, Shader* shader = nullptr);
 	bool hasModel(const std::string& filename);
+	void clearSceneData();
 
 	// Animations
 	void loadAnimationStack(const std::string& fileName, const ImporterType type = SAIL_FBXSDK);

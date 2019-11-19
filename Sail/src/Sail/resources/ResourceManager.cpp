@@ -147,10 +147,8 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 		return true;
 	}
 	else {
-#ifdef _DEBUG
 		SAIL_LOG_ERROR("Could not Load model: (" + filename + ")");
-		//assert(temp);
-#endif
+
 		return false;
 	}
 }
@@ -187,6 +185,10 @@ bool ResourceManager::hasModel(const std::string& filename) {
 	return m_models.find(filename) != m_models.end();
 }
 
+void ResourceManager::clearSceneData() {
+	m_fbxLoader->clearAllScenes();
+}
+
 void ResourceManager::loadAnimationStack(const std::string& fileName, const ImporterType type) {
 	AnimationStack* temp = nullptr;
 	if (m_animationStacks.find(fileName) != m_animationStacks.end()) {
@@ -204,13 +206,11 @@ void ResourceManager::loadAnimationStack(const std::string& fileName, const Impo
 
 	if (temp) {
 		m_animationStacks.insert({fileName, std::unique_ptr<AnimationStack>(temp)});
-		Logger::Log("Animation size of '" + fileName + "' : " + std::to_string((float)m_animationStacks[fileName]->getByteSize() / (1024.f * 1024.f)) + "MB");
+		SAIL_LOG("Animation size of '" + fileName + "' : " + std::to_string((float)m_animationStacks[fileName]->getByteSize() / (1024.f * 1024.f)) + "MB");
 		m_byteSize[RMDataType::Animations] += m_animationStacks[fileName]->getByteSize();
 	}
 	else {
-#ifdef _DEBUG
 		SAIL_LOG_ERROR("Could not Load model: (" + fileName + ")");
-#endif
 	}
 }
 

@@ -97,9 +97,10 @@ void NetworkReceiverSystem::enableSprinklers() {
 void NetworkReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId, const Netcode::PlayerID shooterID) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
-
 			e->getComponent<CandleComponent>()->wasJustExtinguished = true;
 			e->getComponent<CandleComponent>()->wasHitByPlayerID = shooterID;
+
+			EventDispatcher::Instance().emit(TorchExtinguishedEvent(shooterID, candleId));
 
 			return;
 		}
@@ -133,6 +134,7 @@ void NetworkReceiverSystem::setAnimation(const Netcode::ComponentID id, const An
 		auto animation = e->getComponent<AnimationComponent>();
 		animation->setAnimation(info.index);
 		animation->animationTime = info.time;
+		animation->pitch = info.pitch;
 		return;
 	}
 	SAIL_LOG_WARNING("setAnimation called but no matching entity found");
