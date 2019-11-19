@@ -179,9 +179,25 @@ void Profiler::renderWindow() {
 				header = "\n\n\n" + m_averageSentPacketSize + "(B/s)";
 				ImGui::PlotLines(header.c_str(), m_averageSentPacketSizeHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
 			}
-			if (ImGui::CollapsingHeader("Resource Manager Graph")) {
-				header = "\n\n\n" + m_rmMB + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_rmSizeMBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));				
+			if (ImGui::CollapsingHeader("Resource Manager Models Graph")) {
+				header = "\n\n\n" + m_rmModelsMB + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_rmModelsSizeMBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));				
+			}
+			if (ImGui::CollapsingHeader("Resource Manager Animations Graph")) {
+				header = "\n\n\n" + m_rmAnimationsMB + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_rmAnimationsSizeMBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
+			}
+			if (ImGui::CollapsingHeader("Resource Manager Audio Graph")) {
+				header = "\n\n\n" + m_rmAudioMB + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_rmAudioSizeMBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
+			}
+			if (ImGui::CollapsingHeader("Resource Manager Textures Graph")) {
+				header = "\n\n\n" + m_rmTexturesMB + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_rmTexturesSizeMBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
+			}
+			if (ImGui::CollapsingHeader("Resource Manager Generic Graph")) {
+				header = "\n\n\n" + m_rmGenericMB + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_rmGenericSizeMBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
 			}
 
 			ImGui::EndChild();

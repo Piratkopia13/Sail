@@ -97,6 +97,11 @@ public:
 	const unsigned int numberOfModels() const;
 	const unsigned int numberOfTextures() const;
 	const unsigned int getByteSize() const;
+	const unsigned int getModelByteSize() const;
+	const unsigned int geAnimationsByteSize() const;
+	const unsigned int getAudioByteSize() const;
+	const unsigned int getTextureByteSize() const;
+	const unsigned int getGenericByteSize() const;
 	// SoundManager
 	//SoundManager* getSoundManager();
 
