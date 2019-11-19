@@ -217,7 +217,6 @@ void AnimationSystem::updateTransforms(const float dt) {
 
 void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 	m_dispatcher->begin(cmdList);
-	unsigned int meshIndex = 0;
 	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		ModelComponent* modelC = e->getComponent<ModelComponent>();
@@ -242,8 +241,8 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 		auto* context = Application::getInstance()->getAPI<DX12API>();
 
-		m_updateShader->getPipeline()->setStructBufferVar("CSTransforms", animationC->transforms, animationC->transformSize, meshIndex);
-		m_updateShader->getPipeline()->setStructBufferVar("CSVertConnections", connections, connectionSize, meshIndex);
+		m_updateShader->getPipeline()->setStructBufferVar("CSTransforms", animationC->transforms, animationC->transformSize);
+		m_updateShader->getPipeline()->setStructBufferVar("CSVertConnections", connections, connectionSize);
 
 
 		// Get the vertexbuffer that should contain the animated mesh
@@ -297,7 +296,7 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 		AnimationUpdateComputeShader::Input input;
 		input.threadGroupCountX = connectionSize * m_updateShader->getComputeSettings()->threadGroupXScale;
-		m_dispatcher->dispatch(*m_updateShader, input, meshIndex, cmdList);
+		m_dispatcher->dispatch(*m_updateShader, input, cmdList);
 
 		// Transition back to normal vertex buffer usage
 		DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
@@ -309,7 +308,6 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 		vbuffer.setAsUpdated();
 
 		animationC->hasUpdated = false;
-		meshIndex++;
 	}
 }
 
