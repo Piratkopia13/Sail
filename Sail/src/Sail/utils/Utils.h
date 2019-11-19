@@ -101,8 +101,17 @@ namespace Utils {
 	float clamp(float val, float min, float max);
 	float smootherstep(float edge0, float edge1, float x);
 	float wrapValue(float value, float lowerBound, float upperBound);
-	int to1D(const glm::i32vec3& ind, int xMax, int yMax);
-	glm::i32vec3 to3D(int ind, int xMax, int yMax);
+	inline int to1D(const glm::i32vec3& ind, int xMax, int yMax) {
+		return ind.x + xMax * (ind.y + yMax * ind.z);
+	}
+	inline glm::i32vec3 to3D(int ind, int xMax, int yMax) {
+		glm::i32vec3 ind3d;
+		ind3d.z = ind / (xMax * yMax);
+		ind -= (ind3d.z * xMax * yMax);
+		ind3d.y = ind / xMax;
+		ind3d.x = ind % xMax;
+		return ind3d;
+	}
 
 	uint32_t packQuarterFloat(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
 	uint32_t unpackQuarterFloat(uint32_t in, unsigned int index);
