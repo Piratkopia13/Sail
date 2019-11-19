@@ -1339,10 +1339,13 @@ void LevelSystem::addSpawnPoints() {
 glm::vec3 LevelSystem::getSpawnPoint() {
 	// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
 	glm::vec3 spawnLocation;
-		
 	if (spawnPoints.size() > 0) {
 		spawnLocation = spawnPoints.front();
 		spawnPoints.erase(spawnPoints.begin());
+	}
+	else if (extraSpawnPoints.size() > 0) {
+		spawnLocation = extraSpawnPoints.front();
+		extraSpawnPoints.erase(extraSpawnPoints.begin());
 	}
 	else {
 		spawnLocation = glm::vec3(((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (xsize - 1), 1.f, ((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (ysize - 1));
@@ -1350,6 +1353,7 @@ glm::vec3 LevelSystem::getSpawnPoint() {
 	}
 
 	return spawnLocation;
+
 }
 
 
@@ -1461,6 +1465,9 @@ void LevelSystem::generateClutter() {
 		else {
 			for (int x = 0; x < room.sizex; x++) {
 				for (int y = 0; y < room.sizey; y++) {
+					if ((x+0.5f)!=room.sizex/2.f || (y + 0.5f) != room.sizey / 2.f) {
+						extraSpawnPoints.push_back(glm::vec3((room.posx + x) * tileSize, 0.1f, (room.posy + y) * tileSize));
+					}
 					if (tileArr[x + room.posx][y + room.posy][2] < 17) {
 						if (rand() % 100 < clutterModifier) {
 							float xmax = tileSize * 0.95f;

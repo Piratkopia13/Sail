@@ -101,6 +101,7 @@ public:
 	int tileOffset;
 
 	std::vector<glm::vec3> spawnPoints;
+	std::vector<glm::vec3> extraSpawnPoints;
 private:
 	std::queue<Rect> chunks;
 	std::queue<Rect> blocks;
