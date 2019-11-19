@@ -8,6 +8,7 @@ struct Event {
 		WINDOW_FOCUS_CHANGED,
 		POTATO,
 		TEXTINPUT,
+		CHATSENT,
 		// Network events
 		NETWORK_LAN_HOST_FOUND,
 		NETWORK_JOINED,
