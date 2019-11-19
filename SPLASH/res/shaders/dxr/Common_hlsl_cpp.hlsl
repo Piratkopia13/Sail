@@ -36,11 +36,6 @@ namespace DXRShaderCommon {
 #define METABALL_RADIUS 0.12f
 #define MAX_DECALS 100
 
-// #define WATER_GRID_X 350 / 4  // Should be approximately 5 per world unit
-// #define WATER_GRID_Y 37
-// #define WATER_GRID_Z 350
-// #define WATER_ARR_SIZE (WATER_GRID_X * WATER_GRID_Y * WATER_GRID_Z)
-
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;
 static const uint MESH_HAS_ALBEDO_TEX 					= 	1 << 1;
