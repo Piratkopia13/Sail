@@ -119,3 +119,9 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID Play
 	std::string binaryData = dataString.str();
 	NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToClient(binaryData, PlayerId);
 }
+
+#ifdef DEVELOPMENT
+unsigned int HostSendToSpectatorSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif

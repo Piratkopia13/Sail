@@ -53,7 +53,7 @@ void SanitySystem::update(float dt) {
 				dist = glm::distance(tc->getTranslation(), c_tc->getTranslation());
 			}
 
-			ic->sanity -= (dist - 1) * dt * 0.5;
+			ic->sanity -= (dist - 1) * dt * 0.5f;
 			ic->sanity = std::clamp(ic->sanity, m_minSanity, m_maxSanity);
 			if (ic->sanity <= 0) {
 				cc->kill(CandleComponent::DamageSource::INSANE, Netcode::MESSAGE_INSANITY_ID);
@@ -90,6 +90,12 @@ void SanitySystem::updateSanityNetworked(Netcode::ComponentID id, float sanity) 
 #endif
 
 }
+
+#ifdef DEVELOPMENT
+unsigned int SanitySystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
 
 bool SanitySystem::onEvent(const Event& event) {
     switch(event.type) {                                                                             

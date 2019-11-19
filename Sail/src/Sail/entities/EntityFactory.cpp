@@ -343,7 +343,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<AudioComponent>();
 
 	playerEntity->addComponent<GunComponent>();
-	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
+	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0, 0.9f, 0) + spawnLocation);
 
 	//give players teams
 	playerEntity->addComponent<TeamComponent>()->team = (playerID) % 12;
