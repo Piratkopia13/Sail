@@ -149,6 +149,14 @@ void SettingStorage::createApplicationDefaultSound() {
 }
 void SettingStorage::createApplicationDefaultMisc() {
 	applicationSettingsStatic["misc"] = std::unordered_map<std::string, Setting>();
+	applicationSettingsStatic["Crosshair"] = std::unordered_map<std::string, Setting>();
+	applicationSettingsDynamic["Crosshair"]["Thickness"] = DynamicSetting(1.0f, 0.0f, 100.0f);
+	applicationSettingsDynamic["Crosshair"]["CenterPadding"] = DynamicSetting(10.0f, 0.0f, 20.0f);
+	applicationSettingsDynamic["Crosshair"]["Size"] = DynamicSetting(50.0f, 0.0f, 300.0f);
+	applicationSettingsDynamic["Crosshair"]["Color R"] = DynamicSetting(0.5f, 0.0f, 1.0f);
+	applicationSettingsDynamic["Crosshair"]["Color G"] = DynamicSetting(0.0f, 0.0f, 1.0f);
+	applicationSettingsDynamic["Crosshair"]["Color B"] = DynamicSetting(0.0f, 0.0f, 1.0f);
+	applicationSettingsDynamic["Crosshair"]["Color A"] = DynamicSetting(1.0f, 0.0f, 1.0f);
 }
 
 void SettingStorage::createGameDefaultStructure() {

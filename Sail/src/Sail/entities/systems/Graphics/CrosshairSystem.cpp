@@ -6,25 +6,38 @@
 
 CrosshairSystem::CrosshairSystem() {
 	registerComponent<CrosshairComponent>(true, true, true);
+
+	m_settings = &Application::getInstance()->getSettings();
 }
 
 CrosshairSystem::~CrosshairSystem() {
 
-
 }
 
 void CrosshairSystem::update(float dt) {
-	// render the crosshair
-
-
 	for (auto& e : entities) {
 		CrosshairComponent* c = e->getComponent<CrosshairComponent>();
 
-		if (c->recentlyHitSomeone) {
+		// get settings from settingStorage
+		applySettings(c);
 
+		// Update the crosshair if 'i' hit someone
+		if (c->currentlyAltered) {
 			alterCrosshair(e, dt);
 		}
 	}
+}
+
+void CrosshairSystem::applySettings(CrosshairComponent* c) {
+	auto& dynamic = m_settings->applicationSettingsDynamic;
+
+	c->thickness = dynamic["Crosshair"]["Thickness"].value;
+	c->centerPadding = dynamic["Crosshair"]["CenterPadding"].value;
+	c->size = dynamic["Crosshair"]["Size"].value;
+	c->color.x = dynamic["Crosshair"]["Color R"].value;
+	c->color.y = dynamic["Crosshair"]["Color G"].value;
+	c->color.z = dynamic["Crosshair"]["Color B"].value;
+	c->color.w = dynamic["Crosshair"]["Color A"].value;
 }
 
 void CrosshairSystem::alterCrosshair(Entity* e, float dt) {
@@ -35,12 +48,8 @@ void CrosshairSystem::alterCrosshair(Entity* e, float dt) {
 
 	// If we're finished with the altered crosshair and want to go back to normal
 	if (c->passedTimeSinceAlteration >= c->durationOfAlteredCrosshair) {
-		c->recentlyHitSomeone = false;
+		c->currentlyAltered = false;
 		c->passedTimeSinceAlteration = 0;
-		// Set color to 'normal'
 	}
-	// If we're not finished with the altered crosshair yet.
-	else {
-		// Set color to 'altered'
-	}
+	// Crosshair is updated in 'InGameGui.cpp'
 }

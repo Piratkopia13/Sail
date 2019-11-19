@@ -46,6 +46,7 @@ class SpotLightSystem;
 class SprintingSystem;
 class TeamColorSystem;
 class CandleThrowingSystem;
+class CrosshairSystem;
 
 
 // Systems that need duplicate versions for the killcam
@@ -70,6 +71,7 @@ struct Systems {
 	CandleReignitionSystem*      candleReignitionSystem      = nullptr;
 	CandleThrowingSystem*		 candleThrowingSystem		 = nullptr;
 	CollisionSystem*             collisionSystem             = nullptr;
+	CrosshairSystem*			 crosshairSystem			 = nullptr;
 	EndFrameSystem*              endFrameSystem              = nullptr;
 	EntityAdderSystem*           entityAdderSystem           = nullptr;
 	EntityRemovalSystem*         entityRemovalSystem         = nullptr;

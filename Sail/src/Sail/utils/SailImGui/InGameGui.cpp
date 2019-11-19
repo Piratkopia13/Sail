@@ -5,6 +5,7 @@
 
 #include "Sail/entities/components/SanityComponent.h"
 #include "Sail/entities/components/SprintingComponent.h"
+#include "Sail/entities/components/CrosshairComponent.h"
 
 InGameGui::InGameGui(bool showWindow) {
 }
@@ -74,14 +75,29 @@ void InGameGui::renderWindow() {
 
 	ImGui::End();
 
-	// Crosshair settings window
+	if (m_crosshairEntity) {
+		if (!m_crosshairEntity->getComponent<CrosshairComponent>()->sprinting) {
+			renderCrosshair(screenWidth, screenHeight);
+		}
+	}
+}
 
+void InGameGui::setPlayer(Entity* player) {
+	m_player = player;
+}
+
+void InGameGui::setCrosshair(Entity* pCrosshairEntity) {
+	m_crosshairEntity = pCrosshairEntity;
+}
+
+void InGameGui::renderCrosshair(float screenWidth, float screenHeight) {
+	// Crosshair settings window
+	CrosshairComponent* c = m_crosshairEntity->getComponent<CrosshairComponent>();
 
 	// Crosshair
-	float centerPadding = 10;
 	ImVec2 crosshairSize{
-		200,
-		200
+		c->size,
+		c->size
 	};
 	ImVec2 center{
 		screenWidth * 0.5f,
@@ -91,7 +107,7 @@ void InGameGui::renderWindow() {
 		center.x - crosshairSize.x * 0.5f,
 		center.y - crosshairSize.y * 0.5f
 	};
-	ImVec2 top{ 
+	ImVec2 top{
 		topLeft.x + crosshairSize.x * 0.5f,
 		topLeft.y
 	};
@@ -108,7 +124,6 @@ void InGameGui::renderWindow() {
 		center.y
 	};
 
-	
 	ImGui::SetNextWindowPos(topLeft);
 	ImGui::SetNextWindowSize(crosshairSize);
 
@@ -118,31 +133,25 @@ void InGameGui::renderWindow() {
 	crosshairFlags |= ImGuiWindowFlags_NoNav;
 	crosshairFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 	crosshairFlags |= ImGuiWindowFlags_NoTitleBar;
-	//crosshairFlags |= ImGuiWindowFlags_AlwaysAutoResize;
-	//crosshairFlags |= ImGuiWindowFlags_NoSavedSettings;
 	crosshairFlags |= ImGuiWindowFlags_NoBackground;
 	ImGui::Begin("Crosshair", NULL, crosshairFlags);
 
-	ImGui::SliderFloat("Center padding", &centerPadding, 0, 100);
-
-	static ImVec4 colorFloat = ImVec4(1.0f, 1.0f, 0.4f, 1.0f);
-	const ImU32 color = ImColor(colorFloat);
-	float thickness = 1.0f;
+	const ImU32 color = ImColor(c->color);
 
 	ImVec2 center_padded_top{
 		top.x,
-		center.y - centerPadding
+		center.y - c->centerPadding
 	};
 	ImVec2 center_padded_bot{
 		top.x,
-		center.y + centerPadding
+		center.y + c->centerPadding
 	};
 	ImVec2 center_padded_right{
-		center.x + centerPadding,
+		center.x + c->centerPadding,
 		right.y
 	};
 	ImVec2 center_padded_left{
-		center.x - centerPadding,
+		center.x - c->centerPadding,
 		left.y
 	};
 
@@ -155,8 +164,8 @@ void InGameGui::renderWindow() {
 		top,
 		center_padded_top,
 		color,
-		thickness
-	);  
+		c->thickness
+	);
 
 	//		|
 	//   
@@ -165,7 +174,7 @@ void InGameGui::renderWindow() {
 		bot,
 		center_padded_bot,
 		color,
-		thickness
+		c->thickness
 	);
 
 	//		|
@@ -175,9 +184,9 @@ void InGameGui::renderWindow() {
 		right,
 		center_padded_right,
 		color,
-		thickness
-	);  
-	
+		c->thickness
+	);
+
 	//		|
 	//	--	   --
 	//		|
@@ -185,17 +194,89 @@ void InGameGui::renderWindow() {
 		left,
 		center_padded_left,
 		color,
-		thickness
+		c->thickness
 	);
 
+
+
+	// Set to True/False by  CrosshairSystem
+	if (c->currentlyAltered) {
+		ImVec2 topRight{
+			right.x,
+			top.y
+		};
+		ImVec2 botRight{
+			right.x,
+			center.y + c->size * 0.5f
+		};
+		ImVec2 botLeft{
+			left.x,
+			botRight.y
+		};
+
+		ImVec2 center_padded_topLeft{
+			center.x - c->centerPadding,
+			center.y - c->centerPadding
+		};
+		ImVec2 center_padded_topRight{
+			center.x + c->centerPadding,
+			center.y - c->centerPadding
+		};
+		ImVec2 center_padded_botRight{
+			center.x + c->centerPadding,
+			center.y + c->centerPadding
+		};
+		ImVec2 center_padded_botLeft{
+			center.x - c->centerPadding,
+			center.y + c->centerPadding
+		};
+
+		// Set alpha-value of the color based on how long it has been altered for (F1->0)
+		ImVec4 onHitColor = c->color;
+		onHitColor.w = 1 - (c->passedTimeSinceAlteration / c->durationOfAlteredCrosshair);
+		const ImU32 onHitcolor = ImColor(onHitColor);
+
+		//	\
+		//
+		//
+		// Draw an additional cross
+		draw_list->AddLine(
+			topLeft,
+			center_padded_topLeft,
+			onHitcolor,
+			c->thickness
+		);
+		//	\	/
+		//
+		//
+		// Draw an additional cross
+		draw_list->AddLine(
+			topRight,
+			center_padded_topRight,
+			onHitcolor,
+			c->thickness
+		);
+		//	\	/
+		//
+		//		\
+		// Draw an additional cross
+		draw_list->AddLine(
+			botRight,
+			center_padded_botRight,
+			onHitcolor,
+			c->thickness
+		);
+		//	\	/
+		//
+		//	/   \
+		// Draw an additional cross
+		draw_list->AddLine(
+			botLeft,
+			center_padded_botLeft,
+			onHitcolor,
+			c->thickness
+		);
+	}
+
 	ImGui::End();
-
-}
-
-void InGameGui::setPlayer(Entity* player) {
-	m_player = player;
-}
-
-void InGameGui::setCrosshair(Entity* pCrosshairEntity) {
-	m_crosshair = pCrosshairEntity;
 }

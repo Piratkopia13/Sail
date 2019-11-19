@@ -3,10 +3,10 @@
 
 #include "Component.h"
 
-
 class CrosshairComponent : public Component<CrosshairComponent> {
 public:
-	CrosshairComponent() {}
+	CrosshairComponent() {
+	}
 	~CrosshairComponent() {}
 
 
@@ -16,10 +16,18 @@ public:
 	}
 #endif
 
-	// Normal color
-	// Altered color
-
-	bool recentlyHitSomeone = false;
+	// Hit Detection and alteration
+	bool currentlyAltered = false;
 	float passedTimeSinceAlteration = 0.0f;
 	float durationOfAlteredCrosshair = 0.5f;
+
+	// Turn off while
+	bool sprinting = false;
+
+	// Rendering settings
+	ImVec4 color = ImVec4(1.0f, 1.0f, 0.4f, 1.0f);
+	float thickness = 1.0f;
+	float centerPadding = 10.0f;
+	float size = 200.0f;
+	float outerAlteredPadding = 10.0f;
 };

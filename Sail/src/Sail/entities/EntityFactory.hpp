@@ -49,4 +49,6 @@ namespace EntityFactory {
 	Entity::SPtr CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size);
 
 	Entity::SPtr CreateGUIEntity(const std::string& name, const std::string& texture, glm::vec2 origin, glm::vec2 size);
+
+	Entity::SPtr CreateCrosshairEntity(const std::string& name);
 }

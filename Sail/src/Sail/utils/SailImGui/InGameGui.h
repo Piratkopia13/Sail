@@ -15,5 +15,7 @@ public:
 
 private:
 	Entity* m_player = nullptr;
-	Entity* m_crosshair = nullptr;
+	Entity* m_crosshairEntity = nullptr;
+
+	void renderCrosshair(float screenWidth, float screenHeight);
 };

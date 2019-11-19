@@ -7,8 +7,10 @@ public:
 	~ProjectileSystem();
 
 	void update(float dt) override;
+	void setCrosshair(Entity* player);
 
 private:
 	// TODO: Replace with game settings
 	float m_projectileSplashSize;
+	Entity* m_crosshair = nullptr;
 };
