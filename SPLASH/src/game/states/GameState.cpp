@@ -143,7 +143,7 @@ GameState::GameState(StateStack& stack)
 	//EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f));
 
 
-	// TEST
+	// TEST TODO: Check if this texture actually works
 	m_testDDSTexture = new DX12DDSTexture("res/textures/pbr/Character/CF_Albedo.dds");
 	// Level Creation
 	

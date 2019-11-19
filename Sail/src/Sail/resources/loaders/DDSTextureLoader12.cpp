@@ -133,7 +133,7 @@ namespace
     inline HANDLE safe_handle(HANDLE h) { return (h == INVALID_HANDLE_VALUE) ? nullptr : h; }
 
     template<UINT TNameLength>
-    inline void SetDebugObjectName(_In_ ID3D12Device5Child* resource, _In_z_ const wchar_t(&name)[TNameLength])
+    inline void SetDebugObjectName(_In_ ID3D12DeviceChild* resource, _In_z_ const wchar_t(&name)[TNameLength])
     {
         #if !defined(NO_D3D12_DEBUG_NAME) && ( defined(_DEBUG) || defined(PROFILE) )
             resource->SetName(name);
@@ -1120,26 +1120,24 @@ namespace
         desc.Dimension = resDim;
 
         //CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
-		D3D12_HEAP_PROPERTIES defaultHeapProperties;
+		/*D3D12_HEAP_PROPERTIES defaultHeapProperties;
 		defaultHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 		defaultHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 		defaultHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 		defaultHeapProperties.CreationNodeMask = 1;
-		defaultHeapProperties.VisibleNodeMask = 1;
+		defaultHeapProperties.VisibleNodeMask = 1;*/
 
-		DX12Utils::CreateBuffer(d3dDevice, desc.DepthOrArraySize, desc.Flags, D3D12_RESOURCE_STATE_COPY_DEST, &defaultHeapProperties, &desc);/*d3dDevice->CreateCommittedResource(
-            &defaultHeapProperties,
-            D3D12_HEAP_FLAG_NONE,
-            &desc,
-            D3D12_RESOURCE_STATE_COPY_DEST,
-            nullptr,
-            IID_ID3D12Resource, reinterpret_cast<void**>(texture));*/
-        if (SUCCEEDED(hr))
-        {
-            _Analysis_assume_(*texture != nullptr);
+		*texture = DX12Utils::CreateBuffer(d3dDevice, desc.DepthOrArraySize, desc.Flags, D3D12_RESOURCE_STATE_COPY_DEST, DX12Utils::sDefaultHeapProps, &desc);
+		/*d3dDevice->CreateCommittedResource(
+		&defaultHeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&desc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_ID3D12Resource, reinterpret_cast<void**>(texture));*/
+		_Analysis_assume_(*texture != nullptr);
 
-            SetDebugObjectName(*texture, L"DDSTextureLoader");
-        }
+		SetDebugObjectName(*texture, L"DDSTextureLoader");
 
         return hr;
     }
