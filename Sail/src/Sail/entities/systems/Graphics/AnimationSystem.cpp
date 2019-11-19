@@ -164,11 +164,18 @@ void AnimationSystem::updateTransforms(const float dt) {
 			const float frame0Time = animationC->currentAnimation->getTimeAtFrame(frame00);
 			const float frame1Time = animationC->currentAnimation->getTimeAtFrame(frame01);
 			// weight = time - time(0) / time(1) - time(0)
+
 			const float w = (animationC->animationTime - frame0Time) / (frame1Time - frame0Time);
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				interpolate(animationC->transforms[transformIndex], transforms00[transformIndex], transforms01[transformIndex], w);
+				// Rotate the upper body in relation to camera pitch
+				if (transformIndex > 0 && transformIndex < 31) {
+					// Origin of root bone - "hips"
+					const glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
+					auto trans = glm::translate(transOrig) * glm::rotate(animationC->pitch, glm::vec3(1.f, 0.f, 0.f)) * glm::translate(-transOrig);
+					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
+				}
 			}
-
 		} else if (transforms00) {
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				animationC->transforms[transformIndex] = transforms00[transformIndex];
@@ -188,7 +195,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
 			
 			//KEEP THIS DO NOT REMOVE FUCK YOU
-			//animationC->leftHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
+			animationC->leftHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
 			animationC->leftHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
 		}
 
