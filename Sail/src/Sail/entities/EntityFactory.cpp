@@ -8,13 +8,9 @@
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
 #include "Sail/ai/states/SearchingState.h"
-#include "Sail/entities/components/LocalOwnerComponent.h"
-#include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/graphics/geometry/factory/StringModel.h"
 #include "Sail/graphics/geometry/factory/QuadModel.h"
-#include "Sail/entities/components/GUIComponent.h"
-#include "Sail/entities/components/SanityComponent.h"
 
 void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos, size_t lightIndex) {
 	// Candle has a model and a bounding box
