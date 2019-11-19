@@ -63,7 +63,6 @@ void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
 // Prepare transform components for the next frame
 void KillCamReceiverSystem::prepareUpdate() {
 	for (auto e : entities) {
-
 		e->getComponent<TransformComponent>()->prepareUpdate();
 	}
 }

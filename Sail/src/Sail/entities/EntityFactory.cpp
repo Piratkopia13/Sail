@@ -101,7 +101,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 
 	Netcode::ComponentID netComponentID = myPlayer->getComponent<NetworkSenderComponent>()->m_id;
 	myPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
-	//myPlayer->addComponent<ReplayComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
 	myPlayer->addComponent<CollisionComponent>();
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = true;
@@ -126,7 +125,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
 			gunNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::GUN_ENTITY, playerID)->m_id;
 			c->addComponent<NetworkReceiverComponent>(gunNetID, Netcode::EntityType::GUN_ENTITY);
-			//c->addComponent<ReplayComponent>(gunNetID, Netcode::EntityType::GUN_ENTITY);
 			//leave this for now
 			//c->addComponent<GunComponent>();]
 			c->addComponent<RealTimeComponent>(); // The player's gun is updated each frame
@@ -137,7 +135,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 		if (c->hasComponent<CandleComponent>()) {
 			candleNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, playerID)->m_id;
 			c->addComponent<NetworkReceiverComponent>(candleNetID, Netcode::EntityType::CANDLE_ENTITY);
-			//c->addComponent<ReplayComponent>(candleNetID, Netcode::EntityType::CANDLE_ENTITY);
 			c->addComponent<LocalOwnerComponent>(netComponentID);
 			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
 			c->addComponent<MovementComponent>();
@@ -161,13 +158,8 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 		);
 
 
-
-
-
-
 	// REPLAY COPY OF THE ENTITY
 	CreateReplayPlayer(netComponentID, candleNetID, gunNetID, lightIndex, spawnLocation);
-
 
 	return myPlayer;
 }
@@ -185,8 +177,6 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 
 	auto rec = otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 
-	//otherPlayer->addComponent<ReplayComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
-
 	otherPlayer->addComponent<OnlineOwnerComponent>(playerCompID);
 	otherPlayer->addComponent<RenderInActiveGameComponent>();
 
@@ -201,7 +191,6 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 			if ( NWrapperSingleton::getInstance().isHost()) {
 				c->addComponent<NetworkSenderComponent>(Netcode::EntityType::GUN_ENTITY, gunCompID)->m_id = rec->m_id;
 			}
-			//c->addComponent<ReplayComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
 			c->addComponent<OnlineOwnerComponent>(playerCompID);
 			c->addComponent<RenderInActiveGameComponent>();
 
@@ -214,7 +203,6 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 				c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, candleCompID)->m_id = rec->m_id;
 			}
 
-			//c->addComponent<ReplayComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
 			c->addComponent<OnlineOwnerComponent>(playerCompID);
 			c->addComponent<RenderInActiveGameComponent>();
 		}
@@ -223,12 +211,6 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 	if (NWrapperSingleton::getInstance().isHost()) {
 		otherPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerCompID, Netcode::MessageType::UPDATE_SANITY)->m_id = rec->m_id;
 	}
-
-
-
-
-
-
 
 
 	// REPLAY COPY OF THE ENTITY

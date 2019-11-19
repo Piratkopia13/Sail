@@ -102,8 +102,8 @@ struct Systems {
 
 
 	// Systems that need duplicate versions for the killcam
-	MetaballSubmitSystem<RenderInActiveGameComponent>*     metaballSubmitSystem               = nullptr;
-	MetaballSubmitSystem<RenderInReplayComponent>*         killCamMetaballSubmitSystem        = nullptr;
-	ModelSubmitSystem<RenderInActiveGameComponent>*        modelSubmitSystem                  = nullptr;
-	ModelSubmitSystem<RenderInReplayComponent>*            killCamModelSubmitSystem           = nullptr;
+	MetaballSubmitSystem<RenderInActiveGameComponent>* metaballSubmitSystem        = nullptr;
+	MetaballSubmitSystem<RenderInReplayComponent>*     killCamMetaballSubmitSystem = nullptr;
+	ModelSubmitSystem<RenderInActiveGameComponent>*    modelSubmitSystem           = nullptr;
+	ModelSubmitSystem<RenderInReplayComponent>*        killCamModelSubmitSystem    = nullptr;
 };

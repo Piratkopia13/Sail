@@ -24,7 +24,7 @@ void MovementSystem::update(float dt) {
 		// Rotation
 		if (movement->rotation != glm::vec3(0.0f)) {
 			transform->rotate(movement->rotation * dt);
-		}			
+		}
 
 		// Set initial value which might be changed in CollisionSystem
 		movement->updateableDt = dt;

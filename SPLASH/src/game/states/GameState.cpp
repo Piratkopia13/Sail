@@ -809,11 +809,7 @@ void GameState::shutDownGameState() {
 void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	
 	m_componentSystems.killCamReceiverSystem->prepareUpdate();
-
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
-	//m_componentSystems.killCamMovementSystem->update(dt);
-	//m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
-
 }
 
 // HERE BE DRAGONS
