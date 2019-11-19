@@ -96,11 +96,21 @@ public:
 
 	const unsigned int numberOfModels() const;
 	const unsigned int numberOfTextures() const;
+	const unsigned int getByteSize() const;
 	// SoundManager
 	//SoundManager* getSoundManager();
 
 private:
 	const std::string getSuitableName(const std::string& name);
+
+	enum RMDataType {
+		Models = 0,
+		Animations,
+		Audio,
+		Textures,
+		Generic
+	};
+	unsigned int m_byteSize[5];
 
 private:
 	// Audio files/data mapped to their filenames

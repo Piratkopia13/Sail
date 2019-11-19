@@ -25,3 +25,7 @@ XAUDIO2_BUFFER* AudioData::getSoundBuffer() {
 WAVEFORMATEXTENSIBLE* AudioData::getFormat() {
 	return &this->m_data.m_formatWAV;
 }
+
+unsigned int AudioData::getByteSize() const {
+	return sizeof(this) + m_data.m_soundBuffer.AudioBytes;
+}

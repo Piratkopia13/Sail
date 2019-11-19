@@ -29,8 +29,8 @@ Mesh::~Mesh() {
 
 
 
-float Mesh::getSize() {
-	return meshData.numVertices * sizeof(glm::vec3) * 4 + meshData.numVertices * sizeof(glm::vec2);
+unsigned int Mesh::getByteSize() const {
+	return sizeof(this) + meshData.numIndices * sizeof(unsigned long) + meshData.numVertices * sizeof(glm::vec3) * 4 + meshData.numVertices * sizeof(glm::vec2);
 }
 
 const Mesh::Data& Mesh::getMeshData() {
