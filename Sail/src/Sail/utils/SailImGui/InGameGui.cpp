@@ -74,6 +74,9 @@ void InGameGui::renderWindow() {
 
 	ImGui::End();
 
+	// Crosshair settings window
+
+
 	// Crosshair
 	float centerPadding = 10;
 	ImVec2 crosshairSize{
@@ -139,8 +142,8 @@ void InGameGui::renderWindow() {
 		right.y
 	};
 	ImVec2 center_padded_left{
-		right.x - centerPadding,
-		right.y
+		center.x - centerPadding,
+		left.y
 	};
 
 	ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -191,4 +194,8 @@ void InGameGui::renderWindow() {
 
 void InGameGui::setPlayer(Entity* player) {
 	m_player = player;
+}
+
+void InGameGui::setCrosshair(Entity* pCrosshairEntity) {
+	m_crosshair = pCrosshairEntity;
 }

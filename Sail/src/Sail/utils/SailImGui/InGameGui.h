@@ -11,7 +11,9 @@ public:
 
 	virtual void renderWindow() override;
 	virtual void setPlayer(Entity* player);
+	void setCrosshair(Entity* pCrosshairEntity);
 
 private:
 	Entity* m_player = nullptr;
+	Entity* m_crosshair = nullptr;
 };
