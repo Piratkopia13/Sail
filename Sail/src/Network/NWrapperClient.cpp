@@ -180,8 +180,6 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		auto& stat = m_app->getSettings().gameSettingsStatic;
 		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 		m_app->getSettings().deSerialize(std::string(&nEvent.data->Message.rawMsg[1]), stat, dynamic);
-
-		//EventDispatcher::Instance().emit(SettingsUpdatedEvent());
 	}
 		break;
 	case ML_TEAM_REQUEST:
