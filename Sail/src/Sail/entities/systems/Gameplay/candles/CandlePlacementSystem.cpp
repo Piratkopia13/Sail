@@ -45,6 +45,17 @@ void CandlePlacementSystem::update(float dt) {
 		static const float candleHeight = 0.5f;
 		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrixWithUpdate() * glm::vec4(0, candleHeight, 0, 1);
 		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
+
+		// Flicker effect for the torches
+		static float clockLightModifier = 0;
+		clockLightModifier += dt * (rand() % 100 / 100.0f);
+		
+		//						Sine wave function                    +        random variance
+		float r = (sinf(clockLightModifier * 50.0f) * 0.075f + 0.55f) + (rand() % 10 - 5) / 50.0f;
+		auto light = e->getComponent<LightComponent>();
+		//light->m_pointLight.setColor(glm::vec3(r + 0.1f, (r - 0.05f) * 0.5f, (r - 0.1f) * 0.25f));
+		light->defaultColor = glm::vec3(r + 0.1f, (r - 0.05f) * 0.5f, (r - 0.1f) * 0.25f);
+			
 	}
 }
 
