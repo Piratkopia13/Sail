@@ -403,6 +403,15 @@ void AnimationSystem::initDebugAnimations() {
 	}
 }
 
+#ifdef DEVELOPMENT
+unsigned int AnimationSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	size += sizeof(ComputeShaderDispatcher);
+	size += sizeof(InputLayout);
+	return size;
+}
+#endif
+
 void AnimationSystem::addTime(AnimationComponent* e, const float time) {
 	e->animationTime += time * e->animationSpeed;
 	if (e->animationTime >= e->currentAnimation->getMaxAnimationTime()) {

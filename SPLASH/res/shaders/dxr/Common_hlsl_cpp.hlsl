@@ -19,6 +19,8 @@ typedef glm::vec3 float3;
 typedef glm::vec4 float4;
 typedef glm::mat3x3 float3x3;
 typedef glm::mat4x4 float4x4;
+typedef glm::u32vec2 uint2;
+typedef glm::u32vec3 uint3;
 typedef UINT32 uint;
 
 namespace DXRShaderCommon {
@@ -34,20 +36,15 @@ namespace DXRShaderCommon {
 #define METABALL_RADIUS 0.12f
 #define MAX_DECALS 100
 
-#define WATER_GRID_X 350 / 4  // Should be approximately 5 per world unit
-#define WATER_GRID_Y 37
-#define WATER_GRID_Z 350
-#define WATER_ARR_SIZE (WATER_GRID_X * WATER_GRID_Y * WATER_GRID_Z)
-
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;
 static const uint MESH_HAS_ALBEDO_TEX 					= 	1 << 1;
 static const uint MESH_HAS_NORMAL_TEX 					= 	1 << 2;
 static const uint MESH_HAS_METALNESS_ROUGHNESS_AO_TEX	= 	1 << 3;
 
-#define INSTACE_MASK_DEFAULT 0xF0
-#define INSTACE_MASK_METABALLS 0x01
-#define INSTACE_MASK_CAST_SHADOWS 0x02
+#define INSTANCE_MASK_DEFAULT 0xF0
+#define INSTANCE_MASK_METABALLS 0x01
+#define INSTANCE_MASK_CAST_SHADOWS 0x02
 
 struct RayPayload {
 	float4 color;
@@ -110,6 +107,8 @@ struct SceneCBuffer {
 	float3 mapSize;
 	float padding3;
 	float3 mapStart;
+	float padding4;
+	uint3 waterArraySize;
 };
 
 // Properties set once per BLAS/Mesh
