@@ -183,6 +183,15 @@ void NetworkReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	args.ownersNetId   = info.ownerID;
 	args.netCompId     = info.projectileID;
 
+#ifdef _PERFORMANCE_TEST
+	if (!wasRequestedByMe) {
+		// Since the player who spawns a projectile is responsible for destroying it and the projectiles in the 
+		// performance test don't have owners, we limit their lifetime to make it more comparable with how many
+		// projectiles there would be in the world if you had 12 actual players firing simultaneously.
+		args.lifetime = 0.4f;
+	}
+#endif
+
 	EntityFactory::CreateProjectile(e, args);
 }
 
