@@ -16,13 +16,11 @@ LobbyHostState::~LobbyHostState() {
 
 }
 
-bool LobbyHostState::onMyTextInput(const TextInputEvent& event) {
-	if (this->inputToChatLog(event.msg)) {
-		Message temp{ NWrapperSingleton::getInstance().getMyPlayer().id, m_currentmessage };
-		this->addMessageToChat(temp);
-		m_network->sendChatMsg(m_currentmessage);
-		std::string msg = this->fetchMessage();
-	}
+bool LobbyHostState::onMyTextInput(const ChatSent& event) {
+		Message temp{ NWrapperSingleton::getInstance().getMyPlayer().id, m_message };
+		addMessageToChat(temp);
+		m_network->sendChatMsg(m_message);
+
 
 	return true;
 }
