@@ -27,5 +27,5 @@ WAVEFORMATEXTENSIBLE* AudioData::getFormat() {
 }
 
 unsigned int AudioData::getByteSize() const {
-	return sizeof(this) + m_data.m_soundBuffer.AudioBytes;
+	return sizeof(*this) + m_data.m_soundBuffer.AudioBytes;
 }

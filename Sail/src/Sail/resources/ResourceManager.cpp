@@ -232,7 +232,7 @@ const unsigned int ResourceManager::getByteSize() const {
 	for (int i = 0; i < 5; i++) {
 		size += m_byteSize[i];
 	}
-	return size + sizeof(this);
+	return size + sizeof(*this);
 }
 
 const unsigned int ResourceManager::getModelByteSize() const {

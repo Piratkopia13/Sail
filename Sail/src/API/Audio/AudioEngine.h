@@ -93,6 +93,10 @@ public:
 
 	void updateProjectileLowPass(float frequency, int indexToSource);
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const;
+#endif
+
 private: 
 	bool m_isRunning = true;
 

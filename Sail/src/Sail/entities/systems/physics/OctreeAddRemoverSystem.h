@@ -21,7 +21,9 @@ public:
 
 	void setCulling(bool activated, Camera* camera);
 
-
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
 
 private:
 	Octree* m_octree;

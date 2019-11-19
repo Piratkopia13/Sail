@@ -80,6 +80,12 @@ void GunSystem::update(float dt) {
 	}
 }
 
+#ifdef DEVELOPMENT
+unsigned int GunSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
+
 void GunSystem::alterProjectileSpeed(GunComponent* gun) {
 	gun->projectileSpeed = gun->baseProjectileSpeed + (gun->projectileSpeedRange * (gun->gunOverloadvalue/gun->gunOverloadThreshold));
 }
