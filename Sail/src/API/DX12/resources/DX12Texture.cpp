@@ -89,7 +89,7 @@ bool DX12Texture::hasBeenInitialized() const {
 	return m_isInitialized;
 }
 
-ID3D12Resource1* DX12Texture::getResource() const {
+ID3D12Resource* DX12Texture::getResource() const {
 	return textureDefaultBuffers[0].Get();
 }
 

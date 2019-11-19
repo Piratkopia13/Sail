@@ -48,9 +48,9 @@ public:
 
 private:
 	struct AccelerationStructureBuffers {
-		wComPtr<ID3D12Resource1> scratch = nullptr;
-		wComPtr<ID3D12Resource1> result = nullptr;
-		wComPtr<ID3D12Resource1> instanceDesc = nullptr;    // Used only for top-level AS
+		wComPtr<ID3D12Resource> scratch = nullptr;
+		wComPtr<ID3D12Resource> result = nullptr;
+		wComPtr<ID3D12Resource> instanceDesc = nullptr;    // Used only for top-level AS
 		bool allowUpdate = false;
 		void release() {
 			if (scratch) {
@@ -149,7 +149,7 @@ private:
 
 	std::vector<MeshHandles> m_rtMeshHandles[2];
 	// Metaballs
-	std::vector<ID3D12Resource1*> m_metaballPositions_srv;
+	std::vector<ID3D12Resource*> m_metaballPositions_srv;
 	UINT m_metaballsToRender;
 	// Decals
 	UINT m_decalsToRender;
@@ -171,7 +171,7 @@ private:
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
 
 	// Metaball Stuff
-	std::vector<ID3D12Resource1*> m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
+	std::vector<ID3D12Resource*> m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
 
 	// Water voxel grid stuff
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;

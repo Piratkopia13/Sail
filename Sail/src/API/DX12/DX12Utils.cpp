@@ -3,7 +3,7 @@
 
 #include "Sail/utils/Utils.h"
 
-void DX12Utils::UpdateDefaultBufferData(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const void* data, UINT64 byteSize, UINT64 offset, ID3D12Resource1* defaultBuffer, ID3D12Resource1** uploadBuffer) {
+void DX12Utils::UpdateDefaultBufferData(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const void* data, UINT64 byteSize, UINT64 offset, ID3D12Resource* defaultBuffer, ID3D12Resource** uploadBuffer) {
 	// TODO: make this method useful
 
 	D3D12_RESOURCE_DESC bufferDesc{};
@@ -40,7 +40,7 @@ void DX12Utils::UpdateDefaultBufferData(ID3D12Device* device, ID3D12GraphicsComm
 	SetResourceTransitionBarrier(cmdList, defaultBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
-ID3D12Resource1* DX12Utils::CreateBuffer(ID3D12Device5* device, UINT64 size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps, D3D12_RESOURCE_DESC* bufDesc) {
+ID3D12Resource* DX12Utils::CreateBuffer(ID3D12Device5* device, UINT64 size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps, D3D12_RESOURCE_DESC* bufDesc) {
 
 	D3D12_RESOURCE_DESC newBufDesc = {};
 	if (!bufDesc) {
@@ -59,7 +59,7 @@ ID3D12Resource1* DX12Utils::CreateBuffer(ID3D12Device5* device, UINT64 size, D3D
 		bufDesc = &newBufDesc;
 	}
 
-	ID3D12Resource1* pBuffer = nullptr;
+	ID3D12Resource* pBuffer = nullptr;
 	auto hr = device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, bufDesc, initState, nullptr, IID_PPV_ARGS(&pBuffer));
 	if (FAILED(hr)) {
 		_com_error err(hr);

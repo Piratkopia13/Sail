@@ -16,7 +16,7 @@ public:
 	// It is used to create resource objects that needs an open command list
 	void initBuffers(ID3D12GraphicsCommandList4* cmdList);
 	bool hasBeenInitialized() const;
-	ID3D12Resource1* getResource() const;
+	ID3D12Resource* getResource() const;
 
 private:
 	void generateMips(ID3D12GraphicsCommandList4* cmdList);
@@ -27,7 +27,7 @@ private:
 	DX12API* context;
 	TextureData& m_textureData;
 	D3D12_RESOURCE_DESC m_textureDesc;
-	wComPtr<ID3D12Resource1> m_textureUploadBuffer;
+	wComPtr<ID3D12Resource> m_textureUploadBuffer;
 
 	std::mutex m_initializeMutex;
 	bool m_isInitialized;

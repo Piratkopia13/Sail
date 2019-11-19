@@ -397,7 +397,7 @@ void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, co
 		return;
 	}
 	void* pMappedData;
-	ID3D12Resource1* res;
+	ID3D12Resource* res;
 
 	//UPDATE AABB
 	res = m_aabb_desc_resource[m_context->getSwapIndex()];
