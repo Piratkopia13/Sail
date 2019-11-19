@@ -34,7 +34,6 @@ static std::ofstream out("LogFiles/KillCamReceiverSystem.cpp.log");
 // TODO: register more components
 KillCamReceiverSystem::KillCamReceiverSystem() : ReceiverBase() {
 	registerComponent<ReplayReceiverComponent>(true, false, false);
-	//registerComponent<ReplayTransformComponent>(true, true, true);
 
 	//EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
@@ -54,7 +53,6 @@ void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
 void KillCamReceiverSystem::prepareUpdate() {
 	for (auto e : entities) {
 
-		//e->getComponent<ReplayTransformComponent>()->prepareUpdate();
 		e->getComponent<TransformComponent>()->prepareUpdate();
 	}
 }
@@ -248,7 +246,6 @@ void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const 
 // Might need some optimization (like sorting) if we have a lot of networked entities
 void KillCamReceiverSystem::setLocalPosition(const Netcode::ComponentID id, const glm::vec3& translation) {
 	if (auto e = findFromNetID(id); e) {
-		//e->getComponent<ReplayTransformComponent>()->setTranslation(translation);
 		e->getComponent<TransformComponent>()->setTranslation(translation);
 		return;
 	}
@@ -257,7 +254,6 @@ void KillCamReceiverSystem::setLocalPosition(const Netcode::ComponentID id, cons
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rotation) {
 	if (auto e = findFromNetID(id); e) {
-		//e->getComponent<ReplayTransformComponent>()->setRotations(rotation);
 		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
 	}
@@ -266,7 +262,6 @@ void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::quat& rotation) {
 	if (auto e = findFromNetID(id); e) {
-		//e->getComponent<ReplayTransformComponent>()->setRotations(rotation);
 		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
 	}

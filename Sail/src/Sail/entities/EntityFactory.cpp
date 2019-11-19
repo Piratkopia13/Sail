@@ -60,10 +60,6 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	pl.setAttenuation(0.f, 0.f, 0.2f);
 	pl.setIndex(lightIndex);
 	candle->addComponent<LightComponent>(pl);
-
-
-	// Components needed for killcam
-	candle->addComponent<ReplayTransformComponent>();
 }
 
 Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
@@ -79,10 +75,6 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 	gun->addComponent<ModelComponent>(candleModel);
 	gun->addComponent<TransformComponent>();
 	gun->addComponent<CullingComponent>();
-
-
-	// Components needed for killcam
-	gun->addComponent<ReplayTransformComponent>();
 
 	return gun;
 }
@@ -258,10 +250,6 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 	CreateGenericPlayer(replayPlayer, lightIndex, spawnLocation, Netcode::getComponentOwner(playerCompID), true);
 	
 	replayPlayer->addComponent<ReplayReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
-	//replayPlayer->addComponent<ReplayTransformComponent>(spawnLocation);
-	//replayPlayer->removeComponent<TransformComponent>();
-	//replayPlayer->addComponent<RenderInReplayComponent>();
-
 
 	// Remove components that shouldn't be used by entities in the killcam
 	replayPlayer->removeComponent<PlayerComponent>();
@@ -277,23 +265,19 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 	for (Entity* c : replayPlayer->getChildEntities()) {
 		if (c->getName() == replayPlayer->getName() + "WaterGun") {
 			c->addComponent<ReplayReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
-			//c->addComponent<RenderInReplayComponent>();
 			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
-			//c->addComponent<ReplayTransformComponent>(c->getComponent<TransformComponent>()->getTranslation());
-			//c->removeComponent<TransformComponent>();
 		}
 		if (c->hasComponent<CandleComponent>()) {
 			c->addComponent<ReplayReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
-			//c->addComponent<RenderInReplayComponent>();
 			c->removeComponent<CollidableComponent>();
 			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
-
-			//c->addComponent<ReplayTransformComponent>(c->getComponent<TransformComponent>()->getTranslation());
-			//c->removeComponent<TransformComponent>();
 		}
 	}
 
 	ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(replayPlayer.get());
+
+	// Note: The RenderInReplayComponent is added to these entities once KillCamReceiverSystem start running so don't
+	//       add those components here
 
 	return replayPlayer;
 }
@@ -407,9 +391,6 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	ac->leftHandPosition = glm::identity<glm::mat4>();
 	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.563f, 1.059f, 0.110f));
 	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
-
-	// Components needed for killcam
-	//playerEntity->addComponent<ReplayTransformComponent>();
 }
 
 Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterModel, const glm::vec3& pos, Model* lightModel, size_t lightIndex, NodeSystem* ns) {
@@ -482,13 +463,10 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	e->addComponent<CollidableComponent>();
 	e->addComponent<CullingComponent>();
 
+	e->addComponent<RenderInActiveGameComponent>();
 
 	// Components needed to be rendered in the killcam
-	//e->addComponent<ReplayTransformComponent>(pos, rot, scale);
-
-	e->addComponent<RenderInActiveGameComponent>();
 	e->addComponent<RenderInReplayComponent>();
-	
 
 	return e;
 }
@@ -531,7 +509,6 @@ Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const Project
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
 
-	//e->addComponent<ReplayTransformComponent>(info.pos);
 	e->addComponent<TransformComponent>(info.pos);
 	e->addComponent<ReplayReceiverComponent>(info.netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
 

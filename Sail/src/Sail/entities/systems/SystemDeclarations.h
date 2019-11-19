@@ -1,7 +1,5 @@
 #pragma once
 
-//#include "../components/TransformComponent.h"
-//#include "../components/ReplayTransformComponent.h"
 #include "../components/RenderInActiveGameComponent.h"
 #include "../components/RenderInReplayComponent.h"
 
@@ -30,6 +28,8 @@ class LevelSystem;
 class LifeTimeSystem;
 class LightSystem;
 class LightListSystem;
+class MovementSystem;
+class MovementPostCollisionSystem;
 class NetworkReceiverSystem;
 class NetworkSenderSystem;
 class OctreeAddRemoverSystem;
@@ -55,10 +55,6 @@ template <typename T>
 class MetaballSubmitSystem;
 template <typename T>
 class ModelSubmitSystem;
-template <typename T>
-class MovementSystem;
-template <typename T>
-class MovementPostCollisionSystem;
 
 struct Systems {
 	AiSystem*                    aiSystem                    = nullptr;
@@ -84,6 +80,8 @@ struct Systems {
 	LifeTimeSystem*              lifeTimeSystem              = nullptr;
 	LightSystem*                 lightSystem                 = nullptr;
 	LightListSystem*             lightListSystem             = nullptr;
+	MovementSystem*              movementSystem              = nullptr;
+	MovementPostCollisionSystem* movementPostCollisionSystem = nullptr;
 	NetworkReceiverSystem*       networkReceiverSystem       = nullptr;
 	NetworkSenderSystem*         networkSenderSystem         = nullptr;
 	OctreeAddRemoverSystem*      octreeAddRemoverSystem      = nullptr;
@@ -104,21 +102,8 @@ struct Systems {
 
 
 	// Systems that need duplicate versions for the killcam
-	/*MetaballSubmitSystem<TransformComponent>*              metaballSubmitSystem               = nullptr;
-	MetaballSubmitSystem<ReplayTransformComponent>*        killCamMetaballSubmitSystem        = nullptr;
-	MovementSystem<TransformComponent>*                    movementSystem                     = nullptr;
-	MovementSystem<ReplayTransformComponent>*              killCamMovementSystem              = nullptr;
-	MovementPostCollisionSystem<TransformComponent>*       movementPostCollisionSystem        = nullptr;
-	MovementPostCollisionSystem<ReplayTransformComponent>* killCamMovementPostCollisionSystem = nullptr;
-	ModelSubmitSystem<TransformComponent>*                 modelSubmitSystem                  = nullptr;
-	ModelSubmitSystem<ReplayTransformComponent>*           killCamModelSubmitSystem           = nullptr;*/
-
 	MetaballSubmitSystem<RenderInActiveGameComponent>*     metaballSubmitSystem               = nullptr;
 	MetaballSubmitSystem<RenderInReplayComponent>*         killCamMetaballSubmitSystem        = nullptr;
-	MovementSystem<TransformComponent>*                    movementSystem                     = nullptr;
-	//MovementSystem<Transform>*              killCamMovementSystem              = nullptr;
-	MovementPostCollisionSystem<TransformComponent>*       movementPostCollisionSystem        = nullptr;
-	//MovementPostCollisionSystem<ReplayTransformComponent>* killCamMovementPostCollisionSystem = nullptr;
 	ModelSubmitSystem<RenderInActiveGameComponent>*        modelSubmitSystem                  = nullptr;
 	ModelSubmitSystem<RenderInReplayComponent>*            killCamModelSubmitSystem           = nullptr;
 };

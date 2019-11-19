@@ -3,7 +3,6 @@
 #include "..//..//components/ModelComponent.h"
 #include "..//..//components/RealTimeComponent.h"
 #include "..//..//components/TransformComponent.h"
-//#include "..//..//components/ReplayTransformComponent.h"
 #include "..//..//components/CullingComponent.h"
 #include "..//..//components/RenderInActiveGameComponent.h"
 #include "..//..//components/RenderInReplayComponent.h"
