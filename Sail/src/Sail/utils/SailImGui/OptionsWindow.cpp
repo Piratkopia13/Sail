@@ -97,12 +97,14 @@ void OptionsWindow::renderWindow() {
 		}
 	}
 
+
+	/* Left out because not fully implemented, make it so if you wish, henry! */
 	//Drawxhare
-	if (ImGui::BeginChild("##XHARE", ImVec2(0, 100))) {
-		// draw
-		//drawCrosshair();
-	}
-	ImGui::EndChild();
+	//if (ImGui::BeginChild("##XHARE", ImVec2(0, 100))) {
+	//	
+	//	//drawCrosshair();
+	//}
+	//ImGui::EndChild();
 }
 
 bool OptionsWindow::renderGameOptions() {

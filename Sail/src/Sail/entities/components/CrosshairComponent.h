@@ -29,5 +29,4 @@ public:
 	float thickness = 1.0f;
 	float centerPadding = 10.0f;
 	float size = 200.0f;
-	float outerAlteredPadding = 10.0f;
 };
