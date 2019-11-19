@@ -175,9 +175,6 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 	// Other players have a character model and animations
 
 	auto rec = otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
-	if (NWrapperSingleton::getInstance().isHost()) {
-		otherPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerCompID)->m_id = rec->m_id;
-	}
 
 	otherPlayer->addComponent<ReplayComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 
