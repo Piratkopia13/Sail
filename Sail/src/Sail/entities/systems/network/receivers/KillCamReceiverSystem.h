@@ -20,10 +20,11 @@ public:
 	KillCamReceiverSystem();
 	virtual ~KillCamReceiverSystem();
 
-	void prepareUpdate();
 	void handleIncomingData(const std::string& data) override;
-	void update            (float dt)                override;
+	void update (float dt) override;
+	void stop() override;
 
+	void prepareUpdate();
 	void processReplayData(float dt);
 
 
@@ -85,10 +86,9 @@ private:
 	// All the messages that have been sent/received over the network in the past few seconds
 	// Will be used like a ring buffer
 	std::array<std::queue<std::string>, REPLAY_BUFFER_SIZE> m_replayData;
-	size_t m_currentWriteInd = 0;
-	size_t m_currentReadInd = 1;
-
 	std::mutex m_replayDataLock;
 
-	bool hasStarted = false;
+	size_t m_currentWriteInd = 0;
+	size_t m_currentReadInd  = 1;
+	bool   m_hasStarted      = false;
 };

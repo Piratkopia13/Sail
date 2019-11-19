@@ -42,6 +42,17 @@ KillCamReceiverSystem::~KillCamReceiverSystem() {
 	//EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
+void KillCamReceiverSystem::stop() {
+	// Clear the saved data
+	for (std::queue<std::string>& data : m_replayData) {
+		data = std::queue<std::string>();
+	}
+
+	m_currentWriteInd = 0;
+	m_currentReadInd  = 1;
+	m_hasStarted      = false;
+}
+
 void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
 	std::lock_guard<std::mutex> lock(m_replayDataLock);
 
@@ -70,12 +81,12 @@ void KillCamReceiverSystem::update(float dt) {
 // Should only be called when the killcam is active
 void KillCamReceiverSystem::processReplayData(float dt) {
 	// Add the entities to all relevant systems so that they for example will have their animations updated
-	if (!hasStarted) {
+	if (!m_hasStarted) {
 		for (auto e : entities) {
 			e->tryToAddToSystems = true;
 			e->addComponent<RenderInReplayComponent>();
 		}
-		hasStarted = true;
+		m_hasStarted = true;
 	}
 	
 	
