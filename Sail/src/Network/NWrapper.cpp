@@ -104,20 +104,6 @@ Message NWrapper::processChatMessage(const char* data) {
 	};
 }
 
-void NWrapper::updateStateLoadStatus(States::ID state, char status) {
-	Player* myPlayer = NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID());
-	myPlayer->lastStateStatus.state = state;
-	myPlayer->lastStateStatus.status = status;
-
-	char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, NWrapperSingleton::getInstance().getMyPlayerID(), state, status, ML_NULL};
-	
-	if (NWrapperSingleton::getInstance().isHost()) {
-		sendMsgAllClients(msg, sizeof(msg));
-	} else {
-		sendMsg(msg, sizeof(msg));
-	}
-}
-
 void NWrapper::sendMsg(const char* msg, size_t size, TCP_CONNECTION_ID tcp_id) {
 	m_network->send(msg, size, tcp_id);
 }
