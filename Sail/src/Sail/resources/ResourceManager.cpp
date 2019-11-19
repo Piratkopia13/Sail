@@ -1,7 +1,5 @@
 #include "pch.h"
 #include "ResourceManager.h"
-//#include "../graphics/shader/deferred/DeferredGeometryShader.h"
-//#include "audio/SoundManager.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/api/Mesh.h"
@@ -10,8 +8,6 @@ const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
 
 ResourceManager::ResourceManager() {
-	//m_soundManager = std::make_unique<SoundManager>();
-	//m_assimpLoader = std::make_unique<AssimpLoader>();
 	m_fbxLoader = std::make_unique<FBXLoader>();
 	for (int i = 0; i < 5; i++) {
 		m_byteSize[i] = 0;
@@ -134,10 +130,6 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 	}
 
 	if (temp) {
-		/*unsigned int size = 0U;
-		for (int i = 0; i < temp->getNumberOfMeshes(); i++) {
-			size += temp->getMesh(i)->getByteSize();
-		}*/
 		SAIL_LOG("Loaded model: " + filename + " (" + std::to_string((float)temp->getByteSize() / (1024.f * 1024.f)) + "MB)");
 		m_byteSize[RMDataType::Models] += temp->getByteSize();
 		temp->setName(filename);
@@ -254,14 +246,3 @@ const std::string ResourceManager::getSuitableName(const std::string& name) {
 	}
 	return "broken";
 }
-
-//void ResourceManager::reloadShaders() {
-//	for (auto it = m_shaderSets.begin(); it != m_shaderSets.end(); ++it)
-//		it->second->reload();
-//}
-
-
-// Sound Manager
-//SoundManager* ResourceManager::getSoundManager() {
-//	return m_soundManager.get();
-//}

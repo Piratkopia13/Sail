@@ -11,6 +11,7 @@ struct Rect {
 	int sizex;
 	int sizey;
 	int doors = 0;
+	bool isCloning = false;
 };
 struct Clutter {
 	float posx;
@@ -104,6 +105,7 @@ public:
 	int tileOffset;
 
 	std::vector<glm::vec3> spawnPoints;
+	std::vector<glm::vec3> extraSpawnPoints;
 private:
 	std::queue<Rect> chunks;
 	std::queue<Rect> blocks;
