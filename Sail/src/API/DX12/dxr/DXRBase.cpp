@@ -329,7 +329,7 @@ void DXRBase::updateWaterData() {
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
 		unsigned int& data = pair.second;
-		m_waterStructuredBuffer->updateData(&data, 1, 0, offset);
+		m_waterStructuredBuffer->updateData_new(&data, 1, 0, offset);
 	}
 
 	// Reset every other frame because of double buffering
@@ -862,24 +862,24 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 	// Make sure brdfLut texture has been initialized
 	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
 	if (!brdfLutTex.hasBeenInitialized()) {
-		brdfLutTex.initBuffers(cmdList, 0);
+		brdfLutTex.initBuffers(cmdList);
 	}
 
 	// Make sure decal textures has been initialized
 	{
 		auto& decalTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[0]));
 		if (!decalTex.hasBeenInitialized()) {
-			decalTex.initBuffers(cmdList, 0);
+			decalTex.initBuffers(cmdList);
 			decalTex.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
 		auto& decalTex1 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[1]));
 		if (!decalTex1.hasBeenInitialized()) {
-			decalTex1.initBuffers(cmdList, 0);
+			decalTex1.initBuffers(cmdList);
 			decalTex1.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
 		auto& decalTex2 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[2]));
 		if (!decalTex2.hasBeenInitialized()) {
-			decalTex2.initBuffers(cmdList, 0);
+			decalTex2.initBuffers(cmdList);
 			decalTex2.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
 	}
@@ -915,7 +915,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 				if (hasTexture) {
 					// Make sure textures have initialized / uploaded their data to its default buffer
 					if (!texture->hasBeenInitialized()) {
-						texture->initBuffers(cmdList, textureNum * blasIndex);
+						texture->initBuffers(cmdList);
 					}
 
 						// Copy SRV to DXR heap

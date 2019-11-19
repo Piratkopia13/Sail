@@ -52,7 +52,7 @@ DX12Texture::~DX12Texture() {
 
 }
 
-void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList, int meshIndex) {
+void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	//The lock_guard will make sure multiple threads wont try to initialize the same texture
 	std::lock_guard<std::mutex> lock(m_initializeMutex);
 	if (m_isInitialized)
@@ -80,7 +80,7 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList, int meshIndex
 
 	DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
 
-	generateMips(cmdList, meshIndex);
+	generateMips(cmdList);
 
 	m_isInitialized = true;
 }
@@ -93,19 +93,20 @@ ID3D12Resource1* DX12Texture::getResource() const {
 	return textureDefaultBuffers[0].Get();
 }
 
-void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshIndex) {
+void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 	auto& mipsShader = Application::getInstance()->getResourceManager().getShaderSet<GenerateMipsComputeShader>();
 	DX12ComputeShaderDispatcher csDispatcher;
 	const auto& settings = mipsShader.getComputeSettings();
 	csDispatcher.begin(cmdList);
 
-	auto* dxPipeline = static_cast<DX12ShaderPipeline*>(mipsShader.getPipeline());
+	auto* dxPipeline = mipsShader.getPipeline();
 
 	// TODO: read this from texture data
 	bool isSRGB = false;
-	dxPipeline->setCBufferVar_new("IsSRGB", &isSRGB, sizeof(bool), meshIndex);
 
 	for (uint32_t srcMip = 0; srcMip < m_textureDesc.MipLevels - 1u;) {
+		dxPipeline->setCBufferVar("IsSRGB", &isSRGB, sizeof(bool));
+		
 		uint64_t srcWidth = m_textureDesc.Width >> srcMip;
 		uint32_t srcHeight = m_textureDesc.Height >> srcMip;
 		uint32_t dstWidth = static_cast<uint32_t>(srcWidth >> 1);
@@ -116,7 +117,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 		// 0b10(2): Width is even, height is odd.
 		// 0b11(3): Both width and height are odd.
 		unsigned int srcDimension = (srcHeight & 1) << 1 | (srcWidth & 1);
-		dxPipeline->setCBufferVar_new("SrcDimension", &srcDimension, sizeof(unsigned int), meshIndex);
+		dxPipeline->setCBufferVar("SrcDimension", &srcDimension, sizeof(unsigned int));
 
 		// How many mipmap levels to compute this pass (max 4 mips per pass)
 		DWORD mipCount;
@@ -141,9 +142,9 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 
 		glm::vec2 texelSize = glm::vec2(1.0f / (float)dstWidth, 1.0f / (float)dstHeight);
 
-		dxPipeline->setCBufferVar_new("SrcMipLevel", &srcMip, sizeof(unsigned int), meshIndex);
-		dxPipeline->setCBufferVar_new("NumMipLevels", &mipCount, sizeof(unsigned int), meshIndex);
-		dxPipeline->setCBufferVar_new("TexelSize", &texelSize, sizeof(glm::vec2), meshIndex);
+		dxPipeline->setCBufferVar("SrcMipLevel", &srcMip, sizeof(unsigned int));
+		dxPipeline->setCBufferVar("NumMipLevels", &mipCount, sizeof(unsigned int));
+		dxPipeline->setCBufferVar("TexelSize", &texelSize, sizeof(glm::vec2));
 
 		const auto& heap = context->getComputeGPUDescriptorHeap();
 		unsigned int indexStart = heap->getAndStepIndex(20); // TODO: read this from root parameters
@@ -177,7 +178,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 		GenerateMipsComputeShader::Input input;
 		input.threadGroupCountX = (unsigned int)glm::ceil(dstWidth * settings->threadGroupXScale);
 		input.threadGroupCountY = (unsigned int)glm::ceil(dstHeight * settings->threadGroupYScale);
-		csDispatcher.dispatch(mipsShader, input, meshIndex, cmdList);
+		csDispatcher.dispatch(mipsShader, input, cmdList);
 
 		// Transition all subresources to the state that the texture think it is in
 		for (uint32_t mip = 0; mip < mipCount; ++mip) {

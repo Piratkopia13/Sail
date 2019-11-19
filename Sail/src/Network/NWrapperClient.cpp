@@ -175,8 +175,14 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		EventDispatcher::Instance().emit(NetworkSerializedPackageEvent(dataString));
 		break;
 
-	case ML_UPDATE_SETTINGS: 
-		EventDispatcher::Instance().emit(SettingsUpdatedEvent(std::string(nEvent.data->Message.rawMsg).substr(1,std::string::npos)));
+	case ML_UPDATE_SETTINGS:
+	{
+		auto& stat = m_app->getSettings().gameSettingsStatic;
+		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+		m_app->getSettings().deSerialize(std::string(&nEvent.data->Message.rawMsg[1]), stat, dynamic);
+
+		//EventDispatcher::Instance().emit(SettingsUpdatedEvent());
+	}
 		break;
 	case ML_TEAM_REQUEST:
 	{
@@ -218,5 +224,17 @@ void NWrapperClient::updatePlayerList(std::list<Player>& playerList) {
 
 void NWrapperClient::requestTeam(char team) {
 	char msg[] = { ML_TEAM_REQUEST, team, ML_NULL };
+	sendMsg(msg, sizeof(msg));
+}
+
+void NWrapperClient::updateStateLoadStatus(States::ID state, char status) {
+	m_lastReportedState = state;
+
+	Player* myPlayer = NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID());
+	myPlayer->lastStateStatus.state = state;
+	myPlayer->lastStateStatus.status = status;
+
+	char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, NWrapperSingleton::getInstance().getMyPlayerID(), state, status, ML_NULL };
+
 	sendMsg(msg, sizeof(msg));
 }
