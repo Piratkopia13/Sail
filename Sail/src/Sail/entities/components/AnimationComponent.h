@@ -116,6 +116,9 @@ public:
 	std::queue<Transition> transitions;
 	Transition* currentTransition;
 
+	// Used for upper body rotation
+	float pitch = 0.f;
+
 private:
 	AnimationStack* m_stack;
 };

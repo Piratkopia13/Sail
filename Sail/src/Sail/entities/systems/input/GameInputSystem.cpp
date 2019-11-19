@@ -367,12 +367,12 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
 		}
 
-		// Lock pitch to the range -89 - 89
-		if (m_pitch >= 89) {
-			m_pitch = 89;
+		// Lock pitch to the range -70 - 30
+		if (m_pitch >= 30) {
+			m_pitch = 30;
 		}
-		else if (m_pitch <= -89) {
-			m_pitch = -89;
+		else if (m_pitch <= -70) {
+			m_pitch = -70;
 		}
 
 		// Lock yaw to the range 0 - 360
@@ -427,6 +427,7 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		AnimationComponent* animation = e->getComponent<AnimationComponent>();
 
 		playerTrans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
+		animation->pitch = glm::radians(-m_pitch);
 
 		const glm::vec3 finalPos = playerTrans->getRenderMatrix(alpha) * glm::vec4(animation->headPositionLocalCurrent, 1.f);
 		const glm::vec3 camPos = glm::vec3(finalPos);

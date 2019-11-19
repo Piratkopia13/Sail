@@ -31,3 +31,4 @@ void Renderer::setLightSetup(LightSetup* lightSetup) {
 void Renderer::setTeamColors(const std::vector<glm::vec3>& teamColors) {
 	this->teamColors = teamColors;
 }
+

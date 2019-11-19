@@ -16,10 +16,12 @@ CandleHealthSystem::CandleHealthSystem() {
 
 
 	EventDispatcher::Instance().subscribe(Event::Type::WATER_HIT_PLAYER, this);
+	EventDispatcher::Instance().subscribe(Event::Type::TORCH_EXTINGUISHED, this);
 }
 
 CandleHealthSystem::~CandleHealthSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::WATER_HIT_PLAYER, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::TORCH_EXTINGUISHED, this);
 }
 
 void CandleHealthSystem::update(float dt) {
@@ -64,7 +66,7 @@ void CandleHealthSystem::update(float dt) {
 						e->getComponent<NetworkReceiverComponent>()->m_id,
 						candle->wasHitByPlayerID
 					},
-					false // Host extinguishes candle later in this function so don't send to ourself
+					true
 				);
 
 				// If the player has no more respawns kill them
@@ -108,28 +110,6 @@ void CandleHealthSystem::update(float dt) {
 		}
 #pragma endregion
 
-
-		// Everyone does this
-		if (candle->wasJustExtinguished) {
-			candle->health = 0.0f;
-			candle->isLit = false;
-			candle->wasJustExtinguished = false; // reset for the next tick
-
-			if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START) {
-				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
-			}
-
-			else if (candle->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
-				e->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
-			}
-		
-			// Play the reignition sound if the player has any candles left
-			if (candle->respawns < m_maxNumRespawns) {
-				auto playerEntity = e->getParent();
-				playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
-			}
-		}
-
 		// COLOR/INTENSITY
 		float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
 
@@ -157,7 +137,7 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		Entity* candle = findCandleFromParentID(e.netCompID);
 
 		if (!candle) {
-			Logger::Warning("CandleHealthSystem::onWaterHitPlayer: no matching entity found");
+			SAIL_LOG_WARNING("CandleHealthSystem::onWaterHitPlayer: no matching entity found");
 			return;
 		}
 
@@ -172,8 +152,34 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		}
 	};
 
+	auto onTorchExtinguished = [=] (const TorchExtinguishedEvent& e) {
+		for (auto torchE : entities) {
+			if (torchE->getComponent<NetworkReceiverComponent>()->m_id == e.netIDextinguished) {
+				auto candleC = torchE->getComponent<CandleComponent>();
+				candleC->health = 0.0f;
+				candleC->isLit = false;
+				candleC->wasJustExtinguished = false; // reset for the next tick
+
+				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START) {
+					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
+				}
+
+				else if (candleC->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
+					torchE->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
+				}
+
+				// Play the reignition sound if the player has any candles left
+				if (candleC->respawns < m_maxNumRespawns) {
+					auto playerEntity = torchE->getParent();
+					playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
+				}
+			}
+		}
+	};
+
 	switch (event.type) {
 	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
+	case Event::Type::TORCH_EXTINGUISHED: onTorchExtinguished((const TorchExtinguishedEvent&)event); break;	
 	default: break;
 	}
 
