@@ -8,12 +8,21 @@
 #include "Network/NWrapperSingleton.h"
 #include "../libraries/imgui/imgui.h"
 #include "Sail/events/EventDispatcher.h"
+#include "../events/NetworkJoinedEvent.h"
 
-EndGameState::EndGameState(StateStack& stack) : State(stack) {}
+EndGameState::EndGameState(StateStack& stack) : State(stack) {
+	if (NWrapperSingleton::getInstance().getPlayers().size() > 1) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::EndGame, 1);
+	}
+
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
+}
 
 EndGameState::~EndGameState() {
 	ECS::Instance()->stopAllSystems();
 	GameDataTracker::getInstance().resetData();
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 }
 
 bool EndGameState::processInput(float dt) {
@@ -83,6 +92,21 @@ bool EndGameState::renderImgui(float dt) {
 
 bool EndGameState::onEvent(const Event& event) {
 	State::onEvent(event);
+
+	switch (event.type) {
+		case Event::Type::NETWORK_JOINED:	onPlayerJoined((const NetworkJoinedEvent&)event); break;
+	default: break;
+	}
+
+	return true;
+}
+
+bool EndGameState::onPlayerJoined(const NetworkJoinedEvent& event) {
+
+	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(1, event.player.id, false);
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
+	}
 
 	return true;
 }
