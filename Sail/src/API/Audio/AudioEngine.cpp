@@ -380,6 +380,11 @@ unsigned int AudioEngine::getByteSize() const {
 	size += sizeof(IXAudio2);
 	size += sizeof(IXAudio2MasteringVoice);
 	size += sizeof(IXAudio2SubmixVoice);
+	size += sizeof(IXAPO);
+	size += sizeof(IXAudio2SourceVoice);
+	size += sizeof(IXAudio2SubmixVoice);
+	size += sizeof(IXAPOHrtfParameters);
+
 	return size;
 }
 #endif
