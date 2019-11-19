@@ -356,7 +356,9 @@ void AudioEngine::setSoundVolume(int index, float value) {
 
 void AudioEngine::setStreamVolume(int index, float value) {
 	if (this->checkStreamIndex(index)) {
-		m_stream[index].sourceVoice->SetVolume(value);
+		if (m_stream[index].sourceVoice != nullptr) {
+			m_stream[index].sourceVoice->SetVolume(value);
+		}
 	}
 }
 
