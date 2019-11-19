@@ -13,6 +13,8 @@
 SprinklerSystem::SprinklerSystem() : BaseComponentSystem() {
 	registerComponent<CandleComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, false);
+	registerComponent<RenderInActiveGameComponent>(true, false, false);
+
 	m_map = ECS::Instance()->getSystem<LevelSystem>();
 	m_settings = &Application::getInstance()->getSettings();
 	m_endGameStartLimit = m_settings->gameSettingsDynamic["map"]["sprinklerTime"].value;

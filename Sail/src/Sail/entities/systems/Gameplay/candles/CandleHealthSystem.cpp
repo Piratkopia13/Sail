@@ -12,7 +12,7 @@ CandleHealthSystem::CandleHealthSystem() {
 	registerComponent<NetworkSenderComponent>(false, true, false);
 	registerComponent<LightComponent>(true, true, true);
 	registerComponent<AudioComponent>(false, true, true);
-	//registerComponent<RenderInActiveGameComponent>(true, false, false); // Don't include replay candles in this system
+	registerComponent<RenderInActiveGameComponent>(true, false, false); // Don't include replay candles in this system
 
 
 	EventDispatcher::Instance().subscribe(Event::Type::WATER_HIT_PLAYER, this);

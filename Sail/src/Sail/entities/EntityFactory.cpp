@@ -247,7 +247,9 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 	Entity::SPtr replayPlayer = ECS::Instance()->createEntity("ReplayPlayer");
 	replayPlayer->tryToAddToSystems = false;
 
-	CreateGenericPlayer(replayPlayer, lightIndex, spawnLocation, Netcode::getComponentOwner(playerCompID), true);
+	// replay players spawn under the map since if they die long before the killcam spawns they won't be removed until
+	// the match ends
+	CreateGenericPlayer(replayPlayer, lightIndex, { 0.f, -100.f, 0.f }, Netcode::getComponentOwner(playerCompID), true);
 	
 	replayPlayer->addComponent<ReplayReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 
@@ -258,6 +260,8 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 	replayPlayer->removeComponent<SanityComponent>();
 	replayPlayer->removeComponent<AudioComponent>(); // TODO: Remove this line when we start having audio in the killcam
 	replayPlayer->removeComponent<GunComponent>();
+	replayPlayer->removeComponent<BoundingBoxComponent>();
+
 
 	// Create the player
 	AddCandleComponentsToPlayer(replayPlayer, lightIndex, Netcode::getComponentOwner(playerCompID));
@@ -266,10 +270,12 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 		if (c->getName() == replayPlayer->getName() + "WaterGun") {
 			c->addComponent<ReplayReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
 			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
+			c->removeComponent<BoundingBoxComponent>();
 		}
 		if (c->hasComponent<CandleComponent>()) {
 			c->addComponent<ReplayReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
 			c->removeComponent<CollidableComponent>();
+			c->removeComponent<BoundingBoxComponent>();
 			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
 		}
 	}

@@ -158,6 +158,8 @@ void KillCamReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 }
 
 void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
+	destroyEntity(networkIdOfKilled);
+	
 	//if (auto e = findFromNetID(networkIdOfKilled); e) {
 	//	EventDispatcher::Instance().emit(PlayerDiedEvent(
 	//		e,
