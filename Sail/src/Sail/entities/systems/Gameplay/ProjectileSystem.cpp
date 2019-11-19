@@ -74,8 +74,10 @@ void ProjectileSystem::update(float dt) {
 						SAIL_NEW Netcode::MessageWaterHitPlayer{
 							collision.entity->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
 							e->getComponent<NetworkSenderComponent>()->m_id
-						}
+						}, true
 					);
+
+					SAIL_LOG("I hit a torch with projectile: " + std::to_string(e->getComponent<NetworkSenderComponent>()->m_id));
 				}
 			}
 

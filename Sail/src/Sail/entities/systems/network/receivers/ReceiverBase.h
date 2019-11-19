@@ -15,15 +15,10 @@ public: // Functions
 	ReceiverBase();
 	virtual ~ReceiverBase();
 
-	// TODO: See which of these functions need to be in base and which ones are only used
-	//       by the network receiver systems and not by the killcam receiver system
 	void init(Netcode::PlayerID playerID, NetworkSenderSystem* netSendSysPtr);
 	void setPlayer(Entity* player);
 	void setGameState(GameState* gameState);
 	const std::vector<Entity*>& getEntities() const;
-	
-	// TODO: MOVE TO NRS
-	//void pushDataToBuffer(const std::string& data);
 
 	void processData(float dt, std::queue<std::string>& data, const bool ignoreFromSelf = true);
 
@@ -97,8 +92,6 @@ protected: // Functions
 	virtual void mergeHostsStats()                  = 0; // Host adds its data to global statistics before waiting for clients
 	virtual void prepareEndScreen(const Netcode::PlayerID sender, const EndScreenInfo& info) = 0;
 
-	//bool onEvent(const Event& event) override;
-
 
 	// NOT FROM SERIALIZED MESSAGES
 	virtual void playerDisconnect(const Netcode::PlayerID playerID) = 0;
@@ -111,7 +104,7 @@ protected:
 	GameDataTracker* m_gameDataTracker; // needed?
 
 	// The player entity is used to prevent creation of receiver components for entities controlled by the player
-	Netcode::PlayerID m_playerID; // TODO? move to NRS
+	Netcode::PlayerID m_playerID;
 	Entity* m_playerEntity;
 
 	GameState* m_gameStatePtr;

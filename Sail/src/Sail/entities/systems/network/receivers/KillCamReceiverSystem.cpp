@@ -35,11 +35,11 @@ static std::ofstream out("LogFiles/KillCamReceiverSystem.cpp.log");
 KillCamReceiverSystem::KillCamReceiverSystem() : ReceiverBase() {
 	registerComponent<ReplayReceiverComponent>(true, false, false);
 
-	//EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
 }
 
 KillCamReceiverSystem::~KillCamReceiverSystem() {
-	//EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
 }
 
 void KillCamReceiverSystem::stop() {
@@ -51,6 +51,7 @@ void KillCamReceiverSystem::stop() {
 	m_currentWriteInd = 0;
 	m_currentReadInd  = 1;
 	m_hasStarted      = false;
+	m_idOfKillingProjectile = 0;
 }
 
 void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
@@ -391,9 +392,19 @@ Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) cons
 
 
 bool KillCamReceiverSystem::onEvent(const Event& event) {
+
+	auto onPlayerDeath = [&](const PlayerDiedEvent& e) {
+		if (Netcode::getComponentOwner(e.netIDofKilled) == m_playerID) {
+			m_idOfKillingProjectile = e.killerID;
+
+			SAIL_LOG("I was hit by projectile: " + std::to_string(e.killerID));
+		}
+	};
+
+
 	switch (event.type) {
-	default: 
-		break;
+	case Event::Type::PLAYER_DEATH: onPlayerDeath((const PlayerDiedEvent&)event); break;
+	default: break;
 	}
 
 	return true;

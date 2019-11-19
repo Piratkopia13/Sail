@@ -91,4 +91,6 @@ private:
 	size_t m_currentWriteInd = 0;
 	size_t m_currentReadInd  = 1;
 	bool   m_hasStarted      = false;
+
+	Netcode::ComponentID m_idOfKillingProjectile = 0;
 };
