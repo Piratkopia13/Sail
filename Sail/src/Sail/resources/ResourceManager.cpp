@@ -204,7 +204,7 @@ void ResourceManager::loadAnimationStack(const std::string& fileName, const Impo
 
 	if (temp) {
 		m_animationStacks.insert({fileName, std::unique_ptr<AnimationStack>(temp)});
-		Logger::Log("Animation size of '" + fileName + "' : " + std::to_string((float)m_animationStacks[fileName]->getByteSize() / (1024.f * 1024.f)) + "MB");
+		SAIL_LOG("Animation size of '" + fileName + "' : " + std::to_string((float)m_animationStacks[fileName]->getByteSize() / (1024.f * 1024.f)) + "MB");
 		m_byteSize[RMDataType::Animations] += m_animationStacks[fileName]->getByteSize();
 	}
 	else {
