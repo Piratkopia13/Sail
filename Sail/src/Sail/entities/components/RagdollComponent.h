@@ -3,18 +3,28 @@
 #include "Component.h"
 #include "..//..//Physics/Octree.h"
 
+#include "Sail/graphics/geometry/Transform.h"
+
+class Model;
+
 class RagdollComponent : public Component<RagdollComponent> {
 public:
 	RagdollComponent();
+	RagdollComponent(Model* wireframe);
 	~RagdollComponent();
 
-	struct ContactPoints {
+	void addContactPoint(glm::vec3 localOffset, glm::vec3 halfSize);
+
+public:
+	struct ContactPoint {
 		BoundingBox boundingBox;
 		glm::vec3 localOffSet;
-		Octree::CollisionInfo collisions;
+		std::vector<Octree::CollisionInfo> collisions;
+		Transform transform;
 	};
 
-	std::vector<ContactPoints> contactPoints;
+	std::vector<ContactPoint> contactPoints;
 
 	glm::vec3 localCenterOfMass;
+	Model* wireframeModel;
 };

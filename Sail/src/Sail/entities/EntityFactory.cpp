@@ -50,6 +50,10 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->lifeTime = 0.13f;
 	particleEmitterComp->setTexture("particles/fire.tga");
 
+	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
+	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.05f));
+	ragdollComp->addContactPoint(glm::vec3(0.f, 0.37f, 0.0f), glm::vec3(0.05f));
+
 	PointLight pl;
 	pl.setColor(glm::vec3(0.55f, 0.5f, 0.45f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .5f, lightPos.z));
