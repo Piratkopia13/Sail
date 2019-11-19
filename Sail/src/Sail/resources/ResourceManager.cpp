@@ -76,7 +76,13 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 //
 
 void ResourceManager::loadTexture(const std::string& filename) {
-	m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename)) });
+	if (std::string("tga") == filename.substr(filename.size() - 3, 3) || std::string("TGA") == filename.substr(filename.size() - 3, 3)) {
+		m_textures.insert({filename, std::unique_ptr<Texture>(Texture::Create(filename))});
+	} else if (std::string("dds") == filename.substr(filename.size() - 3, 3) || std::string("DDS") == filename.substr(filename.size() - 3, 3)) {
+		// something
+	} else {
+		SAIL_LOG_ERROR(filename + " is not a supported texture format.");
+	}
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
 	auto pos = m_textures.find(filename);
