@@ -63,8 +63,5 @@ bool LobbyClientState::onDropped(const NetworkDroppedEvent& event) {
 }
 
 bool LobbyClientState::onSettingsChanged(const SettingsUpdatedEvent& event) {
-	auto& stat = m_app->getSettings().gameSettingsStatic;
-	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
-	m_app->getSettings().deSerialize(event.settings, stat, dynamic);
 	return true;
 }
