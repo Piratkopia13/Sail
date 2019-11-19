@@ -147,10 +147,8 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 		return true;
 	}
 	else {
-#ifdef _DEBUG
 		SAIL_LOG_ERROR("Could not Load model: (" + filename + ")");
-		//assert(temp);
-#endif
+
 		return false;
 	}
 }
@@ -208,9 +206,7 @@ void ResourceManager::loadAnimationStack(const std::string& fileName, const Impo
 		m_byteSize[RMDataType::Animations] += m_animationStacks[fileName]->getByteSize();
 	}
 	else {
-#ifdef _DEBUG
 		SAIL_LOG_ERROR("Could not Load model: (" + fileName + ")");
-#endif
 	}
 }
 
