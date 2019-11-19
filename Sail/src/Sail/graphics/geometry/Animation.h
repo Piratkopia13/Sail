@@ -101,7 +101,7 @@ public:
 	const unsigned int boneCount();
 	Bone& getBone(const unsigned int index);
 
-
+	unsigned int getByteSize();
 
 	Animation* getAnimation(const std::string& name);
 	Animation* getAnimation(const unsigned int index);

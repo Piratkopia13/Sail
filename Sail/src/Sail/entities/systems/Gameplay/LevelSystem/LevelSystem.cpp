@@ -93,8 +93,6 @@ void LevelSystem::generateMap() {
 	//adds doors to the layout
 	addDoors();
 
-	// Find spawn points
-	addSpawnPoints();
 
 	//creates tilemap for the level
 	matchRoom();
@@ -102,6 +100,8 @@ void LevelSystem::generateMap() {
 	//fills rooms with stuff
 	generateClutter();
 	
+	// Find spawn points
+	addSpawnPoints();
 }
 
 void LevelSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) {
@@ -1317,49 +1317,14 @@ void LevelSystem::addTile(int tileId, int typeId, int doors,const std::vector<Mo
 void LevelSystem::addSpawnPoints() {
 	
 	std::vector<glm::vec3> availableSpawnPoints;
-
-	// Room IDs
-	int roomBottomLeft = tileArr[0][0][1];
-	int roomTopLeft = tileArr[0][ysize - 1][1];
-	int roomBottomRight = tileArr[xsize - 1][0][1];
-	int roomTopRight = tileArr[xsize - 1][ysize - 1][1];
-	int roomsLeftEdge = 0;
-	int roomsBottomEdge = 0;
-	int roomsRightEdge = 0;
-	int roomsTopEdge = 0;
-
-	// Adding all corner spawn location first
-	spawnPoints.push_back(glm::vec3(0.f, 0.f, 0.f));
-	spawnPoints.push_back(glm::vec3(((xsize - 1) * tileSize), 0.f, ((ysize - 1) * tileSize)));
-	spawnPoints.push_back(glm::vec3(0.f, 0.f, ((ysize - 1) * tileSize)));
-	spawnPoints.push_back(glm::vec3(((xsize - 1) * tileSize), 0.f, 0.f));
-
-	// Find all available spawn locations, one in each room
-	for (int x = 0; x < xsize; x++) {
-		// Get all rooms on the bottom edge of the map
-		if (tileArr[x][0][1] > 0 && tileArr[x][0][1] != roomsBottomEdge && tileArr[x][0][1] != roomBottomLeft && tileArr[x][0][1] != roomBottomRight) {
-			availableSpawnPoints.push_back(glm::vec3(x * tileSize, 0.f, 0.f));
-			roomsBottomEdge = tileArr[x][0][1];
-		}
-		// Get all rooms on the top edge of the map
-		if (tileArr[x][ysize - 1][1] > 0 && tileArr[x][ysize - 1][1] != roomsTopEdge && tileArr[x][ysize - 1][1] != roomTopLeft && tileArr[x][ysize - 1][1] != roomTopRight) {
-			availableSpawnPoints.push_back(glm::vec3((x * tileSize), 0.f, ((ysize - 1) * tileSize)));
-			roomsTopEdge = tileArr[x][ysize - 1][1];
+	for (int i = 0; i < numberOfRooms; i++) {
+		Rect room = matched.at(i);
+		if (!room.isCloning) {
+			float posx = (room.sizex / 2.f + room.posx) * tileSize + tileOffset - tileSize / 2.f;
+			float posy = (room.sizey / 2.f + room.posy) * tileSize + tileOffset - tileSize / 2.f;
+			availableSpawnPoints.push_back(glm::vec3(posx, 0.f, posy));
 		}
 	}
-
-	// Get all rooms for the right and left edge of the map, except for the corner rooms
-	for (int y = 0; y < ysize; y++) {
-		if (tileArr[0][y][1] > 0 && tileArr[0][y][1] != roomsLeftEdge && tileArr[0][y][1] != roomBottomLeft && tileArr[0][y][1] != roomTopLeft){
-			availableSpawnPoints.push_back(glm::vec3(0.f, 0.f, (y * tileSize)));
-			roomsLeftEdge = tileArr[0][y][1];
-		}
-		if (tileArr[xsize-1][y][1] > 0 && tileArr[xsize - 1][y][1] != roomsRightEdge && tileArr[xsize - 1][y][1] != roomBottomRight && tileArr[xsize - 1][y][1] != roomTopRight) {
-			availableSpawnPoints.push_back(glm::vec3(((xsize - 1) * tileSize), 0.f, (y * tileSize)));
-			roomsRightEdge = tileArr[xsize - 1][y][1];
-		}
-	}
-
 	std::default_random_engine generator (seed);
 	
 	// Add the rest of the spawn points in a randomized order
@@ -1369,21 +1334,33 @@ void LevelSystem::addSpawnPoints() {
 		spawnPoints.push_back(availableSpawnPoints[randomRoom]);
 		availableSpawnPoints.erase(availableSpawnPoints.begin() + randomRoom);
 	}
+	while (extraSpawnPoints.size() > 0) {
+		availableSpawnPoints.push_back(extraSpawnPoints.at(0));
+		extraSpawnPoints.erase(extraSpawnPoints.begin());
+	}
+	while (availableSpawnPoints.size() > 0) {
+		std::uniform_int_distribution<int> distribution(0, availableSpawnPoints.size() - 1);
+		int randomRoom = distribution(generator);
+		extraSpawnPoints.push_back(availableSpawnPoints[randomRoom]);
+		availableSpawnPoints.erase(availableSpawnPoints.begin() + randomRoom);
+	}
 }
 
 glm::vec3 LevelSystem::getSpawnPoint() {
 	// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
 	glm::vec3 spawnLocation;
-		
 	if (spawnPoints.size() > 0) {
 		spawnLocation = spawnPoints.front();
 		spawnPoints.erase(spawnPoints.begin());
+	}
+	else if (extraSpawnPoints.size() > 0) {
+		spawnLocation = extraSpawnPoints.front();
+		extraSpawnPoints.erase(extraSpawnPoints.begin());
 	}
 	else {
 		spawnLocation = glm::vec3(((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (xsize - 1), 1.f, ((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (ysize - 1));
 		SAIL_LOG_ERROR("No more spawn locations available.");
 	}
-
 	return spawnLocation;
 }
 
@@ -1468,7 +1445,9 @@ void LevelSystem::generateClutter() {
 			vats.rot = 270;
 			vats.posx = (room.posx+0.5f )  * tileSize + tileOffset - tileSize / 2.f;
 			vats.posy = (room.posy + (room.sizey)/2.0f ) * tileSize + tileOffset - tileSize / 2.f;
+			extraSpawnPoints.push_back(glm::vec3(vats.posx, 0.5f, vats.posy));
 			specialClutter.push(vats);
+			matched.at(i).isCloning = true;
 		}
 		else if (room.sizey > 2 && makeRoomCloningChance > 60) {
 			Clutter vats;
@@ -1486,12 +1465,17 @@ void LevelSystem::generateClutter() {
 			vats.rot = 180;
 			vats.posy = (room.posy + 0.5f) * tileSize + tileOffset - tileSize / 2.f;
 			vats.posx = (room.posx + (room.sizex) / 2.0f) * tileSize + tileOffset - tileSize / 2.f;
+			extraSpawnPoints.push_back(glm::vec3(vats.posx, 0.1f, vats.posy));
 			specialClutter.push(vats);
+			matched.at(i).isCloning = true;
 		}
 #endif
 		else {
 			for (int x = 0; x < room.sizex; x++) {
 				for (int y = 0; y < room.sizey; y++) {
+					if ((x+0.5f)!=room.sizex/2.f || (y + 0.5f) != room.sizey / 2.f) {
+						extraSpawnPoints.push_back(glm::vec3((room.posx + x) * tileSize, 0.5f, (room.posy + y) * tileSize));
+					}
 					if (tileArr[x + room.posx][y + room.posy][2] < 17) {
 						if (rand() % 100 < clutterModifier) {
 							float xmax = tileSize * 0.95f;
@@ -1710,6 +1694,16 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 			EntityFactory::CreateStaticMapObject("ClutterSpecial", clutterModels[ClutterModel::CONTROLSTATION], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
 		}
 	}
+
+#ifdef _DEBUG
+	for (int i = 0; i < spawnPoints.size(); i++) {
+		EntityFactory::CreateStaticMapObject("Spawnpoint", clutterModels[ClutterModel::CONTROLSTATION], bb, spawnPoints[i], glm::vec3(0.f,0, 0.f), glm::vec3(0.1f, 0.1f, 0.1f));
+	}
+	for (int i = 0; i < extraSpawnPoints.size(); i++) {
+		EntityFactory::CreateStaticMapObject("Spawnpoint", clutterModels[ClutterModel::NOTEPAD], bb, extraSpawnPoints[i], glm::vec3(0.f, 0, 0.f), glm::vec3(1,1, 1));
+	}
+#endif
+
 	for (int i = 0; i < numberOfRooms; i++) {
 		Rect room = matched.at(i);
 		auto e2 = EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*tileSize),glm::vec3(0.f),glm::vec3(1.f,tileHeight,1.f));
