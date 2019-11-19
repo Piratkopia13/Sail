@@ -37,11 +37,11 @@ private:
 	float* m_frameTimesHistory;
 	float* m_fixedUpdateHistory;
 	float* m_averageSentPacketSizeHistory;
-	float* m_rmModelsSizeMBHistory;
-	float* m_rmAnimationsSizeMBHistory;
+	float* m_rmModelsSizeKBHistory;
+	float* m_rmAnimationsSizeKBHistory;
 	float* m_rmAudioSizeMBHistory;
 	float* m_rmTexturesSizeMBHistory;
-	float* m_rmGenericSizeMBHistory;
+	float* m_rmGenericSizeBHistory;
 	std::string m_virtCount;
 	std::string m_physCount;
 	std::string m_vramUCount;
@@ -50,9 +50,9 @@ private:
 	std::string m_fixedUpdateCount;
 	std::string m_potentialFixedUpdateRate;
 	std::string m_averageSentPacketSize;
-	std::string m_rmModelsMB;
-	std::string m_rmAnimationsMB;
+	std::string m_rmModelsKB;
+	std::string m_rmAnimationsKB;
 	std::string m_rmAudioMB;
 	std::string m_rmTexturesMB;
-	std::string m_rmGenericMB;
+	std::string m_rmGenericB;
 };
