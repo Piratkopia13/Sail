@@ -144,7 +144,7 @@ GameState::GameState(StateStack& stack)
 
 
 	// TEST TODO: Check if this texture actually works
-	m_testDDSTexture = new DX12DDSTexture("res/textures/pbr/Tiles/CF_Albedo.dds");
+	m_testDDSTexture = new DX12DDSTexture("res/textures/pbr/Tiles/CF_Albedo_2.dds");
 	// Level Creation
 	
 	createLevel(shader, boundingBoxModel);
@@ -1137,10 +1137,10 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		roomServer->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/RS_Albedo.tga");
 
 		Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
-		//corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CF_MRAo.tga");
-		corridorFloor->getMesh(0)->getMaterial()->manuallySetTexture(m_testDDSTexture, 2);
+		corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/CF_MRAo.tga");
 		corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/Tiles/CF_NM.tga");
-		corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CF_Albedo.tga");
+		//corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Tiles/CF_Albedo.tga");
+		corridorFloor->getMesh(0)->getMaterial()->manuallySetTexture(m_testDDSTexture, 0);
 
 		Model* roomFloor = &m_app->getResourceManager().getModelCopy("Tiles/RoomFloor.fbx", shader);
 		roomFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Tiles/F_MRAo.tga");
