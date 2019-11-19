@@ -43,7 +43,7 @@ private:
 	void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID) override;
 	void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                               override;
 	void igniteCandle    (const Netcode::ComponentID candleID)                                    override;
-	void playerDied      (const Netcode::ComponentID id, const Netcode::PlayerID shooterID)       override;
+	void playerDied      (const Netcode::ComponentID id, const Netcode::ComponentID killerID)     override;
 	void setAnimation    (const Netcode::ComponentID id, const AnimationInfo& info)               override;
 	void setCandleHealth (const Netcode::ComponentID candleID, const float health)                override;
 	void setCandleState  (const Netcode::ComponentID id, const bool isHeld)                       override;
@@ -51,7 +51,7 @@ private:
 	void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                    override;
 	void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                    override;
 	void spawnProjectile (const ProjectileInfo& info)                                             override;
-	void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::PlayerID SenderId)        override;
+	void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID killerID)     override;
 
 	// AUDIO
 	void playerJumped (const Netcode::ComponentID id)                  override;

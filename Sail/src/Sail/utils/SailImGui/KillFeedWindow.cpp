@@ -100,14 +100,14 @@ bool KillFeedWindow::onEvent(const Event& event) {
 		KillFeedWindow::KillFeedInfo killFeedInfo;
 		killFeedInfo.name2 = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
 
-		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
+		if (e.killerID == Netcode::SPRINKLER_COMP_ID) {
 			killFeedInfo.name1 = "The sprinklers";
 			killFeedInfo.type = "sprayed down";
-		} else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+		} else if (e.killerID == Netcode::INSANITY_COMP_ID) {
 			killFeedInfo.name1 = "Insanity";
 			killFeedInfo.type = "devoured";
 		} else {
-			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.killerID))->name;
 			killFeedInfo.type = "sprayed down";
 		}
 

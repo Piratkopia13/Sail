@@ -65,7 +65,7 @@ protected: // Functions
 	virtual void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID) = 0;
 	virtual void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                               = 0;
 	virtual void igniteCandle    (const Netcode::ComponentID candleID)                                    = 0;
-	virtual void playerDied      (const Netcode::ComponentID id, const Netcode::PlayerID shooterID)       = 0;
+	virtual void playerDied      (const Netcode::ComponentID id, const Netcode::ComponentID killerID)     = 0;
 	virtual void playerJumped    (const Netcode::ComponentID id)                                          = 0;
 	virtual void playerLanded    (const Netcode::ComponentID id)                                          = 0;
 	virtual void setAnimation    (const Netcode::ComponentID id, const AnimationInfo& info)               = 0;
@@ -75,7 +75,7 @@ protected: // Functions
 	virtual void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                    = 0;
 	virtual void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                    = 0;
 	virtual void spawnProjectile (const ProjectileInfo& info)                                             = 0;
-	virtual void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::PlayerID SenderId)        = 0;
+	virtual void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID projectileID) = 0;
 
 	// AUDIO
 	virtual void shootStart (const Netcode::ComponentID id, float frequency) = 0;

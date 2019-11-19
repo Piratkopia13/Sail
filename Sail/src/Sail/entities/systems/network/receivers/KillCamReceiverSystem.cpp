@@ -156,7 +156,7 @@ void KillCamReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 	}
 }
 
-void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
+void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::ComponentID killerID) {
 	destroyEntity(networkIdOfKilled);
 	
 	//if (auto e = findFromNetID(networkIdOfKilled); e) {
@@ -294,7 +294,7 @@ void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	EntityFactory::CreateReplayProjectile(e, args);
 }
 
-void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::PlayerID senderId) {
+void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID killerID) {
 	//EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
 }
 

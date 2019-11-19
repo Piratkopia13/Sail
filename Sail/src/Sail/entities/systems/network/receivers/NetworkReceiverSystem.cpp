@@ -97,19 +97,19 @@ void NetworkReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId
 }
 
 void NetworkReceiverSystem::hitBySprinkler(const Netcode::ComponentID candleOwnerID) {
-	waterHitPlayer(candleOwnerID, Netcode::MESSAGE_SPRINKLER_ID);
+	waterHitPlayer(candleOwnerID, Netcode::SPRINKLER_COMP_ID);
 }
 
 void NetworkReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 	EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
 }
 
-void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
+void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::ComponentID killerID) {
 	if (auto e = findFromNetID(networkIdOfKilled); e) {
 		EventDispatcher::Instance().emit(PlayerDiedEvent(
 			e,
 			m_playerEntity,
-			playerIdOfShooter,
+			killerID,
 			networkIdOfKilled)
 		);
 		return;
@@ -195,8 +195,9 @@ void NetworkReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	EntityFactory::CreateProjectile(e, args);
 }
 
-void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::PlayerID senderId) {
-	EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
+void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID projectileID) {
+	EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, projectileID));
+
 }
 
 
