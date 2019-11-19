@@ -27,6 +27,7 @@ DX12DDSTexture::DX12DDSTexture(const std::string& filename)
 	useOneResource = true;
 
 	m_textureDesc = textureDefaultBuffers[0]->GetDesc();
+	m_textureDesc.MipLevels = MIP_LEVELS;
 
 	// A texture rarely updates its data, if at all, so it is stored in a default heap
 	state[0] = D3D12_RESOURCE_STATE_COPY_DEST;

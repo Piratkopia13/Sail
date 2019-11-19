@@ -1101,7 +1101,7 @@ namespace
         if (!d3dDevice)
             return E_POINTER;
 
-        HRESULT hr = E_FAIL;
+        HRESULT hr = S_OK;
 
         if (loadFlags & DDS_LOADER_FORCE_SRGB)
         {
