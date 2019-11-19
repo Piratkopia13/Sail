@@ -195,7 +195,7 @@ void Profiler::renderWindow() {
 #ifdef DEVELOPMENT
 			if (ImGui::CollapsingHeader("ECS Memory Graph")) {
 				header = "\n\n\n" + m_ecsKB + "(kB)";
-				ImGui::PlotLines(header.c_str(), m_ecsSizeKBHistory, 100, 0, "", 0.f, 200.f, ImVec2(0, 100));
+				ImGui::PlotLines(header.c_str(), m_ecsSizeKBHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
 			}
 #endif
 
