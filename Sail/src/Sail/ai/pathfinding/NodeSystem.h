@@ -61,6 +61,9 @@ public:
 	Model* m_nodeModel;
 	std::vector<Entity::SPtr> m_nodeEntities;
 #endif
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const;
+#endif
 
 private:
 		std::vector<unsigned int> BFS(const unsigned int from, const unsigned int to);
