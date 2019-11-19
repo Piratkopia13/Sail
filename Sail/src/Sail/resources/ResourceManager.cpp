@@ -130,10 +130,6 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 	}
 
 	if (temp) {
-		/*unsigned int size = 0U;
-		for (int i = 0; i < temp->getNumberOfMeshes(); i++) {
-			size += temp->getMesh(i)->getByteSize();
-		}*/
 		SAIL_LOG("Loaded model: " + filename + " (" + std::to_string((float)temp->getByteSize() / (1024.f * 1024.f)) + "MB)");
 		m_byteSize[RMDataType::Models] += temp->getByteSize();
 		temp->setName(filename);
@@ -250,14 +246,3 @@ const std::string ResourceManager::getSuitableName(const std::string& name) {
 	}
 	return "broken";
 }
-
-//void ResourceManager::reloadShaders() {
-//	for (auto it = m_shaderSets.begin(); it != m_shaderSets.end(); ++it)
-//		it->second->reload();
-//}
-
-
-// Sound Manager
-//SoundManager* ResourceManager::getSoundManager() {
-//	return m_soundManager.get();
-//}
