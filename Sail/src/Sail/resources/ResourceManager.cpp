@@ -1,7 +1,5 @@
 #include "pch.h"
 #include "ResourceManager.h"
-//#include "../graphics/shader/deferred/DeferredGeometryShader.h"
-//#include "audio/SoundManager.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/api/Mesh.h"
@@ -10,8 +8,6 @@ const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
 
 ResourceManager::ResourceManager() {
-	//m_soundManager = std::make_unique<SoundManager>();
-	//m_assimpLoader = std::make_unique<AssimpLoader>();
 	m_fbxLoader = std::make_unique<FBXLoader>();
 	for (int i = 0; i < 5; i++) {
 		m_byteSize[i] = 0;
