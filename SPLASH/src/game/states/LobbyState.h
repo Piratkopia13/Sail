@@ -7,9 +7,10 @@
 
 struct Player;
 class NWrapper;
-class TextInputEvent;
+struct TextInputEvent;
 class AudioComponent;
 
+struct ChatSent;
 struct NetworkChatEvent;
 struct NetworkJoinedEvent;
 struct NetworkDisconnectEvent;
@@ -44,6 +45,7 @@ protected:
 	SettingStorage* m_settings;
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
+	std::string m_message;
 	std::list<std::string> m_messages;
 
 	// Front-End Functions
@@ -98,7 +100,7 @@ private:
 	bool m_usePercentage;
 
 
-	virtual bool onMyTextInput(const TextInputEvent& event) = 0;
+	virtual bool onMyTextInput(const ChatSent& event) = 0;
 	bool onRecievedText(const NetworkChatEvent& event);
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
 	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);

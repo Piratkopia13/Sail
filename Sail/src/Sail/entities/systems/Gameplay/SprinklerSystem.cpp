@@ -98,7 +98,7 @@ void SprinklerSystem::update(float dt) {
 			if (m_addNewSprinklers) {
 				// Active rooms now start their sprinklers
 				if (!m_activeRooms.empty()) {
-					for (int i = m_activeSprinklers.size(); i < m_activeSprinklers.size() + m_roomsToBeActivated.size(); i++) {
+					for (size_t i = m_activeSprinklers.size(); i < m_activeSprinklers.size() + m_roomsToBeActivated.size(); i++) {
 						m_sprinklers[i].active = true;
 					}
 					m_activeSprinklers.insert(m_activeSprinklers.end(), m_roomsToBeActivated.begin(), m_roomsToBeActivated.end());
@@ -200,3 +200,14 @@ void SprinklerSystem::enableSprinklers() {
 void SprinklerSystem::setOctree(Octree* octree) {
 	m_octree = octree;
 }
+
+#ifdef DEVELOPMENT
+unsigned int SprinklerSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	size += m_activeRooms.size() * sizeof(int);
+	size += m_activeSprinklers.size() * sizeof(int);
+	size += m_roomsToBeActivated.size() * sizeof(int);
+	size += m_sprinklers.size() * sizeof(Sprinkler);
+	return size;
+}
+#endif

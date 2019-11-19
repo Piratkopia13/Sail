@@ -17,6 +17,8 @@ public:
 	XAUDIO2_BUFFER* getSoundBuffer();
 	WAVEFORMATEXTENSIBLE* getFormat();
 
+	unsigned int getByteSize() const;
+
 private:
 	ResourceFormat::AudioData m_data;
 };
