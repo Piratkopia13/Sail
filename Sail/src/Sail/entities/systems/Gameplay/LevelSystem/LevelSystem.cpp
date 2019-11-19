@@ -1334,6 +1334,16 @@ void LevelSystem::addSpawnPoints() {
 		spawnPoints.push_back(availableSpawnPoints[randomRoom]);
 		availableSpawnPoints.erase(availableSpawnPoints.begin() + randomRoom);
 	}
+	while (extraSpawnPoints.size() > 0) {
+		availableSpawnPoints.push_back(extraSpawnPoints.at(0));
+		extraSpawnPoints.erase(extraSpawnPoints.begin());
+	}
+	while (availableSpawnPoints.size() > 0) {
+		std::uniform_int_distribution<int> distribution(0, availableSpawnPoints.size() - 1);
+		int randomRoom = distribution(generator);
+		extraSpawnPoints.push_back(availableSpawnPoints[randomRoom]);
+		availableSpawnPoints.erase(availableSpawnPoints.begin() + randomRoom);
+	}
 }
 
 glm::vec3 LevelSystem::getSpawnPoint() {
@@ -1351,9 +1361,7 @@ glm::vec3 LevelSystem::getSpawnPoint() {
 		spawnLocation = glm::vec3(((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (xsize - 1), 1.f, ((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (ysize - 1));
 		SAIL_LOG_ERROR("No more spawn locations available.");
 	}
-
 	return spawnLocation;
-
 }
 
 
@@ -1437,7 +1445,7 @@ void LevelSystem::generateClutter() {
 			vats.rot = 270;
 			vats.posx = (room.posx+0.5f )  * tileSize + tileOffset - tileSize / 2.f;
 			vats.posy = (room.posy + (room.sizey)/2.0f ) * tileSize + tileOffset - tileSize / 2.f;
-			spawnPoints.push_back(glm::vec3(vats.posx, 0.1f, vats.posy));
+			extraSpawnPoints.push_back(glm::vec3(vats.posx, 0.1f, vats.posy));
 			specialClutter.push(vats);
 			room.isCloning = true;
 		}
@@ -1457,7 +1465,7 @@ void LevelSystem::generateClutter() {
 			vats.rot = 180;
 			vats.posy = (room.posy + 0.5f) * tileSize + tileOffset - tileSize / 2.f;
 			vats.posx = (room.posx + (room.sizex) / 2.0f) * tileSize + tileOffset - tileSize / 2.f;
-			spawnPoints.push_back(glm::vec3(vats.posx, 0.1f, vats.posy));
+			extraSpawnPoints.push_back(glm::vec3(vats.posx, 0.1f, vats.posy));
 			specialClutter.push(vats);
 			room.isCloning = true;
 		}
