@@ -419,6 +419,8 @@ void DXRBase::rebuildWater() {
 	memset(m_updateWater, 0, sizeof(bool) * numElements);
 	// Recreate sbuffer to resize it
 	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(m_waterDataCPU, numElements, sizeof(unsigned int));
+	// Stop any current changes
+	m_waterDeltas.clear();
 
 	// Reset simulation data
 	m_currWaterZChunk = 0;
