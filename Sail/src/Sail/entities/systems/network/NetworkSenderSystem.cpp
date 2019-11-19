@@ -255,6 +255,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	{
 		ar(e->getComponent<AnimationComponent>()->animationIndex);
 		ar(e->getComponent<AnimationComponent>()->animationTime);
+		ar(e->getComponent<AnimationComponent>()->pitch);
 	}
 	break; 
 	case Netcode::MessageType::CHANGE_ABSOLUTE_POS_AND_ROT:
