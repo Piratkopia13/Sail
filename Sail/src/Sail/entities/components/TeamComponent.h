@@ -5,12 +5,14 @@
 
 class TeamComponent : public Component<TeamComponent> {
 public:
-	TeamComponent(int team = 0){
+	TeamComponent(int team = 0, int _colorIndex = 0){
 		this->team = team;
+		this->colorIndex = _colorIndex;
 	}
 	~TeamComponent() {}
 
 	int team;
+	int colorIndex;
 
 #ifdef DEVELOPMENT
 	const unsigned int getByteSize() const override {

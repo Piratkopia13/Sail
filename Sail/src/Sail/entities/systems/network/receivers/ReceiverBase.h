@@ -48,6 +48,7 @@ protected:
 	struct AnimationInfo {
 		unsigned int index;
 		float time;
+		float pitch;
 	};
 
 	struct EndScreenInfo {

@@ -15,6 +15,10 @@ public:
 	~SanitySoundSystem();
 
 	void update(float dt) override;
+
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
 private:
 	bool onEvent(const Event& event) override;
 

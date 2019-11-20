@@ -70,7 +70,11 @@ namespace ShaderComponent {
 	DX12StructuredBuffer::~DX12StructuredBuffer() {
 	}
 
-	void DX12StructuredBuffer::updateData(const void* newData, unsigned int numElements, int meshIndex, unsigned int offset, int frameIndex) {
+	void DX12StructuredBuffer::updateData(const void* newData, unsigned int numElements, unsigned int offset, int frameIndex) {
+		assert(false && "Deprecated, use updateData_new instead");
+	}
+	
+	void DX12StructuredBuffer::updateData_new(const void* newData, unsigned int numElements, int meshIndex, unsigned int offset, int frameIndex) {
 		// Line below used to check animated models, currently uncommented since StructuredBuffers are used for multiple things
 		//assert(numElements < MAX_ELEMENTS && "Too many elements! Increase MAX_ELEMENTS in DX12StrucutedBuffer.h");
 		assert(meshIndex < MAX_MESHES_PER_FRAME && "Too many meshes! Increase MAX_MESHES_PER_FRAME in DX12StrucutedBuffer.h");

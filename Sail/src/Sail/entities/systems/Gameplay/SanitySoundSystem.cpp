@@ -131,6 +131,12 @@ void SanitySoundSystem::update(float dt) {
 	}
 }
 
+#ifdef DEVELOPMENT
+unsigned int SanitySoundSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
+
 bool SanitySoundSystem::onEvent(const Event& event) {
 	return false;
 }

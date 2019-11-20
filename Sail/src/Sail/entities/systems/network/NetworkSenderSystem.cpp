@@ -211,6 +211,19 @@ void NetworkSenderSystem::pushDataToBuffer(const std::string& data) {
 	m_HOSTONLY_dataToForward.push(data);
 }
 
+#ifdef DEVELOPMENT
+unsigned int NetworkSenderSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	size += m_eventQueue.size() * sizeof(NetworkSenderEvent*);
+	const size_t queueSize = m_HOSTONLY_dataToForward.size();
+	size += queueSize * sizeof(std::string);
+	if (queueSize) {
+		size += queueSize * m_HOSTONLY_dataToForward.front().capacity() * sizeof(unsigned char);		// Approximate string length
+	}
+	return size;
+}
+#endif
+
 // TODO: Test this to see if it's actually needed or not
 void NetworkSenderSystem::stop() {
 	// Loop through networked entities and serialize their data.
@@ -255,6 +268,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	{
 		ar(e->getComponent<AnimationComponent>()->animationIndex);
 		ar(e->getComponent<AnimationComponent>()->animationTime);
+		ar(e->getComponent<AnimationComponent>()->pitch);
 	}
 	break; 
 	case Netcode::MessageType::CHANGE_ABSOLUTE_POS_AND_ROT:

@@ -101,6 +101,18 @@ bool MenuState::render(float dt, float alpha) {
 }
 
 bool MenuState::renderImgui(float dt) {
+
+	// Showcasing imgui texture rendering - remove when everyone who needs to know how this works knows how this works.
+#ifdef DEVELOPMENT
+	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
+	Application::getInstance()->getResourceManager().loadTexture("Crosshair.tga");
+	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Crosshair.tga");
+
+	ImGui::Begin("ImageTest");
+	ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(100, 100));
+	ImGui::End();
+#endif
+
 	
 	//Keep
 #ifdef DEVELOPMENT
@@ -199,28 +211,21 @@ const std::string MenuState::loadPlayerName(const std::string& file) {
 
 bool MenuState::onLanHostFound(const NetworkLanHostFoundEvent& event) {
 	// Get IP (as int) then convert into char*
-	ULONG ip_as_int = event.ip;
-	Network::ip_int_to_ip_string(ip_as_int, m_ipBuffer, m_ipBufferSize);
-	std::string ip_as_string(m_ipBuffer);
-
-	// Get Port as well
-	USHORT hostPort = event.hostPort;
-	ip_as_string += ":";
-	ip_as_string.append(std::to_string(hostPort));
+	std::string serverIdentifier = event.gameDescription.ip + ":" + std::to_string(event.gameDescription.port);
 
 	// Check if it is already logged.	
 	bool alreadyExists = false;
 	for (auto& lobby : m_foundLobbies) {
-		if (lobby.ip == ip_as_string) {
+		if (lobby.serverIdentifier == serverIdentifier) {
 			alreadyExists = true;
-			lobby.description = event.desc;
+			lobby.gameDescription = event.gameDescription;
 			lobby.resetDuration();
 		}
 	}
 	// If not...
 	if (alreadyExists == false) {
 		// ...log it.
-		m_foundLobbies.push_back(FoundLobby{ ip_as_string, event.desc });
+		m_foundLobbies.push_back(FoundLobby{ event.gameDescription, serverIdentifier });
 	}
 
 	return false;
@@ -247,7 +252,7 @@ void MenuState::removeDeadLobbies() {
 		index = 0;
 
 		for (auto& lobby : m_foundLobbies) {
-			if (lobbyToRemove.ip == lobby.ip) {
+			if (lobbyToRemove.serverIdentifier == lobby.serverIdentifier) {
 				m_foundLobbies.erase(m_foundLobbies.begin()+index);
 				break;
 			}
@@ -485,10 +490,12 @@ void MenuState::renderServerBrowser() {
 #endif
 		if (ImGui::BeginChild("Lobbies", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
 			// Per hosted game
-			ImGui::Columns(2, "testColumns", false);
-			ImGui::SetColumnOffset(1,ImGui::GetWindowContentRegionWidth()-100);
+			ImGui::Columns(3, "testColumns", false);
+			ImGui::SetColumnOffset(1,ImGui::GetWindowContentRegionWidth()-200);
+			ImGui::SetColumnOffset(2,ImGui::GetWindowContentRegionWidth()-100);
 			ImGui::Separator();
 			ImGui::Text("Lobby"); ImGui::NextColumn();
+			ImGui::Text("Status"); ImGui::NextColumn();
 			ImGui::Text("Players"); ImGui::NextColumn();
 			ImGui::Separator();
 
@@ -498,30 +505,33 @@ void MenuState::renderServerBrowser() {
 			}
 			for (auto& lobby : m_foundLobbies) {
 				// List as a button
-				std::string fullText = lobby.description;
-				std::string lobbyName = "";
-				std::string playerCount = "N/A";
-				// GET LOBBY NAME AND PLAYERCOUNT AS SEPARATE STRINGS
-				if (fullText == "") {
-					lobbyName = lobby.ip;
-				}
-				else {
-					int p0 = fullText.find_last_of("(");
-					int p1 = fullText.find_last_of(")");
-					lobbyName = fullText.substr(0, p0 - 1);
-					playerCount = fullText.substr(p0 + 1, p1 - p0 - 1);
+				std::string lobbyName = lobby.gameDescription.name;
+				std::string playerCount = (lobby.gameDescription.maxPlayers > 0) ? std::to_string(lobby.gameDescription.nPlayers) + " / " + std::to_string(lobby.gameDescription.maxPlayers) : "N/A";
+				std::string statusString = "Unknown";
+
+				if (lobby.gameDescription.currentState == States::Lobby) {
+					statusString = "In Lobby";
+				} else if (lobby.gameDescription.currentState == States::Game) {
+					statusString = "In Game";
+				} else if (lobby.gameDescription.currentState == States::EndGame) {
+					statusString = "Endgame";
 				}
 
+				// GET LOBBY NAME AND PLAYERCOUNT AS SEPARATE STRINGS
+				if (lobbyName == "") {
+					lobbyName = lobby.serverIdentifier;
+				}
 
 				if (ImGui::Selectable(lobbyName.c_str(), selected == index, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns)) {
 
 					selected = (index == selected ? -1 : index);
 					if (ImGui::IsMouseDoubleClicked(0)) {
 						// If pressed then join
-						joinLobby(lobby.ip);
+						joinLobby(lobby.serverIdentifier);
 					}
 				}
 				ImGui::NextColumn();
+				ImGui::Text(statusString.c_str()); ImGui::NextColumn();
 				ImGui::Text(playerCount.c_str()); ImGui::NextColumn();
 				index++;
 			}
@@ -537,7 +547,7 @@ void MenuState::renderServerBrowser() {
 		}
 		// If pressed then join
 		if (ImGui::Button("Join##browser") && selected > -1) {
-			joinLobby(m_foundLobbies[selected].ip);
+			joinLobby(m_foundLobbies[selected].serverIdentifier);
 		}
 		if (selected == -1) {
 			ImGui::PopStyleVar();
@@ -662,7 +672,6 @@ void MenuState::startSinglePlayer() {
 			NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 		}
 		NWrapperSingleton::getInstance().stopUDP();
-		//m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
 		auto& map = m_app->getSettings().gameSettingsDynamic["map"];
 

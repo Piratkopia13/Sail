@@ -9,6 +9,10 @@ public:
 
 	void handleIncomingData(const std::string& data) override;
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
+
 private:
 	void endMatch()                         override; // Start end timer for host
 	void endMatchAfterTimer(const float dt) override; // Made for the host to quit the game after a set time

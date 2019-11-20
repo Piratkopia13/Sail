@@ -10,7 +10,7 @@
 
 class DX12VertexBuffer;
 class ParticleComputeShader;
-class ID3D12GraphicsCommandList4;
+struct ID3D12GraphicsCommandList4;
 
 class ParticleEmitterComponent : public Component<ParticleEmitterComponent> {
 public:

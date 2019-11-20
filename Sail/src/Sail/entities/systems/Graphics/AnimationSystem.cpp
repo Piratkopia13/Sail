@@ -166,20 +166,14 @@ void AnimationSystem::updateTransforms(const float dt) {
 			// weight = time - time(0) / time(1) - time(0)
 
 			const float w = (animationC->animationTime - frame0Time) / (frame1Time - frame0Time);
-			glm::vec3 transOrig = glm::vec3(0.f);
-			glm::vec3 scaleOrig = glm::vec3(0.f);
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				interpolate(animationC->transforms[transformIndex], transforms00[transformIndex], transforms01[transformIndex], w);
-
-				if (transformIndex == 1) {
-					glm::quat rot;
-					glm::decompose(animationC->transforms[transformIndex], scaleOrig, rot, transOrig, glm::vec3(), glm::vec4());
-				}
-
 				// Rotate the upper body in relation to camera pitch
 				if (transformIndex > 0 && transformIndex < 31) {
-					auto trans = glm::rotate(animationC->pitch, glm::vec3(1.f, 0.f, 0.f)) * animationC->transforms[transformIndex];
-					animationC->transforms[transformIndex] = trans;
+					// Origin of root bone - "hips"
+					const glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
+					auto trans = glm::translate(transOrig) * glm::rotate(animationC->pitch, glm::vec3(1.f, 0.f, 0.f)) * glm::translate(-transOrig);
+					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
 				}
 			}
 		} else if (transforms00) {
@@ -201,7 +195,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
 			
 			//KEEP THIS DO NOT REMOVE FUCK YOU
-			//animationC->leftHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
+			animationC->leftHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
 			animationC->leftHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
 		}
 
@@ -230,7 +224,6 @@ void AnimationSystem::updateTransforms(const float dt) {
 
 void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 	m_dispatcher->begin(cmdList);
-	unsigned int meshIndex = 0;
 	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
 		ModelComponent* modelC = e->getComponent<ModelComponent>();
@@ -255,8 +248,8 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 		auto* context = Application::getInstance()->getAPI<DX12API>();
 
-		m_updateShader->getPipeline()->setStructBufferVar("CSTransforms", animationC->transforms, animationC->transformSize, meshIndex);
-		m_updateShader->getPipeline()->setStructBufferVar("CSVertConnections", connections, connectionSize, meshIndex);
+		m_updateShader->getPipeline()->setStructBufferVar("CSTransforms", animationC->transforms, animationC->transformSize);
+		m_updateShader->getPipeline()->setStructBufferVar("CSVertConnections", connections, connectionSize);
 
 
 		// Get the vertexbuffer that should contain the animated mesh
@@ -310,7 +303,7 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 
 		AnimationUpdateComputeShader::Input input;
 		input.threadGroupCountX = connectionSize * m_updateShader->getComputeSettings()->threadGroupXScale;
-		m_dispatcher->dispatch(*m_updateShader, input, meshIndex, cmdList);
+		m_dispatcher->dispatch(*m_updateShader, input, cmdList);
 
 		// Transition back to normal vertex buffer usage
 		DX12Utils::SetResourceTransitionBarrier(cmdList, vbuffer.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
@@ -322,7 +315,6 @@ void AnimationSystem::updateMeshGPU(ID3D12GraphicsCommandList4* cmdList) {
 		vbuffer.setAsUpdated();
 
 		animationC->hasUpdated = false;
-		meshIndex++;
 	}
 }
 
@@ -410,6 +402,15 @@ void AnimationSystem::initDebugAnimations() {
 		ac->setAnimation(i);
 	}
 }
+
+#ifdef DEVELOPMENT
+unsigned int AnimationSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	size += sizeof(ComputeShaderDispatcher);
+	size += sizeof(InputLayout);
+	return size;
+}
+#endif
 
 void AnimationSystem::addTime(AnimationComponent* e, const float time) {
 	e->animationTime += time * e->animationSpeed;
