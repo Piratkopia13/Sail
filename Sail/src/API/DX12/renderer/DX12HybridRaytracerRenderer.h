@@ -4,6 +4,7 @@
 
 class DX12GBufferRenderer;
 class DX12RaytracingRenderer;
+class DXRBase;
 
 class DX12HybridRaytracerRenderer : public Renderer {
 public:
@@ -24,6 +25,7 @@ public:
 	virtual bool checkIfOnWater(const glm::vec3& pos) override;
 
 	DX12GBufferRenderer* getGBufferRenderer() const;
+	DXRBase* getDXRBase();
 
 private:
 	std::unique_ptr<DX12GBufferRenderer> m_rendererGbuffer;

@@ -28,6 +28,11 @@ public:
 	void updateCameraPosition(float alpha);
 	CameraController* getCamera() const;
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
+
+public:
 	LevelSystem* m_mapPointer;
 
 private:

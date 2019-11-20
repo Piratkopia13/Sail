@@ -9,6 +9,7 @@ public:
 	void toggleHitboxes();
 	void submitAll();
 #ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
 	void imguiPrint(Entity** selectedEntity = nullptr) {
 		ImGui::Columns(2);
 		ImGui::Checkbox("##m_renderHitBoxes", &m_renderHitBoxes); ImGui::NextColumn();

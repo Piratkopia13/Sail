@@ -38,6 +38,9 @@ private:
 	float* m_fixedUpdateHistory;
 	float* m_averageSentPacketSizeHistory;
 	float* m_rmSizeMBHistory;
+#ifdef DEVELOPMENT
+	float* m_ecsSizeKBHistory;
+#endif
 	std::string m_virtCount;
 	std::string m_physCount;
 	std::string m_vramUCount;
@@ -47,5 +50,7 @@ private:
 	std::string m_potentialFixedUpdateRate;
 	std::string m_averageSentPacketSize;
 	std::string m_rmMB;
-
+#ifdef DEVELOPMENT
+	std::string m_ecsKB;
+#endif
 };

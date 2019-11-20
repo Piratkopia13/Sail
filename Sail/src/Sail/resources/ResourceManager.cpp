@@ -12,7 +12,7 @@ ResourceManager::ResourceManager() {
 	for (int i = 0; i < 5; i++) {
 		m_byteSize[i] = 0;
 	}
-	m_byteSize[RMDataType::Generic] += sizeof(this);
+	m_byteSize[RMDataType::Generic] += sizeof(*this);
 	m_defaultShader = nullptr;
 }
 ResourceManager::~ResourceManager() {
@@ -232,7 +232,7 @@ const unsigned int ResourceManager::getByteSize() const {
 	for (int i = 0; i < 5; i++) {
 		size += m_byteSize[i];
 	}
-	return size + sizeof(this);
+	return size + sizeof(*this);
 }
 
 
