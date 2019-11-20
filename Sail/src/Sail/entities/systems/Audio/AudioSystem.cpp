@@ -170,6 +170,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 					if (soundGeneral->isPlaying) {
 
+						if ()
+
 						// Starts a new sound from relevant pool of sounds IF NOT ALREADY PLAYING
 						if (!soundGeneral->hasStartedPlaying) {
 

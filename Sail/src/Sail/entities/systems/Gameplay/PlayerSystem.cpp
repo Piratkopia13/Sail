@@ -67,6 +67,8 @@ bool PlayerSystem::onEvent(const Event& event) {
 			e.killed->removeComponent<ModelComponent>();
 			e.killed->removeComponent<LocalOwnerComponent>();
 
+
+
 			// Move entity above the level and make it look down
 			auto transform = e.killed->getComponent<TransformComponent>();
 			auto pos = glm::vec3(transform->getCurrentTransformState().m_translation);
