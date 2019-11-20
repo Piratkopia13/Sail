@@ -5,7 +5,7 @@
 
 // Ordered by name
 
-class AiSystem;
+//class AiSystem;
 class AnimationSystem;
 class AnimationChangerSystem;
 class AudioSystem;
@@ -48,6 +48,7 @@ class SpotLightSystem;
 class SprintingSystem;
 class TeamColorSystem;
 class CandleThrowingSystem;
+class CrosshairSystem;
 
 
 // Systems that need duplicate versions for the killcam
@@ -57,7 +58,7 @@ template <typename T>
 class ModelSubmitSystem;
 
 struct Systems {
-	AiSystem*                    aiSystem                    = nullptr;
+	//AiSystem*                    aiSystem                    = nullptr;
 	AnimationSystem*             animationSystem             = nullptr;
 	AnimationChangerSystem*      animationChangerSystem      = nullptr;
 	AudioSystem*                 audioSystem                 = nullptr;
@@ -68,6 +69,7 @@ struct Systems {
 	CandleReignitionSystem*      candleReignitionSystem      = nullptr;
 	CandleThrowingSystem*		 candleThrowingSystem		 = nullptr;
 	CollisionSystem*             collisionSystem             = nullptr;
+	CrosshairSystem*			 crosshairSystem			 = nullptr;
 	EndFrameSystem*              endFrameSystem              = nullptr;
 	EntityAdderSystem*           entityAdderSystem           = nullptr;
 	EntityRemovalSystem*         entityRemovalSystem         = nullptr;

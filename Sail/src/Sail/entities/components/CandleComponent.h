@@ -45,6 +45,9 @@ public:
 		}
 	}
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** e) override;
 #endif
 

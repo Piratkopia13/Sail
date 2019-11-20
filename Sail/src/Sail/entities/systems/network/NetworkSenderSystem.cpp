@@ -336,9 +336,7 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	case Netcode::MessageType::UPDATE_SANITY:
 	{
 		SanityComponent* ic = e->getComponent<SanityComponent>();
-		if (ic) {
-			ar(ic->sanity);
-		}
+		ar(ic->sanity);
 	}
 	break;
 	default:
@@ -349,10 +347,6 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 
 void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive& ar) {
 	ar(event->type); // Send the event-type
-
-	if ((int)event->type == 85) {
-		int asdf = 3;
-	}
 
 	// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 	switch (event->type) {

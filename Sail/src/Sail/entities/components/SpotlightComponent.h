@@ -16,6 +16,9 @@ public:
 	SpotLight light; // Describes the light source when not rotated or moved
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 
