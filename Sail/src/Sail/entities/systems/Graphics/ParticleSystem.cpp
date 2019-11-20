@@ -16,6 +16,7 @@
 ParticleSystem::ParticleSystem() {
 	registerComponent<ParticleEmitterComponent>(true, true, true);
 	registerComponent<TransformComponent>(false, true, false);
+	registerComponent<RenderInActiveGameComponent>(true, false, false);
 }
 
 ParticleSystem::~ParticleSystem() {

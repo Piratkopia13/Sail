@@ -13,6 +13,9 @@ public:
 	~SprintingComponent() {}
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		SprintingComponent* sprintC = this;
 		ImGui::SliderFloat("speedModifier", &sprintC->sprintSpeedModifier, 0.f, 2.f);

@@ -8,4 +8,10 @@ class RealTimeComponent : public Component<RealTimeComponent> {
 public:
 	RealTimeComponent() {}
 	virtual ~RealTimeComponent() {}
+
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+#endif
 };
