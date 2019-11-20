@@ -36,7 +36,7 @@ void CandleThrowingSystem::update(float dt) {
 
 		Entity* torchE = nullptr;
 		for (auto& torch : e->getChildEntities()) {
-			if (torch->hasComponent<CandleComponent>()) {
+			if (torch->hasComponent<CandleComponent>() && !torch->isAboutToBeDestroyed()) {
 				torchE = torch;
 			}
 		}
