@@ -34,7 +34,7 @@ void KillFeedWindow::renderWindow() {
 
 		float alpha = 1.f;
 		bool nothingToDisplay = true;
-		for (int i = m_kills.size() - 1; i > -1; i--) {
+		for (int i = static_cast<int>(m_kills.size()) - 1; i > -1; i--) {
 			alpha = m_maxTimeShowed - m_kills[i].first;
 			alpha = Utils::clamp(alpha, 0.f, 1.f);
 			if (alpha > 0.f) {

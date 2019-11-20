@@ -21,6 +21,8 @@ public:
 	unsigned int getBytesPerPixel() const;
 	unsigned char* getTextureData() const;
 	glm::vec4 getPixel(unsigned int x, unsigned int y);
+	
+	unsigned int getByteSize() const;
 
 private:
 	ResourceFormat::TextureData m_data;

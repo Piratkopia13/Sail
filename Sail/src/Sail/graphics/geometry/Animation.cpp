@@ -269,6 +269,14 @@ AnimationStack::Bone& AnimationStack::getBone(const unsigned int index) {
 	return m_bones[index];
 }
 
+unsigned int AnimationStack::getByteSize() {
+	unsigned int size = 0.f;
+	for (int i = 0; i < getAnimationCount(); i++) {
+		size += getAnimation(i)->getMaxAnimationFrame() * boneCount() * sizeof(glm::mat4);
+	}
+	return size;
+}
+
 Animation* AnimationStack::getAnimation(const std::string& name) {
 	if (m_stack.find(name) == m_stack.end()) {
 		return nullptr;
