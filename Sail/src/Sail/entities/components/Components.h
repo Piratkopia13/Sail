@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "Component.h"
@@ -30,8 +31,9 @@
 #include "ProjectileComponent.h"
 #include "RagdollComponent.h"
 #include "RealTimeComponent.h"
-#include "ReplayComponent.h"
-#include "ReplayTransformComponent.h"
+#include "RenderInActiveGameComponent.h"
+#include "RenderInReplayComponent.h"
+#include "ReplayReceiverComponent.h"
 #include "SanityComponent.h"
 #include "SpectatorComponent.h"
 #include "SpeedLimitComponent.h"
