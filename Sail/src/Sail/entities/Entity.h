@@ -111,8 +111,6 @@ inline void Entity::removeComponent() {
 		m_components[ComponentType::ID].reset();
 		
 		// Set the component type bit to 0 if it was 1
-		//m_componentTypes ^= ComponentType::getBID();
-
 		std::bitset<MAX_NUM_COMPONENTS_TYPES> bits = 0;
 		bits |= ComponentType::getBID();				// set a 1 to the type bit
 		bits = ~bits;									// set a 0 to the type bit and rest to 1
