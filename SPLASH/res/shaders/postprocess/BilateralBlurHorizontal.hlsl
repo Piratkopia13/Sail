@@ -5,60 +5,60 @@
 //=============================================================================
 #include "BilateralBlurCommon.hlsl"
 
-Texture2D input : register(t0);
-RWTexture2D<float4> output : register(u10);
+RWTexture2DArray<float4> inoutTexture : register(u10) : SAIL_IGNORE;
 
 [numthreads(N, 1, 1)]
 void CSMain(int3 groupThreadID : SV_GroupThreadID,
-				int3 dispatchThreadID : SV_DispatchThreadID)
+			int3 dispatchThreadID : SV_DispatchThreadID)
 {
 	//
 	// Fill local thread storage to reduce bandwidth.  To blur 
 	// N pixels, we will need to load N + 2*BlurRadius pixels
 	// due to the blur radius.
 	//
-	
-	// This thread group runs N threads.  To get the extra 2*BlurRadius pixels, 
-	// have 2*BlurRadius threads sample an extra pixel.
-	if(groupThreadID.x < blurRadius) {
+	for (uint lightIndex = 0; lightIndex < NUM_SHADOW_TEXTURES; lightIndex++) {
+		// This thread group runs N threads.  To get the extra 2*BlurRadius pixels, 
+		// have 2*BlurRadius threads sample an extra pixel.
+		if(groupThreadID.x < blurRadius) {
+			// Clamp out of bound samples that occur at image borders.
+			int x = max(dispatchThreadID.x - blurRadius, 0);
+			cache[lightIndex][groupThreadID.x] = inoutTexture[int3(x, dispatchThreadID.y, lightIndex)].rg;
+		}
+		if(groupThreadID.x >= N-blurRadius) {
+			// Clamp out of bound samples that occur at image borders.
+			int x = min(dispatchThreadID.x + blurRadius, inoutTexture.Length.x-1);
+			cache[lightIndex][groupThreadID.x+2*blurRadius] = inoutTexture[int3(x, dispatchThreadID.y, lightIndex)].rg;
+		}
+
 		// Clamp out of bound samples that occur at image borders.
-		int x = max(dispatchThreadID.x - blurRadius, 0);
-		cache[groupThreadID.x] = input[int2(x, dispatchThreadID.y)].rg;
-	}
-	if(groupThreadID.x >= N-blurRadius) {
-		// Clamp out of bound samples that occur at image borders.
-		int x = min(dispatchThreadID.x + blurRadius, input.Length.x-1);
-		cache[groupThreadID.x+2*blurRadius] = input[int2(x, dispatchThreadID.y)].rg;
-	}
+		cache[lightIndex][groupThreadID.x+blurRadius] = inoutTexture[int3(min(dispatchThreadID.xy, inoutTexture.Length.xy-1), lightIndex)].rg;
 
-	// Clamp out of bound samples that occur at image borders.
-	cache[groupThreadID.x+blurRadius] = input[min(dispatchThreadID.xy, input.Length.xy-1)].rg;
-
-	// Wait for all threads to finish.
-	GroupMemoryBarrierWithGroupSync();
-	
-	//
-	// Now blur each pixel.
-	//
-
-    // float bZ = 1.0f / normpdf(0.0f, BSIGMA);
-    float bZ = 1.0f;
-	float2 Z = 0.f;
-    float2 blurColor = 0.f;
-	
-	[unroll]
-	for(int i = -blurRadius; i <= blurRadius; ++i) {
-		int k = groupThreadID.x + blurRadius + i;
+		// Wait for all threads to finish.
+		GroupMemoryBarrierWithGroupSync();
 		
-        float2 factor;
-        // factor.r = (1.f / max(abs(cache[k].r-cache[k - i].r), 0.001f)) * weights[i+blurRadius];
-        factor.r = (1.f - abs(cache[k].r-cache[k - i].r)) * weights[i+blurRadius];
+		//
+		// Now blur each pixel.
+		//
+
+		// float bZ = 1.0f / normpdf(0.0f, BSIGMA);
+		float bZ = 1.0f;
+		float2 Z = 0.f;
+		float2 blurColor = 0.f;
 		
-        factor.g = normpdf(cache[k].g-cache[k - i].g, BSIGMA) * bZ * weights[i+blurRadius];
-        Z += factor;
-        blurColor += factor*cache[k];
+		[unroll]
+		for(int i = -blurRadius; i <= blurRadius; ++i) {
+			int k = groupThreadID.x + blurRadius + i;
+			
+			float2 factor;
+			// factor.r = (1.f / max(abs(cache[k].r-cache[k - i].r), 0.001f)) * weights[i+blurRadius];
+			factor.r = (1.f - abs(cache[lightIndex][k].r-cache[lightIndex][k - i].r)) * weights[i+blurRadius];
+			
+			factor.g = normpdf(cache[lightIndex][k].g-cache[lightIndex][k - i].g, BSIGMA) * bZ * weights[i+blurRadius];
+			Z += factor;
+			blurColor += factor*cache[lightIndex][k];
+		}
+		
+		inoutTexture[int3(dispatchThreadID.xy, lightIndex)] = float4(blurColor / Z, 0.f, 1.0f);
+		// output[dispatchThreadID.xy] = float4(cache[lightIndex][groupThreadID.x + blurRadius], 0.f, 1.0f);
 	}
-	
-	output[dispatchThreadID.xy] = float4(blurColor / Z, 0.f, 1.0f);
-    // output[dispatchThreadID.xy] = float4(cache[groupThreadID.x + blurRadius], 0.f, 1.0f);
 }

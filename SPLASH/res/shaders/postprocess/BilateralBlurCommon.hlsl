@@ -10,9 +10,12 @@ static const int blurRadius = 10;
 
 // static const int blurRadius = 5;
 
+#define HLSL
+#include "../dxr/Common_hlsl_cpp.hlsl"
+
 #define N 256
 #define cacheSize (N + 2 * blurRadius)
-groupshared float2 cache[cacheSize];
+groupshared float2 cache[NUM_SHADOW_TEXTURES][cacheSize];
 
 #define BSIGMA 1.0
 

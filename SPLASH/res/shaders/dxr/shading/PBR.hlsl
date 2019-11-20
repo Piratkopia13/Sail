@@ -52,12 +52,14 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     float3 Lo = 0.0f;
     // Add emissive materials
 	Lo += albedo * 2.2 * emissivness;
+    
     for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-        float shadowAmount = 1.f;
-        if (i < NUM_SHADOW_TEXTURES) {
-            shadowAmount = shadow[i];
-        }
-        // float shadowAmount = (i < NUM_SHADOW_TEXTURES) ? shadow[i] : 1.f;
+        // float shadowAmount = 1.f;
+        // if (i < 2) {
+        //     shadowAmount = shadow[i];
+        // }
+        float shadowAmount = shadow[min(i, NUM_SHADOW_TEXTURES - 1)];
+        // float shadowAmount = 1.f;
         PointLightInput p = pointLights[i];
 
         // Dont add light to pixels that are in complete shadow

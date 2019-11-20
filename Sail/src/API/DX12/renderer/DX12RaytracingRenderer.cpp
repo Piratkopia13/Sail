@@ -179,8 +179,14 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		renderCommand.hasUpdatedSinceLastRender[frameIndex] = false;
 	}
 
-	auto filteredShadows = runDenoising(cmdListCompute.Get());
+	// Copy output shadow texture to last shadow texture
+	m_outputTextures.shadows->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+	m_shadowsLastFrame->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_COPY_DEST);
+	cmdListCompute->CopyResource(m_shadowsLastFrame->getResource(), m_outputTextures.shadows->getResource());
+	m_outputTextures.shadows->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	m_shadowsLastFrame->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
+	auto filteredShadows = runDenoising(cmdListCompute.Get());
 	auto shadedOutput = runShading(cmdListDirectShading.Get(), filteredShadows);
 
 	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue
@@ -198,7 +204,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}
 	DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(renderOutput);
 	//DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(shadedOutput);
-	
 
 	// Execute compute command list to do AS updates and ray dispatching
 	cmdListCompute->Close();
@@ -227,13 +232,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	// Lastly - transition back buffer to present
 	DX12Utils::SetResourceTransitionBarrier(cmdListDirectCopy.Get(), renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
 
-	// Copy output shadow texture to last shadow texture
-	m_outputTextures.shadows->transitionStateTo(cmdListDirectCopy.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
-	m_shadowsLastFrame->transitionStateTo(cmdListDirectCopy.Get(), D3D12_RESOURCE_STATE_COPY_DEST);
-	cmdListDirectCopy->CopyResource(m_shadowsLastFrame->getResource(), m_outputTextures.shadows->getResource());
-	m_outputTextures.shadows->transitionStateTo(cmdListDirectCopy.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	m_shadowsLastFrame->transitionStateTo(cmdListDirectCopy.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-
 	cmdListDirectCopy->Close();
 	// Wait for the compute queue to finish (doing post processing) befor executing resource copying
 	m_context->getDirectQueue()->wait(fenceVal);
@@ -254,27 +252,32 @@ DX12RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsComman
 	
 	m_outputTextures.albedo->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
+	auto pass = [&](Shader& shader) {
+		PostProcessPipeline::PostProcessInput input;
+		auto* settings = shader.getComputeSettings();
+		input.outputWidth = static_cast<unsigned int>(windowWidth);
+		input.outputHeight = static_cast<unsigned int>(windowHeight);
+		input.threadGroupCountX = static_cast<unsigned int>(glm::ceil(settings->threadGroupXScale * input.outputWidth));
+		input.threadGroupCountY = static_cast<unsigned int>(glm::ceil(settings->threadGroupYScale * input.outputHeight));
+		// Bind the heap
+		cmdList->SetComputeRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getComputeGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
+		// Manually step descriptor heap to where UAVs start
+		m_context->getComputeGPUDescriptorHeap()->getAndStepIndex(10);
+		// Copy UAV descriptor to the heap
+		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), m_outputTextures.shadows->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		// Do de dispatcheru
+		m_computeShaderDispatcher.dispatch(shader, input, cmdList);
+	};
+
 	auto& blurShaderHorizontal = app->getResourceManager().getShaderSet<BilateralBlurHorizontal>();
 	auto& blurShaderVertical = app->getResourceManager().getShaderSet<BilateralBlurVertical>();
 
 	// Horizontal pass
-	PostProcessPipeline::PostProcessInput input;
-	auto* settings = blurShaderHorizontal.getComputeSettings();
-	input.inputRenderableTexture = m_outputTextures.shadows.get();
-	input.outputWidth = static_cast<unsigned int>(windowWidth);
-	input.outputHeight = static_cast<unsigned int>(windowHeight);
-	input.threadGroupCountX = static_cast<unsigned int>(glm::ceil(settings->threadGroupXScale * input.outputWidth));
-	input.threadGroupCountY = static_cast<unsigned int>(glm::ceil(settings->threadGroupYScale * input.outputHeight));
-	auto output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderHorizontal, input, cmdList));
-
+	pass(blurShaderHorizontal);
 	// Vertical pass
-	settings = blurShaderVertical.getComputeSettings();
-	input.inputRenderableTexture = output.outputTexture;
-	input.threadGroupCountX = static_cast<unsigned int>(glm::ceil(settings->threadGroupXScale * input.outputWidth));
-	input.threadGroupCountY = static_cast<unsigned int>(glm::ceil(settings->threadGroupYScale * input.outputHeight));
-	output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderVertical, input, cmdList));
+	pass(blurShaderVertical);
 
-	return static_cast<DX12RenderableTexture*>(output.outputTexture);
+	return m_outputTextures.shadows.get();
 }
 
 DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandList4* cmdList, DX12RenderableTexture* shadows) {
