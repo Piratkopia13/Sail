@@ -113,11 +113,19 @@ void CandleHealthSystem::update(float dt) {
 		}
 #pragma endregion
 
+		// Flicker effect for the torches
+		static float clockLightModifier = 0;
+		clockLightModifier += dt * (rand() % 100 / 100.0f);
+
+		//						Sine wave function                    +        random variance
+		float r = (sinf(clockLightModifier * 50.0f) * 0.075f + 0.55f) + (rand() % 10 - 5) / 50.0f;
+		LightComponent* lc = e->getComponent<LightComponent>();
+		lc->defaultColor = glm::vec3(r + 0.05f, (r - 0.05f) * 0.5f, (r - 0.1f) * 0.25f);
+		// save this line for further possible further testing in future
+		//light->getPointLight().setAttenuation(0.0f, 0.0f, r );
+
 		// COLOR/INTENSITY
 		float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
-
-		LightComponent* lc = e->getComponent<LightComponent>();
-
 		lc->getPointLight().setColor(tempHealthRatio * lc->defaultColor);
 	}
 }
