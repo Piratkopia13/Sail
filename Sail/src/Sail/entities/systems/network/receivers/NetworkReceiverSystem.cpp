@@ -41,6 +41,16 @@ NetworkReceiverSystem::~NetworkReceiverSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
+void NetworkReceiverSystem::stop() {
+	m_incomingDataBuffer = std::queue<std::string>(); // Clear the data buffer
+	m_netSendSysPtr = nullptr;
+}
+
+
+void NetworkReceiverSystem::init(Netcode::PlayerID player, NetworkSenderSystem* NSS) {
+	initBase(player);
+	m_netSendSysPtr = NSS;
+}
 
 void NetworkReceiverSystem::pushDataToBuffer(const std::string& data) {
 	std::lock_guard<std::mutex> lock(m_bufferLock);
@@ -94,6 +104,16 @@ void NetworkReceiverSystem::enableSprinklers() {
 	ECS::Instance()->getSystem<SprinklerSystem>()->enableSprinklers();
 }
 
+void NetworkReceiverSystem::endMatch(const GameDataForOthersInfo& info) {
+
+	GameDataTracker::getInstance().setStatsForOtherData(
+		info.bulletsFiredID, info.bulletsFired,
+		info.distanceWalkedID, info.distanceWalked,
+		info.jumpsMadeID, info.jumpsMade);
+
+	endGame(); // This function does different things depending on if you are the host or the client
+}
+
 void NetworkReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId, const Netcode::PlayerID shooterID) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
@@ -114,6 +134,21 @@ void NetworkReceiverSystem::hitBySprinkler(const Netcode::ComponentID candleOwne
 
 void NetworkReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 	EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
+}
+
+void NetworkReceiverSystem::matchEnded() {
+
+	NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+		Netcode::MessageType::PREPARE_ENDSCREEN,
+		SAIL_NEW Netcode::MessagePrepareEndScreen(),
+		false
+	);
+
+	GameDataTracker::getInstance().turnOffLocalDataTracking();
+
+	mergeHostsStats();
+	// Dispatch game over event
+	EventDispatcher::Instance().emit(GameOverEvent());
 }
 
 void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::ComponentID killerID) {
@@ -179,6 +214,14 @@ void NetworkReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 		return;
 	}
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
+}
+
+void NetworkReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement) {
+	GameDataTracker::getInstance().setStatsForPlayer(player, nrOfKills, placement);
+}
+
+void NetworkReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {
+	EventDispatcher::Instance().emit(UpdateSanityEvent(id, sanity));
 }
 
 // If I requested the projectile it has a local owner

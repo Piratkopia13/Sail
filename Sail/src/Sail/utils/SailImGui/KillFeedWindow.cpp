@@ -102,17 +102,29 @@ bool KillFeedWindow::onEvent(const Event& event) {
 
 		if (e.killerID == Netcode::SPRINKLER_COMP_ID) {
 			killFeedInfo.name1 = "The sprinklers";
-			killFeedInfo.type = "sprayed down";
+			killFeedInfo.type = "eliminated";
 		} else if (e.killerID == Netcode::INSANITY_COMP_ID) {
 			killFeedInfo.name1 = "Insanity";
 			killFeedInfo.type = "devoured";
+		} else if (e.killerID == e.netIDofKilled) {
+			killFeedInfo.name1 = killFeedInfo.name2;
+			killFeedInfo.type = "eliminated himself!";
+			killFeedInfo.name2 = "";
 		} else {
 			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.killerID))->name;
-			killFeedInfo.type = "sprayed down";
+			killFeedInfo.type = "eliminated";
 		}
 
 		SAIL_LOG(killFeedInfo.name1 + " " + killFeedInfo.type + " " + killFeedInfo.name2);
+		auto myID = NWrapperSingleton::getInstance().getMyPlayerID();
+		if (Netcode::getComponentOwner(e.killerID) == myID) {
+			killFeedInfo.relevant = 1;
+		} else if (idOfDeadPlayer == myID) {
+			killFeedInfo.relevant = 2;
+		}
 
+		m_kills.emplace_back(0.f, killFeedInfo);
+		m_doRender = true;
 
 	};
 
@@ -122,12 +134,24 @@ bool KillFeedWindow::onEvent(const Event& event) {
 		KillFeedWindow::KillFeedInfo killFeedInfo;
 		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
 			killFeedInfo.name1 = "The sprinklers";
+			killFeedInfo.type = "sprayed down";
+			killFeedInfo.name2 = extinguishedOwner->name;
+		} else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+			killFeedInfo.name1 = extinguishedOwner->name;
+			killFeedInfo.type = "got spooked";
+			killFeedInfo.name2 = "";
+		} else if (e.shooterID == extinguishedOwner->id) {
+			killFeedInfo.name1 = extinguishedOwner->name;
+			killFeedInfo.type = "sprayed down himself!";
+			killFeedInfo.name2 = "";
 		} else {
 			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+			killFeedInfo.type = "sprayed down";
+			killFeedInfo.name2 = extinguishedOwner->name;
 		}
 
-		killFeedInfo.type = "sprayed down";
-		killFeedInfo.name2 = extinguishedOwner->name;
+
+
 
 		std::string message = killFeedInfo.name1 + " " + killFeedInfo.type + " " + killFeedInfo.name2;
 		SAIL_LOG(message);
@@ -135,17 +159,22 @@ bool KillFeedWindow::onEvent(const Event& event) {
 		auto myID = NWrapperSingleton::getInstance().getMyPlayerID();
 		if (e.shooterID == myID) {
 			killFeedInfo.relevant = 1;
-		} else if (extinguishedOwner->id == myID) {
+		}
+		else if (extinguishedOwner->id == myID && e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+			killFeedInfo.relevant = 1;
+		}
+		else if (extinguishedOwner->id == myID) {
 			killFeedInfo.relevant = 2;
 		}
+		
 
 		m_kills.emplace_back(0.f, killFeedInfo);
 		m_doRender = true;
 	};
 
 	switch (event.type) {
-	case Event::Type::PLAYER_DEATH: onPlayerDied((const PlayerDiedEvent&)event); break;
 	case Event::Type::TORCH_EXTINGUISHED: onTorchExtinguished((const TorchExtinguishedEvent&)event); break;
+	case Event::Type::PLAYER_DEATH: onPlayerDied((const PlayerDiedEvent&)event); break;
 	default: break;
 	}
 

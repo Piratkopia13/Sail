@@ -1,21 +1,21 @@
+
 #pragma once
 
 #include "../../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
-#include "Sail/events/EventReceiver.h"
 
 #include "glm/gtc/quaternion.hpp"
 
 class GameState;
 class NetworkSenderSystem;
-class GameDataTracker;
 
-class ReceiverBase : public BaseComponentSystem, public EventReceiver {
+class ReceiverBase : public BaseComponentSystem {
 public: // Functions
 	ReceiverBase();
 	virtual ~ReceiverBase();
 
-	void init(Netcode::PlayerID playerID, NetworkSenderSystem* netSendSysPtr);
+	virtual void stop() override;
+
 	void setPlayer(Entity* player);
 	void setGameState(GameState* gameState);
 	const std::vector<Entity*>& getEntities() const;
@@ -51,28 +51,44 @@ protected:
 		int jumpsMade;
 		float distanceWalked;
 	};
+
+	struct GameDataForOthersInfo {
+		int bulletsFired;
+		Netcode::PlayerID bulletsFiredID;
+		int distanceWalked;
+		Netcode::PlayerID distanceWalkedID;
+		int jumpsMade;
+		Netcode::PlayerID jumpsMadeID;
+	};
 #pragma endregion
 
 protected: // Functions
+	void initBase(Netcode::PlayerID playerID);
+
+
 	virtual void createPlayer    (const PlayerComponentInfo& info, const glm::vec3& pos)                  = 0;
 	virtual void destroyEntity   (const Netcode::ComponentID entityID)                                    = 0;
 	virtual void enableSprinklers()                                                                       = 0;
+	virtual void endMatch        (const GameDataForOthersInfo& info)                                      = 0;
 	virtual void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID) = 0;
 	virtual void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                               = 0;
 	virtual void igniteCandle    (const Netcode::ComponentID candleID)                                    = 0;
+	virtual void matchEnded      ()                                                                       = 0;
 	virtual void playerDied      (const Netcode::ComponentID id, const Netcode::ComponentID killerID)     = 0;
-	virtual void playerJumped    (const Netcode::ComponentID id)                                          = 0;
-	virtual void playerLanded    (const Netcode::ComponentID id)                                          = 0;
 	virtual void setAnimation    (const Netcode::ComponentID id, const AnimationInfo& info)               = 0;
 	virtual void setCandleHealth (const Netcode::ComponentID candleID, const float health)                = 0;
 	virtual void setCandleState  (const Netcode::ComponentID id, const bool isHeld)                       = 0;
 	virtual void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                    = 0;
 	virtual void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                    = 0;
 	virtual void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                    = 0;
+	virtual void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement)                 = 0;
+	virtual void updateSanity    (const Netcode::ComponentID id, const float sanity)                      = 0;
 	virtual void spawnProjectile (const ProjectileInfo& info)                                             = 0;
 	virtual void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID projectileID) = 0;
 
 	// AUDIO
+	virtual void playerJumped (const Netcode::ComponentID id)                = 0;
+	virtual void playerLanded (const Netcode::ComponentID id)                = 0;
 	virtual void shootStart (const Netcode::ComponentID id, float frequency) = 0;
 	virtual void shootLoop  (const Netcode::ComponentID id, float frequency) = 0;
 	virtual void shootEnd   (const Netcode::ComponentID id, float frequency) = 0;
@@ -85,7 +101,6 @@ protected: // Functions
 	virtual void throwingEndSound	   (const Netcode::ComponentID id)       = 0;
 
 	// FUNCTIONS THAT DIFFER BETWEEN HOST AND CLIENT
-	virtual void endMatch() = 0;
 	
 	// HOST ONLY FUNCTIONS
 	virtual void endMatchAfterTimer(const float dt) = 0; // Made for the host to quit the game after a set time
@@ -100,9 +115,6 @@ protected: // Functions
 	virtual Entity* findFromNetID(const Netcode::ComponentID id) const = 0;
 
 protected:
-	NetworkSenderSystem* m_netSendSysPtr;
-	GameDataTracker* m_gameDataTracker; // needed?
-
 	// The player entity is used to prevent creation of receiver components for entities controlled by the player
 	Netcode::PlayerID m_playerID;
 	Entity* m_playerEntity;

@@ -54,6 +54,10 @@ void KillCamReceiverSystem::stop() {
 	m_idOfKillingProjectile = 0;
 }
 
+void KillCamReceiverSystem::init(Netcode::PlayerID player) {
+	initBase(player);
+}
+
 void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
 	std::lock_guard<std::mutex> lock(m_replayDataLock);
 
@@ -138,6 +142,9 @@ void KillCamReceiverSystem::enableSprinklers() {
 	//ECS::Instance()->getSystem<SprinklerSystem>()->enableSprinklers();
 }
 
+// SHOULD REMAIN EMPTY FOR THE KILLCAM
+void KillCamReceiverSystem::endMatch(const GameDataForOthersInfo& info) {}
+
 void KillCamReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId, const Netcode::PlayerID shooterID) {
 	if (auto e = findFromNetID(candleId); e) {
 		e->getComponent<CandleComponent>()->wasJustExtinguished = true;
@@ -170,6 +177,9 @@ void KillCamReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 		SAIL_LOG_WARNING("igniteCandle called but no matching entity found");
 	}
 }
+
+// SHOULD REMAIN EMPTY FOR THE KILLCAM
+void KillCamReceiverSystem::matchEnded() {}
 
 void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::ComponentID killerID) {
 	destroyEntity(networkIdOfKilled);
@@ -295,6 +305,12 @@ void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
+// SHOULD REMAIN EMPTY FOR THE KILLCAM
+void KillCamReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement) {}
+
+// SHOULD PROABABLY REMAIN EMPTY FOR THE KILLCAM
+void KillCamReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {}
+
 // If I requested the projectile it has a local owner
 void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	auto e = ECS::Instance()->createEntity("projectile");
@@ -379,7 +395,6 @@ void KillCamReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {
 
 
 // These functions are only used by NetworkReceiverSystemHost so their implementations are empty here
-void KillCamReceiverSystem::endMatch() {}
 void KillCamReceiverSystem::endMatchAfterTimer(const float dt) {}
 void KillCamReceiverSystem::prepareEndScreen(const Netcode::PlayerID sender, const EndScreenInfo& info) {}
 void KillCamReceiverSystem::mergeHostsStats() {}

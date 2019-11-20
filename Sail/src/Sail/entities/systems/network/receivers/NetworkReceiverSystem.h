@@ -9,11 +9,14 @@ class GameState;
 class NetworkSenderSystem;
 class GameDataTracker;
 
-class NetworkReceiverSystem : public ReceiverBase {
+class NetworkReceiverSystem : public ReceiverBase, public EventReceiver {
 public:
 	NetworkReceiverSystem();
 	virtual ~NetworkReceiverSystem();
 
+	virtual void stop() override;
+
+	void init(Netcode::PlayerID player, NetworkSenderSystem* NSS);
 	void pushDataToBuffer(const std::string& data);
 
 	void update(float dt) override;
@@ -29,9 +32,11 @@ protected:
 	void createPlayer    (const PlayerComponentInfo& info, const glm::vec3& pos)                  override;
 	void destroyEntity   (const Netcode::ComponentID entityID)                                    override;
 	void enableSprinklers()                                                                       override;
+	void endMatch        (const GameDataForOthersInfo& info)                                      override;
 	void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID) override;
 	void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                               override;
 	void igniteCandle    (const Netcode::ComponentID candleID)                                    override;
+	void matchEnded      ()                                                                       override;
 	void playerDied      (const Netcode::ComponentID id, const Netcode::ComponentID killerID)     override;
 	void setAnimation    (const Netcode::ComponentID id, const AnimationInfo& info)               override;
 	void setCandleHealth (const Netcode::ComponentID candleID, const float health)                override;
@@ -39,6 +44,8 @@ protected:
 	void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                    override;
 	void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                    override;
 	void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                    override;
+	void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement)                 override;
+	void updateSanity    (const Netcode::ComponentID id, const float sanity)                      override;
 	void spawnProjectile (const ProjectileInfo& info)                                             override;
 	void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID projectileID) override;
 
@@ -64,7 +71,12 @@ protected:
 
 	bool onEvent(const Event& event) override;
 
+
+	// Function differs between host and client
+	virtual void endGame() = 0;
 protected:
+	NetworkSenderSystem* m_netSendSysPtr;
+
 	// FIFO container of serialized data-strings to decode
 	std::queue<std::string> m_incomingDataBuffer;
 	std::mutex m_bufferLock;
