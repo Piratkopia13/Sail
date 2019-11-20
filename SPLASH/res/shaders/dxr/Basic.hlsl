@@ -248,6 +248,25 @@ void rayGen() {
 	// albedoOne.x = totalShadowAmount;
 	// albedoOne.yz = 0.f;
 
+	// Hard shadows mix test
+	// {
+	// 	// Ignore light if its color is black
+	// 	SpotlightInput p = CB_SceneData.spotLights[i];
+	// 	if (!(all(p.color == 0.0f) || p.angle == 0)) {
+	// 		float3 L = normalize(p.position - worldPosition);
+	// 		float angle = dot(L, normalize(p.direction));
+	// 		if (abs(angle) > p.angle) {
+	// 			float distance = length(p.position - worldPosition);
+	// 			if (Utils::rayHitAnything(worldPosition, L, distance)) {
+	// 				albedoOne = 0.f;
+	// 				metalnessOne = 0.f;
+	// 				roughnessOne = 0.f;
+	// 				aoOne = 0.f;
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 	// Overwrite gbuffers
 	gbuffer_albedo[launchIndex] = float4(albedoOne, 1.0f);
 	gbuffer_normals[launchIndex] = float4(worldNormal * 0.5f + 0.5f, 1.0f);
