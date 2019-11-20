@@ -342,8 +342,9 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
 	
+	[unroll]
 	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
-		payload.shadowTwo[i] = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, 0);
+		payload.shadowTwo[i] = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, i);
 	}
 
 	payload.albedoTwo.rgb = albedoColor.rgb; // TODO: store alpha and use as team color amount
