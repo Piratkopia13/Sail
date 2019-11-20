@@ -52,6 +52,9 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     float3 Lo = 0.0f;
     // Add emissive materials
 	Lo += albedo * 2.2 * emissivness;
+
+    float totalShadowAmount = 0.f;
+	uint numLights = 0;
     
     for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
         // float shadowAmount = 1.f;
@@ -61,15 +64,18 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         float shadowAmount = shadow[min(i, NUM_SHADOW_TEXTURES - 1)];
         // float shadowAmount = 1.f;
         PointLightInput p = pointLights[i];
-
-        // Dont add light to pixels that are in complete shadow
-        if (shadowAmount == 0.f) {
-            continue;
-        }
+        
         // Ignore point light if color is black
         if (all(p.color == 0.0f)) {
             continue;
         }
+        numLights++;
+        // Dont add light to pixels that are in complete shadow
+        if (shadowAmount == 0.f) {
+            continue;
+        }
+        totalShadowAmount += shadowAmount;
+
         float3 L = normalize(p.position - worldPosition);
         float3 H = normalize(V + L);
         float distance = length(p.position - worldPosition);
@@ -100,6 +106,12 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         Lo += (kD * albedo / PI + specular) * radiance * NdotL * shadowAmount;
     }
 
+    // Lerp AO depending on shadow
+	// This fixes water being visible in darkness
+	totalShadowAmount /= max(numLights, 1);
+	totalShadowAmount = (totalShadowAmount * totalShadowAmount);
+	ao = lerp(0.f, ao, totalShadowAmount);
+
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT
     float3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, roughness);
 
@@ -109,7 +121,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     
     // Assume constant irradiance since game is played indoors with no or few indirect light sources
     // This could be read from a skymap or irradiance probe
-    float3 irradiance = 0.01f;
+    float3 irradiance = 0.0f;
     float3 diffuse    = irradiance * albedo;
     
     float3 R = reflect(-V, N);  

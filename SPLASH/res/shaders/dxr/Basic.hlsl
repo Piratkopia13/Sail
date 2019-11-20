@@ -92,9 +92,8 @@ float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal,
 		lightShadowAmount += (float)Utils::rayHitAnything(worldPosition, worldNormal, L, distance);
 	}
 	lightShadowAmount /= numSamples;
-	float shadow = lightShadowAmount;
 
-	return shadow;
+	return lightShadowAmount;
 }
 
 [shader("raygeneration")]
@@ -217,8 +216,10 @@ void rayGen() {
 	motionVector.y = 1.f - motionVector.y;
 	motionVector = motionVector * 2.f - 1.0f;
 
+	float totalShadowAmount = 0.f;
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
 	// float2 reprojectedTexCoord = screenTexCoord;
+	[unroll]
 	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
 		float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, i);
 
@@ -227,7 +228,9 @@ void rayGen() {
 		float2 shadow = float2(firstBounceShadow, payload.shadowTwo[i]);
 		shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
 		lOutputShadows[uint3(launchIndex, i)] = shadow;
+		totalShadowAmount += firstBounceShadow;
 	}
+	totalShadowAmount /= max(NUM_SHADOW_TEXTURES, 1);
 
 	float3 albedoTwo = finalPayload.albedoTwo.rgb;
 	float3 worldNormalTwo = finalPayload.normalTwo.rgb;
@@ -240,13 +243,15 @@ void rayGen() {
 	// Change material if second bounce color should be water on a surface
 	getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
 
-	// float interpAoOne = lerp(originalAoOne, aoOne, shadow.x);
-	float interpAoOne = aoOne; // TODO: fix this! use code from dev. Removed water in shadow
+	// totalShadowAmount = 1 - totalShadowAmount * totalShadowAmount;
+	// aoOne = lerp(aoOne, originalAoOne, totalShadowAmount);
+	// albedoOne.x = totalShadowAmount;
+	// albedoOne.yz = 0.f;
 
 	// Overwrite gbuffers
 	gbuffer_albedo[launchIndex] = float4(albedoOne, 1.0f);
 	gbuffer_normals[launchIndex] = float4(worldNormal * 0.5f + 0.5f, 1.0f);
-	gbuffer_texMetalnessRoughnessAO[launchIndex] = float4(metalnessOne, roughnessOne, interpAoOne, emisivenessOne);
+	gbuffer_texMetalnessRoughnessAO[launchIndex] = float4(metalnessOne, roughnessOne, aoOne, emisivenessOne);
 	// Write outputs
 	lOutputAlbedo[launchIndex] = float4(albedoTwo, 1.0f);
 	lOutputNormals[launchIndex] = float4(worldNormalTwo * 0.5f + 0.5f, 1.0f);

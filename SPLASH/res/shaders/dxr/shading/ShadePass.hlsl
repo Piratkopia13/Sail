@@ -89,9 +89,9 @@ float4 PSMain(PSIn input) : SV_Target0 {
     return pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, emissivenessOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor.rgb);
     
     // Debug stuff
-    // return float4(metalnessRoughnessAoOne, 1.0f);
+    // return float4(albedoOne, 1.0f);
     // return float4(worldNormalOne, 1.0f);
-    // return float4(shadowTwo[0], 0.f, 0.f, 1.0f);
+    // return float4(shadowOne[0], 0.f, 0.f, 1.0f);
     // return float4(shadowAmount.x, 0.f, 0.f, 1.0f) * 0.5 + pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor) * 0.5;
 }
 
