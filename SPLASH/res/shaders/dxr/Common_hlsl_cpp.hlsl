@@ -27,7 +27,6 @@ namespace DXRShaderCommon {
 
 #endif
 
-
 #define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 12
@@ -35,6 +34,7 @@ namespace DXRShaderCommon {
 #define MAX_NUM_METABALLS 500
 #define METABALL_RADIUS 0.12f
 #define MAX_DECALS 100
+#define NUM_SHADOW_TEXTURES 2
 
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;
@@ -55,7 +55,7 @@ struct RayPayload {
 	float4 metalnessRoughnessAOTwo;
 	float3 worldPositionOne;
 	float3 worldPositionTwo;
-	float shadowTwo;
+	float shadowTwo[NUM_SHADOW_TEXTURES];
 	uint recursionDepth;
 	float closestTvalue;
 };

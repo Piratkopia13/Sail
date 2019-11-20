@@ -22,7 +22,7 @@ RWTexture2DArray<float2> lOutputShadows 		: register(u6); 	// Shadows first boun
 RWTexture2D<float4> lOutputPositionsOne			: register(u7);		// XYZ - world space positions for first bounce
 RWTexture2D<float4> lOutputPositionsTwo			: register(u8);		// XYZ - world space positions for second bounce
 RWTexture2D<float4> lOutputBloom 				: register(u9); 	// RGB - Writes all colors that should later be bloomed
-Texture2D<float2> 	lInputShadowsLastFrame 		: register(t20); 	// last frame Shadows first bounce/last frame shadows second bounce
+Texture2DArray<float2> InputShadowsLastFrame 	: register(t20); 	// last frame Shadows first bounce/last frame shadows second bounce
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);
@@ -149,7 +149,9 @@ void rayGen() {
 	RayPayload payload;
 	payload.recursionDepth = 0;
 	payload.closestTvalue = 0;
-	payload.shadowTwo = 0.f;
+	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
+		payload.shadowTwo[i] = 0.f;
+	}
 	payload.albedoOne = 0.f;
 	payload.albedoTwo = 0.f;
 	payload.normalOne = 0.f;
@@ -177,7 +179,9 @@ void rayGen() {
 	RayPayload payloadMetaball;
 	payloadMetaball.recursionDepth = 0;
 	payloadMetaball.closestTvalue = 0;
-	payloadMetaball.shadowTwo = 0.f;
+	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
+		payloadMetaball.shadowTwo[i] = 0.f;
+	}
 	payloadMetaball.albedoOne = 0.f;
 	payloadMetaball.albedoTwo = 0.f;
 	payloadMetaball.normalOne = 0.f;
@@ -205,7 +209,6 @@ void rayGen() {
 	// Get shadow from first bounce
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
-	float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, 0);
 
 	// Temporal filtering via an exponential moving average
 	float alpha = 0.3f; // Temporal fade, trading temporal stability for lag
@@ -216,14 +219,15 @@ void rayGen() {
 
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
 	// float2 reprojectedTexCoord = screenTexCoord;
-	float2 cLast = lInputShadowsLastFrame.SampleLevel(motionSS, reprojectedTexCoord, 0).rg;
-	// float2 cLast = 0.0f;
-	float2 shadow = float2(firstBounceShadow, payload.shadowTwo);
-	shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
-	lOutputShadows[uint3(launchIndex, 0)] = shadow;
-	lOutputShadows[uint3(launchIndex, 1)] = float2(1.f, 0.f);
+	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
+		float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, i);
 
-
+		float2 cLast = InputShadowsLastFrame.SampleLevel(motionSS, float3(reprojectedTexCoord, i), 0).rg;
+		// float2 cLast = 0.0f;
+		float2 shadow = float2(firstBounceShadow, payload.shadowTwo[i]);
+		shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
+		lOutputShadows[uint3(launchIndex, i)] = shadow;
+	}
 
 	float3 albedoTwo = finalPayload.albedoTwo.rgb;
 	float3 worldNormalTwo = finalPayload.normalTwo.rgb;
@@ -236,8 +240,8 @@ void rayGen() {
 	// Change material if second bounce color should be water on a surface
 	getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
 
-	float interpAoOne = lerp(originalAoOne, aoOne, shadow.x);
-	// float interpAoOne = aoOne;
+	// float interpAoOne = lerp(originalAoOne, aoOne, shadow.x);
+	float interpAoOne = aoOne; // TODO: fix this! use code from dev. Removed water in shadow
 
 	// Overwrite gbuffers
 	gbuffer_albedo[launchIndex] = float4(albedoOne, 1.0f);
@@ -338,7 +342,10 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
 	
-	payload.shadowTwo = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, 0);
+	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
+		payload.shadowTwo[i] = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, 0);
+	}
+
 	payload.albedoTwo.rgb = albedoColor.rgb; // TODO: store alpha and use as team color amount
 	payload.normalTwo = normalInWorldSpace;
 	payload.metalnessRoughnessAOTwo = metalnessRoughnessAO;

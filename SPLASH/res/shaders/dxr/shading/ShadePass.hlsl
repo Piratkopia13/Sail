@@ -47,8 +47,6 @@ Texture2D<float4> brdfLUT : register(t9);
 
 SamplerState PSss : register(s0);
 
-static const uint NUM_SHADOW_TEXTURES = 2;
-
 #include "PBR.hlsl"
 
 float4 PSMain(PSIn input) : SV_Target0 {
@@ -93,7 +91,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
     // Debug stuff
     // return float4(metalnessRoughnessAoOne, 1.0f);
     // return float4(worldNormalOne, 1.0f);
-    // return float4(shadowAmount.x, 0.f, 0.f, 1.0f);
+    // return float4(shadowTwo[0], 0.f, 0.f, 1.0f);
     // return float4(shadowAmount.x, 0.f, 0.f, 1.0f) * 0.5 + pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor) * 0.5;
 }
 

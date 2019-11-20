@@ -1,3 +1,6 @@
+#define HLSL
+#include "../Common_hlsl_cpp.hlsl"
+
 #define RENDER_SHADOWS_SEPARATELY
 
 float3 fresnelSchlick(float cosTheta, float3 F0) {
