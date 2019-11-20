@@ -126,7 +126,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 		}
 
 		const glm::mat4* transforms00 = animationC->currentAnimation->getAnimationTransform(frame00);
-		const glm::mat4* transforms01 = frame01 > frame00 ? animationC->currentAnimation->getAnimationTransform(frame01) : nullptr;
+		const glm::mat4* transforms01 = animationC->currentAnimation->getAnimationTransform(frame01);//frame01 > frame00 ? animationC->currentAnimation->getAnimationTransform(frame01) : nullptr;
 		const glm::mat4* transforms10 = animationC->nextAnimation ? animationC->nextAnimation->getAnimationTransform(frame10) : nullptr;
 		const glm::mat4* transforms11 = (animationC->nextAnimation && frame11 > frame10) ? animationC->nextAnimation->getAnimationTransform(frame11) : nullptr;
 
@@ -165,14 +165,14 @@ void AnimationSystem::updateTransforms(const float dt) {
 			const float frame1Time = animationC->currentAnimation->getTimeAtFrame(frame01);
 			// weight = time - time(0) / time(1) - time(0)
 
+			// Origin of root bone - "hips"
+			const glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
+			auto trans = glm::translate(transOrig) * glm::rotate(animationC->pitch, glm::vec3(1.f, 0.f, 0.f)) * glm::translate(-transOrig);
 			const float w = (animationC->animationTime - frame0Time) / (frame1Time - frame0Time);
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				interpolate(animationC->transforms[transformIndex], transforms00[transformIndex], transforms01[transformIndex], w);
 				// Rotate the upper body in relation to camera pitch
 				if (transformIndex > 0 && transformIndex < 31) {
-					// Origin of root bone - "hips"
-					const glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
-					auto trans = glm::translate(transOrig) * glm::rotate(animationC->pitch, glm::vec3(1.f, 0.f, 0.f)) * glm::translate(-transOrig);
 					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
 				}
 			}
@@ -187,13 +187,14 @@ void AnimationSystem::updateTransforms(const float dt) {
 		}
 		animationC->hasUpdated = true;
 
+
 		if (animationC->leftHandEntity) {
 			glm::mat4 res = animationC->transforms[10] * animationC->leftHandPosition;
-			
+
 			glm::vec3 pos, scale;
 			glm::quat rot;
 			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
-			
+
 			//KEEP THIS DO NOT REMOVE FUCK YOU
 			animationC->leftHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
 			animationC->leftHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
@@ -201,11 +202,11 @@ void AnimationSystem::updateTransforms(const float dt) {
 
 		if (animationC->rightHandEntity) {
 			glm::mat4 res = animationC->transforms[22] * animationC->rightHandPosition;
-		
+
 			glm::vec3 pos, scale;
 			glm::quat rot;
 			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
-		
+
 			animationC->rightHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
 			animationC->rightHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
 		}
@@ -415,7 +416,9 @@ unsigned int AnimationSystem::getByteSize() const {
 void AnimationSystem::addTime(AnimationComponent* e, const float time) {
 	e->animationTime += time * e->animationSpeed;
 	if (e->animationTime >= e->currentAnimation->getMaxAnimationTime()) {
-		e->animationTime -= (int(e->animationTime / e->currentAnimation->getMaxAnimationTime()) * e->currentAnimation->getMaxAnimationTime());
+		//e->animationTime -= (int(e->animationTime / e->currentAnimation->getMaxAnimationTime()) * e->currentAnimation->getMaxAnimationTime());
+		e->animationTime = fmodf(e->animationTime, e->currentAnimation->getMaxAnimationTime());
+		//SAIL_LOG(std::to_string(e->animationTime));
 	}
 }
 
