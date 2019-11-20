@@ -5,7 +5,7 @@
 
 // Ordered by name
 
-class AiSystem;
+//class AiSystem;
 class AnimationSystem;
 class AnimationChangerSystem;
 class AudioSystem;
@@ -57,7 +57,7 @@ template <typename T>
 class ModelSubmitSystem;
 
 struct Systems {
-	AiSystem*                    aiSystem                    = nullptr;
+	//AiSystem*                    aiSystem                    = nullptr;
 	AnimationSystem*             animationSystem             = nullptr;
 	AnimationChangerSystem*      animationChangerSystem      = nullptr;
 	AudioSystem*                 audioSystem                 = nullptr;
