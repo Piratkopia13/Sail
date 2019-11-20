@@ -15,8 +15,6 @@
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/graphics/geometry/factory/StringModel.h"
 #include "Sail/graphics/geometry/factory/QuadModel.h"
-#include "Sail/entities/components/GUIComponent.h"
-#include "Sail/entities/components/SanityComponent.h"
 
 #include "Sail/entities/systems/network/receivers/KillCamReceiverSystem.h"
 
@@ -53,6 +51,10 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->spawnRate = 0.001f;
 	particleEmitterComp->lifeTime = 0.13f;
 	particleEmitterComp->setTexture("particles/fire.tga");
+
+	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
+	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.05f));
+	ragdollComp->addContactPoint(glm::vec3(0.f, 0.37f, 0.0f), glm::vec3(0.05f));
 
 	PointLight pl;
 	pl.setColor(glm::vec3(0.55f, 0.5f, 0.45f));
