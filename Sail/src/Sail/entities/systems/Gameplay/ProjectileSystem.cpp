@@ -101,7 +101,6 @@ unsigned int ProjectileSystem::getByteSize() const {
 	return BaseComponentSystem::getByteSize() + sizeof(*this);
 }
 #endif
-}
 
 void ProjectileSystem::setCrosshair(Entity* pCrosshair) {
 	m_crosshair = pCrosshair;
