@@ -248,18 +248,6 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				enableSprinklers();
 			}
 			break;
-			case Netcode::MessageType::START_THROWING:
-			{
-				ar(compID);
-				throwingStartSound(compID);
-			}
-			break;
-			case Netcode::MessageType::STOP_THROWING:
-			{
-				ar(compID);
-				throwingEndSound(compID);
-			}
-			break;
 			case Netcode::MessageType::ENDGAME_STATS:
 			{
 				// create temporary variables to hold data when reading message
@@ -324,12 +312,12 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 			break;
 			case Netcode::MessageType::PLAYER_DIED:
 			{
-				Netcode::PlayerID playerIdOfShooter;
+				Netcode::ComponentID killerID;
 
 				ar(compID);
-				ar(playerIdOfShooter);
+				ar(killerID);
 				
-				playerDied(compID, playerIdOfShooter);
+				playerDied(compID, killerID);
 			}
 			break;
 			case Netcode::MessageType::PLAYER_JUMPED:
@@ -408,15 +396,29 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				spawnProjectile(info);
 			}
 			break;
+			case Netcode::MessageType::START_THROWING:
+			{
+				ar(compID);
+				throwingStartSound(compID);
+			}
+			break;
+			case Netcode::MessageType::STOP_THROWING:
+			{
+				ar(compID);
+				throwingEndSound(compID);
+			}
+			break;
 			case Netcode::MessageType::WATER_HIT_PLAYER:
 			{
-				Netcode::ComponentID playerwhoWasHit;
+				Netcode::ComponentID playerwhoWasHit, projectile;
+
 				ar(playerwhoWasHit);
+				ar(projectile);
 
 				// NOTE!
 				// This function is and should be empty for the NetworkReceiverSystemClient. 
 				// Only the Host has the authority to damage candles.
-				waterHitPlayer(playerwhoWasHit, senderID);
+				waterHitPlayer(playerwhoWasHit, projectile);
 			}
 			break;
 			default:
