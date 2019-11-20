@@ -165,7 +165,6 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 
 				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candleC->wasHitByPlayerID != candleC->playerEntityID) {
 					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
-					SAIL_LOG("Kill counted");
 				}
 
 				else if (candleC->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
