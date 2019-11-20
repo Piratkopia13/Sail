@@ -425,6 +425,7 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 	auto onPlayerDeath = [&](const PlayerDiedEvent& e) {
 		if (Netcode::getComponentOwner(e.netIDofKilled) == m_playerID) {
 			m_idOfKillingProjectile = e.killerID;
+			SAIL_LOG("killed by projectile:" + std::to_string(e.killerID));
 		}
 	};
 
