@@ -8,7 +8,7 @@
 #include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 
 class NWrapperSingleton;
-
+class Application;
 struct InduvidualStats {
 	int bulletsFired;
 	float distanceWalked;
@@ -67,8 +67,16 @@ public:
 
 	// Implemented in...
 	void renderImgui();							// ...EndState::renderImGui()
-	
+
+	void renderPlacement();
+	void renderPersonalStats();
+	void renderFunStats();
+
+#ifdef DEVELOPMENT
+	void addDebugData();
+#endif
 private:
+	Application* m_app;
 	NWrapperSingleton* m_network;
 
 	InduvidualStats m_loggedData;
@@ -93,4 +101,6 @@ private:
 	GameDataTracker();
 	virtual bool onEvent(const Event& e);
 	void playerDisconnected(const NetworkDisconnectEvent& e);
+
+
 };
