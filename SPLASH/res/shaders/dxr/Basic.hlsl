@@ -421,7 +421,9 @@ float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float
 float CalculateMetaballsPotential(in uint index, in float3 position) {
 	//return 1;
 	float sumFieldPotential = 0;
-	uint nballs = CB_SceneData.nMetaballs;
+	uint groupStart = CB_SceneData.metaballGroup[0].start;
+	uint nballs = CB_SceneData.metaballGroup[0].size;
+	uint groupEnd = groupStart + nballs;
 
 	int mid = index;
 	int nWeights = 30;
@@ -429,12 +431,12 @@ float CalculateMetaballsPotential(in uint index, in float3 position) {
 	int start = mid - nWeights;
 	int end = mid + nWeights;
 
-	if (start < 0)
+	if (start < 0)//TODO:: GROUP START
 		start = 0;
-	if (end > nballs) 
+	if (end > nballs)
 		end = nballs;
 
-	for (int i = start; i < end - 1; i++) {
+	for (int i = start; i < end; i++) {
 		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], METABALL_RADIUS);
 	}
 
@@ -518,7 +520,9 @@ void IntersectionShader() {
 	float4 dummy;
 	float min;
 	float max;
-	uint nballs = CB_SceneData.nMetaballs;
+	uint groupStart = CB_SceneData.metaballGroup[0].start;
+	uint nballs = CB_SceneData.metaballGroup[0].size;
+	uint groupEnd = groupStart + nballs;
 
 	const uint MAX_HITS = 2;
 	Ballhit hits[MAX_HITS];
@@ -534,16 +538,16 @@ void IntersectionShader() {
 		}
 	}
 
-	for (uint i = 0; i < nballs && nHits < MAX_HITS; i++) {
-		uint i2 = nballs - i - 1;
-		if (intersectSphere(rayWorld, metaballs[i2], METABALL_RADIUS, min, max, dummy)) {
-			hits[nHits].tmin = min;
-			hits[nHits].tmax = max + 1;
-			hits[nHits].index = i2;
-			nHits++;
-			break;
-		}
-	}
+	//for (uint i = groupStart; i < groupEnd && nHits < MAX_HITS; i++) {
+	//	uint i2 = groupEnd - i - 1;
+	//	if (intersectSphere(rayWorld, metaballs[i2], METABALL_RADIUS, min, max, dummy)) {
+	//		hits[nHits].tmin = min;
+	//		hits[nHits].tmax = max + 1;
+	//		hits[nHits].index = i2;
+	//		nHits++;
+	//		break;
+	//	}
+	//}
 
 	if (nHits == 0)
 		return;

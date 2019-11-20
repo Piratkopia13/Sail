@@ -212,7 +212,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 }
 
 void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::map<int, MetaballGroup>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
-	//m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
+
 	updateMetaballpositions(metaballGroups);
 
 	DXRShaderCommon::SceneCBuffer newData = {};
@@ -223,7 +223,10 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::map<in
 	newData.cameraPosition = cam.getPosition();
 	newData.cameraDirection = cam.getDirection();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
-	newData.nMetaballs = metaballGroups.size() ? metaballGroups.at(0).balls.size() : 0; //TODO: Change This
+	newData.nMetaballGroups = metaballGroups.size();
+	newData.metaballGroup[0].start = 0;
+	newData.metaballGroup[0].size = (newData.nMetaballGroups > 0) ? metaballGroups.at(0).balls.size() : 0;
+
 	newData.nDecals = m_decalsToRender;
 	newData.doTonemapping = doToneMapping;
 	newData.waterArraySize = m_waterArrSizes;
