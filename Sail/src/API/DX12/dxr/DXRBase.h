@@ -27,6 +27,12 @@ public:
 		float distToCamera;
 	};
 
+	struct MetaballGroup {
+		int index;
+		std::vector<DXRBase::Metaball> balls;
+		D3D12_RAYTRACING_AABB aabb;
+	};
+
 	DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs);
 	~DXRBase();
 
@@ -34,7 +40,7 @@ public:
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 
-	void updateSceneData(Camera& cam, LightSetup& lights, const std::map<int, std::vector<Metaball>>& metaballGroups, const std::map<int, D3D12_RAYTRACING_AABB>& m_next_metaball_group_aabbs, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::map<int, MetaballGroup>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	bool checkWaterAtWorldPosition(const glm::vec3& position);
@@ -101,10 +107,10 @@ private:
 	void createEmptyLocalRootSignature();
 
 	void initMetaballBuffers();
-	void updateMetaballpositions(const std::map<int, std::vector<Metaball>>& metaballGroups, const std::map<int, D3D12_RAYTRACING_AABB>& m_next_metaball_group_aabbs);
+	void updateMetaballpositions(const std::map<int, MetaballGroup>& metaballGroups);
 
 	void initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle);
-	void addMetaballGroupAABB();
+	void addMetaballGroupAABB(int index);
 
 private:
 	DX12API* m_context;
@@ -175,7 +181,7 @@ private:
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
 
 	// Metaball Stuff
-	std::vector<std::vector<ID3D12Resource1*>> m_aabb_desc_resources; // m_aabb_descs uploaded to GPU
+	std::map<int, std::vector<ID3D12Resource1*>> m_aabb_desc_resources; // m_aabb_descs uploaded to GPU
 
 	// Water voxel grid stuff
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;

@@ -38,8 +38,7 @@ private:
 	std::unique_ptr<DX12RenderableTexture> m_outputTexture;
 	std::unique_ptr<DX12RenderableTexture> m_outputBloomTexture;
 
-	std::map<int, std::vector<DXRBase::Metaball>> m_metaballGroups;
-	std::map<int, D3D12_RAYTRACING_AABB> m_nextMetaballGroupAabbs;
+	std::map<int, DXRBase::MetaballGroup> m_metaballGroups;
 
 	// Decals
 	DXRShaderCommon::DecalData m_decals[MAX_DECALS];

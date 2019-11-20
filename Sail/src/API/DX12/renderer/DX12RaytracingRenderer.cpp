@@ -63,13 +63,15 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	auto fenceVal = m_context->getDirectQueue()->signal();
 	m_context->getComputeQueue()->wait(fenceVal);
 
-	//std::sort(m_metaballs.begin(), m_metaballs.end(),
-	//	[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
-	//	{
-	//		return a.distToCamera < b.distToCamera;
-	//	});
 
-	for (auto group : m_metaballGroups) {
+	int gpuGroupIndex = 0;
+	for (auto& group : m_metaballGroups) {
+		//std::sort(group.second.balls.begin(), group.second.balls.end(),
+		//	[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
+		//	{
+		//		return a.distToCamera < b.distToCamera;
+		//	});
+
 		commandQueue.emplace_back();
 		RenderCommand& cmd = commandQueue.back();
 		cmd.type = RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
@@ -80,7 +82,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), true);
 
 		//Calculate the needed size of m_next_metaball_aabb.
-		glm::vec3& pos = group.second.front().pos;
+		glm::vec3& pos = group.second.balls.front().pos;
+
 		D3D12_RAYTRACING_AABB nextMetaballAabb;
 		nextMetaballAabb.MaxX = pos.x + METABALL_RADIUS;
 		nextMetaballAabb.MaxY = pos.y + METABALL_RADIUS;
@@ -88,8 +91,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		nextMetaballAabb.MinX = pos.x - METABALL_RADIUS;
 		nextMetaballAabb.MinY = pos.y - METABALL_RADIUS;
 		nextMetaballAabb.MinZ = pos.z - METABALL_RADIUS;
-		for (size_t i = 1; i < group.second.size() && i < MAX_NUM_METABALLS; i++) {
-			glm::vec3& pos = group.second[i].pos;
+		for (size_t i = 1; i < group.second.balls.size() && i < MAX_NUM_METABALLS; i++) {
+			glm::vec3& pos = group.second.balls[i].pos;
 
 			if (nextMetaballAabb.MaxX < pos.x + METABALL_RADIUS) {
 				nextMetaballAabb.MaxX = pos.x + METABALL_RADIUS;
@@ -112,7 +115,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 			}
 		}
 
-		m_nextMetaballGroupAabbs[group.first] = nextMetaballAabb;
+		group.second.aabb = nextMetaballAabb;
+		group.second.index = gpuGroupIndex++;
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_DXR_SHADER)) {
@@ -132,7 +136,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}
 
 	if (camera && lightSetup) {
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballGroups, m_nextMetaballGroupAabbs, teamColors, (postProcessPipeline) ? false : true);
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballGroups, teamColors, (postProcessPipeline) ? false : true);
 	}
 
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
@@ -182,7 +186,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 void DX12RaytracingRenderer::begin(Camera* camera) {
 	Renderer::begin(camera);
 	m_metaballGroups.clear();
-	m_nextMetaballGroupAabbs.clear();
 }
 
 bool DX12RaytracingRenderer::onEvent(const Event& event) {
@@ -217,7 +220,7 @@ void DX12RaytracingRenderer::submitMetaball(RenderCommandType type, Material* ma
 		ball.pos = pos;
 		ball.distToCamera = glm::length(ball.pos - camera->getPosition());
 
-		m_metaballGroups[group].emplace_back(ball);
+		m_metaballGroups[group].balls.emplace_back(ball);
 	}
 }
 

@@ -89,7 +89,7 @@ DXRBase::~DXRBase() {
 	}
 
 	for (auto& resource : m_aabb_desc_resources) {
-		for (auto& resource2 : resource) {
+		for (auto& resource2 : resource.second) {
 			resource2->Release();
 		}
 	}
@@ -211,9 +211,9 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::map<int, std::vector<Metaball>>& metaballGroups, const std::map<int, D3D12_RAYTRACING_AABB>& m_next_metaball_group_aabbs, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::map<int, MetaballGroup>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
 	//m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
-	updateMetaballpositions(metaballGroups, m_next_metaball_group_aabbs);
+	updateMetaballpositions(metaballGroups);
 
 	DXRShaderCommon::SceneCBuffer newData = {};
 	newData.viewToWorld = glm::inverse(cam.getViewMatrix());
@@ -223,7 +223,7 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::map<in
 	newData.cameraPosition = cam.getPosition();
 	newData.cameraDirection = cam.getDirection();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
-	newData.nMetaballs = metaballGroups.size() ? metaballGroups.at(0).size() : 0; //TODO: Change This
+	newData.nMetaballs = metaballGroups.size() ? metaballGroups.at(0).balls.size() : 0; //TODO: Change This
 	newData.nDecals = m_decalsToRender;
 	newData.doTonemapping = doToneMapping;
 	newData.waterArraySize = m_waterArrSizes;
@@ -424,7 +424,7 @@ void DXRBase::rebuildWater() {
 	m_waterZChunkSize = m_waterArrSizes.z / m_maxWaterZChunk;
 }
 
-void DXRBase::updateMetaballpositions(const std::map<int, std::vector<Metaball>>& metaballGroups, const std::map<int, D3D12_RAYTRACING_AABB>& next_metaball_group_aabbs) {
+void DXRBase::updateMetaballpositions(const std::map<int, MetaballGroup>& metaballGroups) {
 	if (metaballGroups.empty()) {
 		return;
 	}
@@ -439,34 +439,31 @@ void DXRBase::updateMetaballpositions(const std::map<int, std::vector<Metaball>>
  	hr = pos_res->Map(0, nullptr, &pPosMappedData);
 	DX12Utils::checkDeviceRemovalReason(m_context->getDevice(), hr);
 
-	int gpuGroupID = 0;
 	int metaballIndex = 0;
 	int metaballOffsetBytes = 0;
 	int offsetInc = sizeof(Metaball::pos);
 
-	for (auto group : next_metaball_group_aabbs) {
-		if (gpuGroupID >= m_aabb_desc_resources.size()) {
-			addMetaballGroupAABB();
+	for (auto group : metaballGroups) {
+		if (!m_aabb_desc_resources.count(group.second.index)) {
+			addMetaballGroupAABB(group.second.index);
 		}
 
 		//UPDATE AABB
-		aabb_res = m_aabb_desc_resources[gpuGroupID][m_context->getSwapIndex()];
+		aabb_res = m_aabb_desc_resources[group.second.index][m_context->getSwapIndex()];
 		hr = aabb_res->Map(0, nullptr, &pAabbMappedData);
 		DX12Utils::checkDeviceRemovalReason(m_context->getDevice(), hr);
 
-		memcpy(pAabbMappedData, &group.second, sizeof(D3D12_RAYTRACING_AABB));
+		memcpy(pAabbMappedData, &group.second.aabb, sizeof(D3D12_RAYTRACING_AABB));
 		aabb_res->Unmap(0, nullptr);
 
 		//UPDATE METABALLS
-		const std::vector<Metaball>& metaballs = metaballGroups.at(group.first);
+		const std::vector<Metaball>& metaballs = group.second.balls;
 		size_t size = metaballs.size();
 
 		for (size_t i = 0; i < size; i++) {;
 			memcpy(static_cast<char*>(pPosMappedData) + metaballOffsetBytes, &metaballs[i].pos, offsetInc);
 			metaballOffsetBytes += offsetInc;
-		}
-		
-		gpuGroupID++;
+		}		
 	}
 	pos_res->Unmap(0, nullptr);
 }
@@ -1177,9 +1174,8 @@ void DXRBase::initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCR
 	m_usedDescriptors += 3;
 }
 
-void DXRBase::addMetaballGroupAABB() {
-	m_aabb_desc_resources.emplace_back();
-	std::vector<ID3D12Resource1*> & aabbRes = m_aabb_desc_resources.back();
+void DXRBase::addMetaballGroupAABB(int index) {
+	std::vector<ID3D12Resource1*> & aabbRes = m_aabb_desc_resources[index];
 
 	aabbRes.reserve(DX12API::NUM_GPU_BUFFERS);
 	for (size_t i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
