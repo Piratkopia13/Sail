@@ -521,9 +521,6 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 		ar(data->playerWhoWasHitID);
 		ar(data->projectileThatHitID);
-
-		SAIL_LOG("HIT WITH PROJECTILE:" + std::to_string(data->projectileThatHitID));
-
 	}
 	break;
 	default:
