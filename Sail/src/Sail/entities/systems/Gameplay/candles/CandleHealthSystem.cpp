@@ -57,18 +57,23 @@ void CandleHealthSystem::update(float dt) {
 			} else { // If candle used to be lit but has lost all its health
 				candle->wasJustExtinguished = true;
 
-				// Candle has lost all its health so extinguish it
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::EXTINGUISH_CANDLE,
-					SAIL_NEW Netcode::MessageExtinguishCandle{
-						e->getComponent<NetworkReceiverComponent>()->m_id,
-						candle->wasHitByPlayerID
-					},
-					true
-				);
+				if (candle->respawns < m_maxNumRespawns) {
+					// Candle has lost all its health so extinguish it
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::EXTINGUISH_CANDLE,
+						SAIL_NEW Netcode::MessageExtinguishCandle{
+							e->getComponent<NetworkReceiverComponent>()->m_id,
+							candle->wasHitByPlayerID
+						},
+						true
+					);
+					// If the player has no more respawns kill them
+				} else {
 
-				// If the player has no more respawns kill them
-				if (candle->respawns >= m_maxNumRespawns) {
+					if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candle->wasHitByPlayerID != candle->playerEntityID) {
+						GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+					}
+
 					livingCandles--;
 
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
@@ -158,7 +163,7 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 				candleC->isLit = false;
 				candleC->wasJustExtinguished = false; // reset for the next tick
 
-				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START) {
+				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candleC->wasHitByPlayerID != candleC->playerEntityID) {
 					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
 				}
 
