@@ -1,10 +1,10 @@
 #pragma once
 
 #include "../BaseComponentSystem.h"
-#include "Sail/Application.h"
 
 class Entity;
 class CrosshairComponent;
+class SettingStorage;
 
 /*
 Crosshair is rendered in InGameGui.cpp

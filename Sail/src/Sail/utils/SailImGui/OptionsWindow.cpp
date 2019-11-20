@@ -202,10 +202,11 @@ void OptionsWindow::drawCrosshair() {
 	screenWidth = ImGui::GetCurrentWindow()->Pos.x + 5;
 	screenHeight = ImGui::GetCurrentWindow()->Pos.y + 5;
 
-	float thickness = dynamic["Crosshair"]["Thickness"].value;
-	float centerPadding = dynamic["Crosshair"]["CenterPadding"].value;
-	float size = dynamic["Crosshair"]["Size"].value;
-	float outerAlteredPadding = dynamic["Crosshair"]["OuterAlteredPadding"].value;
+	auto& crosshairSettings = dynamic["Crosshair"];
+	float thickness = crosshairSettings["Thickness"].value;
+	float centerPadding = crosshairSettings["CenterPadding"].value;
+	float size = crosshairSettings["Size"].value;
+	float outerAlteredPadding = crosshairSettings["OuterAlteredPadding"].value;
 
 	// Crosshair
 	ImVec2 crosshairSize{

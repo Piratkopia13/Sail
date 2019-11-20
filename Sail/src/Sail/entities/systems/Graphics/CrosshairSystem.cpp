@@ -2,7 +2,7 @@
 #include "CrosshairSystem.h"
 #include "../../ECS.h"
 #include "Sail/entities/components/Components.h"
-
+#include "Sail.h"
 
 CrosshairSystem::CrosshairSystem() {
 	registerComponent<CrosshairComponent>(true, true, true);
@@ -31,13 +31,15 @@ void CrosshairSystem::update(float dt) {
 void CrosshairSystem::applySettings(CrosshairComponent* c) {
 	auto& dynamic = m_settings->applicationSettingsDynamic;
 
-	c->thickness = dynamic["Crosshair"]["Thickness"].value;
-	c->centerPadding = dynamic["Crosshair"]["CenterPadding"].value;
-	c->size = dynamic["Crosshair"]["Size"].value;
-	c->color.x = dynamic["Crosshair"]["Color R"].value;
-	c->color.y = dynamic["Crosshair"]["Color G"].value;
-	c->color.z = dynamic["Crosshair"]["Color B"].value;
-	c->color.w = dynamic["Crosshair"]["Color A"].value;
+	auto& crosshairSetting = dynamic["Crosshair"];
+
+	c->thickness = crosshairSetting["Thickness"].value;
+	c->centerPadding = crosshairSetting["CenterPadding"].value;
+	c->size = crosshairSetting["Size"].value;
+	c->color.x = crosshairSetting["Color R"].value;
+	c->color.y = crosshairSetting["Color G"].value;
+	c->color.z = crosshairSetting["Color B"].value;
+	c->color.w = crosshairSetting["Color A"].value;
 }
 
 void CrosshairSystem::alterCrosshair(Entity* e, float dt) {
