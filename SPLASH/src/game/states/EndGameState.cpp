@@ -167,7 +167,6 @@ void EndGameState::renderPersonalStats() {
 	static ImVec2 size(200, 700);
 	static ImVec2 pos(0, m_padding);
 
-	//size.x = m_app->getWindow()->getWindowWidth() * 0.6f;
 	pos.x = (m_app->getWindow()->getWindowWidth() - m_padding) - size.x;
 
 	ImGui::SetNextWindowPos(pos);

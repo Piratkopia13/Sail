@@ -145,7 +145,6 @@ void GameDataTracker::renderPlacement() {
 	std::map<int, int> tempPlacementMap;
 
 	// Sort rankings
-	
 	for (auto& [key, value]: m_hostPlayerTracker) {
 		tempPlacementMap[value.placement] = key;
 	}
@@ -157,6 +156,7 @@ void GameDataTracker::renderPlacement() {
 		0.82f,
 		1.0f
 	};
+	//KEEP
 	//ImGui::SliderFloat4("##DEBUG0", &a[0], 0.0f, 1.0f);
 
 	float x[4] = {
@@ -171,34 +171,32 @@ void GameDataTracker::renderPlacement() {
 	SailImGui::cText("SCOREBOARD", ImGui::GetWindowContentRegionWidth());
 	ImGui::PopStyleColor();
 	ImGui::PopFont();
-		//ImGui::Columns(3, "PlacementColumns", true);
-		ImGui::Separator();
-		std::string map = "not implemented yet"; // m_app->getSettings().gameSettingsStatic["map"]["names"].getSelected().name;
-		std::string gamemode = m_app->getSettings().gameSettingsStatic["gamemode"]["types"].getSelected().name;
+	ImGui::Separator();
+	std::string map = "not implemented yet"; // m_app->getSettings().gameSettingsStatic["map"]["names"].getSelected().name; 
+	std::string gamemode = m_app->getSettings().gameSettingsStatic["gamemode"]["types"].getSelected().name;
 
-		ImGui::Text(map.c_str());
-		ImGui::SameLine();
-		ImGui::SameLine(ImGui::GetCursorPosX() + 30.0f);
-		ImGui::Text("|");
-		ImGui::SameLine();
-		ImGui::SameLine(ImGui::GetCursorPosX() + 30.0f);
+	ImGui::Text(map.c_str());
+	ImGui::SameLine();
+	ImGui::SameLine(ImGui::GetCursorPosX() + 30.0f);
+	ImGui::Text("|");
+	ImGui::SameLine();
+	ImGui::SameLine(ImGui::GetCursorPosX() + 30.0f);
 
-		ImGui::Text(gamemode.c_str());
-		ImGui::Separator();
-		ImGui::SameLine(x[0]);
-		SailImGui::rText("Extinguishes",0);
-		ImGui::SameLine(x[1]);
-		SailImGui::rText("Torches Lost",0);
-		ImGui::SameLine(x[2]);
-		SailImGui::rText("Damage",0);
-		ImGui::SameLine(x[3]);
-		SailImGui::rText("Damage Taken",0);
-		ImGui::Spacing();
+	ImGui::Text(gamemode.c_str());
+	ImGui::Separator();
+	ImGui::SameLine(x[0]);
+	SailImGui::rText("Extinguishes",0);
+	ImGui::SameLine(x[1]);
+	SailImGui::rText("Torches Lost",0);
+	ImGui::SameLine(x[2]);
+	SailImGui::rText("Damage",0);
+	ImGui::SameLine(x[3]);
+	SailImGui::rText("Damage Taken",0);
+	ImGui::Spacing();
+
 	if (ImGui::BeginChild("##SCOREBOARD", ImVec2(0, 0))) {
-
 		// key = placement, value = index in playerlist
 		for (auto& [key, value] : tempPlacementMap) {
-
 			///PLAYER NAME
 			//Player still in session
 			if (Player* player = NWrapperSingleton::getInstance().getPlayer(value)) {
@@ -231,19 +229,9 @@ void GameDataTracker::renderPlacement() {
 			//DAMAGE TAKEN
 			ImGui::SameLine(x[3]);
 			SailImGui::rText("x  ", 0);
-
-
 		}
-
 	}
 	ImGui::EndChild();
-
-
-
-
-
-
-
 }
 
 
@@ -263,8 +251,6 @@ void GameDataTracker::renderPersonalStats() {
 }
 
 void GameDataTracker::renderFunStats() {
-
-
 	std::string bdString = "Most bullets fires by " +
 		m_hostPlayerTracker[m_loggedDataGlobal.bulletsFiredID].playerName + ": " + std::to_string(m_loggedDataGlobal.bulletsFired);
 	ImGui::Text(bdString.c_str());
@@ -279,20 +265,12 @@ void GameDataTracker::renderFunStats() {
 }
 
 void GameDataTracker::addDebugData() {
-
-
-
-
-
 	for (int i = -1; i > -10; i--) {
 		m_hostPlayerTracker[i].nKills = i*-1;
 		m_hostPlayerTracker[i].placement = i*-1;
 		m_hostPlayerTracker[i].playerName = std::string("player"+std::to_string(i));
 		m_nPlayersCurrentSession++;
-
 	}
-
-
 }
 
 bool GameDataTracker::onEvent(const Event& e) {
