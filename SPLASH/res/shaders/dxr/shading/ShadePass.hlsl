@@ -38,7 +38,7 @@ Texture2D<float4> normalsBounceTwo : register(t3);
 Texture2D<float4> metalnessRoughnessAoBounceOne : register(t4);
 Texture2D<float4> metalnessRoughnessAoBounceTwo : register(t5);
 
-Texture2D<float2> shadows : register(t6);
+Texture2DArray<float2> shadows : register(t6);
 
 Texture2D<float4> worldPositionsOne : register(t7);
 Texture2D<float4> worldPositionsTwo : register(t8);
@@ -46,6 +46,8 @@ Texture2D<float4> worldPositionsTwo : register(t8);
 Texture2D<float4> brdfLUT : register(t9);
 
 SamplerState PSss : register(s0);
+
+static const uint NUM_SHADOW_TEXTURES = 2;
 
 #include "PBR.hlsl"
 
@@ -68,9 +70,15 @@ float4 PSMain(PSIn input) : SV_Target0 {
     float emissivenessOne = pow(1 - metalnessRoughnessAoOne.a, 2);
     float emissivenessTwo = pow(1 - metalnessRoughnessAoTwo.a, 2);
 
-    float2 shadowAmount = shadows.Sample(PSss, input.texCoord).rg;
-    float shadowOne = shadowAmount.r;
-    float shadowTwo = shadowAmount.g;
+	float shadowOne[NUM_SHADOW_TEXTURES];
+    float shadowTwo[NUM_SHADOW_TEXTURES];
+    for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
+        float2 shadowAmount = shadows.Sample(PSss, float3(input.texCoord, i)).rg; // z parameter in texCoords is the array index
+        shadowOne[i] = shadowAmount.r;
+        shadowTwo[i] = shadowAmount.g;
+    }
+    // float shadowOne = shadowAmount.r;
+    // float shadowTwo = shadowAmount.g;
 
     // Calculate world position for first bounce (stored a depth)
     float3 worldPositionOne = worldPositionsOne.Sample(PSss, input.texCoord).xyz;

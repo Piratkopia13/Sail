@@ -18,7 +18,7 @@ Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19); // NOT USED
 RWTexture2D<float4> lOutputAlbedo		 		: register(u3);		// RGB
 RWTexture2D<float4> lOutputNormals 				: register(u4); 	// XYZ
 RWTexture2D<float4> lOutputMetalnessRoughnessAO : register(u5); 	// Metalness/Roughness/AO
-RWTexture2D<float2> lOutputShadows 				: register(u6); 	// Shadows first bounce/shadows second bounce
+RWTexture2DArray<float2> lOutputShadows 		: register(u6); 	// Shadows first bounce/shadows second bounce for all lights
 RWTexture2D<float4> lOutputPositionsOne			: register(u7);		// XYZ - world space positions for first bounce
 RWTexture2D<float4> lOutputPositionsTwo			: register(u8);		// XYZ - world space positions for second bounce
 RWTexture2D<float4> lOutputBloom 				: register(u9); 	// RGB - Writes all colors that should later be bloomed
@@ -62,40 +62,38 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 	direction = normalize(world.xyz - origin);
 }
 
-float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal) {
+float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal, int lightIndex) {
 	const uint numSamples = 1;
     const float lightRadius = 0.08f;
-	float shadow = 0.f;
-	// Shoot a ray towards a random point on each light
-	for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-		PointLightInput p = CB_SceneData.pointLights[i];
+	// Shoot a ray towards a random point on the light
+	PointLightInput p = CB_SceneData.pointLights[lightIndex];
 
-        // Ignore point light if color is black
-		if (all(p.color == 0.0f)) {
-			continue;
-		}
-
-        float3 toLight = normalize(p.position - worldPosition);
-        // Calculate a vector perpendicular to L
-        float3 perpL = cross(toLight, float3(0.f, 1.0f, 0.f));
-        // Handle case where L = up -> perpL should then be (1,0,0)
-        if (all(perpL == 0.0f)) {
-            perpL.x = 1.0;
-        }
-        // Use perpL to get a vector from worldPosition to the edge of the light sphere
-        float3 toLightEdge = normalize((p.position+perpL*lightRadius) - worldPosition);
-        // Angle between L and toLightEdge. Used as the cone angle when sampling shadow rays
-        float coneAngle = acos(dot(toLight, toLightEdge)) * 2.0f;
-        float distance = length(p.position - worldPosition);
-
-		float lightShadowAmount = 0.f;
-		for (int shadowSample = 0; shadowSample < numSamples; shadowSample++) {
-			float3 L = Utils::getConeSample(seed, toLight, coneAngle);
-			lightShadowAmount += (float)Utils::rayHitAnything(worldPosition, worldNormal, L, distance);
-		}
-		lightShadowAmount /= numSamples;
-		shadow += lightShadowAmount;
+	// Ignore point light if color is black
+	if (all(p.color == 0.0f)) {
+		return 0.f;
 	}
+
+	float3 toLight = normalize(p.position - worldPosition);
+	// Calculate a vector perpendicular to L
+	float3 perpL = cross(toLight, float3(0.f, 1.0f, 0.f));
+	// Handle case where L = up -> perpL should then be (1,0,0)
+	if (all(perpL == 0.0f)) {
+		perpL.x = 1.0;
+	}
+	// Use perpL to get a vector from worldPosition to the edge of the light sphere
+	float3 toLightEdge = normalize((p.position+perpL*lightRadius) - worldPosition);
+	// Angle between L and toLightEdge. Used as the cone angle when sampling shadow rays
+	float coneAngle = acos(dot(toLight, toLightEdge)) * 2.0f;
+	float distance = length(p.position - worldPosition);
+
+	float lightShadowAmount = 0.f;
+	for (int shadowSample = 0; shadowSample < numSamples; shadowSample++) {
+		float3 L = Utils::getConeSample(seed, toLight, coneAngle);
+		lightShadowAmount += (float)Utils::rayHitAnything(worldPosition, worldNormal, L, distance);
+	}
+	lightShadowAmount /= numSamples;
+	float shadow = lightShadowAmount;
+
 	return shadow;
 }
 
@@ -207,7 +205,7 @@ void rayGen() {
 	// Get shadow from first bounce
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
-	float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal);
+	float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, 0);
 
 	// Temporal filtering via an exponential moving average
 	float alpha = 0.3f; // Temporal fade, trading temporal stability for lag
@@ -222,7 +220,8 @@ void rayGen() {
 	// float2 cLast = 0.0f;
 	float2 shadow = float2(firstBounceShadow, payload.shadowTwo);
 	shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
-	lOutputShadows[launchIndex] = shadow;
+	lOutputShadows[uint3(launchIndex, 0)] = shadow;
+	lOutputShadows[uint3(launchIndex, 1)] = float2(1.f, 0.f);
 
 
 
@@ -339,7 +338,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
 	
-	payload.shadowTwo = getShadowAmount(randSeed, worldPosition, normalInWorldSpace);
+	payload.shadowTwo = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, 0);
 	payload.albedoTwo.rgb = albedoColor.rgb; // TODO: store alpha and use as team color amount
 	payload.normalTwo = normalInWorldSpace;
 	payload.metalnessRoughnessAOTwo = metalnessRoughnessAO;
