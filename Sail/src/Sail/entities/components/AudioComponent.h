@@ -35,7 +35,7 @@ public:
 		for (const auto& sound : m_sounds) {
 			if (sound.isPlaying) {
 				Audio::SoundType type = static_cast<Audio::SoundType>(index);
-				ImGui::Text(typeid(type).name());
+				ImGui::Text(std::to_string(type).c_str());
 			}
 			index++;
 		}

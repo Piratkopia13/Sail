@@ -167,6 +167,14 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 				soundPoolSize = audioData.m_soundsUnique[soundTypeIndex].size();
 				if (soundPoolSize > 0) {
+					
+					// If the sound is meant to be delayed
+					if (soundGeneral->delay > 0.0f) {
+						// Decrease the delay and skip it
+						soundGeneral->delay -= dt;
+						SAIL_LOG("Skipped cus of delay: " + std::to_string(soundGeneral->delay));
+						continue;
+					}
 
 					if (soundGeneral->isPlaying) {
 
@@ -413,6 +421,7 @@ bool AudioSystem::onEvent(const Event& event) {
 			auto& killSound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::KILLING_BLOW];
 			killSound.isPlaying = true;
 			killSound.playOnce = true;
+			killSound.delay = 1.0f;
 		}
 
 		//TODO: Find out why death sound is high as fuck!
@@ -425,6 +434,7 @@ bool AudioSystem::onEvent(const Event& event) {
 			auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
 			deathSound.isPlaying = true;
 			deathSound.playOnce = true;
+			deathSound.delay = 3.0f;
 		}
 	};
 
