@@ -27,13 +27,16 @@ public:
 
 	void initDebugAnimations();
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
+
 private:
 	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;
 	std::unique_ptr<InputLayout> m_inputLayout;
 	Shader* m_updateShader;
-	
 	bool m_interpolate;
+	
 	void addTime(AnimationComponent* e, const float time);
 	void interpolate(glm::mat4& res, const glm::mat4& mat1, const glm::mat4& mat2, const float w);
-
 };

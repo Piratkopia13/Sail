@@ -57,18 +57,23 @@ void CandleHealthSystem::update(float dt) {
 			} else { // If candle used to be lit but has lost all its health
 				candle->wasJustExtinguished = true;
 
-				// Candle has lost all its health so extinguish it
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::EXTINGUISH_CANDLE,
-					SAIL_NEW Netcode::MessageExtinguishCandle{
-						e->getComponent<NetworkReceiverComponent>()->m_id,
-						candle->wasHitByPlayerID
-					},
-					true
-				);
+				if (candle->respawns < m_maxNumRespawns) {
+					// Candle has lost all its health so extinguish it
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::EXTINGUISH_CANDLE,
+						SAIL_NEW Netcode::MessageExtinguishCandle{
+							e->getComponent<NetworkReceiverComponent>()->m_id,
+							candle->wasHitByPlayerID
+						},
+						true
+					);
+					// If the player has no more respawns kill them
+				} else {
 
-				// If the player has no more respawns kill them
-				if (candle->respawns >= m_maxNumRespawns) {
+					if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candle->wasHitByPlayerID != candle->playerEntityID) {
+						GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+					}
+
 					livingCandles--;
 
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
@@ -108,11 +113,19 @@ void CandleHealthSystem::update(float dt) {
 		}
 #pragma endregion
 
+		// Flicker effect for the torches
+		static float clockLightModifier = 0;
+		clockLightModifier += dt * (rand() % 100 / 100.0f);
+
+		//						Sine wave function                    +        random variance
+		float r = (sinf(clockLightModifier * 50.0f) * 0.075f + 0.55f) + (rand() % 10 - 5) / 50.0f;
+		LightComponent* lc = e->getComponent<LightComponent>();
+		lc->defaultColor = glm::vec3(r + 0.05f, (r - 0.05f) * 0.5f, (r - 0.1f) * 0.25f);
+		// save this line for further possible further testing in future
+		//light->getPointLight().setAttenuation(0.0f, 0.0f, r );
+
 		// COLOR/INTENSITY
 		float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
-
-		LightComponent* lc = e->getComponent<LightComponent>();
-
 		lc->getPointLight().setColor(tempHealthRatio * lc->defaultColor);
 	}
 }
@@ -158,7 +171,7 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 				candleC->isLit = false;
 				candleC->wasJustExtinguished = false; // reset for the next tick
 
-				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START) {
+				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candleC->wasHitByPlayerID != candleC->playerEntityID) {
 					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
 				}
 
@@ -183,3 +196,9 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 
 	return true;
 }
+
+#ifdef DEVELOPMENT
+unsigned int CandleHealthSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
