@@ -21,6 +21,8 @@
 #include "InGameMenuState.h"
 #include "../SPLASH/src/game/events/ResetWaterEvent.h"
 #include "API/DX12/DX12API.h"
+#include "API/DX12/renderer/DX12HybridRaytracerRenderer.h"
+#include "API/DX12/dxr/DXRBase.h"
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -59,6 +61,9 @@ GameState::GameState(StateStack& stack)
 		m_teamColors.emplace_back(settings.getColor(settings.teamColorIndex(i)));
 	}
 	m_app->getRenderWrapper()->getCurrentRenderer()->setTeamColors(m_teamColors);
+
+	// Update water voxel grid
+	static_cast<DX12HybridRaytracerRenderer*>(m_app->getRenderWrapper()->getCurrentRenderer())->getDXRBase()->rebuildWater();
 
 	//----Octree creation----
 	//Wireframe shader

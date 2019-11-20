@@ -7,7 +7,7 @@
 
 struct Player;
 class NWrapper;
-class TextInputEvent;
+struct TextInputEvent;
 class AudioComponent;
 
 struct ChatSent;

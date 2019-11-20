@@ -374,6 +374,21 @@ void AudioEngine::updateProjectileLowPass(float frequency, int indexToSource) {
 	}
 }
 
+#ifdef DEVELOPMENT
+unsigned int AudioEngine::getByteSize() const {
+	unsigned int size = sizeof(*this);
+	size += sizeof(IXAudio2);
+	size += sizeof(IXAudio2MasteringVoice);
+	size += sizeof(IXAudio2SubmixVoice);
+	size += sizeof(IXAPO);
+	size += sizeof(IXAudio2SourceVoice);
+	size += sizeof(IXAudio2SubmixVoice);
+	size += sizeof(IXAPOHrtfParameters);
+
+	return size;
+}
+#endif
+
 void AudioEngine::initialize() {
 	// Init soundObjects
 	for (int i = 0; i < SOUND_COUNT; i++) {
