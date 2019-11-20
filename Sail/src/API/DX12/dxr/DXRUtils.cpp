@@ -158,7 +158,6 @@ ID3D12StateObject* DXRUtils::PSOBuilder::build(ID3D12Device5* device) {
 	return pso;
 }
 
-
 DXRUtils::ShaderTableBuilder::ShaderTableBuilder(UINT numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance)
 	: m_soProps(nullptr)
 	, m_numInstances(numInstances)

@@ -7,6 +7,9 @@
 
 namespace DX12Utils {
 
+	void checkDeviceRemovalReason(ID3D12Device5* device, HRESULT hr);
+
+
 	const D3D12_HEAP_PROPERTIES sUploadHeapProperties = {
 		D3D12_HEAP_TYPE_UPLOAD,
 		D3D12_CPU_PAGE_PROPERTY_UNKNOWN,

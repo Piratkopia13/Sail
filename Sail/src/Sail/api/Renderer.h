@@ -63,7 +63,7 @@ public:
 	virtual void begin(Camera* camera);
 	virtual void submit(Model* model, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID);
 
-	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) {}
+	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags, int group) {}
 
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) { };
 	virtual void submitWaterPoint(const glm::vec3& pos) { };
