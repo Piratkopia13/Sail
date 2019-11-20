@@ -122,11 +122,15 @@ bool KillFeedWindow::onEvent(const Event& event) {
 		KillFeedWindow::KillFeedInfo killFeedInfo;
 		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
 			killFeedInfo.name1 = "The sprinklers";
+			killFeedInfo.type = "sprayed down";
+		} else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+			killFeedInfo.name1 = "The darkness";
+			killFeedInfo.type = "consumed";
 		} else {
 			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+			killFeedInfo.type = "sprayed down";
 		}
 
-		killFeedInfo.type = "sprayed down";
 		killFeedInfo.name2 = extinguishedOwner->name;
 
 		std::string message = killFeedInfo.name1 + " " + killFeedInfo.type + " " + killFeedInfo.name2;
