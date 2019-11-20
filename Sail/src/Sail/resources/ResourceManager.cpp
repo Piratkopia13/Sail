@@ -235,6 +235,26 @@ const unsigned int ResourceManager::getByteSize() const {
 	return size + sizeof(*this);
 }
 
+const unsigned int ResourceManager::getModelByteSize() const {
+	return m_byteSize[RMDataType::Models];
+}
+
+const unsigned int ResourceManager::getAnimationsByteSize() const {
+	return m_byteSize[RMDataType::Animations];
+}
+
+const unsigned int ResourceManager::getAudioByteSize() const {
+	return m_byteSize[RMDataType::Audio];
+}
+
+const unsigned int ResourceManager::getTextureByteSize() const {
+	return m_byteSize[RMDataType::Textures];
+}
+
+const unsigned int ResourceManager::getGenericByteSize() const {
+	return m_byteSize[RMDataType::Generic];
+}
+
 
 const std::string ResourceManager::getSuitableName(const std::string& name) {
 	unsigned int iterator = 1;
