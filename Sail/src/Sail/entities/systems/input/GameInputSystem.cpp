@@ -367,9 +367,9 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
 		}
 
-		// Lock pitch to the range -70 - 30
-		if (m_pitch >= 30) {
-			m_pitch = 30;
+		// Lock pitch to the range -70 - 55
+		if (m_pitch >= 55) {
+			m_pitch = 55;
 		}
 		else if (m_pitch <= -70) {
 			m_pitch = -70;
