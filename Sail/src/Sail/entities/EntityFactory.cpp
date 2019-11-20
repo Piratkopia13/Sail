@@ -540,3 +540,11 @@ Entity::SPtr EntityFactory::CreateGUIEntity(const std::string& name, const std::
 
 	return ent;
 }
+
+Entity::SPtr EntityFactory::CreateCrosshairEntity(const std::string& name) {
+	auto entity = ECS::Instance()->createEntity(name);
+
+	entity->addComponent<CrosshairComponent>();
+
+	return entity;
+}

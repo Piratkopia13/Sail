@@ -75,9 +75,15 @@ void ProjectileSystem::update(float dt) {
 							collision.entity->getParent()->getComponent<NetworkReceiverComponent>()->m_id
 						}
 					);
+
+					// Alter the crosshair for the local player.
+					if (m_crosshair->hasComponent<CrosshairComponent>() && cc->isLit) {
+						CrosshairComponent* crossC = m_crosshair->getComponent<CrosshairComponent>();
+						crossC->currentlyAltered = true;
+						crossC->passedTimeSinceAlteration = 0.0f;
+					}
 				}
 			}
-
 		}
 
 		// The projectile owner is responsible for destroying their own projectiles
@@ -95,3 +101,7 @@ unsigned int ProjectileSystem::getByteSize() const {
 	return BaseComponentSystem::getByteSize() + sizeof(*this);
 }
 #endif
+
+void ProjectileSystem::setCrosshair(Entity* pCrosshair) {
+	m_crosshair = pCrosshair;
+}
