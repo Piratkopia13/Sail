@@ -170,7 +170,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 					if (soundGeneral->isPlaying) {
 
-						if ()
+						if (soundTypeIndex == 20) {
+
+						}
 
 						// Starts a new sound from relevant pool of sounds IF NOT ALREADY PLAYING
 						if (!soundGeneral->hasStartedPlaying) {
@@ -420,9 +422,9 @@ bool AudioSystem::onEvent(const Event& event) {
 			insanitySound.playOnce = true;
 		} else {
 			// Play death sound
-			//auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
-			//deathSound.isPlaying = true;
-			//deathSound.playOnce = true;
+			auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
+			deathSound.isPlaying = true;
+			deathSound.playOnce = true;
 		}
 	};
 
