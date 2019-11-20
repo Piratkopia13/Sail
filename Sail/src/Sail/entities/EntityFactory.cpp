@@ -345,6 +345,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 
 	//give players teams
 	playerEntity->addComponent<TeamComponent>()->team = (playerID) % 12;
+	
 
 	AnimationComponent* ac = playerEntity->addComponent<AnimationComponent>(stack);
 	ac->currentAnimation = stack->getAnimation(1);
