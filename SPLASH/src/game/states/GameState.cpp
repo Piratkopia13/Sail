@@ -234,6 +234,17 @@ GameState::GameState(StateStack& stack)
 	m_inGameGui.setCrosshair(crosshairEntity.get());
 	m_componentSystems.projectileSystem->setCrosshair(crosshairEntity.get());
 	m_componentSystems.sprintingSystem->setCrosshair(crosshairEntity.get());
+
+	// Flags for hud icons with imgui
+	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoBringToFrontOnFocus |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoBackground;
 }
 
 GameState::~GameState() {
@@ -794,6 +805,12 @@ bool GameState::renderImgui(float dt) {
 	//ImGui::End();
 	//ECS::Instance()->getSystem<AnimationSystem>()->updateHands(lPos, rPos, lRot, rRot);
 
+	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
+	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("pbr/Character/CharacterTex.tga");
+
+	ImGui::Begin("ImageTest", nullptr, m_standaloneButtonflags);
+	ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(100, 100));
+	ImGui::End();
 
 	return false;
 }
