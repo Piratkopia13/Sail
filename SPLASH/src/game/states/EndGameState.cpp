@@ -104,7 +104,7 @@ bool EndGameState::onEvent(const Event& event) {
 bool EndGameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 
 	if (NWrapperSingleton::getInstance().isHost()) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(1, event.player.id, false);
+		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(-1, event.player.id, false);
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
 	}
 
