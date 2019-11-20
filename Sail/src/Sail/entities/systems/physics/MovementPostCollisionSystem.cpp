@@ -6,18 +6,16 @@
 #include "..//..//Entity.h"
 #include "Sail/utils/GameDataTracker.h"
 
-template <typename T>
-MovementPostCollisionSystem<T>::MovementPostCollisionSystem() {
-	registerComponent<T>(true, true, true);
+MovementPostCollisionSystem::MovementPostCollisionSystem() {
+	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<MovementComponent>(true, true, true);
 	registerComponent<CollisionSpheresComponent>(false, true, true);
 }
 
 
-template <typename T>
-void MovementPostCollisionSystem<T>::update(float dt) {
+void MovementPostCollisionSystem::update(float dt) {
 	for (auto& e : entities) {
-		T* transform = e->getComponent<T>();
+		TransformComponent* transform = e->getComponent<TransformComponent>();
 		MovementComponent* movement = e->getComponent<MovementComponent>();
 
 		// Apply air drag
@@ -50,7 +48,3 @@ void MovementPostCollisionSystem<T>::update(float dt) {
 		}
 	}
 }
-
-
-template class MovementPostCollisionSystem<TransformComponent>;
-template class MovementPostCollisionSystem<ReplayTransformComponent>;

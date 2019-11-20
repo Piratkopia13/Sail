@@ -16,7 +16,7 @@ namespace Netcode {
 	
 	// ID for sprinkler
 	static constexpr PlayerID MESSAGE_SPRINKLER_ID = 254;
-	static constexpr PlayerID MESSAGE_INSANITY_ID = 253;
+	static constexpr PlayerID MESSAGE_INSANITY_ID  = 253;
 	static constexpr PlayerID NONE_PLAYER_ID_START = 200;
 
 	// ComponentID has 32 bits and the first 8 are the PlayerID of the owner which

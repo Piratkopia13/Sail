@@ -35,11 +35,16 @@ namespace EntityFactory {
 		Netcode::ComponentID gunCompID, 
 		size_t lightIndex, glm::vec3 spawnLocation);
 	
+	Entity::SPtr CreateReplayPlayer(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID,
+		Netcode::ComponentID gunCompID, size_t lightIndex, glm::vec3 spawnLocation);
+
 	void CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation);
 	
-	void CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation, Netcode::PlayerID playerID);
+	void CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation, Netcode::PlayerID playerID, bool doNotAddToSystems = false);
 	Entity::SPtr CreateMySpectator(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation);
 	
+
+
 	Entity::SPtr CreateBot(Model* boundingBoxModel, Model* characterModel, const glm::vec3& pos, Model* lightModel, size_t lightIndex, NodeSystem* ns);
 	Entity::SPtr CreateStaticMapObject(const std::string& name, Model * model, Model* boundingBoxModel, const glm::vec3& pos = glm::vec3(0,0,0), const glm::vec3& rot = glm::vec3(0,0,0), const glm::vec3& scale = glm::vec3(1,1,1));
 	

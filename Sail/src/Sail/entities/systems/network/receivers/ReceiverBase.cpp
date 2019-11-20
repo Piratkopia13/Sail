@@ -1,15 +1,27 @@
+/*
+  ----------------------------- IMPORTANT: DO NOT IMPLEMENT ANY BEHAVIOR IN THIS CLASS ---------------------------------
+  Both the active game and the killcam makes use of this class and whatever old messages the killcam is processing
+  should not have any affect on the current game via any events, sigletons, or whatever.
+  So ReceiverBase::processData() should only call virtual functions which are implemented in NetworkReceiverSystem and 
+  KillCamReceiverSystem. ReceiverBase is only used by those classes to read the data.
+*/
 
+
+// DO NOT INCLUDE ANY MORE FILES HERE
 #include "pch.h"
 #include "ReceiverBase.h"
+#include "Network/NWrapperSingleton.h"
 #include "Sail/entities/Entity.h"
-#include "Sail/entities/components/SanityComponent.h"
-
-#include "Sail/utils/GameDataTracker.h"
 #include "Sail/utils/Utils.h"
 
-#include "Network/NWrapperSingleton.h"
 
-#include "../SPLASH/src/game/events/GameOverEvent.h"
+// DO NOT IMPLEMENT ANY BEHAVIOR, EMIT EVENTS, OR IN ANY WAY CHANGE STATE IN RECEIVERBASE
+// This class is just used to call functions in the classes that inherit from it
+#define BANNED(func) BEHAVIOR_NOT_ALLOWED_IN_RECEIVER_BASE
+#undef  emit
+#define emit(x) BANNED(emit)
+
+
 
 ReceiverBase::ReceiverBase() : BaseComponentSystem()
 {}
@@ -17,10 +29,14 @@ ReceiverBase::ReceiverBase() : BaseComponentSystem()
 ReceiverBase::~ReceiverBase() 
 {}
 
-void ReceiverBase::init(Netcode::PlayerID playerID, NetworkSenderSystem* NSS) {
+void ReceiverBase::stop() {
+	m_playerID = 0;
+	m_playerEntity = nullptr;
+	m_gameStatePtr = nullptr;
+}
+
+void ReceiverBase::initBase(Netcode::PlayerID playerID) {
 	m_playerID = playerID;
-	m_netSendSysPtr = NSS;
-	m_gameDataTracker = &GameDataTracker::getInstance();
 }
 
 void ReceiverBase::setPlayer   (Entity* player)       { m_playerEntity = player; }
@@ -62,7 +78,6 @@ const std::vector<Entity*>& ReceiverBase::getEntities() const { return entities;
 	|     ...                                        |
 	| ...                                            |
 	--------------------------------------------------
-
 */
 void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bool ignoreFromSelf) {
 	// TODO: Remove a bunch of stuff from here
@@ -177,7 +192,8 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				{
 					float sanity;
 					ar(sanity);
-					EventDispatcher::Instance().emit(UpdateSanityEvent(compID, sanity));
+
+					updateSanity(compID, sanity);
 				}
 				break;
 				default:
@@ -246,41 +262,35 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 			break;
 			case Netcode::MessageType::ENDGAME_STATS:
 			{
-				// Receive player count
-				size_t nrOfPlayers;
-				ar(nrOfPlayers);
-
 				// create temporary variables to hold data when reading message
+				GameDataForOthersInfo info;
+				size_t nrOfPlayers;
 				Netcode::PlayerID pID;
 				int nKills;
 				int placement;
 
-				int bulletsFired, jumpsMade;
-				float distanceWalked;
-				Netcode::PlayerID bulletsFiredID, distanceWalkedID, jumpsMadeID;
+				ar(nrOfPlayers);
 
 				// Get all per player data from the Host
 				for (int k = 0; k < nrOfPlayers; k++) {
 					ar(pID);
 					ar(nKills);
 					ar(placement);
-					GameDataTracker::getInstance().setStatsForPlayer(pID, nKills, placement);
+
+					setPlayerStats(pID, nKills, placement);
 				}
 
 				// Get all specific data from the Host
-				ar(bulletsFired);
-				ar(bulletsFiredID);
+				ar(info.bulletsFired);
+				ar(info.bulletsFiredID);
 
-				ar(distanceWalked);
-				ar(distanceWalkedID);
+				ar(info.distanceWalked);
+				ar(info.distanceWalkedID);
 
-				ar(jumpsMade);
-				ar(jumpsMadeID);
-
-				GameDataTracker::getInstance().setStatsForOtherData(
-					bulletsFiredID, bulletsFired, distanceWalkedID, distanceWalked, jumpsMadeID, jumpsMade);
-
-				endMatch();
+				ar(info.jumpsMade);
+				ar(info.jumpsMadeID);
+				
+				endMatch(info);
 			}
 			break;
 			case Netcode::MessageType::EXTINGUISH_CANDLE:
@@ -309,17 +319,7 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 			break;
 			case Netcode::MessageType::MATCH_ENDED:
 			{
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::PREPARE_ENDSCREEN,
-					SAIL_NEW Netcode::MessagePrepareEndScreen(),
-					false
-				);
-
-				GameDataTracker::getInstance().turnOffLocalDataTracking();
-
-				mergeHostsStats();
-				// Dispatch game over event
-				EventDispatcher::Instance().emit(GameOverEvent());
+				matchEnded();
 			}
 			break;
 			case Netcode::MessageType::PLAYER_DIED:
@@ -346,7 +346,6 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 			break;
 			case Netcode::MessageType::PREPARE_ENDSCREEN:
 			{
-				GameDataTracker* dgtp = &GameDataTracker::getInstance();
 				EndScreenInfo info;
 
 				// Get the data
