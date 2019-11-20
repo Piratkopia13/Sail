@@ -76,7 +76,7 @@ void ProjectileSystem::update(float dt) {
 						}
 					);
 
-					// Alter the crosshair for the local player
+					// Alter the crosshair for the local player.
 					if (m_crosshair->hasComponent<CrosshairComponent>() && cc->isLit) {
 						CrosshairComponent* crossC = m_crosshair->getComponent<CrosshairComponent>();
 						crossC->currentlyAltered = true;
