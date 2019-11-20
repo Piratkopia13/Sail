@@ -144,7 +144,7 @@ GameState::GameState(StateStack& stack)
 
 
 	// TEST TODO: Check if this texture actually works
-	m_testDDSTexture = new DX12DDSTexture("res/textures/pbr/Tiles/CF_Albedo_2.dds");
+	m_testDDSTexture = new DX12DDSTexture("res/textures/pbr/Tiles/CF_Albedo.dds");
 	// Level Creation
 	
 	createLevel(shader, boundingBoxModel);
