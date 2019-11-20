@@ -416,9 +416,7 @@ unsigned int AnimationSystem::getByteSize() const {
 void AnimationSystem::addTime(AnimationComponent* e, const float time) {
 	e->animationTime += time * e->animationSpeed;
 	if (e->animationTime >= e->currentAnimation->getMaxAnimationTime()) {
-		//e->animationTime -= (int(e->animationTime / e->currentAnimation->getMaxAnimationTime()) * e->currentAnimation->getMaxAnimationTime());
 		e->animationTime = fmodf(e->animationTime, e->currentAnimation->getMaxAnimationTime());
-		//SAIL_LOG(std::to_string(e->animationTime));
 	}
 }
 
