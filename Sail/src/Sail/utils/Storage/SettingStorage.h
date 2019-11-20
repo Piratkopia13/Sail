@@ -57,8 +57,8 @@ public:
 	std::string serialize(const std::unordered_map<std::string, std::unordered_map<std::string, Setting>>& stat, const std::unordered_map<std::string, std::unordered_map<std::string, DynamicSetting>>& dynamic);
 	bool deSerialize(const std::string& msg, std::unordered_map<std::string, std::unordered_map<std::string, Setting>>& stat, std::unordered_map<std::string, std::unordered_map<std::string, DynamicSetting>>& dynamic);
 
-
-
+	const int teamColorIndex(const int team);
+	glm::vec3 getColor(const int team);
 
 	// settings[area][setting].selected == current selected setting; 
 	// settings[area][setting].options[selected].value == value of selected setting; 
@@ -85,5 +85,5 @@ private:
 	void createGameDefaultStructure();
 	void createGameDefaultMap();
 	void createGameModeDefault();
-
+	void createGameColorsDefault();
 };

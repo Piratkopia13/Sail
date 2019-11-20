@@ -48,7 +48,6 @@ public:
 public:
 	Entity* ptrToOwner = nullptr;
 
-	bool hitByLocalPlayer = false;
 	bool wasHitByMeThisTick = false;
 	bool wasHitByWater = false;
 	bool isAlive = true;
