@@ -16,7 +16,7 @@
 
 
 // DO NOT IMPLEMENT ANY BEHAVIOR, EMIT EVENTS, OR IN ANY WAY CHANGE STATE IN RECEIVERBASE
-// This class just used to call functions in the classes that inherit from it
+// This class is just used to call functions in the classes that inherit from it
 #define BANNED(func) BEHAVIOR_NOT_ALLOWED_IN_RECEIVER_BASE
 #undef  emit
 #define emit(x) BANNED(emit)
