@@ -11,8 +11,10 @@ public:
 
 
 #ifdef DEVELOPMENT
-	void imguiRender(Entity** relevantEntity) {
+	void imguiRender(Entity** relevantEntity) {}
 
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
 	}
 #endif
 
