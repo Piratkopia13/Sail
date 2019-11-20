@@ -1,16 +1,18 @@
 #include "pch.h"
 #include "UpdateBoundingBoxSystem.h"
-#include "../../Entity.h"
-#include "../../components/TransformComponent.h"
-#include "../../components/BoundingBoxComponent.h"
-#include "../../components/ModelComponent.h"
+#include "Sail/entities/Entity.h"
+#include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/BoundingBoxComponent.h"
+#include "Sail/entities/components/ModelComponent.h"
+#include "Sail/entities/components/RagdollComponent.h"
 
-#include "../../../graphics/geometry/Model.h"
+#include "Sail/graphics/geometry/Model.h"
 
 UpdateBoundingBoxSystem::UpdateBoundingBoxSystem() : BaseComponentSystem() {
 	registerComponent<BoundingBoxComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<ModelComponent>(false, true, true);
+	registerComponent<RagdollComponent>(false, true, true);
 }
 
 UpdateBoundingBoxSystem::~UpdateBoundingBoxSystem() {
@@ -76,6 +78,17 @@ void UpdateBoundingBoxSystem::recalculateBoundingBoxPosition(Entity* e) {
 	boundingBox->getTransform()->setScale(boundingBox->getBoundingBox()->getHalfSize() * 2.0f);
 }
 
+void UpdateBoundingBoxSystem::updateRagdollBoundingBoxes(Entity* e) {
+	RagdollComponent* ragdollComp = e->getComponent<RagdollComponent>();
+	TransformComponent* transComp = e->getComponent<TransformComponent>();
+
+	for (size_t i = 0; i < ragdollComp->contactPoints.size(); i++) {
+		ragdollComp->contactPoints[i].boundingBox.setPosition(glm::vec3(transComp->getMatrixWithUpdate() * glm::vec4(ragdollComp->contactPoints[i].localOffSet, 1.0f)));
+		ragdollComp->contactPoints[i].transform.setTranslation(ragdollComp->contactPoints[i].boundingBox.getPosition() - glm::vec3(0.0f, ragdollComp->contactPoints[i].boundingBox.getHalfSize().y, 0.0f));
+		ragdollComp->contactPoints[i].transform.setScale(ragdollComp->contactPoints[i].boundingBox.getHalfSize() * 2.0f);
+	}
+}
+
 bool UpdateBoundingBoxSystem::addEntity(Entity* entity) {
 	if (BaseComponentSystem::addEntity(entity)) {
 		recalculateBoundingBoxFully(entity);
@@ -94,6 +107,10 @@ void UpdateBoundingBoxSystem::update(float dt) {
 			} 
 			else if (change > 0) {
 				recalculateBoundingBoxPosition(e);
+			}
+
+			if (e->hasComponent<RagdollComponent>()) {
+				updateRagdollBoundingBoxes(e);
 			}
 		}
 	}
