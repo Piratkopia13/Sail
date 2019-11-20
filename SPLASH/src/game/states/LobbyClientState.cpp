@@ -34,12 +34,10 @@ bool LobbyClientState::onEvent(const Event& event) {
 	return true;
 }
 
-bool LobbyClientState::onMyTextInput(const TextInputEvent& event) {
+bool LobbyClientState::onMyTextInput(const ChatSent& event) {
 	// Add input to current message, If 'enter', send message to host, do not input to chat.
-	if (this->inputToChatLog(event.msg)) {
-		m_network->sendChatMsg(m_currentmessage);
-		std::string msg = this->fetchMessage();
-	}
+	Message temp{ NWrapperSingleton::getInstance().getMyPlayer().id, m_message };
+	m_network->sendChatMsg(m_message);
 	
 	return true;
 }
@@ -62,8 +60,5 @@ bool LobbyClientState::onDropped(const NetworkDroppedEvent& event) {
 }
 
 bool LobbyClientState::onSettingsChanged(const SettingsUpdatedEvent& event) {
-	auto& stat = m_app->getSettings().gameSettingsStatic;
-	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
-	m_app->getSettings().deSerialize(event.settings, stat, dynamic);
 	return true;
 }

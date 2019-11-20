@@ -34,7 +34,8 @@ public:
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
+
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	bool checkWaterAtWorldPosition(const glm::vec3& position);
@@ -42,9 +43,10 @@ public:
 	void dispatch(BounceOutput& output, DX12RenderableTexture* outputBloomTexture, DX12RenderableTexture* shadowsLastFrameInput, ID3D12GraphicsCommandList4* cmdList);
 
 	void simulateWater(float dt);
-	void resetWater();
+	void rebuildWater();
 	ShaderComponent::DX12StructuredBuffer* getWaterVoxelSBuffer();
-	
+
+	void resetWater();
 	void reloadShaders();
 
 	virtual bool onEvent(const Event& event) override;
@@ -195,9 +197,14 @@ private:
 	// Water voxel grid stuff
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
 	std::unordered_map<unsigned int, unsigned int> m_waterDeltas; // Changed water voxels over the last 2 frames
-	unsigned int m_waterDataCPU[WATER_ARR_SIZE];
-	bool m_updateWater[WATER_ARR_SIZE];
+	unsigned int* m_waterDataCPU;
+	bool* m_updateWater;
 	bool m_waterChanged;
+	glm::vec3 m_waterArrSizes;
+	unsigned int m_waterArrSize;
+	glm::vec3 m_mapSize;
+	glm::vec3 m_mapStart;
+
 	// Water simluation stuff
 	int m_currWaterZChunk;
 	int m_maxWaterZChunk;

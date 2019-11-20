@@ -7,9 +7,10 @@
 
 struct Player;
 class NWrapper;
-class TextInputEvent;
+struct TextInputEvent;
 class AudioComponent;
 
+struct ChatSent;
 struct NetworkChatEvent;
 struct NetworkJoinedEvent;
 struct NetworkDisconnectEvent;
@@ -44,7 +45,8 @@ protected:
 	SettingStorage* m_settings;
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
-	std::list<std::string> m_messages;
+	std::string m_message;
+	std::list<Message> m_messages;
 
 	// Front-End Functions
 	bool inputToChatLog(const MSG& msg);
@@ -69,6 +71,10 @@ private:
 	bool m_firstFrame = true;	// Used solely for ImGui
 	bool m_chatFocus = true;	// Used solely for ImGui
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
+	float m_timeSinceLastMessage;
+	float m_fadeTime;
+	float m_fadeThreshold;
+	bool m_scrollToBottom;
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	bool m_settingsChanged;
@@ -89,6 +95,7 @@ private:
 
 
 
+
 	float m_menuWidth;
 	ImVec2 m_minSize;
 	ImVec2 m_maxSize;
@@ -98,7 +105,7 @@ private:
 	bool m_usePercentage;
 
 
-	virtual bool onMyTextInput(const TextInputEvent& event) = 0;
+	virtual bool onMyTextInput(const ChatSent& event) = 0;
 	bool onRecievedText(const NetworkChatEvent& event);
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
 	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);

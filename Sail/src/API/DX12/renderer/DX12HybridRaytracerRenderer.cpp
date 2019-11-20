@@ -85,3 +85,7 @@ bool DX12HybridRaytracerRenderer::checkIfOnWater(const glm::vec3& pos) {
 DX12GBufferRenderer* DX12HybridRaytracerRenderer::getGBufferRenderer() const {
 	return m_rendererGbuffer.get();
 }
+
+DXRBase* DX12HybridRaytracerRenderer::getDXRBase() {
+	return m_rendererRaytrace->getDXRBase();;
+}

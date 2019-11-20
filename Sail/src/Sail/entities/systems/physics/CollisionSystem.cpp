@@ -4,7 +4,7 @@
 #include "..//..//components/MovementComponent.h"
 #include "..//..//components/CollisionComponent.h"
 #include "..//..//components/BoundingBoxComponent.h"
-#include "..//..//components/CollisionSpheresComponent.h"
+#include "..//..//components/RagdollComponent.h"
 #include "..//..//Physics/Intersection.h"
 
 #include "Sail/Application.h"
@@ -14,7 +14,7 @@ CollisionSystem::CollisionSystem() {
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<CollisionComponent>(true, true, true);
 	registerComponent<BoundingBoxComponent>(true, true, true);
-	registerComponent<CollisionSpheresComponent>(false, true, false);
+	registerComponent<RagdollComponent>(false, true, false);
 
 	m_octree = nullptr;
 }
@@ -41,16 +41,16 @@ void CollisionSystem::update(float dt) {
 	}
 
 	// ======================== Collision Update ======================================
-	
+
 	// Start executing jobs
 	for (size_t i = 0; i < NR_OF_JOBS - 1; ++i) {
 		jobs[i] = Application::getInstance()->pushJobToThreadPool([=](int id) {
 			return collisionUpdatePart(dt, i * entitiesPerJob, i * entitiesPerJob + entitiesPerJob);
-		});
+			});
 	}
 	jobs[LAST_JOB] = Application::getInstance()->pushJobToThreadPool([=](int id) {
 		return collisionUpdatePart(dt, LAST_JOB * entitiesPerJob, entities.size());
-	});
+		});
 
 	// Wait for jobs to finish executing
 	for (size_t i = 0; i < NR_OF_JOBS; ++i) { jobs[i].get(); }
@@ -62,11 +62,11 @@ void CollisionSystem::update(float dt) {
 	for (size_t i = 0; i < NR_OF_JOBS - 1; ++i) {
 		jobs[i] = Application::getInstance()->pushJobToThreadPool([=](int id) {
 			return surfaceFromCollisionPart(dt, i * entitiesPerJob, i * entitiesPerJob + entitiesPerJob);
-		});
+			});
 	}
 	jobs[LAST_JOB] = Application::getInstance()->pushJobToThreadPool([=](int id) {
 		return surfaceFromCollisionPart(dt, LAST_JOB * entitiesPerJob, entities.size());
-	});
+		});
 
 	// Wait for jobs to finish executing
 	for (size_t i = 0; i < NR_OF_JOBS; ++i) { jobs[i].get(); }
@@ -80,23 +80,28 @@ void CollisionSystem::update(float dt) {
 	for (size_t i = 0; i < NR_OF_JOBS - 1; ++i) {
 		jobs[i] = Application::getInstance()->pushJobToThreadPool([=](int id) {
 			return rayCastCollisionPart(dt, i * entitiesPerJob, i * entitiesPerJob + entitiesPerJob);
-		});
+			});
 	}
 	jobs[LAST_JOB] = Application::getInstance()->pushJobToThreadPool([=](int id) {
 		return rayCastCollisionPart(dt, LAST_JOB * entitiesPerJob, entities.size());
-	});
+		});
 
 	// Wait for jobs to finish executing
 	for (size_t i = 0; i < NR_OF_JOBS; ++i) { jobs[i].get(); }
 }
 
+#ifdef DEVELOPMENT
+unsigned int CollisionSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
+
 bool CollisionSystem::collisionUpdatePart(float dt, size_t start, size_t end) {
 	for (size_t i = start; i < end; ++i) {
 		Entity* e = entities[i];
 
-		CollisionComponent*   collision   = e->getComponent<CollisionComponent>();
+		CollisionComponent* collision = e->getComponent<CollisionComponent>();
 		BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
-		const CollisionSpheresComponent* csc   = e->getComponent<CollisionSpheresComponent>();
 
 		collision->collisions.clear();
 
@@ -105,9 +110,8 @@ bool CollisionSystem::collisionUpdatePart(float dt, size_t start, size_t end) {
 			collision->padding = glm::min(glm::min(halfSize.x, halfSize.y), halfSize.z);
 		}
 
-		if (m_octree && !csc) { //Not implemented for spheres yet
-			collisionUpdate(e, dt);
-		}
+
+		collisionUpdate(e, dt);
 	}
 
 	return true;
@@ -118,9 +122,8 @@ bool CollisionSystem::surfaceFromCollisionPart(float dt, size_t start, size_t en
 		Entity* e = entities[i];
 
 		CollisionComponent* collision = e->getComponent<CollisionComponent>();
-		const CollisionSpheresComponent* csc = e->getComponent<CollisionSpheresComponent>();
 
-		if (m_octree && !csc) { //Not implemented for spheres yet
+		if (m_octree) { //Not implemented for spheres yet
 			surfaceFromCollision(e, collision->collisions);
 		}
 	}
@@ -133,11 +136,10 @@ bool CollisionSystem::rayCastCollisionPart(float dt, size_t start, size_t end) {
 
 		MovementComponent* movement = e->getComponent<MovementComponent>();
 		BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
-		const CollisionSpheresComponent* csc = e->getComponent<CollisionSpheresComponent>();
 
 		float updateableDt = dt;
 
-		if (m_octree && !csc) {
+		if (m_octree) {
 			if (rayCastCheck(e, *boundingBox, updateableDt)) {
 				//Object is moving fast, ray cast for collisions
 				rayCastUpdate(e, *boundingBox, updateableDt);
@@ -154,12 +156,7 @@ const bool CollisionSystem::collisionUpdate(Entity* e, const float dt) {
 	std::vector<Octree::CollisionInfo> collisions;
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
 
-	bool hasSpheres = e->hasComponent<CollisionSpheresComponent>();
-	if (hasSpheres) {
-		assert(false); //Not implemented
-	} else {
-		m_octree->getCollisions(e, &collisions, collision->doSimpleCollisions);
-	}
+	m_octree->getCollisions(e, &collisions, collision->doSimpleCollisions);
 
 	return handleCollisions(e, collisions, dt);
 }
@@ -319,8 +316,8 @@ void CollisionSystem::rayCastUpdate(Entity* e, BoundingBox& boundingBox, float& 
 
 void CollisionSystem::surfaceFromCollision(Entity* e, std::vector<Octree::CollisionInfo>& collisions) {
 	glm::vec3 distance(0.0f);
-	BoundingBox*          bb        = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
-	TransformComponent*   transform = e->getComponent<TransformComponent>();
+	BoundingBox* bb = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
+	TransformComponent* transform = e->getComponent<TransformComponent>();
 
 	const size_t count = collisions.size();
 	for (size_t i = 0; i < count; i++) {

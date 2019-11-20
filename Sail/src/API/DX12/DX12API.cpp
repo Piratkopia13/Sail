@@ -5,6 +5,8 @@
 #include "resources/DescriptorHeap.h"
 #include "Sail/Application.h"
 #include <iomanip>
+#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/NewFrameEvent.h"
 
 const UINT DX12API::NUM_SWAP_BUFFERS = 3;
 const UINT DX12API::NUM_GPU_BUFFERS = 2;
@@ -454,6 +456,7 @@ void DX12API::nextFrame() {
 		getMainGPUDescriptorHeap()->setIndex(0);
 		getComputeGPUDescriptorHeap()->setIndex(0);
 	}
+	EventDispatcher::Instance().emit(NewFrameEvent());
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {

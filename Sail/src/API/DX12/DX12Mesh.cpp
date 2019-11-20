@@ -39,13 +39,9 @@ DX12Mesh::~DX12Mesh() {
 }
 
 void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
-	assert(false);/*[deprecated]*/
-}
-
-void DX12Mesh::draw_new(const Renderer& renderer, void* cmdList, int meshIndex, int srvOffset) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
-	bindMaterial(cmdList, meshIndex);
+	bindMaterial(cmdList);
 	// Set offset in SRV heap for this mesh 
 	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getGPUDescriptorHandleForIndex(m_SRVIndex + srvOffset));
 	vertexBuffer->bind(cmdList);
@@ -58,13 +54,15 @@ void DX12Mesh::draw_new(const Renderer& renderer, void* cmdList, int meshIndex, 
 		dxCmdList->DrawIndexedInstanced(getNumIndices(), 1, 0, 0, 0);
 	else
 		dxCmdList->DrawInstanced(getNumVertices(), 1, 0, 0);
+
+	 static_cast<DX12ShaderPipeline*>(material->getShader()->getPipeline())->instanceFinished();
 }
 
-void DX12Mesh::bindMaterial(void* cmdList, int meshIndex) {
+void DX12Mesh::bindMaterial(void* cmdList) {
 	Shader* shader = material->getShader();
 	const auto& pbrSettings = material->getPBRSettings();
 	DX12ShaderPipeline* pipeline = static_cast<DX12ShaderPipeline*>(shader->getPipeline());
-	pipeline->trySetCBufferVar_new("sys_material_pbr", (void*)& pbrSettings, sizeof(PBRMaterial::PBRSettings), meshIndex);
+	pipeline->trySetCBufferVar("sys_material_pbr", (void*)& pbrSettings, sizeof(PBRMaterial::PBRSettings));
 	m_SRVIndex = pipeline->setMaterial(material.get(), cmdList);
 }
 

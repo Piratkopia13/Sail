@@ -17,7 +17,10 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	, m_gbufferInputTextures(inputs)
 	, m_brdfLUTPath("pbr/brdfLUT.tga")
 	, m_waterChanged(false)
-	, m_frameCount(0)
+	, m_waterDataCPU(nullptr)
+	, m_updateWater(nullptr)
+	, m_mapSize(1.f)
+	, m_mapStart(1.f)
 {
 
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
@@ -56,23 +59,16 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	}
 
 	m_decalsToRender = 0;
-
-	// Init water "decals"
-	unsigned int numElements = WATER_ARR_SIZE;
-	unsigned int waterDataSize = sizeof(unsigned int) * numElements;
-	unsigned int* initData = new unsigned int[WATER_ARR_SIZE];
-	memset(initData, 0, waterDataSize);
-	memset(m_waterDataCPU, 0, waterDataSize);
-	memset(m_updateWater, 0, sizeof(bool) * numElements);
-	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, numElements, sizeof(unsigned int));
-	delete initData;
-
-	m_currWaterZChunk = 0;
-	m_maxWaterZChunk = 5;
-	m_waterZChunkSize = WATER_GRID_Z / m_maxWaterZChunk;
+	unsigned int initData = 0;
+	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(&initData, 1, sizeof(unsigned int));
+	m_waterArrSize = 1;
+	m_waterArrSizes = glm::vec3(1.f, 1.f, 1.f);
 }
 
 DXRBase::~DXRBase() {
+	Memory::SafeDeleteArr(m_waterDataCPU);
+	Memory::SafeDeleteArr(m_updateWater);
+
 	m_rtPipelineState->Release();
 	for (auto& blasList : m_bottomBuffers) {
 		for (auto& blas : blasList) {
@@ -217,7 +213,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
 	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
 	updateMetaballpositions(metaballs, m_next_metaball_aabb);
 
@@ -232,8 +228,9 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.nMetaballs = m_metaballsToRender;
 	newData.nDecals = m_decalsToRender;
 	newData.doTonemapping = doToneMapping;
-	newData.mapSize = mapSize;
-	newData.mapStart = mapStart;
+	newData.waterArraySize = m_waterArrSizes;
+	newData.mapSize = m_mapSize;
+	newData.mapStart = m_mapStart;
 	newData.frameCount = m_frameCount++;
 
 	int nTeams = teamColors.size();
@@ -262,19 +259,18 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
 	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
 	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
-	static const glm::vec3 arrSize(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
 
 	// Convert position to index, stored as floats
-	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
+	glm::vec3 floatInd = ((position - mapStart) / mapSize) * m_waterArrSizes;
 	// Convert triple-number index to a single index value
 	int quarterIndex = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
 	// Convert triple-number (float) to triple-number (int)
 	glm::i32vec3 ind = floor(floatInd);
 	// Convert to final 1-D index
-	int arrIndex = Utils::to1D(ind, arrSize.x, arrSize.y);
+	int arrIndex = Utils::to1D(ind, m_waterArrSizes.x, m_waterArrSizes.y);
 
 	// Ignore water points that are outside the map
-	if (arrIndex >= 0 && arrIndex <= WATER_ARR_SIZE - 1) {
+	if (arrIndex >= 0 && arrIndex <= m_waterArrSize - 1) {
 		// Make sure to update this water
 		m_updateWater[arrIndex] = true;
 		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
@@ -308,17 +304,16 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
 	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
 	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
-	static const glm::vec3 arrSize(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z);
 
 	// Convert position to index, stored as floats
-	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
+	glm::vec3 floatInd = ((position - mapStart) / mapSize) * m_waterArrSizes;
 	// Convert triple-number (float) to triple-number (int)
 	glm::i32vec3 ind = floor(floatInd);
 	// Convert to final 1-D index
-	int arrIndex = Utils::to1D(ind, arrSize.x, arrSize.y);
+	int arrIndex = Utils::to1D(ind, m_waterArrSizes.x, m_waterArrSizes.y);
 
 	// Ignore water points that are outside the map
-	if (arrIndex >= 0 && arrIndex <= WATER_ARR_SIZE - 1) {
+	if (arrIndex >= 0 && arrIndex <= m_waterArrSize - 1) {
 		returnValue = m_waterDataCPU[arrIndex] != 0;
 	}
 
@@ -333,7 +328,7 @@ void DXRBase::updateWaterData() {
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
 		unsigned int& data = pair.second;
-		m_waterStructuredBuffer->updateData(&data, 1, 0, offset);
+		m_waterStructuredBuffer->updateData_new(&data, 1, 0, offset);
 	}
 
 	// Reset every other frame because of double buffering
@@ -344,12 +339,12 @@ void DXRBase::updateWaterData() {
 }
 
 void DXRBase::simulateWater(float dt) {
-	for (unsigned int z = 0; z < WATER_GRID_Z; z++) {
-		for (unsigned int y = 1; y < WATER_GRID_Y; y++) {
-			for (unsigned int x = 0; x < WATER_GRID_X; x++) {
-				auto arrIndex = Utils::to1D(glm::i32vec3(x, y, z), WATER_GRID_X, WATER_GRID_Y);
+	for (unsigned int z = 0; z < m_waterArrSizes.z; z++) {
+		for (unsigned int y = 1; y < m_waterArrSizes.y; y++) {
+			for (unsigned int x = 0; x < m_waterArrSizes.x; x++) {
+				auto arrIndex = Utils::to1D(glm::i32vec3(x, y, z), m_waterArrSizes.x, m_waterArrSizes.y);
 				if (m_updateWater[arrIndex]) {
-					auto arrIndexBelow = arrIndex - WATER_GRID_X;
+					unsigned int arrIndexBelow = arrIndex - m_waterArrSizes.x;
 
 					bool change = false;
 					uint32_t vals[8];
@@ -391,6 +386,45 @@ void DXRBase::simulateWater(float dt) {
 			}
 		}
 	}
+}
+
+void DXRBase::rebuildWater() {
+	// Get some map settings
+	auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	m_mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	m_mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
+	auto tileSize = mapSettings["tileSize"].value;
+	float mapSizeX = mapSettings["sizeX"].value * tileSize;
+	float mapSizeZ = mapSettings["sizeY"].value * tileSize;
+
+	// Water voxel apperance setting, increase to improve water resolution
+	const float voxelCellsPerWorldUnit = 5.f;
+	// How many values are packed into each X, don't change this
+	const int valuesPerX = 4;
+
+	m_waterArrSizes.x = glm::floor(mapSizeX * voxelCellsPerWorldUnit / valuesPerX);
+	m_waterArrSizes.y = 37;
+	m_waterArrSizes.z = glm::floor(mapSizeZ * voxelCellsPerWorldUnit);
+	
+	m_waterArrSize = m_waterArrSizes.x * m_waterArrSizes.y * m_waterArrSizes.z;
+
+	// Init water "decals"
+	unsigned int numElements = m_waterArrSize;
+	Memory::SafeDeleteArr(m_waterDataCPU);
+	Memory::SafeDeleteArr(m_updateWater);
+	m_waterDataCPU = new unsigned int[numElements];
+	m_updateWater = new bool[numElements];
+	memset(m_waterDataCPU, 0, sizeof(unsigned int) * numElements);
+	memset(m_updateWater, 0, sizeof(bool) * numElements);
+	// Recreate sbuffer to resize it
+	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(m_waterDataCPU, numElements, sizeof(unsigned int));
+	// Stop any current changes
+	m_waterDeltas.clear();
+
+	// Reset simulation data
+	m_currWaterZChunk = 0;
+	m_maxWaterZChunk = 5;
+	m_waterZChunkSize = m_waterArrSizes.z / m_maxWaterZChunk;
 }
 
 void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb) {
@@ -502,7 +536,7 @@ void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* outputBloomT
 
 void DXRBase::resetWater() {
 	// TODO: make faster by updates the whole buffer at once
-	for (unsigned int i = 0; i < WATER_ARR_SIZE; i++) {
+	for (unsigned int i = 0; i < m_waterArrSize; i++) {
 		m_waterDataCPU[i] = m_waterDeltas[i] = 0;
 	}
 	m_waterChanged = true;
@@ -582,7 +616,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 		for (auto& instance : instanceList.instanceList) {
 			if (it.first == nullptr) {
 				pInstanceDesc->InstanceID = instanceID_metaballs++;	// exposed to the shader via InstanceID() - currently same for all instances of same material
-				pInstanceDesc->InstanceMask = INSTACE_MASK_METABALLS;
+				pInstanceDesc->InstanceMask = INSTANCE_MASK_METABALLS;
 			} else {
 #ifdef DEVELOPMENT
 				if (blasIndex >= 1 << 10) {
@@ -590,8 +624,8 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 				}
 #endif
 				pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
-				UINT shadowMask = (instance.castShadows) ? INSTACE_MASK_CAST_SHADOWS : 0;
-				pInstanceDesc->InstanceMask = INSTACE_MASK_DEFAULT | shadowMask;
+				UINT shadowMask = (instance.castShadows) ? INSTANCE_MASK_CAST_SHADOWS : 0;
+				pInstanceDesc->InstanceMask = INSTANCE_MASK_DEFAULT | shadowMask;
 			}
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
@@ -850,24 +884,24 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 	// Make sure brdfLut texture has been initialized
 	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
 	if (!brdfLutTex.hasBeenInitialized()) {
-		brdfLutTex.initBuffers(cmdList, 0);
+		brdfLutTex.initBuffers(cmdList);
 	}
 
 	// Make sure decal textures has been initialized
 	{
 		auto& decalTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[0]));
 		if (!decalTex.hasBeenInitialized()) {
-			decalTex.initBuffers(cmdList, 0);
+			decalTex.initBuffers(cmdList);
 			decalTex.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
 		auto& decalTex1 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[1]));
 		if (!decalTex1.hasBeenInitialized()) {
-			decalTex1.initBuffers(cmdList, 0);
+			decalTex1.initBuffers(cmdList);
 			decalTex1.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
 		auto& decalTex2 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[2]));
 		if (!decalTex2.hasBeenInitialized()) {
-			decalTex2.initBuffers(cmdList, 0);
+			decalTex2.initBuffers(cmdList);
 			decalTex2.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
 	}
@@ -903,7 +937,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 				if (hasTexture) {
 					// Make sure textures have initialized / uploaded their data to its default buffer
 					if (!texture->hasBeenInitialized()) {
-						texture->initBuffers(cmdList, textureNum * blasIndex);
+						texture->initBuffers(cmdList);
 					}
 
 						// Copy SRV to DXR heap

@@ -4,11 +4,8 @@
 #include "../states/LobbyState.h"
 
 struct SettingsUpdatedEvent : public Event {
-	SettingsUpdatedEvent(const std::string& _settings)
-		: Event(Event::Type::SETTINGS_UPDATED)
-		, settings(_settings) {
+	SettingsUpdatedEvent()
+		: Event(Event::Type::SETTINGS_UPDATED) {
 	}
 	~SettingsUpdatedEvent() = default;
-
-	const std::string settings;
 };

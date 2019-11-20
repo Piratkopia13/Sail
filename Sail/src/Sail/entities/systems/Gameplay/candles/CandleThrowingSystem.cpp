@@ -180,4 +180,10 @@ void CandleThrowingSystem::update(float dt) {
 	}
 }
 
+#ifdef DEVELOPMENT
+unsigned int CandleThrowingSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
+
 void CandleThrowingSystem::throwCandle(Entity* e) {}

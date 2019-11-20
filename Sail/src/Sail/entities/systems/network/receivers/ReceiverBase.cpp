@@ -120,6 +120,7 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 					AnimationInfo info;
 					ar(info.index);
 					ar(info.time);
+					ar(info.pitch);
 					setAnimation(compID, info);
 				}
 				break;
@@ -431,7 +432,6 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 	// End game timer 
 	endMatchAfterTimer(dt);
 }
-
 
 
 

@@ -54,6 +54,18 @@ void NetworkReceiverSystem::update(float dt) {
 	processData(dt, m_incomingDataBuffer);
 }
 
+#ifdef DEVELOPMENT
+unsigned int NetworkReceiverSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	const size_t queueSize = m_incomingDataBuffer.size();
+	size += queueSize * sizeof(std::string);
+	if (queueSize) {
+		size += queueSize * m_incomingDataBuffer.front().capacity() * sizeof(unsigned char);	// Approximate string length
+	}
+	return 0;
+}
+#endif
+
 void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
 	// Early exit if the entity already exists
 	if (findFromNetID(info.playerCompID)) {
@@ -85,9 +97,10 @@ void NetworkReceiverSystem::enableSprinklers() {
 void NetworkReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId, const Netcode::PlayerID shooterID) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
-
 			e->getComponent<CandleComponent>()->wasJustExtinguished = true;
 			e->getComponent<CandleComponent>()->wasHitByPlayerID = shooterID;
+
+			EventDispatcher::Instance().emit(TorchExtinguishedEvent(shooterID, candleId));
 
 			return;
 		}
@@ -121,6 +134,7 @@ void NetworkReceiverSystem::setAnimation(const Netcode::ComponentID id, const An
 		auto animation = e->getComponent<AnimationComponent>();
 		animation->setAnimation(info.index);
 		animation->animationTime = info.time;
+		animation->pitch = info.pitch;
 		return;
 	}
 	SAIL_LOG_WARNING("setAnimation called but no matching entity found");

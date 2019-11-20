@@ -9,10 +9,8 @@ public:
 	DX12Mesh(unsigned int numVertices, Shader* shader);
 	virtual ~DX12Mesh();
 
-	/*[Depricated]*/
 	virtual void draw(const Renderer& renderer, void* cmdList) override;
-	virtual void draw_new(const Renderer& renderer, void* cmdList, int meshIndex, int srvOffset = 0);
-	virtual void bindMaterial(void* cmdList, int meshIndex);
+	virtual void bindMaterial(void* cmdList);
 	unsigned int getSRVIndex();
 private:
 	DX12API* m_context;

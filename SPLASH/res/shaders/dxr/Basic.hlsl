@@ -189,7 +189,7 @@ void rayGen() {
 	payloadMetaball.worldPositionOne = 0.f;
 	payloadMetaball.worldPositionTwo = 0.f;
 
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payload_metaball);
 	//===========MetaBalls RT END===========
 
 	// lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
@@ -365,8 +365,8 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	reftractRaydesc.Origin += reftractRaydesc.Direction * 0.0001;
 
 	if (payload.recursionDepth == 1) {
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_DEFAULT & ~INSTACE_MASK_METABALLS, 0, 0, 0, reflectRaydesc, reflect_payload);
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_DEFAULT & ~INSTACE_MASK_METABALLS, 0, 0, 0, reftractRaydesc, refract_payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_DEFAULT & ~INSTANCE_MASK_METABALLS, 0, 0, 0, reflectRaydesc, reflect_payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_DEFAULT & ~INSTANCE_MASK_METABALLS, 0, 0, 0, reftractRaydesc, refract_payload);
 
 		float4 reflect_color = reflect_payload.albedoTwo;
 		reflect_color.b += 0.05f;

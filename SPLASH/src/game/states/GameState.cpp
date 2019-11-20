@@ -21,6 +21,8 @@
 #include "InGameMenuState.h"
 #include "../SPLASH/src/game/events/ResetWaterEvent.h"
 #include "API/DX12/DX12API.h"
+#include "API/DX12/renderer/DX12HybridRaytracerRenderer.h"
+#include "API/DX12/dxr/DXRBase.h"
 #include "Sail/graphics/shader/postprocess/BilateralBlurHorizontal.h"
 #include "Sail/graphics/shader/postprocess/BilateralBlurVertical.h"
 #include "Sail/graphics/shader/dxr/ShadePassShader.h"
@@ -44,7 +46,7 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 	m_gameStarted = m_isSingleplayer; //Delay gamestart untill everyOne is ready if playing multiplayer
-
+	
 	if (!m_isSingleplayer) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
 		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
@@ -53,11 +55,18 @@ GameState::GameState(StateStack& stack)
 	initConsole();
 	m_app->setCurrentCamera(&m_cam);
 
+	
+	
+	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+	auto& settings = m_app->getSettings();
 	std::vector<glm::vec3> m_teamColors;
 	for (int i = 0; i < 12; i++) {
-		m_teamColors.push_back(TeamColorSystem::getTeamColor(i));
+		m_teamColors.emplace_back(settings.getColor(settings.teamColorIndex(i)));
 	}
 	m_app->getRenderWrapper()->getCurrentRenderer()->setTeamColors(m_teamColors);
+
+	// Update water voxel grid
+	static_cast<DX12HybridRaytracerRenderer*>(m_app->getRenderWrapper()->getCurrentRenderer())->getDXRBase()->rebuildWater();
 
 	//----Octree creation----
 	//Wireframe shader
@@ -643,7 +652,7 @@ bool GameState::onPlayerDropped(const NetworkDroppedEvent& event) {
 
 bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 
-	if (NWrapperSingleton::getInstance().isHost()) {	
+	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(-1, event.player.id, false);	
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::Game, event.player.id);	
 	}

@@ -31,6 +31,7 @@ public:
 	virtual void updateMetaballAABB();
 
 	void setGBufferInputs(DX12RenderableTexture** inputs);
+	DXRBase* getDXRBase();
 
 private:
 	DX12RenderableTexture* runDenoising(ID3D12GraphicsCommandList4* cmdList);

@@ -86,7 +86,7 @@ protected:
 
 	Camera* camera;
 	LightSetup* lightSetup;
-
+	
 };
 
 // Operators to use RenderFlags enum as bit flags
