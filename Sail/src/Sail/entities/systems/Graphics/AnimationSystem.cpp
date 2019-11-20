@@ -142,6 +142,10 @@ void AnimationSystem::updateTransforms(const float dt) {
 		const glm::mat4* transforms10 = animationC->currentTransition->to ? animationC->currentTransition->to->getAnimationTransform(frame10) : nullptr;
 		const glm::mat4* transforms11 = (animationC->currentTransition->to && frame11 > frame10) ? animationC->currentTransition->to->getAnimationTransform(frame11) : nullptr;
 
+		// Origin of root bone - "hips"
+		const glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
+		auto trans = glm::translate(transOrig) * glm::rotate(animationC->pitch, glm::vec3(1.f, 0.f, 0.f)) * glm::translate(-transOrig);
+
 		//INTERPOLATE
 		if (transforms00 && transforms01 && transforms10 && transforms11 && m_interpolate) {
 			const float frame00Time = animationC->currentAnimation->getTimeAtFrame(frame00);
@@ -162,6 +166,11 @@ void AnimationSystem::updateTransforms(const float dt) {
 				interpolate(m0, transforms00[transformIndex], transforms01[transformIndex], w0);
 				interpolate(m1, transforms10[transformIndex], transforms11[transformIndex], w1);
 				interpolate(animationC->transforms[transformIndex], m0, m1, wt);
+
+				// Rotate the upper body in relation to camera pitch
+				if (transformIndex > 0 && transformIndex < 31) {
+					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
+				}
 			}
 
 		}
@@ -170,6 +179,11 @@ void AnimationSystem::updateTransforms(const float dt) {
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				interpolate(animationC->transforms[transformIndex], transforms00[transformIndex], transforms10[transformIndex], wt);
 				animationC->transforms[transformIndex] = transforms00[transformIndex];
+
+				// Rotate the upper body in relation to camera pitch
+				if (transformIndex > 0 && transformIndex < 31) {
+					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
+				}
 			}
 		}
 		else if (transforms00 && transforms01 && m_interpolate) {
@@ -177,9 +191,6 @@ void AnimationSystem::updateTransforms(const float dt) {
 			const float frame1Time = animationC->currentAnimation->getTimeAtFrame(frame01);
 			// weight = time - time(0) / time(1) - time(0)
 
-			// Origin of root bone - "hips"
-			const glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
-			auto trans = glm::translate(transOrig) * glm::rotate(animationC->pitch, glm::vec3(1.f, 0.f, 0.f)) * glm::translate(-transOrig);
 			const float w = (animationC->animationTime - frame0Time) / (frame1Time - frame0Time);
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				interpolate(animationC->transforms[transformIndex], transforms00[transformIndex], transforms01[transformIndex], w);
@@ -191,6 +202,11 @@ void AnimationSystem::updateTransforms(const float dt) {
 		} else if (transforms00) {
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				animationC->transforms[transformIndex] = transforms00[transformIndex];
+
+				// Rotate the upper body in relation to camera pitch
+				if (transformIndex > 0 && transformIndex < 31) {
+					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
+				}
 			}
 		}
 

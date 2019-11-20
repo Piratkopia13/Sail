@@ -691,7 +691,7 @@ bool GameState::update(float dt, float alpha) {
 bool GameState::fixedUpdate(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
-	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | "
+	m_app->getWindow()->setWindowTitle("S.P.L.A.S.H.2.O | "
 		+ Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
 
 	static float counter = 0.0f;
