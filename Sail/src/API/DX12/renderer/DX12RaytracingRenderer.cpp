@@ -41,7 +41,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_outputTextures.positionsOne = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "PositionOneTexture", Texture::R16G16B16A16_FLOAT)));
 	m_outputTextures.positionsTwo = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "PositionTwoTexture", Texture::R16G16B16A16_FLOAT)));
 	// init shaded output texture - this is written to in a rasterisation pass
-	m_shadedOuput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT shaded output")));
+	m_shadedOutput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT shaded output")));
 	// Init raytracing input texture
 	m_shadowsLastFrame = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "LastFrameShadowTexture", Texture::R8G8)));
 	// Init bloom output texture
@@ -65,12 +65,12 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	if (postProcessPipeline) {
 		// Make sure output textures are in a higher precision format to accomodate values > 1
-		m_outputTextures.albedo->changeFormat(Texture::R16G16B16A16_FLOAT);
+		m_shadedOutput->changeFormat(Texture::R16G16B16A16_FLOAT);
 		m_outputBloomTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
 	} else {
 		// Make sure output textures are in a format that can be directly copied to the back buffer
 		// Please note that no tone mapping is applied when post process is turned off.
-		m_outputTextures.albedo->changeFormat(Texture::R8G8B8A8);
+		m_shadedOutput->changeFormat(Texture::R8G8B8A8);
 		m_outputBloomTexture->changeFormat(Texture::R8G8B8A8);
 	}
 
@@ -207,14 +207,14 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_context->getDirectQueue()->wait(fenceVal);
 	// Execute direct command list
 	cmdListDirectShading->Close();
-	fenceVal = m_context->getDirectQueue()->signal();
 	m_context->executeCommandLists({ cmdListDirectShading.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	fenceVal = m_context->getDirectQueue()->signal();
 
 	// Wait for the direct queue to finish (doing shading) before executing the post processing
 	cmdListComputePostProcess->Close();
 	m_context->getComputeQueue()->wait(fenceVal);
-	fenceVal = m_context->getComputeQueue()->signal();
 	m_context->executeCommandLists({ cmdListComputePostProcess.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	fenceVal = m_context->getComputeQueue()->signal();
 
 	// Copy post processing output to back buffer
 	dxRenderOutput->transitionStateTo(cmdListDirectCopy.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -236,9 +236,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_context->getDirectQueue()->wait(fenceVal);
 	m_context->executeCommandLists({ cmdListDirectCopy.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
 
-	// Next direct queue execution must wait on this post processing to finish
-	/*fenceVal = m_context->getComputeQueue()->signal();
-	m_context->getDirectQueue()->wait(fenceVal);*/
+	// Next compute queue execution must wait on the copying to finish
+	/*fenceVal = m_context->getDirectQueue()->signal();
+	m_context->getComputeQueue()->wait(fenceVal);*/
 }
 
 DX12RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsCommandList4* cmdList) {
@@ -262,14 +262,14 @@ DX12RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsComman
 	input.outputHeight = static_cast<unsigned int>(windowHeight);
 	input.threadGroupCountX = static_cast<unsigned int>(glm::ceil(settings->threadGroupXScale * input.outputWidth));
 	input.threadGroupCountY = static_cast<unsigned int>(glm::ceil(settings->threadGroupYScale * input.outputHeight));
-	auto output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderHorizontal, input, 0, cmdList));
+	auto output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderHorizontal, input, cmdList));
 
 	// Vertical pass
 	settings = blurShaderVertical.getComputeSettings();
 	input.inputRenderableTexture = output.outputTexture;
 	input.threadGroupCountX = static_cast<unsigned int>(glm::ceil(settings->threadGroupXScale * input.outputWidth));
 	input.threadGroupCountY = static_cast<unsigned int>(glm::ceil(settings->threadGroupYScale * input.outputHeight));
-	output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderVertical, input, 1, cmdList));
+	output = static_cast<PostProcessPipeline::PostProcessOutput&>(m_computeShaderDispatcher.dispatch(blurShaderVertical, input, cmdList));
 
 	return static_cast<DX12RenderableTexture*>(output.outputTexture);
 }
@@ -280,8 +280,8 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 	// Make sure model has been initialized
 	static_cast<DX12VertexBuffer&>(m_fullscreenModel->getMesh(0)->getVertexBuffer()).init(cmdList);
 
-	m_shadedOuput->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	cmdList->OMSetRenderTargets(1, &m_shadedOuput->getRtvCDH(), false, nullptr);
+	m_shadedOutput->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	cmdList->OMSetRenderTargets(1, &m_shadedOutput->getRtvCDH(), false, nullptr);
 	cmdList->RSSetViewports(1, m_context->getViewport());
 	cmdList->RSSetScissorRects(1, m_context->getScissorRect());
 
@@ -290,7 +290,7 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 	// Bind the descriptor heap that will contain all SRVs, DSVs and RTVs for this frame
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList);
 
-	shaderPipeline->bind_new(cmdList, 0);
+	shaderPipeline->bind(cmdList);
 
 	// The following order must match the t-register order in shader
 	int numCustomSRVs = 0;
@@ -318,7 +318,7 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 		shaderPipeline->setCBufferVar("pointLights", &plData, sizeof(plData));
 	}
 
-	static_cast<DX12Mesh*>(m_fullscreenModel->getMesh(0))->draw_new(*this, cmdList, 0, -numCustomSRVs);
+	static_cast<DX12Mesh*>(m_fullscreenModel->getMesh(0))->draw_new(*this, cmdList, -numCustomSRVs);
 
 	// setTexture2D transitions texture to pixel shader resource
 	// We need to transition them back to a state that is usable on a compute queue before the next frame
@@ -330,7 +330,7 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 	m_outputTextures.positionsTwo->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	shadows->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
-	return m_shadedOuput.get();
+	return m_shadedOutput.get();
 }
 
 void DX12RaytracingRenderer::begin(Camera* camera) {
@@ -416,7 +416,7 @@ bool DX12RaytracingRenderer::onResize(const WindowResizeEvent& event) {
 	m_outputTextures.positionsOne->resize(event.width, event.height);
 	m_outputTextures.positionsTwo->resize(event.width, event.height);
 	m_shadowsLastFrame->resize(event.width, event.height);
-	m_shadedOuput->resize(event.width, event.height);
+	m_shadedOutput->resize(event.width, event.height);
 	m_outputBloomTexture->resize(event.width, event.height);
 	return true;
 }

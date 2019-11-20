@@ -18,6 +18,8 @@ DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width,
 	isRenderableTex = true;
 	context = Application::getInstance()->getAPI<DX12API>();
 
+	m_name = name;
+
 	m_format = convertFormat(format);
 
 	const auto& numSwapBuffers = context->getNumGPUBuffers();
@@ -31,7 +33,7 @@ DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width,
 		m_dsvHeapCDHs[i] = m_cpuDsvDescHeap.getCPUDescriptorHandleForIndex(i);
 	}
 	createTextures();
-	renameBuffer(name);
+	//renameBuffer(name);
 }
 
 DX12RenderableTexture::~DX12RenderableTexture() {
@@ -162,7 +164,9 @@ void DX12RenderableTexture::createTextures() {
 		state[i] = D3D12_RESOURCE_STATE_COMMON;
 		// A texture rarely updates its data, if at all, so it is stored in a default heap
 		ThrowIfFailed(context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &textureDesc, state[i], &clearValue, IID_PPV_ARGS(&textureDefaultBuffers[i])));
-		textureDefaultBuffers[i]->SetName(L"Renderable texture default buffer");
+
+		std::wstring stemp = std::wstring(m_name.begin(), m_name.end());
+		textureDefaultBuffers[i]->SetName(stemp.c_str());
 
 		// Create a shader resource view (descriptor that points to the texture and describes it)
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};

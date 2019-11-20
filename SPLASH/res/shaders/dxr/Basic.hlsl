@@ -189,7 +189,7 @@ void rayGen() {
 	payloadMetaball.worldPositionOne = 0.f;
 	payloadMetaball.worldPositionTwo = 0.f;
 
-	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payload_metaball);
+	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
 	//===========MetaBalls RT END===========
 
 	// lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);

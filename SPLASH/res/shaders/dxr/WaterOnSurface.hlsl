@@ -3,7 +3,11 @@ void getWaterMaterialOnSurface(inout float3 albedo, inout float metalness, inout
 	//  Render pixel as water if close to a water point
 	// =================================================
 
-	static const float3 arrSize = int3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z) - 1;
+	float3 arrSize = (float3)CB_SceneData.waterArraySize;
+	arrSize.x = max(1, arrSize.x);
+	arrSize.y = max(1, arrSize.y);
+	arrSize.z = max(1, arrSize.z);
+	float3 waterArrSize = arrSize.x * arrSize.y * arrSize.z;
 	static const float cutoff = 0.2f;
 
 	float3 cellWorldSize = CB_SceneData.mapSize / arrSize;
@@ -28,7 +32,7 @@ void getWaterMaterialOnSurface(inout float3 albedo, inout float metalness, inout
 		for (int y = indMin.y; y <= indMax.y; y++) {
 			for (int x = indMin.x; x <= indMax.x; x++) {
 				int i = Utils::to1D(int3(x,y,z), arrSize.x, arrSize.y);
-				i = clamp(i, 0, floor(WATER_ARR_SIZE) - 1);
+				i = clamp(i, 0, floor(waterArrSize) - 1);
 				uint packedR = waterData[i];
 
 				uint start = (x == indMin.x) ? floor(((floatIndMin.x - floor(floatIndMin.x)) * 4.f) % 4) : 0;

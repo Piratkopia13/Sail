@@ -51,7 +51,7 @@ private:
 
 	DXRBase::BounceOutput m_outputTextures;
 	std::unique_ptr<DX12RenderableTexture> m_outputBloomTexture;
-	std::unique_ptr<DX12RenderableTexture> m_shadedOuput;
+	std::unique_ptr<DX12RenderableTexture> m_shadedOutput;
 	std::unique_ptr<DX12RenderableTexture> m_shadowsLastFrame;
 	std::unique_ptr<Model> m_fullscreenModel;
 	ShadePassShader* m_shadeShader;

@@ -35,7 +35,8 @@ private:
 	DescriptorHeap m_cpuDsvDescHeap;
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_rtvHeapCDHs;
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_dsvHeapCDHs;
-	
+
+	std::string m_name;
 	UINT m_width, m_height;
 	bool m_hasDepthTextures;
 	DXGI_FORMAT m_format;

@@ -262,7 +262,8 @@ void ShaderPipeline::parseRWTexture(const char* source) {
 	}
 	free(lineCopy);
 
-	parsedData.renderableTextures.emplace_back(ShaderResource(name, slot), format);
+	std::string nameSuffix(" File: " + filename + " slot " + std::to_string(slot));
+	parsedData.renderableTextures.emplace_back(ShaderResource(name, slot), format, nameSuffix);
 }
 
 void ShaderPipeline::parseStructuredBuffer(const char* source, bool isRW) {

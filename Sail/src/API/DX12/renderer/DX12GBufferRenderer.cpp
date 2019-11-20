@@ -210,9 +210,9 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 		// Specifically used in GBuffer shader to calculate motion vectors
 		glm::mat4 wvpLastFrame = camera->getViewProjectionLastFrame() * glm::transpose(command->transformLastFrame);
-		shaderPipeline->trySetCBufferVar_new("sys_mWVPLastFrame", &wvpLastFrame, sizeof(glm::mat4));
+		shaderPipeline->trySetCBufferVar("sys_mWVPLastFrame", &wvpLastFrame, sizeof(glm::mat4));
 		
-		command->model.mesh->draww(*this, cmdList.Get());
+		command->model.mesh->draw(*this, cmdList.Get());
 	}
 
 	// Lastly - transition back buffer to present
