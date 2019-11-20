@@ -74,6 +74,7 @@ private:
 	float m_timeSinceLastMessage;
 	float m_fadeTime;
 	float m_fadeThreshold;
+	bool m_scrollToBottom;
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	bool m_settingsChanged;
@@ -91,6 +92,7 @@ private:
 
 	bool m_renderGameSettings;
 	bool m_renderApplicationSettings;
+
 
 
 

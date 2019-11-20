@@ -47,7 +47,8 @@ LobbyState::LobbyState(StateStack& stack)
 	*m_settingBotCount = 0;
 	m_timeSinceLastMessage = 0.0f;
 	m_fadeTime = 3.0f;
-	m_fadeThreshold = 3.0f;
+	m_fadeThreshold = -1.0f;
+	m_scrollToBottom = false;
 
 	m_messageSizeLimit = 50;
 	m_currentmessageIndex = 0;
@@ -280,6 +281,7 @@ void LobbyState::addMessageToChat(const Message& message) {
 	if (m_messages.size() > m_messageLimit) {
 		m_messages.pop_front();
 	}
+	m_scrollToBottom = true;
 }
 
 bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
@@ -625,7 +627,7 @@ void LobbyState::renderChat() {
 	);
 	ImVec2 pos(
 		m_outerPadding,
-		m_screenHeight - (m_outerPadding + m_textHeight) - size.y
+		m_screenHeight - (m_outerPadding) - size.y
 	);
 
 
@@ -640,12 +642,11 @@ void LobbyState::renderChat() {
 	}
 	static float alpha = 1.0f;
 	alpha = 1.0f;
-	if (m_timeSinceLastMessage > m_fadeThreshold) {
+	if (m_timeSinceLastMessage > m_fadeThreshold && m_fadeThreshold >= 0.0f ) {
 		pop = true;
 		alpha = 1.0f - ((m_timeSinceLastMessage - m_fadeThreshold) / m_fadeTime);
 		alpha = alpha < 0.02f ? 0.02f : alpha;
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
-		//ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
 
 	}
 
@@ -682,6 +683,10 @@ void LobbyState::renderChat() {
 				}
 				
 				
+			}
+			if (m_scrollToBottom) {
+				ImGui::SetScrollHereY(1.0f);
+				m_scrollToBottom = false;
 			}
 		}
 		ImGui::EndChild();
