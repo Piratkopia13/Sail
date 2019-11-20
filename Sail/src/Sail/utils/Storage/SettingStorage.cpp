@@ -272,8 +272,8 @@ void SettingStorage::createGameColorsDefault() {
 			{ "Pink", 7.0f },
 			{ "Violet", 8.0f },
 			{ "Grey", 9.0f },
-			{ "Green", 10.0f },
-			{ "LGreen", 11.0f },
+			{ "Dark Green", 10.0f },
+			{ "Light Green", 11.0f },
 		}));
 	}
 }

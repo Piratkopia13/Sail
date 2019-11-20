@@ -572,8 +572,8 @@ void LobbyState::renderPlayerList() {
 				ImGui::EndPopup();
 			}
 			
+			//KEEP THIS FOR NOW
 			//ImGui::OpenPopupOnItemClick(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str(), 1);
-
 			//if (ImGui::IsItemHovered()) {
 				//ImGui::SetTooltip("First group hovered");
 			// }
