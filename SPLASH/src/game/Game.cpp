@@ -14,7 +14,13 @@ Game::Game(HINSTANCE hInstance)
 	
 {
 	// Register states
-	registerStates();
+	registerStates(); 
+
+#ifdef DEVELOPMENT
+	Application::getInstance()->getWindow()->setWindowTitle("S.P.L.A.S.H.2.O | Development");
+#else
+	Application::getInstance()->getWindow()->setWindowTitle("S.P.L.A.S.H.2.O");
+#endif
 
 	// Set starting state
 	m_stateStack.pushState(States::SplashScreen);
