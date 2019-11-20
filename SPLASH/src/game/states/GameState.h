@@ -40,9 +40,9 @@ private:
 	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
 	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
-
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
-	
+	void onToggleSlowMotion(const ToggleSlowMotionReplayEvent& event);
+
 	void shutDownGameState();
 
 	// Where to updates the component systems. Responsibility can be moved to other places
@@ -103,6 +103,9 @@ private:
 	bool m_wasDropped = false;
 
 	bool m_isInKillCamMode = false;
+	size_t m_killCamTickCounter = 0; // Counts ticks in the range [ 0, SLOW_MO_MULTIPLIER )
+	//SlowMotionSetting m_slowMotionState = SlowMotionSetting::DISABLE;
+	SlowMotionSetting m_slowMotionState = SlowMotionSetting::ENABLE;
 
 #ifdef _PERFORMANCE_TEST
 	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);

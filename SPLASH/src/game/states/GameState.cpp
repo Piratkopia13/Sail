@@ -24,6 +24,11 @@
 #include "API/DX12/renderer/DX12HybridRaytracerRenderer.h"
 #include "API/DX12/dxr/DXRBase.h"
 
+// TODO: Move to somewhere more appropriate
+constexpr size_t SLOW_MO_MULTIPLIER = 4;
+
+
+
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
@@ -37,6 +42,7 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
+	EventDispatcher::Instance().subscribe(Event::Type::TOGGLE_SLOW_MOTION, this);
 
 
 	// Get the Application instance
@@ -244,6 +250,7 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_SLOW_MOTION, this);
 }
 
 // Process input for the state
@@ -600,13 +607,13 @@ bool GameState::onEvent(const Event& event) {
 	State::onEvent(event);
 
 	switch (event.type) {
-		case Event::Type::WINDOW_RESIZE:					onResize((const WindowResizeEvent&)event); break;
-		case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED:	onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
-		case Event::Type::NETWORK_DISCONNECT:				onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
-		case Event::Type::NETWORK_DROPPED:					onPlayerDropped((const NetworkDroppedEvent&)event); break;
-		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS:	onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
-		case Event::Type::NETWORK_JOINED:	onPlayerJoined((const NetworkJoinedEvent&)event); break;
-
+		case Event::Type::WINDOW_RESIZE:                    onResize((const WindowResizeEvent&)event); break;
+		case Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED: onNetworkSerializedPackageEvent((const NetworkSerializedPackageEvent&)event); break;
+		case Event::Type::NETWORK_DISCONNECT:               onPlayerDisconnect((const NetworkDisconnectEvent&)event); break;
+		case Event::Type::NETWORK_DROPPED:                  onPlayerDropped((const NetworkDroppedEvent&)event); break;
+		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS: onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
+		case Event::Type::NETWORK_JOINED:                   onPlayerJoined((const NetworkJoinedEvent&)event); break;
+		case Event::Type::TOGGLE_SLOW_MOTION:               onToggleSlowMotion((const ToggleSlowMotionReplayEvent&)event); break;
 		default: break;
 	}
 
@@ -655,6 +662,10 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	return true;
 }
 
+void GameState::onToggleSlowMotion(const ToggleSlowMotionReplayEvent& event) {
+	m_slowMotionState = event.setting;
+}
+
 void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
 
 	if (NWrapperSingleton::getInstance().isHost() && m_gameStarted) {
@@ -673,7 +684,7 @@ bool GameState::update(float dt, float alpha) {
 	m_killFeedWindow.updateTiming(dt);	
 	waitForOtherPlayers();
 
-	//Dont update game if game have not started. This is to sync all players to start at the same time
+	//Don't update game if game have not started. This is to sync all players to start at the same time
 	if (!m_gameStarted) {
 		return true;
 	}
@@ -698,7 +709,7 @@ bool GameState::fixedUpdate(float dt) {
 
 	counter += dt * 2.0f;
 
-	//Dont update game if game have not started. This is to sync all players to start at the same time
+	//Don't update game if game have not started. This is to sync all players to start at the same time
 	if (!m_gameStarted) {
 		return true;
 	}
@@ -728,6 +739,8 @@ bool GameState::fixedUpdate(float dt) {
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
 bool GameState::render(float dt, float alpha) {
+	static float killCamAlpha = 0.f;
+
 	// Clear back buffer
 	m_app->getAPI()->clear({ 0.01f, 0.01f, 0.01f, 1.0f });
 
@@ -735,8 +748,14 @@ bool GameState::render(float dt, float alpha) {
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
 
 	if (m_isInKillCamMode) {
-		m_componentSystems.killCamModelSubmitSystem->submitAll(alpha);
-		m_componentSystems.killCamMetaballSubmitSystem->submitAll(alpha);
+		if (m_slowMotionState == SlowMotionSetting::ENABLE) {
+			killCamAlpha = (m_killCamTickCounter + alpha) / SLOW_MO_MULTIPLIER;
+		} else {
+			killCamAlpha = alpha;
+		}
+
+		m_componentSystems.killCamModelSubmitSystem->submitAll(killCamAlpha);
+		m_componentSystems.killCamMetaballSubmitSystem->submitAll(killCamAlpha);
 	} else {
 		m_componentSystems.modelSubmitSystem->submitAll(alpha);
 		m_componentSystems.particleSystem->submitAll();
@@ -816,7 +835,14 @@ void GameState::shutDownGameState() {
 
 // TODO: Add more systems here that only deal with replay entities/components
 void GameState::updatePerTickKillCamComponentSystems(float dt) {
-	
+
+	m_killCamTickCounter = (m_killCamTickCounter + 1) % SLOW_MO_MULTIPLIER;
+
+	// If slow motion is enabled only update once every SLOW_MO_MULTIPLIER ticks
+	if (m_slowMotionState == SlowMotionSetting::ENABLE && m_killCamTickCounter != 0) {
+		return;
+	}
+
 	m_componentSystems.killCamReceiverSystem->prepareUpdate();
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
 }

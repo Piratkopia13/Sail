@@ -59,9 +59,11 @@ void KillCamReceiverSystem::init(Netcode::PlayerID player) {
 }
 
 void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
-	std::lock_guard<std::mutex> lock(m_replayDataLock);
+	if (!m_hasStarted) { // Stop writing data to this once the 
+		std::lock_guard<std::mutex> lock(m_replayDataLock);
 
-	m_replayData[m_currentWriteInd].push(data);
+		m_replayData[m_currentWriteInd].push(data);
+	}
 }
 
 
