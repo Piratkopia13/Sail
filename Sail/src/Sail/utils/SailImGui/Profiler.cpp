@@ -26,14 +26,14 @@ Profiler::~Profiler() {
 	delete[] m_fixedUpdateHistory;
 	delete[] m_averageSentPacketSizeHistory;
 
-	delete[] m_rmModelsSizeKBHistory;
-	delete[] m_rmAnimationsSizeKBHistory;
+	delete[] m_rmModelsSizeMBHistory;
+	delete[] m_rmAnimationsSizeMBHistory;
 	delete[] m_rmAudioSizeMBHistory;
 	delete[] m_rmTexturesSizeMBHistory;
-	delete[] m_rmGenericSizeBHistory;
+	delete[] m_rmGenericSizeMBHistory;
 
 #ifdef DEVELOPMENT
-	delete[] m_ecsSizeKBHistory;
+	delete[] m_ecsSizeMBHistory;
 #endif
 }
 
@@ -61,14 +61,14 @@ void Profiler::init() {
 	m_fixedUpdateHistory = SAIL_NEW float[100];
 	m_averageSentPacketSizeHistory = SAIL_NEW float[100];
 
-	m_rmModelsSizeKBHistory = SAIL_NEW float[100];
-	m_rmAnimationsSizeKBHistory = SAIL_NEW float[100];
+	m_rmModelsSizeMBHistory = SAIL_NEW float[100];
+	m_rmAnimationsSizeMBHistory = SAIL_NEW float[100];
 	m_rmAudioSizeMBHistory = SAIL_NEW float[100];
 	m_rmTexturesSizeMBHistory = SAIL_NEW float[100];
-	m_rmGenericSizeBHistory = SAIL_NEW float[100];
+	m_rmGenericSizeMBHistory = SAIL_NEW float[100];
 
 #ifdef DEVELOPMENT
-	m_ecsSizeKBHistory = SAIL_NEW float[100];
+	m_ecsSizeMBHistory = SAIL_NEW float[100];
 #endif
 
 	for (int i = 0; i < 100; i++) {
@@ -80,14 +80,14 @@ void Profiler::init() {
 		m_fixedUpdateHistory[i] = 0.f;
 		m_averageSentPacketSizeHistory[i] = 0.f;
 
-		m_rmModelsSizeKBHistory[i] = 0.f;
-		m_rmAnimationsSizeKBHistory[i] = 0.f;
+		m_rmModelsSizeMBHistory[i] = 0.f;
+		m_rmAnimationsSizeMBHistory[i] = 0.f;
 		m_rmAudioSizeMBHistory[i] = 0.f;
 		m_rmTexturesSizeMBHistory[i] = 0.f;
-		m_rmGenericSizeBHistory[i] = 0.f;
+		m_rmGenericSizeMBHistory[i] = 0.f;
 
 #ifdef DEVELOPMENT
-		m_ecsSizeKBHistory[i] = 0.f;
+		m_ecsSizeMBHistory[i] = 0.f;
 #endif
 	}
 }
@@ -207,30 +207,30 @@ void Profiler::renderWindow() {
 			}
 			if (ImGui::CollapsingHeader("Resource Manager")) {
 				if (ImGui::CollapsingHeader("Models Graph")) {
-					header = "\n\n\n" + m_rmModelsKB + "(KB)";
-					ImGui::PlotLines(header.c_str(), m_rmModelsSizeKBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
+					header = "\n\n\n" + m_rmModelsMB + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_rmModelsSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
 				}
 				if (ImGui::CollapsingHeader("Animations Graph")) {
-					header = "\n\n\n" + m_rmAnimationsKB + "(KB)";
-					ImGui::PlotLines(header.c_str(), m_rmAnimationsSizeKBHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
+					header = "\n\n\n" + m_rmAnimationsMB + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_rmAnimationsSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
 				}
 				if (ImGui::CollapsingHeader("Audio Graph")) {
 					header = "\n\n\n" + m_rmAudioMB + "(MB)";
-					ImGui::PlotLines(header.c_str(), m_rmAudioSizeMBHistory, 100, 0, "", 0.f, 200.f, ImVec2(0, 100));
+					ImGui::PlotLines(header.c_str(), m_rmAudioSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
 				}
 				if (ImGui::CollapsingHeader("Textures Graph")) {
 					header = "\n\n\n" + m_rmTexturesMB + "(MB)";
-					ImGui::PlotLines(header.c_str(), m_rmTexturesSizeMBHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+					ImGui::PlotLines(header.c_str(), m_rmTexturesSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
 				}
 				if (ImGui::CollapsingHeader("Generic Graph")) {
-					header = "\n\n\n" + m_rmGenericB + "(B)";
-					ImGui::PlotLines(header.c_str(), m_rmGenericSizeBHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+					header = "\n\n\n" + m_rmGenericMB + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_rmGenericSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
 				}
 			}
 #ifdef DEVELOPMENT
 			if (ImGui::CollapsingHeader("ECS Memory Graph")) {
-				header = "\n\n\n" + m_ecsKB + "(kB)";
-				ImGui::PlotLines(header.c_str(), m_ecsSizeKBHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+				header = "\n\n\n" + m_ecsMB + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_ecsSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
 			}
 #endif
 
@@ -258,6 +258,10 @@ void Profiler::renderWindow() {
 				const unsigned int ecsByteSize = ECS::Instance()->getByteSize();
 #endif
 
+				auto byteToMB = [] (size_t bytes) -> float {
+					return (float)bytes / (1024.f * 1024.f);
+				};
+
 				if (m_profilerCounter < 100) {
 
 					m_virtRAMHistory[m_profilerCounter] = (float)virtMemUsage();
@@ -267,14 +271,14 @@ void Profiler::renderWindow() {
 					m_fixedUpdateHistory[m_profilerCounter] = latestFixedUpdate;
 					m_averageSentPacketSizeHistory[m_profilerCounter] = (float)averagePacketSize;
 
-					m_rmModelsSizeKBHistory[m_profilerCounter] = (float)rmModelsByteSize / 1024.f;
-					m_rmAnimationsSizeKBHistory[m_profilerCounter] = (float)rmAnimationsByteSize / 1024.f;
-					m_rmAudioSizeMBHistory[m_profilerCounter] = (float)rmAudioByteSize / (1024.f * 1024.f);
-					m_rmTexturesSizeMBHistory[m_profilerCounter] = (float)rmTexturesByteSize / (1024.f * 1024.f);
-					m_rmGenericSizeBHistory[m_profilerCounter] = rmGenericByteSize;
+					m_rmModelsSizeMBHistory[m_profilerCounter] = byteToMB(rmModelsByteSize);
+					m_rmAnimationsSizeMBHistory[m_profilerCounter] = byteToMB(rmAnimationsByteSize);
+					m_rmAudioSizeMBHistory[m_profilerCounter] = byteToMB(rmAudioByteSize);
+					m_rmTexturesSizeMBHistory[m_profilerCounter] = byteToMB(rmTexturesByteSize);
+					m_rmGenericSizeMBHistory[m_profilerCounter] = byteToMB(rmGenericByteSize);
 
 #ifdef DEVELOPMENT
-					m_ecsSizeKBHistory[m_profilerCounter] = (float)ecsByteSize / 1024.f;
+					m_ecsSizeMBHistory[m_profilerCounter] = byteToMB(ecsByteSize);
 #endif
 					m_cpuHistory[m_profilerCounter++] = (float)processUsage();
 					
@@ -287,14 +291,14 @@ void Profiler::renderWindow() {
 					m_potentialFixedUpdateRate = std::to_string(static_cast<int>(1.0f / latestFixedUpdate));
 					m_averageSentPacketSize = std::to_string(static_cast<size_t>(averagePacketSize * updateFrequency));
 
-					m_rmModelsKB = std::to_string(static_cast<float>(rmModelsByteSize) / 1024.f);
-					m_rmAnimationsKB = std::to_string(static_cast<float>(rmAnimationsByteSize) / 1024.f);
-					m_rmAudioMB = std::to_string(static_cast<float>(rmAudioByteSize) / (1024.f * 1024.f));
-					m_rmTexturesMB = std::to_string(static_cast<float>(rmTexturesByteSize) / (1024.f * 1024.f));
-					m_rmGenericB = std::to_string(rmGenericByteSize);
+					m_rmModelsMB = std::to_string(byteToMB(rmModelsByteSize));
+					m_rmAnimationsMB = std::to_string(byteToMB(rmAnimationsByteSize));
+					m_rmAudioMB = std::to_string(byteToMB(rmAudioByteSize));
+					m_rmTexturesMB = std::to_string(byteToMB(rmTexturesByteSize));
+					m_rmGenericMB = std::to_string(byteToMB(rmGenericByteSize));
 
 #ifdef DEVELOPMENT
-					m_ecsKB = std::to_string(static_cast<float>(ecsByteSize) / 1024.f);
+					m_ecsMB = std::to_string(byteToMB(ecsByteSize));
 #endif
 
 				} else {
@@ -334,14 +338,14 @@ void Profiler::renderWindow() {
 					m_averageSentPacketSizeHistory = tempFloatArr7;
 					m_averageSentPacketSize = std::to_string(static_cast<size_t>(averagePacketSize*updateFrequency));
 
-					copyHistory(&m_rmModelsSizeKBHistory, m_rmModelsKB, (float)rmModelsByteSize / 1024.f);
-					copyHistory(&m_rmAnimationsSizeKBHistory, m_rmAnimationsKB, (float)rmAnimationsByteSize / 1024.f);
-					copyHistory(&m_rmAudioSizeMBHistory, m_rmAudioMB, (float)rmAudioByteSize / (1024.f * 1024.f));
-					copyHistory(&m_rmTexturesSizeMBHistory, m_rmTexturesMB, (float)rmTexturesByteSize / (1024.f * 1024.f));
-					copyHistory(&m_rmGenericSizeBHistory, m_rmGenericB, rmGenericByteSize);
+					copyHistory(&m_rmModelsSizeMBHistory, m_rmModelsMB, byteToMB(rmModelsByteSize));
+					copyHistory(&m_rmAnimationsSizeMBHistory, m_rmAnimationsMB, byteToMB(rmAnimationsByteSize));
+					copyHistory(&m_rmAudioSizeMBHistory, m_rmAudioMB, byteToMB(rmAudioByteSize));
+					copyHistory(&m_rmTexturesSizeMBHistory, m_rmTexturesMB, byteToMB(rmTexturesByteSize));
+					copyHistory(&m_rmGenericSizeMBHistory, m_rmGenericMB, byteToMB(rmGenericByteSize));
 
 #ifdef DEVELOPMENT
-					copyHistory(&m_ecsSizeKBHistory, m_ecsKB, (float)ecsByteSize / 1024.f);
+					copyHistory(&m_ecsSizeMBHistory, m_ecsMB, byteToMB(ecsByteSize));
 #endif
 				}
 			}
