@@ -268,6 +268,8 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	{
 		ar(e->getComponent<AnimationComponent>()->animationIndex);
 		ar(e->getComponent<AnimationComponent>()->animationTime);
+
+
 		ar(e->getComponent<AnimationComponent>()->pitch);
 	}
 	break; 

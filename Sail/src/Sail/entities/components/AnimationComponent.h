@@ -63,11 +63,15 @@ public:
 			transitionTime = time;
 			transpiredTime = 0.0f;
 			waitForEnd = wait;
+			done = true;
+			toIndex = 51020130;
 		}
 		Animation* to;
 		float transitionTime;
 		float transpiredTime;
 		bool waitForEnd;
+		bool done;
+		unsigned int toIndex;
 	};
 
 public:
@@ -90,7 +94,7 @@ public:
 	float animationSpeed;
 	std::string animationName;
 	Animation* currentAnimation;
-	Animation* nextAnimation;
+	//Animation* nextAnimation;
 	bool blending;
 	unsigned int transformSize;
 	bool hasUpdated;
@@ -113,7 +117,7 @@ public:
 
 	std::unique_ptr<VertexBuffer> tposeVBuffer;
 
-	std::queue<Transition> transitions;
+	//std::queue<Transition> transitions;
 	Transition* currentTransition;
 
 	// Used for upper body rotation

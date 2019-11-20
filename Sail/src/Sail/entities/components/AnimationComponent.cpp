@@ -9,7 +9,7 @@ AnimationComponent::AnimationComponent(AnimationStack* animationStack) :
 	animationSpeed(1.0f),
 	animationName(""),
 	currentAnimation(nullptr),
-	nextAnimation(nullptr),
+	//nextAnimation(nullptr),
 	blending(false),
 	transformSize(0),
 	hasUpdated(false),
@@ -22,6 +22,7 @@ AnimationComponent::AnimationComponent(AnimationStack* animationStack) :
 	currentTransition(nullptr),
 	m_stack(animationStack)
 {
+	currentTransition = new Transition(nullptr, 0.1f, false);
 	transformSize = m_stack->getAnimation(0)->getAnimationTransformSize(unsigned int(0));
 	transforms = SAIL_NEW glm::mat4[transformSize];
 }
@@ -38,11 +39,26 @@ AnimationComponent::~AnimationComponent() {
 }
 
 void AnimationComponent::setAnimation(const unsigned int index) {
-	animationIndex = index;
+	if (index != animationIndex) {
+		// Transition
+		// Check if not already doing a transition to the said index
+		if (index != currentTransition->toIndex) {
+			currentTransition->done = false;
+			currentTransition->transpiredTime = 0.f;
+			currentTransition->transitionTime = 0.1f; // Should probably differ from animation to animation
+			if (index > m_stack->getAnimationCount()) {
+				currentTransition->toIndex = 0;
+			} else {
+				currentTransition->toIndex = index;
+			}
+			currentTransition->to = m_stack->getAnimation(currentTransition->toIndex);
+		}
+	}
+	/*animationIndex = index;
 	if (animationIndex > m_stack->getAnimationCount()) {
 		animationIndex = 0;
 	}
-	currentAnimation = m_stack->getAnimation(animationIndex);
+	currentAnimation = m_stack->getAnimation(animationIndex);*/
 }
 void AnimationComponent::setAnimation(const std::string& name) {
 	animationIndex = m_stack->getAnimationIndex(name);
@@ -63,20 +79,24 @@ void AnimationComponent::imguiRender(Entity** selected) {
 	AnimationStack* stack = animationC->getAnimationStack();
 	float w = animationC->animationW;
 	ImGui::SliderFloat("weight", &w, 0.0f, 1.0f);
-	ImGui::Text("AnimationStack");
-	
+	ImGui::Text("Current transition");
+	ImGui::Text(("toIndex: " + std::to_string(animationC->currentTransition->toIndex)).c_str());
+	ImGui::Text(("done: " + std::to_string(animationC->currentTransition->done)).c_str());
+	ImGui::Text(("transpiredTime: " + std::to_string(animationC->currentTransition->transpiredTime)).c_str());
+	ImGui::Text(("transitionTime: " + std::to_string(animationC->currentTransition->transitionTime)).c_str());
+	ImGui::Text("AnimationStack");	
 	for (unsigned int animationTrack = 0; animationTrack < stack->getAnimationCount(); animationTrack++) {
 		float time = -1;
 		if (animationC->currentAnimation == stack->getAnimation(animationTrack)) {
 			time = animationC->animationTime;
 		}
-		if (animationC->nextAnimation == stack->getAnimation(animationTrack)) {
+		if (animationC->currentTransition->to == stack->getAnimation(animationTrack)) {
 			if (time > -1) {
-				float time2 = animationC->transitions.front().transpiredTime;
+				float time2 = animationC->currentTransition->transpiredTime;
 				ImGui::SliderFloat(std::string("CurrentTime: " + std::to_string(animationTrack) + "T").c_str(), &time2, 0.0f, stack->getAnimation(animationTrack)->getMaxAnimationTime());
 			}
 			else {
-				time = animationC->transitions.front().transpiredTime;
+				time = animationC->currentTransition->transpiredTime;
 			}
 		}
 		if (time == -1) {
@@ -96,7 +116,11 @@ void AnimationComponent::imguiRender(Entity** selected) {
 	}
 	for (unsigned int animationIndex = 0; animationIndex < stack->getAnimationCount(); animationIndex++) {
 		if (ImGui::Button(std::string("Switch to " + stack->getAnimation(animationIndex)->getName()).c_str())) {
-			animationC->transitions.emplace(stack->getAnimation(animationIndex), transitionTime, transitionWait);
+			//animationC->transitions.emplace(stack->getAnimation(animationIndex), transitionTime, transitionWait);
+			animationC->currentTransition->to = stack->getAnimation(animationIndex);
+			animationC->currentTransition->transitionTime = transitionTime;
+			animationC->currentTransition->transpiredTime = 0.f;
+			animationC->currentTransition->waitForEnd = transitionWait;
 		}
 		ImGui::Separator();
 	}
