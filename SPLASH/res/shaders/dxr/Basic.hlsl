@@ -138,7 +138,7 @@ void rayGen() {
 	float emisivenessOne = mrao.a;
 	float originalAoOne = aoOne;
 	// Change material if first bounce color should be water on a surface
-	// getWaterMaterialOnSurface(albedoOne, metalnessOne, roughnessOne, aoOne, worldNormal, worldPosition); // TODO: fix and uncomment
+	getWaterMaterialOnSurface(albedoOne, metalnessOne, roughnessOne, aoOne, worldNormal, worldPosition); // TODO: fix and uncomment
 
 	RayDesc ray;
 	ray.Origin = worldPosition;

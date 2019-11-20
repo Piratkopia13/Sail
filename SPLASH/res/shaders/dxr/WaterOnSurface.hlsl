@@ -1,3 +1,4 @@
+// #define WATER_DEBUG
 void getWaterMaterialOnSurface(inout float3 albedo, inout float metalness, inout float roughness, inout float ao, inout float3 worldNormal, float3 worldPosition) {
 	// =================================================
 	//  Render pixel as water if close to a water point
@@ -41,8 +42,8 @@ void getWaterMaterialOnSurface(inout float3 albedo, inout float metalness, inout
 				[unroll]
 				for (uint index = start; index <= end; index++) {
 					uint up = Utils::unpackQuarterFloat(packedR, index);
-					if (up < 255) {
-						half r = (255.h - up) * 0.00392156863h; // That last wierd one is 1 / 255
+					if (up > 0) {
+						half r = up * 0.00392156863h; // That last wierd one is 1 / 255
 						// r = 1.0f;
 						float3 waterPointWorldPos = (float3(x*4+index,y,z) + 0.5f) * cellWorldSize + CB_SceneData.mapStart;
 
@@ -63,7 +64,7 @@ void getWaterMaterialOnSurface(inout float3 albedo, inout float metalness, inout
 
 	if (sum > 0.8f) {
 #ifdef WATER_DEBUG
-		albedo = float(1.0f, 0.f, 0.f);
+		albedo = float3(1.0f, 0.f, 0.f);
 		return;
 #endif
 		float waterOpacity = clamp(sum / 1.f, 0.f, 0.8f);
