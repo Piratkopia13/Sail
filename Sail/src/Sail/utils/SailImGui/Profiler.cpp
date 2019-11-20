@@ -228,6 +228,7 @@ void Profiler::renderWindow() {
 				}
 			}
 #ifdef DEVELOPMENT
+			ImGui::Text(("ECS Components " + std::to_string((float)ECS::Instance()->getByteSizeComponents() / (1024.f * 1024.f)) + "(MB)").c_str());
 			if (ImGui::CollapsingHeader("ECS Memory Graph")) {
 				header = "\n\n\n" + m_ecsMB + "(MB)";
 				ImGui::PlotLines(header.c_str(), m_ecsSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));

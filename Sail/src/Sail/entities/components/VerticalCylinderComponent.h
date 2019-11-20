@@ -8,4 +8,10 @@ public:
 	~VerticalCylinderComponent() {}
 
 	VerticalCylinder cylinder;
+
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+#endif
 };
