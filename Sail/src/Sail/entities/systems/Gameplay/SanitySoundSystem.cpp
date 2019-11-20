@@ -41,13 +41,11 @@ void SanitySoundSystem::update(float dt) {
 				m_switch_ambiance = true;
 				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", true, 1.0f, false, true);
 			}
-		}
-		else if (m_switch_ambiance) {
+		} else if (m_switch_ambiance) {
 			if (sanity == TIMEPOINT_AMBIANCE) {
 				m_switch_ambiance = false;
 				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", false, 1.0f, false, true);
-			}
-			else {
+			} else {
 				float tempX = (1.0f - sanity);
 				// Logarithmic increase of volume = linear to our ears
 				ac->streamSetVolume_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", volume);

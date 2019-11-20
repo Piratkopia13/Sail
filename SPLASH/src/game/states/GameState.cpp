@@ -522,7 +522,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 
 	// Create systems needed for the killcam
-	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
+	m_componentSystems.killCamReceiverSystem->init(playerID);
 	m_componentSystems.killCamModelSubmitSystem    = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMetaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInReplayComponent>>();
 
