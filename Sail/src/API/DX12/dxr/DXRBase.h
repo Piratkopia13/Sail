@@ -29,6 +29,7 @@ public:
 
 	struct MetaballGroup {
 		int index;
+		int gpuGroupStartOffset; //offset in gpu structured buffer for metaball positions
 		std::vector<DXRBase::Metaball> balls;
 		D3D12_RAYTRACING_AABB aabb;
 	};

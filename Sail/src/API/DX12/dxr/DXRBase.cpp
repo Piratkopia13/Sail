@@ -241,8 +241,11 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::map<in
 	newData.cameraDirection = cam.getDirection();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
 	newData.nMetaballGroups = metaballGroups.size();
-	newData.metaballGroup[0].start = 0;
-	newData.metaballGroup[0].size = (newData.nMetaballGroups > 0) ? metaballGroups.at(0).balls.size() : 0;
+
+	for (auto& group : metaballGroups) {
+		newData.metaballGroup[group.second.index].start = group.second.gpuGroupStartOffset;
+		newData.metaballGroup[group.second.index].size = group.second.balls.size();
+	}
 
 	newData.nDecals = m_decalsToRender;
 	newData.doTonemapping = doToneMapping;

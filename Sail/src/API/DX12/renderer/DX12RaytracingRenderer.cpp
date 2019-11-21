@@ -65,6 +65,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 
 	int gpuGroupIndex = 0;
+	int gpuGroupStartOffset = 0;
 	for (auto& group : m_metaballGroups) {
 		//std::sort(group.second.balls.begin(), group.second.balls.end(),
 		//	[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
@@ -117,6 +118,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 		group.second.aabb = nextMetaballAabb;
 		group.second.index = gpuGroupIndex++;
+		group.second.gpuGroupStartOffset = gpuGroupStartOffset;
+		gpuGroupStartOffset += group.second.balls.size();
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_DXR_SHADER)) {
