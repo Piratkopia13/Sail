@@ -828,21 +828,6 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			m_isStreaming[myIndex] = false;
 		}
 
-		//if (!m_isStreaming[myIndex])
-		//{
-		//	m_sourceVoiceStream[myIndex]->SetVolume(0);
-
-		//	XAUDIO2_VOICE_STATE state;
-		//	for (;;)
-		//	{
-		//		m_sourceVoiceStream[myIndex]->GetState(&state);
-		//		if (!state.BuffersQueued)
-		//			break;
-
-		//		WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
-		//	}
-		//}
-
 		currentChunk = 0;
 		currentVolume = 0;
 		m_stream[myIndex].sourceVoice->Stop();
@@ -859,14 +844,6 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 	m_isFinished[myIndex] = true;
 	m_streamLocks[myIndex].store(false);
-
-		// Commented-out because it causes a crash during death of other player
-	// Clean up audio component as well
-	//if (pAudioC != nullptr) {
-	//	if (pAudioC->m_currentlyStreaming.size() == 1) {
-	//		pAudioC->m_currentlyStreaming.clear();
-	//	}
-	//}
 }
 
 //--------------------------------------------------------------------------------------

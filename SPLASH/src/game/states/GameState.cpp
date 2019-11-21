@@ -271,8 +271,26 @@ bool GameState::processInput(float dt) {
 	Input::HideCursor(true);		//Shreks multiple applications on the same computer
 #endif
 
+	// Unpause Game
+	if (m_readyRestartAmbiance)
+	{
+		if (m_restartAmbianceTimer > 5.5f) {
+			std::cout << "1 - REQUESTING\n";
+			m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
+			m_readyRestartAmbiance = false;
+			m_restartAmbianceTimer = 0.0f;
+		}
+
+		else if (m_readyRestartAmbiance) {
+			m_restartAmbianceTimer += dt;
+		}
+	}
+
 	// Pause game
 	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::SHOW_IN_GAME_MENU)) {
+		std::cout << "WEEOOOWWOOEWE\n";
+		m_readyRestartAmbiance = true;
+		ECS::Instance()->getSystem<AudioSystem>()->stop();
 		requestStackPush(States::InGameMenu);
 	}
 
