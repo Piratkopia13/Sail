@@ -21,16 +21,21 @@ void NetworkInfoWindow::renderWindow() {
 	ImGui::NextColumn();
 	ImGui::Columns(1);
 	if (ImGui::CollapsingHeader("Player List")) {
-		ImGui::Columns(2);
+		ImGui::Columns(3);
 		ImGui::Text("Player ID");
 		ImGui::NextColumn();
+
 		ImGui::Text("Name");
+		ImGui::NextColumn();
+		ImGui::Text("Team");
 		ImGui::NextColumn();
 		ImGui::Separator();
 		for (auto p : net.getPlayers()) {
 			ImGui::Text(std::to_string(p.id).c_str());
 			ImGui::NextColumn();
 			ImGui::Text(p.name.c_str());
+			ImGui::NextColumn();
+			ImGui::Text(std::to_string((int)p.team).c_str());
 			ImGui::NextColumn();
 		}
 	}

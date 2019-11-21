@@ -129,10 +129,9 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 		randPos += glm::normalize(velocity) * (Utils::rnd() * randomSpread * 2 - randomSpread) * 5.0f;
 
 		auto rayFrom = e->getComponent<TransformComponent>()->getTranslation();
-		auto gunPos = gun->position;
-		rayFrom.y = gunPos.y;
+		rayFrom.y = gun->position.y;
 		Octree::RayIntersectionInfo rayInfo;
-		auto rayDir = gunPos - rayFrom;
+		auto rayDir = gun->position - rayFrom;
 		auto rayDirNorm = glm::normalize(rayDir);
 
 		m_octree->getRayIntersection(rayFrom, rayDirNorm, &rayInfo, e, 0.1f);
@@ -141,7 +140,7 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 				Netcode::MessageType::SPAWN_PROJECTILE,
 				SAIL_NEW Netcode::MessageSpawnProjectile{
-					gunPos + randPos,
+					gun->position + randPos,
 					velocity,
 					Netcode::generateUniqueComponentID(myPlayerID), // Generate unique ComponentID here for our own projectiles
 					e->getComponent<NetworkSenderComponent>()->m_id,
