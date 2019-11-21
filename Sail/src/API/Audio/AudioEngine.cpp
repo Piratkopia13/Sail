@@ -31,8 +31,6 @@
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfuuid")
 #pragma comment(lib, "hrtfapo.lib")
-//#include <xaudio2.h>
-//#include <x3daudio.h>
 
 #include <xaudio2fx.h>
 #pragma comment(lib,"xaudio2.lib")
@@ -104,15 +102,6 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 
 		// Create the source voice
 		hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
-
-		//// Also reset the xAPO + SubmixVoice
-		//m_sound[indexValue].xapo.ReleaseAndGetAddressOf();
-		//m_sound[indexValue].xapo = nullptr;
-		//setUpxAPO(indexValue);
-
-		//m_sound[indexValue].xAPOsubMixVoice->DestroyVoice();
-		//m_sound[indexValue].xAPOsubMixVoice = nullptr;
-		//createXAPOsubMixVoice(&m_sound[indexValue].xAPOsubMixVoice, m_sound[indexValue].xapo);
 	}
 
 	m_sound[indexValue].xAPOsubMixVoice->SetVolume(volume);
