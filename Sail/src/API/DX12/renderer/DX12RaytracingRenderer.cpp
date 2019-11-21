@@ -321,7 +321,9 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 	}
 	if (lightSetup) {
 		auto& plData = lightSetup->getPointLightsData();
+		auto& slData = lightSetup->getSpotLightsData();
 		shaderPipeline->setCBufferVar("pointLights", &plData, sizeof(plData));
+		shaderPipeline->setCBufferVar("spotLights", &slData, sizeof(slData));
 	}
 
 	static_cast<DX12Mesh*>(m_fullscreenModel->getMesh(0))->draw_new(*this, cmdList, -numCustomSRVs);

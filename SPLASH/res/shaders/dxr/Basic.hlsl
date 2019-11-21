@@ -66,7 +66,7 @@ float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal,
 	const uint numSamples = 1;
     const float lightRadius = 0.08f;
 	// Shoot a ray towards a random point on the light
-	PointLightInput p = CB_SceneData.pointLights[lightIndex];
+	PointlightInput p = CB_SceneData.pointLights[lightIndex];
 
 	// Ignore point light if color is black
 	if (all(p.color == 0.0f)) {

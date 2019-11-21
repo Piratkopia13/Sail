@@ -72,9 +72,9 @@ struct Vertex {
 	float3 bitangent;
 };
 
-struct PointLightInput {
+struct PointlightInput {
 	float3 color;
-	float padding;
+	float padding1;
 	float3 position;
     float attConstant;
     float attLinear;
@@ -83,15 +83,18 @@ struct PointLightInput {
 };
 
 struct SpotlightInput {
+	// This part must match point light input
+	// (all lights are casted to PointLightInput during shading)
 	float3 color;
-	float attConstant;
+	float padding1;
 	float3 position;
-	float attLinear;
+    float attConstant;
+    float attLinear;
+    float attQuadratic;
+	float2 padding2;
+	// This part can be unique for each light type
 	float3 direction;
-	float attQuadratic;
-
 	float angle;
-	float padding1, padding2, padding3;
 };
 
 // Properties set once for the scene
@@ -107,7 +110,7 @@ struct SceneCBuffer {
 	float nearZ;
 	float farZ;
 	float padding2;
-    PointLightInput pointLights[NUM_POINT_LIGHTS];
+    PointlightInput pointLights[NUM_POINT_LIGHTS];
     SpotlightInput spotLights[NUM_POINT_LIGHTS];
 	float4 teamColors[NUM_TEAM_COLORS];
 

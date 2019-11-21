@@ -26,7 +26,8 @@ PSIn VSMain(VSIn input) {
 cbuffer PSSceneCBuffer : register(b0) {
     float3 cameraPosition;
     float padding;
-    PointLightInput pointLights[NUM_POINT_LIGHTS];
+    PointlightInput pointLights[NUM_POINT_LIGHTS];
+    SpotlightInput spotLights[NUM_POINT_LIGHTS];
 }
 
 Texture2D<float4> albedoBounceOne : register(t0);

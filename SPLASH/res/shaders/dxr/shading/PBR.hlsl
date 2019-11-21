@@ -41,6 +41,37 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
+float3 shadeWithLight(PointlightInput light, float3 worldPosition, float3 N, float3 V, float3 F0, float3 albedo, float metalness, float roughness, float shadowAmount) {
+    float3 L = normalize(light.position - worldPosition);
+    float3 H = normalize(V + L);
+    float distance = length(light.position - worldPosition);
+
+    float attenuation = 1.f / (light.attConstant + light.attLinear * distance + light.attQuadratic * distance * distance);
+    float3 radiance   = light.color * attenuation;
+
+    float3 F  = fresnelSchlick(max(dot(H, V), 0.0f), F0);
+
+    float NDF = DistributionGGX(N, H, roughness);
+    float G   = GeometrySmith(N, V, L, roughness);
+
+    // Calculate the Cook-Torrance BDRF
+    float3 numerator    = NDF * G * F;
+    float  denominator  = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+    float3 specular     = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
+    specular *= attenuation;
+
+    // The fresnel value directly corresponds to the specular contribution
+    float3 kS = F;
+    // The rest is the diffuse contribution (energy conserving)
+    float3 kD = 1.0f - kS;
+    // Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
+    kD *= 1.0f - metalness;
+
+    // Calculate the light's outgoing reflectance value
+    float NdotL = max(dot(N, L), 0.0f);
+    return (kD * albedo / PI + specular) * radiance * NdotL * shadowAmount;
+}
+
 float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float emissivness, float metalness, float roughness, float ao, float shadow[NUM_SHADOW_TEXTURES], float3 reflectionColor) {
     float3 N = normalize(worldNormal); 
     float3 V = normalize(invViewDir);
@@ -56,55 +87,61 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     float totalShadowAmount = 0.f;
 	uint numLights = 0;
     
-    [unroll]
-    for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-        // float shadowAmount = 1.f;
-        // if (i < 2) {
-        //     shadowAmount = shadow[i];
-        // }
-        float shadowAmount = shadow[min(i, NUM_SHADOW_TEXTURES - 1)]; // This line casues debug to not launch
-        // float shadowAmount = 1.f;
-        PointLightInput p = pointLights[i];
-        
-        // Ignore point light if color is black
-        if (all(p.color == 0.0f)) {
-            continue;
+    // Do lighting from all light sources
+    {
+        // Point lights
+        [unroll]
+        for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
+            // float shadowAmount = 1.f;
+            // if (i < 2) {
+            //     shadowAmount = shadow[i];
+            // }
+            float shadowAmount = shadow[min(i, NUM_SHADOW_TEXTURES - 1)]; // This line casues debug to not launch - Not after dxil update!
+            // float shadowAmount = 1.f;
+            PointlightInput p = pointLights[i];
+            
+            // Ignore point light if color is black
+            if (all(p.color == 0.0f)) {
+                continue;
+            }
+            numLights++;
+            // Dont add light to pixels that are in complete shadow
+            if (shadowAmount == 0.f) {
+                continue;
+            }
+            totalShadowAmount += shadowAmount;
+
+            Lo += shadeWithLight(p, worldPosition, N, V, F0, albedo, metalness, roughness, shadowAmount);
         }
-        numLights++;
-        // Dont add light to pixels that are in complete shadow
-        if (shadowAmount == 0.f) {
-            continue;
-        }
-        totalShadowAmount += shadowAmount;
+        //Spotlights
+		for (int j = 0; j < NUM_POINT_LIGHTS; j++) {
+            float shadowAmount = shadow[min(i, NUM_SHADOW_TEXTURES - 1)]; // TODO: make this unique for spot lights
 
-        float3 L = normalize(p.position - worldPosition);
-        float3 H = normalize(V + L);
-        float distance = length(p.position - worldPosition);
+			SpotlightInput p = spotLights[j];
 
-        float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
-        float3 radiance   = p.color * attenuation;
+			// Ignore point light if color is black
+			if (all(p.color == 0.0f) || p.angle == 0) {
+				continue;
+			}
 
-        float3 F  = fresnelSchlick(max(dot(H, V), 0.0f), F0);
+			float3 L = normalize(p.position - worldPosition);
+			float distance = length(p.position - worldPosition);
+			float angle = dot(L, normalize(p.direction));
+            // Ignore if angle is outside light
+            // abs is used to make spotlights bidirectional
+			if (abs(angle) <= p.angle) {
+				continue;
+			}
 
-        float NDF = DistributionGGX(N, H, roughness);
-        float G   = GeometrySmith(N, V, L, roughness);
+			numLights++;
+			// Dont add light to pixels that are in complete shadow
+            if (shadowAmount == 0.f) {
+                continue;
+            }
+            totalShadowAmount += shadowAmount;
 
-        // Calculate the Cook-Torrance BDRF
-        float3 numerator    = NDF * G * F;
-        float  denominator  = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
-        float3 specular     = numerator / max(denominator, 0.001f); // constrain the denominator to 0.001 to prevent a divide by zero in case any dot product ends up 0.0
-        specular *= attenuation;
-
-        // The fresnel value directly corresponds to the specular contribution
-        float3 kS = F;
-        // The rest is the diffuse contribution (energy conserving)
-        float3 kD = 1.0f - kS;
-        // Because metallic surfaces don't refract light and thus have no diffuse reflections we enforce this property by nullifying kD if the surface is metallic
-        kD *= 1.0f - metalness;
-
-        // Calculate the light's outgoing reflectance value
-        float NdotL = max(dot(N, L), 0.0f);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL * shadowAmount;
+            Lo += shadeWithLight((PointlightInput)p, worldPosition, N, V, F0, albedo, metalness, roughness, shadowAmount);
+		}
     }
 
     // Lerp AO depending on shadow

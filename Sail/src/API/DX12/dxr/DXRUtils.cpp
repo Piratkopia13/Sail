@@ -36,8 +36,10 @@ void DXRUtils::PSOBuilder::addLibrary(const std::string& shaderPath, const std::
 	m_shaderNames.insert(m_shaderNames.end(), names.begin(), names.end());
 
 	DXILShaderCompiler::Desc shaderDesc;
-	shaderDesc.compileArguments.push_back(L"/Gis");
-	shaderDesc.compileArguments.push_back(L"/Zi");
+	shaderDesc.compileArguments.push_back(L"/Gis"); // Declare all variables and values as precise
+#ifdef _DEBUG
+	shaderDesc.compileArguments.push_back(L"/Zi"); // Debug info
+#endif
 	std::wstring stemp = std::wstring(shaderPath.begin(), shaderPath.end());
 	shaderDesc.filePath = stemp.c_str();
 	shaderDesc.entryPoint = L"";

@@ -21,15 +21,18 @@ public:
 	};
 
 	struct SpotlightStruct {
+		// This part must match point light input
+		// (all lights are casted to PointLightInput during shading)
 		glm::vec3 color = glm::vec3(0.f);
-		float attConstant = 0.f;
+		float padding;
 		glm::vec3 position = glm::vec3(0.f);
+		float attConstant = 0.f;
 		float attLinear;
-		glm::vec3 direction = glm::vec3(1.f, 0.0f, 0.0f);
 		float attQuadratic;
-		
+		float padding1, padding2;
+		// This part can be unique for each light type
+		glm::vec3 direction = glm::vec3(1.f, 0.0f, 0.0f);
 		float angle;
-		float padding1, padding2, padding3;
 	};
 
 	struct DirLightBuffer {
