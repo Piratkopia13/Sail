@@ -794,7 +794,6 @@ bool GameState::renderImgui(float dt) {
 	//ImGui::End();
 	//ECS::Instance()->getSystem<AnimationSystem>()->updateHands(lPos, rPos, lRot, rRot);
 
-
 	return false;
 }
 

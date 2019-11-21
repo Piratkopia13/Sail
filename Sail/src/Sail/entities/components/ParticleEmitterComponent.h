@@ -75,6 +75,7 @@ private:
 
 	std::vector<float>* m_particleLife;
 
+	int m_animationIndex;
 
 	struct NewParticleInfo {
 		glm::vec3 pos;
@@ -93,7 +94,7 @@ private:
 
 	struct ParticleData {
 		glm::vec3 position;
-		float padding0;
+		int animationIndex = 0;
 		glm::vec3 velocity;
 		float padding1;
 		glm::vec3 acceleration;

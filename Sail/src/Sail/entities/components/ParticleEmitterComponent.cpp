@@ -45,7 +45,7 @@ void ParticleEmitterComponent::init() {
 
 	auto* context = Application::getInstance()->getAPI<DX12API>();
 
-	m_particlePhysicsSize = 9 * 4; // 9 floats times 4 bytes
+	m_particlePhysicsSize = 11 * 4; // 9 floats times 4 bytes
 
 	m_physicsBufferDefaultHeap = SAIL_NEW wComPtr<ID3D12Resource>[DX12API::NUM_GPU_BUFFERS];
 	for (UINT i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
@@ -122,14 +122,15 @@ void ParticleEmitterComponent::updateTimers(float dt) {
 		}
 	}
 
-	if (spawnTimer >= spawnRate) {
+	if (spawnTimer >= 10.f) {
 		//Spawn the correct number of particles
-		int particlesToSpawn = (int)glm::floor(spawnTimer / glm::max(spawnRate, 0.0001f));
+		int particlesToSpawn = 1;// (int)glm::floor(spawnTimer / glm::max(spawnRate, 0.0001f));
 		spawnParticles(particlesToSpawn);
 		//Decrease timer
-		spawnTimer -= spawnRate * particlesToSpawn;
+		spawnTimer = 0;
 	}
 	spawnTimer += dt;
+	
 }
 
 void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm::vec3& cameraPos) {
@@ -183,6 +184,7 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		for (unsigned int i = 0; i < numPart; i++) {
 			const NewParticleInfo* newParticle_i = &m_cpuOutput[context->getSwapIndex()].newParticles[i];
 			m_inputData.particles[i].position = newParticle_i->pos;
+			m_inputData.particles[i].animationIndex++;// = m_animationIndex % 9;
 			m_inputData.particles[i].velocity = velocity + newParticle_i->spread;
 			m_inputData.particles[i].acceleration = acceleration;
 			m_inputData.particles[i].spawnTime = m_cpuOutput[context->getSwapIndex()].lastFrameTime - newParticle_i->spawnTime;
