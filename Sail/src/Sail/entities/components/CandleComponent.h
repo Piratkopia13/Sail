@@ -32,6 +32,7 @@ public:
 		wasHitThisTick = true;
 		lastDamageSource = source;
 		wasHitByPlayerID = shooterID;
+		userReignition = true;
 	}
 
 	// This function is only called by the host

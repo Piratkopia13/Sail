@@ -25,6 +25,7 @@ SanitySystem::~SanitySystem() {
 void SanitySystem::update(float dt) {
 	const bool isHost = NWrapperSingleton::getInstance().isHost();
 	
+
 	//Only let host control sanity for all players.
 	if (!isHost) {
 		return;
