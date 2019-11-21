@@ -9,6 +9,7 @@
 #include "../SPLASH/src/game/events/NetworkJoinedEvent.h"
 #include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 #include "Sail/events/types/NetworkPlayerChangedTeam.h"
+#include "Sail/events/types/WindowResizeEvent.h"
 
 ChatWindow::ChatWindow(bool showWindow) :
 	m_message(""),
@@ -31,6 +32,7 @@ ChatWindow::ChatWindow(bool showWindow) :
 	m_eventDispatcher->subscribe(Event::Type::NETWORK_JOINED, this);
 	m_eventDispatcher->subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	m_eventDispatcher->subscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+	m_eventDispatcher->subscribe(Event::Type::WINDOW_RESIZE, this);
 
 
 
@@ -61,6 +63,7 @@ ChatWindow::~ChatWindow() {
 	m_eventDispatcher->unsubscribe(Event::Type::NETWORK_JOINED, this);
 	m_eventDispatcher->unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 	m_eventDispatcher->unsubscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+	m_eventDispatcher->unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 bool ChatWindow::onEvent(const Event& event) {
@@ -73,6 +76,8 @@ bool ChatWindow::onEvent(const Event& event) {
 	case Event::Type::NETWORK_JOINED:				onPlayerJoined((const NetworkJoinedEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:			onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_PLAYER_CHANGED_TEAM:	onPlayerTeamChanged((const NetworkPlayerChangedTeam&)event); break;
+	case Event::Type::WINDOW_RESIZE:				onWindowResize((const WindowResizeEvent&)event); break;
+	
 
 	default:
 		break;
@@ -236,6 +241,18 @@ void ChatWindow::clearHistory() {
 	m_messages.clear();
 }
 
+void ChatWindow::setFadeTime(const float& time) {
+	m_fadeTime = time;
+}
+
+void ChatWindow::setFadeThreshold(const float& time) {
+	m_fadeThreshold = time;
+}
+
+void ChatWindow::resetMessageTime() {
+	m_timeSinceLastMessage = 0.0f;
+}
+
 
 bool ChatWindow::onMyTextInput(const ChatSent& event) {
 
@@ -277,6 +294,13 @@ bool ChatWindow::onPlayerTeamChanged(const NetworkPlayerChangedTeam& event) {
 	content += " changed team to " + selectedGameTeams.options[currentlySelected > 0].name;
 	addMessage(255, "", content);
 	return true;
+}
+
+bool ChatWindow::onWindowResize(const WindowResizeEvent& event) {
+
+	m_position.y = event.height - 30 - m_size.y;
+	
+	return false;
 }
 
 bool ChatWindow::onPlayerJoined(const NetworkJoinedEvent& event) {

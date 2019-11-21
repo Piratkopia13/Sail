@@ -16,6 +16,7 @@ struct NetworkChatEvent;
 struct NetworkJoinedEvent;
 struct NetworkDisconnectEvent;
 struct NetworkPlayerChangedTeam;
+struct WindowResizeEvent;
 
 class ChatWindow : public SailImGuiWindow, public EventReceiver {
 public:
@@ -34,17 +35,26 @@ public:
 	void addMessage(const int id, const std::string& name, const std::string message);
 	void clearHistory();
 
-	bool onMyTextInput(const ChatSent& event);
-	bool onRecievedText(const NetworkChatEvent& event);
-	bool onPlayerJoined(const NetworkJoinedEvent& event);
-	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
-	bool onPlayerTeamChanged(const NetworkPlayerChangedTeam& event);
+
+
+	void setFadeTime(const float& time);
+	void setFadeThreshold(const float& time);
+	void resetMessageTime();
+
+
 
 
 
 protected:
 
 	virtual bool onEvent(const Event& event) override;
+	bool onMyTextInput(const ChatSent& event);
+	bool onRecievedText(const NetworkChatEvent& event);
+	bool onPlayerJoined(const NetworkJoinedEvent& event);
+	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
+	bool onPlayerTeamChanged(const NetworkPlayerChangedTeam& event);
+	bool onWindowResize(const WindowResizeEvent& event);
+
 
 private:
 	Application* m_app;
