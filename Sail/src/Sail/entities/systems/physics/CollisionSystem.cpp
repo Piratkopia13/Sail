@@ -239,49 +239,68 @@ const bool CollisionSystem::handleRagdollCollisions(Entity* e, std::vector<Octre
 	bool collisionFound = false;
 	collision->onGround = false;
 
-	std::vector<int> groundIndices;
-	glm::vec3 sumVec(0.0f);
-	std::vector<Octree::CollisionInfo> trueCollisions;
+	std::vector<glm::vec3> movementDiffs;
 
 	for (size_t i = 0; i < ragdollComp->contactPoints.size(); i++) {
-		//----WILL BE USED LATER ON WHEN MOMENTUM IS IMPLEMENTED----
-		/*Transform tempTransform;
-		tempTransform.setRotations(transComp->getRotations());
-		glm::vec3 pos1 = tempTransform.getMatrixWithUpdate() * glm::vec4(ragdollComp->contactPoints[i].localOffSet, 1.0f);
-		tempTransform.rotate(movementComp->rotation * dt);
-		glm::vec3 pos2 = tempTransform.getMatrixWithUpdate() * glm::vec4(ragdollComp->contactPoints[i].localOffSet, 1.0f);
-
-		glm::vec3 bbMovement(0.f);
-		glm::vec3 bbDir = pos2 - pos1;
-		if (glm::length2(bbDir) > 0.0000001f) {
-			bbDir = glm::normalize(bbDir);
-			float bbVelocity = (glm::length(movementComp->rotation) / 2.0f * glm::pi<float>()) * glm::length(ragdollComp->contactPoints[i].localOffSet) * 2.0f * glm::pi<float>();
-			glm::vec3 bbMovement = bbDir * bbVelocity;
-		}
-
-		bbMovement += movementComp->velocity;
-		glm::vec3 updatedMovement = bbMovement; */
-		//----------------------------------------------------------
+		std::vector<int> groundIndices;
+		glm::vec3 sumVec(0.0f);
+		std::vector<Octree::CollisionInfo> trueCollisions;
 
 		//Gather info
 		gatherCollisionInformation(e, &ragdollComp->contactPoints[i].boundingBox, collisions, trueCollisions, sumVec, groundIndices, dt);
+
+		if (groundIndices.size() > 0) {
+			collision->onGround = true;
+		}
+
+		movementDiffs.emplace_back();
+
+		if (trueCollisions.size() > 0) {
+			collisionFound = true;
+
+			//----Angular momentum----
+			/*Transform tempTransform;
+			tempTransform.setRotations(transComp->getRotations());
+			glm::vec3 pos1 = tempTransform.getMatrixWithUpdate() * glm::vec4(ragdollComp->contactPoints[i].localOffSet, 1.0f);
+			tempTransform.rotate(movementComp->rotation * dt);
+			glm::vec3 pos2 = tempTransform.getMatrixWithUpdate() * glm::vec4(ragdollComp->contactPoints[i].localOffSet, 1.0f);*/
+
+			glm::vec3 bbMovement(0.f);
+			/*glm::vec3 bbDir = pos2 - pos1;
+			if (glm::length2(bbDir) > 0.0000001f) {
+				bbDir = glm::normalize(bbDir);
+				float bbVelocity = (glm::length(movementComp->rotation) / 2.0f * glm::pi<float>()) * glm::length(ragdollComp->contactPoints[i].localOffSet) * 2.0f * glm::pi<float>();
+				glm::vec3 bbMovement = bbDir * bbVelocity;
+			}*/
+
+			bbMovement += movementComp->velocity;
+			glm::vec3 updatedMovement = bbMovement;
+			//------------------------
+
+			//Update velocity
+			updateVelocityVec(e, updatedMovement, trueCollisions, sumVec, groundIndices, dt);
+
+			movementDiffs.back() = updatedMovement - bbMovement;
+		}
+		else {
+			movementDiffs.back() = { 0.f, 0.f, 0.f };
+		}
 	}
 
-	if (trueCollisions.size() > 0) {
-		collisionFound = true;
+	glm::vec3 totalMovementDiff(0.f);
+	glm::vec3 totalRotation(0.f);
+
+	for (size_t i = 0; i < ragdollComp->contactPoints.size(); i++) {
+		glm::vec3 offsetVector = transComp->getMatrixWithUpdate() * glm::vec4(ragdollComp->contactPoints[i].localOffSet, 1.0f) - transComp->getMatrixWithUpdate() * glm::vec4(ragdollComp->localCenterOfMass, 1.0f);
+		float hitDot = 0.0f;
+		if (glm::length2(movementDiffs[i]) > 0.f) {
+			float hitDot = glm::dot(glm::normalize(movementDiffs[i]), glm::normalize(offsetVector));
+		}
+		totalMovementDiff += movementDiffs[i] * (1.0f + hitDot);
+		//totalMovementDiff += movementDiffs[i];
 	}
 
-	if (groundIndices.size() > 0) {
-		collision->onGround = true;
-	}
-
-
-	glm::vec3 movement = movementComp->velocity;
-
-	//Update velocity
-	updateVelocityVec(e, movement, trueCollisions, sumVec, groundIndices, dt);
-
-	movementComp->velocity = movement;
+	movementComp->velocity += totalMovementDiff / glm::max((float)ragdollComp->contactPoints.size(), 1.0f);
 
 	return collisionFound;
 }
