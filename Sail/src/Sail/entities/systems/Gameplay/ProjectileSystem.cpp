@@ -72,12 +72,19 @@ void ProjectileSystem::update(float dt) {
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::WATER_HIT_PLAYER,
 						SAIL_NEW Netcode::MessageWaterHitPlayer{
-							collision.entity->getParent()->getComponent<NetworkReceiverComponent>()->m_id
-						}
+							collision.entity->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
+							e->getComponent<NetworkSenderComponent>()->m_id
+						}, true
 					);
+
+					// Alter the crosshair for the local player.
+					if (m_crosshair->hasComponent<CrosshairComponent>() && cc->isLit) {
+						CrosshairComponent* crossC = m_crosshair->getComponent<CrosshairComponent>();
+						crossC->currentlyAltered = true;
+						crossC->passedTimeSinceAlteration = 0.0f;
+					}
 				}
 			}
-
 		}
 
 		// The projectile owner is responsible for destroying their own projectiles
@@ -88,4 +95,14 @@ void ProjectileSystem::update(float dt) {
 
 		projComp->timeSinceLastDecal += dt;
 	}
+}
+
+#ifdef DEVELOPMENT
+unsigned int ProjectileSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
+
+void ProjectileSystem::setCrosshair(Entity* pCrosshair) {
+	m_crosshair = pCrosshair;
 }

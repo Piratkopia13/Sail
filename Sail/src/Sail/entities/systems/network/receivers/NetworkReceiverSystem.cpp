@@ -41,6 +41,16 @@ NetworkReceiverSystem::~NetworkReceiverSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 }
 
+void NetworkReceiverSystem::stop() {
+	m_incomingDataBuffer = std::queue<std::string>(); // Clear the data buffer
+	m_netSendSysPtr = nullptr;
+}
+
+
+void NetworkReceiverSystem::init(Netcode::PlayerID player, NetworkSenderSystem* NSS) {
+	initBase(player);
+	m_netSendSysPtr = NSS;
+}
 
 void NetworkReceiverSystem::pushDataToBuffer(const std::string& data) {
 	std::lock_guard<std::mutex> lock(m_bufferLock);
@@ -53,6 +63,18 @@ void NetworkReceiverSystem::update(float dt) {
 
 	processData(dt, m_incomingDataBuffer);
 }
+
+#ifdef DEVELOPMENT
+unsigned int NetworkReceiverSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	const size_t queueSize = m_incomingDataBuffer.size();
+	size += queueSize * sizeof(std::string);
+	if (queueSize) {
+		size += queueSize * m_incomingDataBuffer.front().capacity() * sizeof(unsigned char);	// Approximate string length
+	}
+	return 0;
+}
+#endif
 
 void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
 	// Early exit if the entity already exists
@@ -82,6 +104,16 @@ void NetworkReceiverSystem::enableSprinklers() {
 	ECS::Instance()->getSystem<SprinklerSystem>()->enableSprinklers();
 }
 
+void NetworkReceiverSystem::endMatch(const GameDataForOthersInfo& info) {
+
+	GameDataTracker::getInstance().setStatsForOtherData(
+		info.bulletsFiredID, info.bulletsFired,
+		info.distanceWalkedID, info.distanceWalked,
+		info.jumpsMadeID, info.jumpsMade);
+
+	endGame(); // This function does different things depending on if you are the host or the client
+}
+
 void NetworkReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId, const Netcode::PlayerID shooterID) {
 	for (auto& e : entities) {
 		if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
@@ -97,19 +129,34 @@ void NetworkReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId
 }
 
 void NetworkReceiverSystem::hitBySprinkler(const Netcode::ComponentID candleOwnerID) {
-	waterHitPlayer(candleOwnerID, Netcode::MESSAGE_SPRINKLER_ID);
+	waterHitPlayer(candleOwnerID, Netcode::SPRINKLER_COMP_ID);
 }
 
 void NetworkReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 	EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
 }
 
-void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
+void NetworkReceiverSystem::matchEnded() {
+
+	NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+		Netcode::MessageType::PREPARE_ENDSCREEN,
+		SAIL_NEW Netcode::MessagePrepareEndScreen(),
+		false
+	);
+
+	GameDataTracker::getInstance().turnOffLocalDataTracking();
+
+	mergeHostsStats();
+	// Dispatch game over event
+	EventDispatcher::Instance().emit(GameOverEvent());
+}
+
+void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::ComponentID killerID) {
 	if (auto e = findFromNetID(networkIdOfKilled); e) {
 		EventDispatcher::Instance().emit(PlayerDiedEvent(
 			e,
 			m_playerEntity,
-			playerIdOfShooter,
+			killerID,
 			networkIdOfKilled)
 		);
 		return;
@@ -169,6 +216,14 @@ void NetworkReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
+void NetworkReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement) {
+	GameDataTracker::getInstance().setStatsForPlayer(player, nrOfKills, placement);
+}
+
+void NetworkReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {
+	EventDispatcher::Instance().emit(UpdateSanityEvent(id, sanity));
+}
+
 // If I requested the projectile it has a local owner
 void NetworkReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	const bool wasRequestedByMe = (Netcode::getComponentOwner(info.ownerID) == m_playerID);
@@ -183,11 +238,21 @@ void NetworkReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	args.ownersNetId   = info.ownerID;
 	args.netCompId     = info.projectileID;
 
+#ifdef _PERFORMANCE_TEST
+	if (!wasRequestedByMe) {
+		// Since the player who spawns a projectile is responsible for destroying it and the projectiles in the 
+		// performance test don't have owners, we limit their lifetime to make it more comparable with how many
+		// projectiles there would be in the world if you had 12 actual players firing simultaneously.
+		args.lifetime = 0.4f;
+	}
+#endif
+
 	EntityFactory::CreateProjectile(e, args);
 }
 
-void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::PlayerID senderId) {
-	EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
+void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID projectileID) {
+	EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, projectileID));
+
 }
 
 

@@ -136,6 +136,8 @@ public:
 	size_t getNumEntities();
 #ifdef DEVELOPMENT
 	const SystemMap& getSystems() const;
+	const unsigned int getByteSize() const;
+	const unsigned int getByteSizeComponents() const;
 #endif
 private:
 

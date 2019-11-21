@@ -36,7 +36,7 @@ void CandleThrowingSystem::update(float dt) {
 
 		Entity* torchE = nullptr;
 		for (auto& torch : e->getChildEntities()) {
-			if (torch->hasComponent<CandleComponent>()) {
+			if (torch->hasComponent<CandleComponent>() && !torch->isAboutToBeDestroyed()) {
 				torchE = torch;
 			}
 		}
@@ -61,7 +61,7 @@ void CandleThrowingSystem::update(float dt) {
 							EventDispatcher::Instance().emit(StartThrowingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::START_THROWING,
-								SAIL_NEW Netcode::MessageWaterHitPlayer{
+								SAIL_NEW Netcode::MessageStartThrowing{
 									e->getComponent<NetworkReceiverComponent>()->m_id
 								}
 							);
@@ -147,7 +147,7 @@ void CandleThrowingSystem::update(float dt) {
 						EventDispatcher::Instance().emit(StopThrowingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::STOP_THROWING,
-							SAIL_NEW Netcode::MessageWaterHitPlayer{
+							SAIL_NEW Netcode::MessageStopThrowing{
 								e->getComponent<NetworkReceiverComponent>()->m_id
 							}
 						);
@@ -179,5 +179,11 @@ void CandleThrowingSystem::update(float dt) {
 		throwC->wasChargingLastFrame = throwC->isCharging;
 	}
 }
+
+#ifdef DEVELOPMENT
+unsigned int CandleThrowingSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
 
 void CandleThrowingSystem::throwCandle(Entity* e) {}

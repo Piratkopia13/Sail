@@ -87,6 +87,18 @@ void NodeSystem::setDebugModelAndScene(Shader* shader) {
 }
 #endif
 
+#ifdef DEVELOPMENT
+unsigned int NodeSystem::getByteSize() const {
+	unsigned int size = sizeof(*this);
+	size += m_connections.size() * sizeof(std::vector<unsigned int>);
+	for (auto& vec : m_connections) {
+		size += vec.size() * sizeof(unsigned int);
+	}
+	size += m_nodes.size() * sizeof(NodeSystem::Node);
+	return size;
+}
+#endif
+
 std::vector<unsigned int> NodeSystem::BFS(const unsigned int from, const unsigned int to) {
 	std::list<unsigned int> queue;
 	std::vector<unsigned int> visited = std::vector<unsigned int>(m_connections.size());

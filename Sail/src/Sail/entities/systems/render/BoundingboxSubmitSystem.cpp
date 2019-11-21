@@ -46,3 +46,10 @@ void BoundingboxSubmitSystem::submitAll() {
 		}
 	}
 }
+
+
+#ifdef DEVELOPMENT
+unsigned int BoundingboxSubmitSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif

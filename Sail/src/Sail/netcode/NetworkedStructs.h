@@ -10,19 +10,22 @@ namespace Netcode {
 	static ComponentID createNetworkID()    { return ++gNetworkIDCounter; }
 	static ComponentID nrOfNetworkObjects() { return gNetworkIDCounter; }
 
-
-	// Used to signify NetworkMessages sent Internally
-	static constexpr PlayerID MESSAGE_FROM_SELF_ID = 255;
-	
-	// ID for sprinkler
-	static constexpr PlayerID MESSAGE_SPRINKLER_ID = 254;
-	static constexpr PlayerID MESSAGE_INSANITY_ID = 253;
-	static constexpr PlayerID NONE_PLAYER_ID_START = 200;
-
 	// ComponentID has 32 bits and the first 8 are the PlayerID of the owner which
 	// can be extracted by shifting the ComponentID 18 bits to the right.
 	static constexpr ComponentID SHIFT_AMOUNT = 18;
 
+#pragma region SPECIAL_ID_VALUES
+	// Used to signify NetworkMessages sent Internally
+	static constexpr PlayerID    MESSAGE_FROM_SELF_ID = 255;
+	
+	static constexpr PlayerID    MESSAGE_SPRINKLER_ID = 254;
+	static constexpr ComponentID SPRINKLER_COMP_ID    = static_cast<ComponentID>(MESSAGE_SPRINKLER_ID) << SHIFT_AMOUNT;
+
+	static constexpr PlayerID    MESSAGE_INSANITY_ID  = 253;
+	static constexpr ComponentID INSANITY_COMP_ID     = static_cast<ComponentID>(MESSAGE_INSANITY_ID) << SHIFT_AMOUNT;
+
+	static constexpr PlayerID    NONE_PLAYER_ID_START = 200;
+#pragma endregion
 
 	// Generates a unique ID for a NetworkSenderComponent based on the player's PlayerID
 	static ComponentID generateUniqueComponentID(PlayerID ownerID) {
@@ -210,12 +213,13 @@ namespace Netcode {
 
 	class MessageWaterHitPlayer : public MessageData {
 	public:
-		MessageWaterHitPlayer(Netcode::ComponentID whoWasHit)
-			: playerWhoWasHitID(whoWasHit)
+		MessageWaterHitPlayer(Netcode::ComponentID whoWasHit, Netcode::ComponentID projectileID)
+			: playerWhoWasHitID(whoWasHit), projectileThatHitID(projectileID)
 		{}
 		~MessageWaterHitPlayer() {}
 
 		Netcode::ComponentID playerWhoWasHitID;
+		Netcode::ComponentID projectileThatHitID;
 	};
 
 	class MessageSetCandleHealth : public MessageData {
@@ -256,10 +260,10 @@ namespace Netcode {
 
 	class MessagePlayerDied : public MessageData {
 	public:
-		MessagePlayerDied(Netcode::ComponentID id, Netcode::PlayerID shooterID) : playerWhoDied(id), playerWhoFired(shooterID) {}
+		MessagePlayerDied(Netcode::ComponentID id, Netcode::ComponentID killer) : playerWhoDied(id), killingEntity(killer) {}
 		~MessagePlayerDied() {}
 		Netcode::ComponentID playerWhoDied;
-		Netcode::PlayerID playerWhoFired;
+		Netcode::ComponentID killingEntity;
 	};
 
 	class MessageCandleHeldState : public MessageData {

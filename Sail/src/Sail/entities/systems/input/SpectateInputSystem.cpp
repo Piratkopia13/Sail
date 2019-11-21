@@ -49,6 +49,14 @@ void SpectateInputSystem::clean() {
 	Memory::SafeDelete(m_cam);
 }
 
+#ifdef DEVELOPMENT
+unsigned int SpectateInputSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	size += sizeof(CameraController);
+	return size;
+}
+#endif
+
 void SpectateInputSystem::processKeyboardInput(const float& dt) {
 
 	for (auto e : entities) {

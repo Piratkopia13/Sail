@@ -10,7 +10,7 @@
 
 class DX12VertexBuffer;
 class ParticleComputeShader;
-class ID3D12GraphicsCommandList4;
+struct ID3D12GraphicsCommandList4;
 
 class ParticleEmitterComponent : public Component<ParticleEmitterComponent> {
 public:
@@ -27,6 +27,19 @@ public:
 	float lifeTime;
 	float spawnRate;
 	float spawnTimer;
+
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		/* TODO: Fix component size */
+		unsigned int size = sizeof(*this);
+		size += sizeof(CPUOutput);
+		size += sizeof(NewParticleInfo) * m_cpuOutput->newParticles.size();
+		size += sizeof(unsigned int) * m_cpuOutput->toRemove.size();
+		size += sizeof(float) * m_particleLife->size();
+		size += m_model->getByteSize();
+		return size;
+	}
+#endif
 
 private:
 	void init();

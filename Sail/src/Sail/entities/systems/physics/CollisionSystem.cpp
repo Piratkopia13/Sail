@@ -90,6 +90,12 @@ void CollisionSystem::update(float dt) {
 	for (size_t i = 0; i < NR_OF_JOBS; ++i) { jobs[i].get(); }
 }
 
+#ifdef DEVELOPMENT
+unsigned int CollisionSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
+
 bool CollisionSystem::collisionUpdatePart(float dt, size_t start, size_t end) {
 	for (size_t i = start; i < end; ++i) {
 		Entity* e = entities[i];
