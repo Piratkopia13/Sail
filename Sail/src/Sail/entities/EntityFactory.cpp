@@ -83,7 +83,7 @@ void EntityFactory::AddCandleComponentsToPlayer(Entity::SPtr& player, const size
 		if (c->getName() == player->getName() + "Candle") {
 			c->addComponent<CandleComponent>()->playerEntityID = playerID;
 			c->addComponent<CollidableComponent>();
-			c->addComponent<TeamComponent>()->team = (playerID) % 12;
+			c->addComponent<TeamComponent>()->team = NWrapperSingleton::getInstance().getPlayer(playerID)->team;
 		}
 	}
 }
@@ -344,7 +344,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0, 0.9f, 0) + spawnLocation);
 
 	//give players teams
-	playerEntity->addComponent<TeamComponent>()->team = (playerID) % 12;
+	playerEntity->addComponent<TeamComponent>()->team = NWrapperSingleton::getInstance().getPlayer(playerID)->team;
 	
 
 	AnimationComponent* ac = playerEntity->addComponent<AnimationComponent>(stack);
