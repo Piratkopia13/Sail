@@ -42,13 +42,11 @@ void AnimationChangerSystem::update(float dt) {
 					}
 				}
 				continue;
-			} else if (throwC->isCharging || throwC->isThrowing && 
-					   !(animationC->currentTransition->toIndex == IDLE_THROW || animationC->currentTransition->toIndex == IDLE_THROW/*TODO: RUNNING_THROW*/)) {
+			} else if (throwC->isThrowing) {
 				if (velMag2 < 0.01f) {
 					animationC->setAnimation(IDLE_THROW);
 				} else {
-					// Replace the animation indices once they are implemented
-					animationC->setAnimation(IDLE_THROW/*TODO: RUNNING_THROW*/);
+					animationC->setAnimation(RUNNING_THROW);
 				}
 				if (animIndexBefore != animationC->animationIndex) {
 					animationC->animationTime = 0.f;
@@ -71,8 +69,8 @@ void AnimationChangerSystem::update(float dt) {
 				animationC->setAnimation(IDLE);
 			} 
 			else if (moveC->relVel.y > 0.1f && fabsf(moveC->relVel.x) < 0.1f && fabsf(moveC->relVel.z) < 0.1f && 
-					 animationC->animationIndex != IDLE_THROW /*&&
-					 TODO: animationC->animationIndex != RUNNING_THROW*/) {
+					 animationC->animationIndex != IDLE_THROW &&
+					 animationC->animationIndex != RUNNING_THROW) {
 				if (animationC->animationIndex != IDLEJUMP) {
 					animationC->setAnimation(IDLEJUMP);
 					animationC->animationTime = 0.310f;
@@ -92,8 +90,8 @@ void AnimationChangerSystem::update(float dt) {
 
 				
 				if (moveC->relVel.y > 0.1f && (fabsf(moveC->relVel.x) > 0.1f || fabsf(moveC->relVel.z) > 0.1f) &&
-					animationC->animationIndex != IDLE_THROW /*&&
-					TODO: animationC->animationIndex != RUNNING_THROW*/) {
+					animationC->animationIndex != IDLE_THROW &&
+					animationC->animationIndex != RUNNING_THROW) {
 					animationC->setAnimation(FORWARDJUMP);
 					animationC->animationTime = 0.5f;
 				}

@@ -478,7 +478,6 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 							throwingComp->isCharging = true;
 							if (throwingComp->chargeTime >= throwingComp->chargeToThrowThreshold) {
 								// We want to throw the torch
-								throwingComp->isThrowing = true;
 								throwingComp->isCharging = false;
 								m_candleToggleTimer = 0.f;
 							}
@@ -490,7 +489,6 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 					} else if (candleComp->isCarried && throwingComp->wasChargingLastFrame) {
 						// We want to throw the torch
 						throwingComp->isCharging = false;
-						throwingComp->isThrowing = true;
 						m_candleToggleTimer = 0.f;
 					}
 				}
@@ -515,8 +513,10 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	if (Input::IsKeyPressed(KeyBinds::MOVE_UP)) { playerMovement.upMovement += 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN)) { playerMovement.upMovement -= 1.0f; }
 
+	//auto throwC = e->getComponent<ThrowingComponent>();
+	auto animC = e->getComponent<AnimationComponent>();
 	auto throwC = e->getComponent<ThrowingComponent>();
-	if (throwC->isThrowing || throwC->isCharging) {
+	if (animC->animationIndex == 9/*IDLE_THROW*/ || animC->animationIndex == 11/*RUNNING_THROW*/ || throwC->chargeTime > 0.f) {
 		return playerMovement;
 	}
 
