@@ -192,6 +192,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 				
 							// To make the code easier to read
+							if (Audio::SoundType::INSANITY_SCREAM) {
+
+							}
 							soundGeneral->soundID = m_audioEngine->beginSound(
 								soundUnique->fileName,
 								soundGeneral->effect,
