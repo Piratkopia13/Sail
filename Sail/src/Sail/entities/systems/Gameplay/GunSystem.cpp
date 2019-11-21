@@ -34,6 +34,10 @@ GunSystem::~GunSystem() {
 
 }
 
+void GunSystem::setOctree(Octree* octree) {
+	m_octree = octree;
+}
+
 void GunSystem::update(float dt) {
 	for (auto& e : entities) {
 		GunComponent* gun = e->getComponent<GunComponent>();
@@ -124,17 +128,29 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 
 		randPos += glm::normalize(velocity) * (Utils::rnd() * randomSpread * 2 - randomSpread) * 5.0f;
 
-		// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
-		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			Netcode::MessageType::SPAWN_PROJECTILE,
-			SAIL_NEW Netcode::MessageSpawnProjectile{
-				gun->position + randPos,
-				velocity,
-				Netcode::generateUniqueComponentID(myPlayerID), // Generate unique ComponentID here for our own projectiles
-				e->getComponent<NetworkSenderComponent>()->m_id,
-				frequency
-			}
-		);
+		auto rayFrom = e->getComponent<TransformComponent>()->getTranslation();
+		auto gunPos = gun->position;
+		rayFrom.y = gunPos.y;
+		Octree::RayIntersectionInfo rayInfo;
+		auto rayDir = gunPos - rayFrom;
+		auto rayDirNorm = glm::normalize(rayDir);
+
+		m_octree->getRayIntersection(rayFrom, rayDirNorm, &rayInfo, e, 0.1f);
+		if (!(rayInfo.closestHit < glm::length(rayDir))) {
+			// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
+			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+				Netcode::MessageType::SPAWN_PROJECTILE,
+				SAIL_NEW Netcode::MessageSpawnProjectile{
+					gunPos + randPos,
+					velocity,
+					Netcode::generateUniqueComponentID(myPlayerID), // Generate unique ComponentID here for our own projectiles
+					e->getComponent<NetworkSenderComponent>()->m_id,
+					frequency
+				}
+			);
+		}
+
+
 	}
 }
 
