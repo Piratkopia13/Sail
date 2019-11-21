@@ -100,29 +100,26 @@ bool KillFeedWindow::onEvent(const Event& event) {
 		KillFeedWindow::KillFeedInfo killFeedInfo;
 		killFeedInfo.name2 = NWrapperSingleton::getInstance().getPlayer(idOfDeadPlayer)->name;
 
-		if (e.shooterID == Netcode::MESSAGE_SPRINKLER_ID) {
+		if (e.killerID == Netcode::SPRINKLER_COMP_ID) {
 			killFeedInfo.name1 = "The sprinklers";
 			killFeedInfo.type = "eliminated";
-		} else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+		} else if (e.killerID == Netcode::INSANITY_COMP_ID) {
 			killFeedInfo.name1 = "Insanity";
 			killFeedInfo.type = "devoured";
-		}
-		else if (e.shooterID == idOfDeadPlayer) {
+		} else if (e.killerID == e.netIDofKilled) {
 			killFeedInfo.name1 = killFeedInfo.name2;
 			killFeedInfo.type = "eliminated himself!";
 			killFeedInfo.name2 = "";
-		}
-		else {
-			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
+		} else {
+			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(Netcode::getComponentOwner(e.killerID))->name;
 			killFeedInfo.type = "eliminated";
 		}
 
 		SAIL_LOG(killFeedInfo.name1 + " " + killFeedInfo.type + " " + killFeedInfo.name2);
 		auto myID = NWrapperSingleton::getInstance().getMyPlayerID();
-		if (e.shooterID == myID) {
+		if (Netcode::getComponentOwner(e.killerID) == myID) {
 			killFeedInfo.relevant = 1;
-		}
-		else if (idOfDeadPlayer == myID) {
+		} else if (idOfDeadPlayer == myID) {
 			killFeedInfo.relevant = 2;
 		}
 
@@ -139,18 +136,15 @@ bool KillFeedWindow::onEvent(const Event& event) {
 			killFeedInfo.name1 = "The sprinklers";
 			killFeedInfo.type = "sprayed down";
 			killFeedInfo.name2 = extinguishedOwner->name;
-		}
-		else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+		} else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
 			killFeedInfo.name1 = extinguishedOwner->name;
 			killFeedInfo.type = "got spooked";
 			killFeedInfo.name2 = "";
-		}
-		else if (e.shooterID == extinguishedOwner->id) {
+		} else if (e.shooterID == extinguishedOwner->id) {
 			killFeedInfo.name1 = extinguishedOwner->name;
 			killFeedInfo.type = "sprayed down himself!";
 			killFeedInfo.name2 = "";
-		}
-		else {
+		} else {
 			killFeedInfo.name1 = NWrapperSingleton::getInstance().getPlayer(e.shooterID)->name;
 			killFeedInfo.type = "sprayed down";
 			killFeedInfo.name2 = extinguishedOwner->name;

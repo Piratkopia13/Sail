@@ -147,7 +147,7 @@ GameState::GameState(StateStack& stack)
 
 	// Crosshair
 	//EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f));
-
+	auto crosshairEntity = EntityFactory::CreateCrosshairEntity("crosshairEntity");
 
 	// Level Creation
 
@@ -231,6 +231,9 @@ GameState::GameState(StateStack& stack)
 
 
 	m_inGameGui.setPlayer(m_player);
+	m_inGameGui.setCrosshair(crosshairEntity.get());
+	m_componentSystems.projectileSystem->setCrosshair(crosshairEntity.get());
+	m_componentSystems.sprintingSystem->setCrosshair(crosshairEntity.get());
 }
 
 GameState::~GameState() {
@@ -461,6 +464,8 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.candlePlacementSystem = ECS::Instance()->createSystem<CandlePlacementSystem>();
 	m_componentSystems.candleThrowingSystem = ECS::Instance()->createSystem<CandleThrowingSystem>();
 	m_componentSystems.candleThrowingSystem->setOctree(m_octree);
+
+	m_componentSystems.crosshairSystem = ECS::Instance()->createSystem<CrosshairSystem>();
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -890,6 +895,8 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_componentSystems.lightListSystem->updateLights(&m_lights);
 		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha, dt);
 	}
+	
+	m_componentSystems.crosshairSystem->update(dt);
 
 	if (m_showcaseProcGen) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));

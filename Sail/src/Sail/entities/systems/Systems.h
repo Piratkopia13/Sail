@@ -11,6 +11,7 @@
 #include "Gameplay/candles/CandlePlacementSystem.h"
 #include "Gameplay/candles/CandleReignitionSystem.h"
 #include "Gameplay/candles/CandleThrowingSystem.h"
+#include "Graphics/CrosshairSystem.h"
 #include "Gameplay/GunSystem.h"
 #include "Gameplay/LevelSystem/LevelSystem.h"
 #include "Gameplay/lifetime/LifeTimeSystem.h"

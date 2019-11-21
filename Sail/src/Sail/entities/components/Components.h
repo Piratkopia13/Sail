@@ -12,6 +12,7 @@
 #include "CollisionComponent.h"
 #include "CollisionSpheresComponent.h"
 #include "CullingComponent.h"
+#include "CrosshairComponent.h"
 #include "FSMComponent.h"
 #include "GUIComponent.h"
 #include "GunComponent.h"
