@@ -61,7 +61,7 @@ void CandleThrowingSystem::update(float dt) {
 							EventDispatcher::Instance().emit(StartThrowingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::START_THROWING,
-								SAIL_NEW Netcode::MessageWaterHitPlayer{
+								SAIL_NEW Netcode::MessageStartThrowing{
 									e->getComponent<NetworkReceiverComponent>()->m_id
 								}
 							);
@@ -147,7 +147,7 @@ void CandleThrowingSystem::update(float dt) {
 						EventDispatcher::Instance().emit(StopThrowingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::STOP_THROWING,
-							SAIL_NEW Netcode::MessageWaterHitPlayer{
+							SAIL_NEW Netcode::MessageStopThrowing{
 								e->getComponent<NetworkReceiverComponent>()->m_id
 							}
 						);

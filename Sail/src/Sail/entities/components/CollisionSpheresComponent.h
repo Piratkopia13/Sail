@@ -9,4 +9,10 @@ public:
 
 	Sphere spheres[2];
 	//Sphere sphere;
+
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+#endif
 };

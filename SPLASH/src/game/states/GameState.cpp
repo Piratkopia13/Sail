@@ -147,7 +147,7 @@ GameState::GameState(StateStack& stack)
 
 	// Crosshair
 	//EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f));
-
+	auto crosshairEntity = EntityFactory::CreateCrosshairEntity("crosshairEntity");
 
 	// Level Creation
 
@@ -202,12 +202,12 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.lightListSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
-	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
+/*	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
 #ifdef _DEBUG_NODESYSTEM
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader);
 #else
 	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
-#endif
+#endif*/
 
 	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
 	m_ambiance->addComponent<AudioComponent>();
@@ -229,6 +229,9 @@ GameState::GameState(StateStack& stack)
 
 
 	m_inGameGui.setPlayer(m_player);
+	m_inGameGui.setCrosshair(crosshairEntity.get());
+	m_componentSystems.projectileSystem->setCrosshair(crosshairEntity.get());
+	m_componentSystems.sprintingSystem->setCrosshair(crosshairEntity.get());
 }
 
 GameState::~GameState() {
@@ -333,7 +336,7 @@ bool GameState::processInput(float dt) {
 
 	// TODO: Move this to a system
 	// Toggle ai following the player
-	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_AI_FOLLOWING)) {
+	/*if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_AI_FOLLOWING)) {
 		auto entities = m_componentSystems.aiSystem->getEntities();
 		for (int i = 0; i < entities.size(); i++) {
 			auto aiComp = entities[i]->getComponent<AiComponent>();
@@ -353,7 +356,7 @@ bool GameState::processInput(float dt) {
 				aiComp->setTarget(nullptr);
 			}
 		}
-	}
+	}*/
 
 	// Set directional light if using forward rendering
 	if (Input::IsKeyPressed(KeyBinds::SET_DIRECTIONAL_LIGHT)) {
@@ -422,12 +425,12 @@ bool GameState::processInput(float dt) {
 
 void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
-	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem<TransformComponent>>();
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
 	
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
 
-	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<TransformComponent>>();
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
 
 	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
 
@@ -448,7 +451,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
 
-	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+	//m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
@@ -459,6 +462,8 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.candlePlacementSystem = ECS::Instance()->createSystem<CandlePlacementSystem>();
 	m_componentSystems.candleThrowingSystem = ECS::Instance()->createSystem<CandleThrowingSystem>();
 	m_componentSystems.candleThrowingSystem->setOctree(m_octree);
+
+	m_componentSystems.crosshairSystem = ECS::Instance()->createSystem<CrosshairSystem>();
 
 	// Create system which prepares each new update
 	m_componentSystems.prepareUpdateSystem = ECS::Instance()->createSystem<PrepareUpdateSystem>();
@@ -474,8 +479,8 @@ void GameState::initSystems(const unsigned char playerID) {
 	// Create systems for rendering
 	m_componentSystems.beginEndFrameSystem     = ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	m_componentSystems.metaballSubmitSystem    = ECS::Instance()->createSystem<MetaballSubmitSystem<TransformComponent>>();
-	m_componentSystems.modelSubmitSystem       = ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
+	m_componentSystems.metaballSubmitSystem    = ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInActiveGameComponent>>();
+	m_componentSystems.modelSubmitSystem       = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.renderImGuiSystem       = ECS::Instance()->createSystem<RenderImGuiSystem>();
 	m_componentSystems.guiSubmitSystem         = ECS::Instance()->createSystem<GUISubmitSystem>();
 
@@ -490,7 +495,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.networkSenderSystem = ECS::Instance()->createSystem<NetworkSenderSystem>();
 
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
-	// Create Network Reciever System depending on host or client.
+	// Create Network Receiver System depending on host or client.
 	if (NWrapperSingleton::getInstance().isHost()) {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemHost>();
 	} else {
@@ -524,11 +529,9 @@ void GameState::initSystems(const unsigned char playerID) {
 
 
 	// Create systems needed for the killcam
-	m_componentSystems.killCamReceiverSystem->init(playerID, m_componentSystems.networkSenderSystem);
-	m_componentSystems.killCamModelSubmitSystem    = ECS::Instance()->createSystem<ModelSubmitSystem<ReplayTransformComponent>>();
-	m_componentSystems.killCamMetaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<ReplayTransformComponent>>();
-	m_componentSystems.killCamMovementSystem       = ECS::Instance()->createSystem<MovementSystem<ReplayTransformComponent>>();
-	m_componentSystems.killCamMovementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<ReplayTransformComponent>>();
+	m_componentSystems.killCamReceiverSystem->init(playerID);
+	m_componentSystems.killCamModelSubmitSystem    = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamMetaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInReplayComponent>>();
 
 }
 
@@ -818,11 +821,7 @@ void GameState::shutDownGameState() {
 void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	
 	m_componentSystems.killCamReceiverSystem->prepareUpdate();
-
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
-	m_componentSystems.killCamMovementSystem->update(dt);
-	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
-
 }
 
 // HERE BE DRAGONS
@@ -853,7 +852,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
-	runSystem(dt, m_componentSystems.aiSystem);
+	//runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
 	runSystem(dt, m_componentSystems.candleThrowingSystem);
 	runSystem(dt, m_componentSystems.candleHealthSystem);
@@ -894,6 +893,8 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_componentSystems.lightListSystem->updateLights(&m_lights);
 		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha, dt);
 	}
+	
+	m_componentSystems.crosshairSystem->update(dt);
 
 	if (m_showcaseProcGen) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
@@ -1080,7 +1081,7 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 }
 
 void GameState::createBots(Model* boundingBoxModel, const std::string& characterModel, Model* projectileModel, Model* lightModel) {
-	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
+	/*int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
 	if (botCount < 0) {
 		botCount = 0;
@@ -1094,7 +1095,7 @@ void GameState::createBots(Model* boundingBoxModel, const std::string& character
 		else {
 			SAIL_LOG_ERROR("Bot not spawned because all spawn points are already used for this map.");
 		}
-	}
+	}*/
 }
 
 void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {

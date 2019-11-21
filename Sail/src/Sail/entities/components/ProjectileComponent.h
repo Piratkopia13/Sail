@@ -8,6 +8,12 @@ public:
 	ProjectileComponent(float damage, bool isOwnedLocally): m_damage(damage), ownedbyLocalPlayer(isOwnedLocally){}
 	~ProjectileComponent() { ; }
 
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+#endif
+
 	float m_damage = 1.0f;
 	bool ownedbyLocalPlayer = false;	// Used to determine hit-reg with network.
 	Netcode::ComponentID ownedBy;
