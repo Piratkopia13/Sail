@@ -82,7 +82,9 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
-
+	m_chatWindow = std::make_unique<ChatWindow>(true);
+	m_chatWindow->setPosition(ImVec2(500,500));
+	m_chatWindow->setSize(ImVec2(400,300));
 }
 
 Application::~Application() {
@@ -250,8 +252,8 @@ SettingStorage& Application::getSettings() {
 	return m_settingStorage;
 }
 
-ChatWindow& Application::getChatWindow() {
-	return m_chatWindow;
+ChatWindow* Application::getChatWindow() {
+	return m_chatWindow.get();
 }
 
 Camera* Application::getCurrentCamera() const {

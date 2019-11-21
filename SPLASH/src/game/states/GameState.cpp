@@ -767,6 +767,8 @@ bool GameState::renderImgui(float dt) {
 		m_waitingForPlayersWindow.renderWindow();
 	}
 
+	m_app->getChatWindow()->renderChat(dt);
+
 	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
 	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);
 	//static glm::vec3 rPos(-0.555f, 1.052f, 0.107f);

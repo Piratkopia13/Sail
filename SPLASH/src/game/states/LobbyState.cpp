@@ -56,8 +56,6 @@ LobbyState::LobbyState(StateStack& stack)
 	m_currentmessageIndex = 0;
 	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
 
-	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHAT, this);
-	EventDispatcher::Instance().subscribe(Event::Type::CHATSENT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
@@ -115,8 +113,6 @@ LobbyState::~LobbyState() {
 	delete[] m_currentmessage;
 	delete m_settingBotCount;
 
-	EventDispatcher::Instance().unsubscribe(Event::Type::CHATSENT, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_CHAT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 
@@ -237,7 +233,7 @@ bool LobbyState::renderImgui(float dt) {
 	}
 
 	ImGui::PopFont();
-	m_app->getChatWindow().renderChat(dt);
+	m_app->getChatWindow()->renderChat(dt);
 
 	return false;
 }
@@ -249,8 +245,7 @@ bool LobbyState::onEvent(const Event& event) {
 
 	switch (event.type) {
 
-	case Event::Type::CHATSENT:				onMyTextInput((const ChatSent&)event); break;
-	case Event::Type::NETWORK_CHAT:			onRecievedText((const NetworkChatEvent&)event); break;
+
 	case Event::Type::NETWORK_JOINED:		onPlayerJoined((const NetworkJoinedEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE:	onPlayerTeamRequest((const NetworkPlayerRequestedTeamChange&)event); break;

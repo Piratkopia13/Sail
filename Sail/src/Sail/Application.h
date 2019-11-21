@@ -86,7 +86,7 @@ public:
 	ResourceManager& getResourceManager();
 	ConsoleCommands& getConsole();
 	SettingStorage& getSettings();
-	ChatWindow& getChatWindow();
+	ChatWindow* getChatWindow();
 	Camera* getCurrentCamera() const;
 
 	MemoryManager& getMemoryManager();
@@ -110,7 +110,7 @@ private:
 	MemoryManager m_memoryManager;
 	StateStorage m_stateStorage;
 	SettingStorage m_settingStorage;
-	ChatWindow m_chatWindow;
+	std::unique_ptr<ChatWindow> m_chatWindow;
 	Camera* m_cameraRef;
 
 	// Timer
