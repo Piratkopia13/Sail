@@ -210,7 +210,7 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/Clutter/ControlStation_NM.tga");
 
 	rm->loadTexture("Icons/TorchLeft.tga");
-	rm->loadTexture("Icons/TorchThrow.tga");
+	rm->loadTexture("Icons/TorchThrow2.tga");
 
 	return true;
 }

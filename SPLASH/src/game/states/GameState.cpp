@@ -814,7 +814,7 @@ bool GameState::renderImgui(float dt) {
 		}
 		ImGui::SetWindowPos(ImVec2(
 			m_app->getWindow()->getWindowWidth()-ImGui::GetWindowSize().x,
-			m_app->getWindow()->getWindowHeight() - ImGui::GetWindowSize().y-100
+			m_app->getWindow()->getWindowHeight() - ImGui::GetWindowSize().y-110
 			));
 	}
 	ImGui::End();
