@@ -17,7 +17,7 @@ namespace Utils {
 
     bool rayHitAnything(float3 origin, float3 normal, float3 direction, float tmax = 100000) {
         RayDesc rayDesc;
-        rayDesc.Origin = origin + normal * 0.000001f;
+        rayDesc.Origin = origin + normal * 0.001f;
         rayDesc.Direction = direction;
         rayDesc.TMin = 0.001;
         rayDesc.TMax = tmax;

@@ -92,11 +92,12 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         // Point lights
         [unroll]
         for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-            // float shadowAmount = 1.f;
-            // if (i < 2) {
-            //     shadowAmount = shadow[i];
-            // }
-            float shadowAmount = shadow[min(i, NUM_SHADOW_TEXTURES - 1)]; // This line casues debug to not launch - Not after dxil update!
+            int shadowTextureIndex = shadowTextureIndexMap[i].index;
+            if (shadowTextureIndex == -1) {
+                // No shadow texture is bound to this light, skip it
+                continue;
+            }
+            float shadowAmount = shadow[shadowTextureIndex];
             // float shadowAmount = 1.f;
             PointlightInput p = pointLights[i];
             
@@ -114,8 +115,14 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
             Lo += shadeWithLight(p, worldPosition, N, V, F0, albedo, metalness, roughness, shadowAmount);
         }
         //Spotlights
+        [unroll]
 		for (int j = 0; j < NUM_POINT_LIGHTS; j++) {
-            float shadowAmount = shadow[min(i, NUM_SHADOW_TEXTURES - 1)]; // TODO: make this unique for spot lights
+            int shadowTextureIndex = shadowTextureIndexMap[j + NUM_POINT_LIGHTS].index;
+            if (shadowTextureIndex == -1) {
+                // No shadow texture is bound to this light, skip it
+                continue;
+            }
+            float shadowAmount = shadow[shadowTextureIndex];
 
 			SpotlightInput p = spotLights[j];
 
@@ -125,7 +132,6 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 			}
 
 			float3 L = normalize(p.position - worldPosition);
-			float distance = length(p.position - worldPosition);
 			float angle = dot(L, normalize(p.direction));
             // Ignore if angle is outside light
             // abs is used to make spotlights bidirectional
@@ -141,6 +147,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
             totalShadowAmount += shadowAmount;
 
             Lo += shadeWithLight((PointlightInput)p, worldPosition, N, V, F0, albedo, metalness, roughness, shadowAmount);
+            // Lo = float3(shadowAmount, shadowAmount, shadowAmount);
 		}
     }
 

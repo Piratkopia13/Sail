@@ -39,6 +39,11 @@ private:
 	bool onResize(const WindowResizeEvent& event);
 
 private:
+	struct IndexMap {
+		int index;
+		glm::vec3 padding;
+	};
+
 	DX12API* m_context;
 	DXRBase m_dxr;
 	DX12API::Command m_commandDirectShading;

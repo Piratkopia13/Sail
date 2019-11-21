@@ -34,7 +34,7 @@ namespace DXRShaderCommon {
 #define MAX_NUM_METABALLS 500
 #define METABALL_RADIUS 0.12f
 #define MAX_DECALS 100
-#define NUM_SHADOW_TEXTURES 2
+#define NUM_SHADOW_TEXTURES 14
 
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;

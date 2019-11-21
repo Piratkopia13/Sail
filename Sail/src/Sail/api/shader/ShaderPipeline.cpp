@@ -442,6 +442,8 @@ UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "Vertex") { return 4 * 14; }
 	if (typeName == "VertConnections") { return 4 + 4*5 + 4*5; }
 	if (typeName == "ParticleInput") { return (12 * 312 + 312 + 9) * 4; }
+	if (typeName == "IndexMap") { return 4*4*12*2; } // NUM_POINT_LIGHTS * 2 * int
+
 
 	SAIL_LOG_ERROR("Found shader variable type with unknown size (" + typeName + ")");
 	return 0;

@@ -62,36 +62,72 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 	direction = normalize(world.xyz - origin);
 }
 
-float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal, int lightIndex) {
-	const uint numSamples = 1;
-    const float lightRadius = 0.08f;
-	// Shoot a ray towards a random point on the light
-	PointlightInput p = CB_SceneData.pointLights[lightIndex];
+float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal, inout int inOutlightIndex) {
+	// Shoots a ray towards a random point on the light
 
-	// Ignore point light if color is black
-	if (all(p.color == 0.0f)) {
-		return 0.f;
-	}
+	const uint numSamples = 1; // Rays per light source per pixel
+    const float lightRadius = 0.08f; // TODO: tweak this!
 
-	float3 toLight = normalize(p.position - worldPosition);
-	// Calculate a vector perpendicular to L
-	float3 perpL = cross(toLight, float3(0.f, 1.0f, 0.f));
-	// Handle case where L = up -> perpL should then be (1,0,0)
-	if (all(perpL == 0.0f)) {
-		perpL.x = 1.0;
+	bool skip = false;
+	PointlightInput p;
+	// Find the next applicable light
+	bool foundLight = false;
+	while (true) {
+		skip = false;
+		if (inOutlightIndex >= NUM_POINT_LIGHTS * 2) {
+			// No more applicable lights found!
+			inOutlightIndex = -1;
+			return 0.f;
+		}
+		// First "NUM_POINT_LIGHTS" lights are sampled as point lights and the rest as spot lights
+		if (inOutlightIndex < NUM_POINT_LIGHTS) {
+			p = CB_SceneData.pointLights[inOutlightIndex];
+		} else {
+			SpotlightInput spotlight = CB_SceneData.spotLights[inOutlightIndex-NUM_POINT_LIGHTS];
+			// Skip pixels outside spotlight cone
+			float3 L = normalize(spotlight.position - worldPosition);
+			float angle = dot(L, normalize(spotlight.direction));
+			if(spotlight.angle == 0 || abs(angle) <= spotlight.angle) {
+				skip = true;
+			}
+			p = (PointlightInput)spotlight;
+		}
+
+		// Ignore point light if color is black
+		if (all(p.color == 0.0f)) {
+			inOutlightIndex++;
+			continue;
+		}
+		// Light found, break!
+		break;
 	}
-	// Use perpL to get a vector from worldPosition to the edge of the light sphere
-	float3 toLightEdge = normalize((p.position+perpL*lightRadius) - worldPosition);
-	// Angle between L and toLightEdge. Used as the cone angle when sampling shadow rays
-	float coneAngle = acos(dot(toLight, toLightEdge)) * 2.0f;
-	float distance = length(p.position - worldPosition);
 
 	float lightShadowAmount = 0.f;
-	for (int shadowSample = 0; shadowSample < numSamples; shadowSample++) {
-		float3 L = Utils::getConeSample(seed, toLight, coneAngle);
-		lightShadowAmount += (float)Utils::rayHitAnything(worldPosition, worldNormal, L, distance);
+	if (!skip) {
+		float3 toLight = normalize(p.position - worldPosition);
+		// Calculate a vector perpendicular to L
+		float3 perpL = cross(toLight, float3(0.f, 1.0f, 0.f));
+		// Handle case where L = up -> perpL should then be (1,0,0)
+		if (all(perpL == 0.0f)) {
+			perpL.x = 1.0;
+		}
+		// Use perpL to get a vector from worldPosition to the edge of the light sphere
+		float3 toLightEdge = normalize((p.position+perpL*lightRadius) - worldPosition);
+		// Angle between L and toLightEdge. Used as the cone angle when sampling shadow rays
+		float coneAngle = acos(dot(toLight, toLightEdge)) * 2.0f;
+		float distance = length(p.position - worldPosition);
+
+		for (int shadowSample = 0; shadowSample < numSamples; shadowSample++) {
+			float3 L = Utils::getConeSample(seed, toLight, coneAngle);
+			lightShadowAmount += (float)Utils::rayHitAnything(worldPosition, worldNormal, L, distance);
+		}
+		lightShadowAmount /= numSamples;
+	} else {
+		// Assume shadow if skipped
+		lightShadowAmount = 1.f;
 	}
-	lightShadowAmount /= numSamples;
+
+	inOutlightIndex++;
 
 	return lightShadowAmount;
 }
@@ -224,15 +260,22 @@ void rayGen() {
 
 	// The following loop SOMETIMES causes the DXIL compiler to fail - not after the dll update!
 	[unroll]
-	for (uint k = 0; k < NUM_SHADOW_TEXTURES; k++) {
-		float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, k);
+	uint shadowTextureIndex = 0;
+	uint lightIndex = 0;
+	while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
+		float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, lightIndex);
+		if (lightIndex == -1) {
+			// No more lights available!
+			break;
+		}
 
-		float2 cLast = InputShadowsLastFrame.SampleLevel(motionSS, float3(reprojectedTexCoord, k), 0).rg;
+		float2 cLast = InputShadowsLastFrame.SampleLevel(motionSS, float3(reprojectedTexCoord, shadowTextureIndex), 0).rg;
 		// float2 cLast = 0.0f;
-		float2 shadow = float2(firstBounceShadow, payload.shadowTwo[k]);
+		float2 shadow = float2(firstBounceShadow, payload.shadowTwo[lightIndex]);
 		shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
-		lOutputShadows[uint3(launchIndex, k)] = shadow;
+		lOutputShadows[uint3(launchIndex, shadowTextureIndex)] = shadow;
 		totalShadowAmount += firstBounceShadow;
+		shadowTextureIndex++;
 	}
 	totalShadowAmount /= max(NUM_SHADOW_TEXTURES, 1);
 
@@ -370,9 +413,12 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
 	
-	[unroll]
+	// [unroll]
+	// for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
+	// 	payload.shadowTwo[i] = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, i);
+	// }
 	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
-		payload.shadowTwo[i] = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, i);
+		payload.shadowTwo[i] = 0.f;
 	}
 
 	payload.albedoTwo.rgb = albedoColor.rgb; // TODO: store alpha and use as team color amount

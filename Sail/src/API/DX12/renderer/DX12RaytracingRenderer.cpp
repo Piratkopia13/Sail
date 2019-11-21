@@ -324,6 +324,31 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 		auto& slData = lightSetup->getSpotLightsData();
 		shaderPipeline->setCBufferVar("pointLights", &plData, sizeof(plData));
 		shaderPipeline->setCBufferVar("spotLights", &slData, sizeof(slData));
+
+		const unsigned int maxLights = NUM_POINT_LIGHTS * 2; // Point light and spot lights
+		IndexMap indexMapData[maxLights];
+		// Map shadow texture indices to light indices
+		uint lightIndex = 0;
+		uint shadowTextureIndex = 0;
+		for (auto& pl : plData.pLights) {
+			if (pl.color == glm::vec3(0.f)) {
+				// No shadow texture when light color is black/disabled
+				indexMapData[lightIndex].index = -1;
+			} else {
+				indexMapData[lightIndex].index = shadowTextureIndex++;
+			}
+			lightIndex++;
+		}
+		for (auto& sl : slData.sLights) {
+			if (sl.color == glm::vec3(0.f)) {
+				// No shadow texture when light color is black/disabled
+				indexMapData[lightIndex].index = -1;
+			} else {
+				indexMapData[lightIndex].index = shadowTextureIndex++;
+			}
+			lightIndex++;
+		}
+		shaderPipeline->setCBufferVar("shadowTextureIndexMap", &indexMapData, sizeof(indexMapData));
 	}
 
 	static_cast<DX12Mesh*>(m_fullscreenModel->getMesh(0))->draw_new(*this, cmdList, -numCustomSRVs);

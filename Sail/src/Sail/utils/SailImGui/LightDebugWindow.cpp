@@ -56,6 +56,39 @@ void LightDebugWindow::renderWindow() {
 			i++;
 			ImGui::PopID();
 		}
+		i = 0;
+		for (auto& sl : m_lightSetup->getSLs()) {
+			ImGui::PushID(i);
+			std::string label("Spot light ");
+			label += std::to_string(i);
+			if (ImGui::CollapsingHeader(label.c_str())) {
+
+				glm::vec3 color = sl.getColor();
+				glm::vec3 position = sl.getPosition();
+				float attConstant = sl.getAttenuation().constant;
+				float attLinear = sl.getAttenuation().linear;
+				float attQuadratic = sl.getAttenuation().quadratic;
+				float angle = sl.getAngle();
+				glm::vec3 direction = sl.getDirection();
+
+				ImGui::SliderFloat3("Color##", &color[0], 0.f, 1.0f);
+				ImGui::SliderFloat3("Position##", &position[0], -15.f, 15.0f);
+				ImGui::SliderFloat3("Direction##", &direction[0], -1.f, 1.f);
+				ImGui::SliderFloat("Angle##", &angle, 0.f, glm::two_pi<float>());
+				ImGui::SliderFloat("AttConstant##", &attConstant, 0.f, 1.f);
+				ImGui::SliderFloat("AttLinear##", &attLinear, 0.f, 1.f);
+				ImGui::SliderFloat("AttQuadratic##", &attQuadratic, 0.f, 0.2f);
+
+				sl.setAttenuation(attConstant, attLinear, attQuadratic);
+				sl.setColor(color);
+				sl.setPosition(position);
+				sl.setAngle(angle);
+				sl.setDirection(direction);
+
+			}
+			i++;
+			ImGui::PopID();
+		}
 	}
 	ImGui::End();
 }
