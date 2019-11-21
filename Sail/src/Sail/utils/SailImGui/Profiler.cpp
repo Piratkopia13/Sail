@@ -25,9 +25,15 @@ Profiler::~Profiler() {
 	delete[] m_frameTimesHistory;
 	delete[] m_fixedUpdateHistory;
 	delete[] m_averageSentPacketSizeHistory;
-	delete[] m_rmSizeMBHistory;
+
+	delete[] m_rmModelsSizeMBHistory;
+	delete[] m_rmAnimationsSizeMBHistory;
+	delete[] m_rmAudioSizeMBHistory;
+	delete[] m_rmTexturesSizeMBHistory;
+	delete[] m_rmGenericSizeMBHistory;
+
 #ifdef DEVELOPMENT
-	delete[] m_ecsSizeKBHistory;
+	delete[] m_ecsSizeMBHistory;
 #endif
 }
 
@@ -54,9 +60,15 @@ void Profiler::init() {
 	m_frameTimesHistory = SAIL_NEW float[100];
 	m_fixedUpdateHistory = SAIL_NEW float[100];
 	m_averageSentPacketSizeHistory = SAIL_NEW float[100];
-	m_rmSizeMBHistory = SAIL_NEW float[100];
+
+	m_rmModelsSizeMBHistory = SAIL_NEW float[100];
+	m_rmAnimationsSizeMBHistory = SAIL_NEW float[100];
+	m_rmAudioSizeMBHistory = SAIL_NEW float[100];
+	m_rmTexturesSizeMBHistory = SAIL_NEW float[100];
+	m_rmGenericSizeMBHistory = SAIL_NEW float[100];
+
 #ifdef DEVELOPMENT
-	m_ecsSizeKBHistory = SAIL_NEW float[100];
+	m_ecsSizeMBHistory = SAIL_NEW float[100];
 #endif
 
 	for (int i = 0; i < 100; i++) {
@@ -67,9 +79,15 @@ void Profiler::init() {
 		m_frameTimesHistory[i] = 0.f;
 		m_fixedUpdateHistory[i] = 0.f;
 		m_averageSentPacketSizeHistory[i] = 0.f;
-		m_rmSizeMBHistory[i] = 0.f;
+
+		m_rmModelsSizeMBHistory[i] = 0.f;
+		m_rmAnimationsSizeMBHistory[i] = 0.f;
+		m_rmAudioSizeMBHistory[i] = 0.f;
+		m_rmTexturesSizeMBHistory[i] = 0.f;
+		m_rmGenericSizeMBHistory[i] = 0.f;
+
 #ifdef DEVELOPMENT
-		m_ecsSizeKBHistory[i] = 0.f;
+		m_ecsSizeMBHistory[i] = 0.f;
 #endif
 	}
 }
@@ -174,7 +192,6 @@ void Profiler::renderWindow() {
 			if (ImGui::CollapsingHeader("Virtual RAM Graph")) {
 				header = "\n\n\n" + m_virtCount + "(MB)";
 				ImGui::PlotLines(header.c_str(), m_virtRAMHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
-
 			}
 			if (ImGui::CollapsingHeader("Physical RAM Graph")) {
 				header = "\n\n\n" + m_physCount + "(MB)";
@@ -188,14 +205,33 @@ void Profiler::renderWindow() {
 				header = "\n\n\n" + m_averageSentPacketSize + "(B/s)";
 				ImGui::PlotLines(header.c_str(), m_averageSentPacketSizeHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
 			}
-			if (ImGui::CollapsingHeader("Resource Manager Graph")) {
-				header = "\n\n\n" + m_rmMB + "(MB)";
-				ImGui::PlotLines(header.c_str(), m_rmSizeMBHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+			if (ImGui::CollapsingHeader("Resource Manager")) {
+				if (ImGui::CollapsingHeader("Models Graph")) {
+					header = "\n\n\n" + m_rmModelsMB + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_rmModelsSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
+				}
+				if (ImGui::CollapsingHeader("Animations Graph")) {
+					header = "\n\n\n" + m_rmAnimationsMB + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_rmAnimationsSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
+				}
+				if (ImGui::CollapsingHeader("Audio Graph")) {
+					header = "\n\n\n" + m_rmAudioMB + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_rmAudioSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
+				}
+				if (ImGui::CollapsingHeader("Textures Graph")) {
+					header = "\n\n\n" + m_rmTexturesMB + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_rmTexturesSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
+				}
+				if (ImGui::CollapsingHeader("Generic Graph")) {
+					header = "\n\n\n" + m_rmGenericMB + "(MB)";
+					ImGui::PlotLines(header.c_str(), m_rmGenericSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
+				}
 			}
 #ifdef DEVELOPMENT
+			ImGui::Text(("ECS Components " + std::to_string((float)ECS::Instance()->getByteSizeComponents() / (1024.f * 1024.f)) + "(MB)").c_str());
 			if (ImGui::CollapsingHeader("ECS Memory Graph")) {
-				header = "\n\n\n" + m_ecsKB + "(kB)";
-				ImGui::PlotLines(header.c_str(), m_ecsSizeKBHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
+				header = "\n\n\n" + m_ecsMB + "(MB)";
+				ImGui::PlotLines(header.c_str(), m_ecsSizeMBHistory, 100, 0, "", 0.f, 250.f, ImVec2(0, 100));
 			}
 #endif
 
@@ -212,10 +248,21 @@ void Profiler::renderWindow() {
 				m_profilerTimer = 0.f;
 
 				size_t averagePacketSize = NWrapperSingleton::getInstance().averagePacketSizeSinceLastCheck();
-				size_t rmByteSize = Application::getInstance()->getResourceManager().getByteSize();
+
+				size_t rmModelsByteSize = Application::getInstance()->getResourceManager().getModelByteSize();
+				size_t rmAnimationsByteSize = Application::getInstance()->getResourceManager().getAnimationsByteSize();
+				size_t rmAudioByteSize = Application::getInstance()->getResourceManager().getAudioByteSize();
+				size_t rmTexturesByteSize = Application::getInstance()->getResourceManager().getTextureByteSize();
+				size_t rmGenericByteSize = Application::getInstance()->getResourceManager().getGenericByteSize();
+
 #ifdef DEVELOPMENT
 				const unsigned int ecsByteSize = ECS::Instance()->getByteSize();
 #endif
+
+				auto byteToMB = [] (size_t bytes) -> float {
+					return (float)bytes / (1024.f * 1024.f);
+				};
+
 				if (m_profilerCounter < 100) {
 
 					m_virtRAMHistory[m_profilerCounter] = (float)virtMemUsage();
@@ -224,11 +271,18 @@ void Profiler::renderWindow() {
 					m_frameTimesHistory[m_profilerCounter] = dt;
 					m_fixedUpdateHistory[m_profilerCounter] = latestFixedUpdate;
 					m_averageSentPacketSizeHistory[m_profilerCounter] = (float)averagePacketSize;
-					m_rmSizeMBHistory[m_profilerCounter] = (float)rmByteSize / (1024.f * 1024.f);
+
+					m_rmModelsSizeMBHistory[m_profilerCounter] = byteToMB(rmModelsByteSize);
+					m_rmAnimationsSizeMBHistory[m_profilerCounter] = byteToMB(rmAnimationsByteSize);
+					m_rmAudioSizeMBHistory[m_profilerCounter] = byteToMB(rmAudioByteSize);
+					m_rmTexturesSizeMBHistory[m_profilerCounter] = byteToMB(rmTexturesByteSize);
+					m_rmGenericSizeMBHistory[m_profilerCounter] = byteToMB(rmGenericByteSize);
+
 #ifdef DEVELOPMENT
-					m_ecsSizeKBHistory[m_profilerCounter] = (float)ecsByteSize / 1024.f;
+					m_ecsSizeMBHistory[m_profilerCounter] = byteToMB(ecsByteSize);
 #endif
 					m_cpuHistory[m_profilerCounter++] = (float)processUsage();
+					
 					m_virtCount = std::to_string(virtMemUsage());
 					m_physCount = std::to_string(workSetUsage());
 					m_vramUCount = std::to_string(vramUsage());
@@ -237,47 +291,38 @@ void Profiler::renderWindow() {
 					m_fixedUpdateCount = std::to_string(latestFixedUpdate*1000.f);
 					m_potentialFixedUpdateRate = std::to_string(static_cast<int>(1.0f / latestFixedUpdate));
 					m_averageSentPacketSize = std::to_string(static_cast<size_t>(averagePacketSize * updateFrequency));
-					m_rmMB = std::to_string(static_cast<float>(rmByteSize) / (1024.f * 1024.f));
+
+					m_rmModelsMB = std::to_string(byteToMB(rmModelsByteSize));
+					m_rmAnimationsMB = std::to_string(byteToMB(rmAnimationsByteSize));
+					m_rmAudioMB = std::to_string(byteToMB(rmAudioByteSize));
+					m_rmTexturesMB = std::to_string(byteToMB(rmTexturesByteSize));
+					m_rmGenericMB = std::to_string(byteToMB(rmGenericByteSize));
+
 #ifdef DEVELOPMENT
-					m_ecsKB = std::to_string(static_cast<float>(ecsByteSize) / 1024.f);
+					m_ecsMB = std::to_string(byteToMB(ecsByteSize));
 #endif
 
 				} else {
 					// Copying all the history to a new array because ImGui is stupid
-					float* tempFloatArr = SAIL_NEW float[100];
-					std::copy(m_virtRAMHistory + 1, m_virtRAMHistory + 100, tempFloatArr);
-					tempFloatArr[99] = (float)virtMemUsage();
-					delete m_virtRAMHistory;
-					m_virtRAMHistory = tempFloatArr;
-					m_virtCount = std::to_string(virtMemUsage());
 
-					float* tempFloatArr1 = SAIL_NEW float[100];
-					std::copy(m_physRAMHistory + 1, m_physRAMHistory + 100, tempFloatArr1);
-					tempFloatArr1[99] = (float)workSetUsage();
-					delete m_physRAMHistory;
-					m_physRAMHistory = tempFloatArr1;
-					m_physCount = std::to_string(workSetUsage());
+					auto copyHistory = [](float** arr, std::string& str, float value) {
+						float* tempArr = SAIL_NEW float[100];
+						std::copy(*arr + 1, *arr + 100, tempArr);
+						tempArr[99] = value;
+						delete[] *arr;
+						*arr = tempArr;
+						str = std::to_string(value);
+					};
 
-					float* tempFloatArr3 = SAIL_NEW float[100];
-					std::copy(m_vramUsageHistory + 1, m_vramUsageHistory + 100, tempFloatArr3);
-					tempFloatArr3[99] = (float)vramUsage();
-					delete m_vramUsageHistory;
-					m_vramUsageHistory = tempFloatArr3;
-					m_vramUCount = std::to_string(vramUsage());
+					copyHistory(&m_virtRAMHistory, m_virtCount, (float)virtMemUsage());
+					
+					copyHistory(&m_physRAMHistory, m_physCount, (float)workSetUsage());
 
-					float* tempFloatArr4 = SAIL_NEW float[100];
-					std::copy(m_cpuHistory + 1, m_cpuHistory + 100, tempFloatArr4);
-					tempFloatArr4[99] = (float)processUsage();
-					delete m_cpuHistory;
-					m_cpuHistory = tempFloatArr4;
-					m_cpuCount = std::to_string(processUsage());
+					copyHistory(&m_vramUsageHistory, m_vramUCount, (float)vramUsage());
 
-					float* tempFloatArr5 = SAIL_NEW float[100];
-					std::copy(m_frameTimesHistory + 1, m_frameTimesHistory + 100, tempFloatArr5);
-					tempFloatArr5[99] = dt;
-					delete m_frameTimesHistory;
-					m_frameTimesHistory = tempFloatArr5;
-					m_ftCount = std::to_string(dt);
+					copyHistory(&m_cpuHistory, m_cpuCount, (float)processUsage());
+
+					copyHistory(&m_frameTimesHistory, m_ftCount, dt);
 
 					float* tempFloatArr6 = SAIL_NEW float[100];
 					std::copy(m_fixedUpdateHistory + 1, m_fixedUpdateHistory + 100, tempFloatArr6);
@@ -287,7 +332,6 @@ void Profiler::renderWindow() {
 					m_fixedUpdateCount = std::to_string(latestFixedUpdate*1000.f);
 					m_potentialFixedUpdateRate = std::to_string(static_cast<int>(1.0f / latestFixedUpdate));
 
-
 					float* tempFloatArr7 = SAIL_NEW float[100];
 					std::copy(m_averageSentPacketSizeHistory + 1, m_averageSentPacketSizeHistory + 100, tempFloatArr7);
 					tempFloatArr7[99] = (float)averagePacketSize;
@@ -295,20 +339,14 @@ void Profiler::renderWindow() {
 					m_averageSentPacketSizeHistory = tempFloatArr7;
 					m_averageSentPacketSize = std::to_string(static_cast<size_t>(averagePacketSize*updateFrequency));
 
-					float* tempFloatArr8 = SAIL_NEW float[100];
-					std::copy(m_rmSizeMBHistory + 1, m_rmSizeMBHistory + 100, tempFloatArr8);
-					tempFloatArr8[99] = (float)rmByteSize / (1024.f * 1024.f);
-					delete m_rmSizeMBHistory;
-					m_rmSizeMBHistory = tempFloatArr8;
-					m_rmMB = std::to_string(static_cast<float>(rmByteSize) / (1024.f * 1024.f));
+					copyHistory(&m_rmModelsSizeMBHistory, m_rmModelsMB, byteToMB(rmModelsByteSize));
+					copyHistory(&m_rmAnimationsSizeMBHistory, m_rmAnimationsMB, byteToMB(rmAnimationsByteSize));
+					copyHistory(&m_rmAudioSizeMBHistory, m_rmAudioMB, byteToMB(rmAudioByteSize));
+					copyHistory(&m_rmTexturesSizeMBHistory, m_rmTexturesMB, byteToMB(rmTexturesByteSize));
+					copyHistory(&m_rmGenericSizeMBHistory, m_rmGenericMB, byteToMB(rmGenericByteSize));
 
 #ifdef DEVELOPMENT
-					float* tempFloatArr9 = SAIL_NEW float[100];
-					std::copy(m_ecsSizeKBHistory + 1, m_ecsSizeKBHistory + 100, tempFloatArr9);
-					tempFloatArr9[99] = (float)ecsByteSize / 1024.f;
-					delete m_ecsSizeKBHistory;
-					m_ecsSizeKBHistory = tempFloatArr9;
-					m_ecsKB = std::to_string(static_cast<float>(ecsByteSize) / 1024.f);
+					copyHistory(&m_ecsSizeMBHistory, m_ecsMB, byteToMB(ecsByteSize));
 #endif
 				}
 			}

@@ -27,7 +27,7 @@ unsigned int NetworkReceiverSystemHost::getByteSize() const {
 }
 #endif
 
-void NetworkReceiverSystemHost::endMatch() {
+void NetworkReceiverSystemHost::endGame() {
 	m_startEndGameTimer = true;
 }
 
@@ -75,7 +75,7 @@ void NetworkReceiverSystemHost::prepareEndScreen(const Netcode::PlayerID sender,
 	}
 
 	// Send data back in Netcode::MessageType::ENDGAME_STATS
-	endMatch(); // Starts the end game timer. Runs only for the host
+	endGame(); // Starts the end game timer. Runs only for the host
 
 }
 
@@ -97,5 +97,5 @@ void NetworkReceiverSystemHost::mergeHostsStats() {
 		gdt->getStatisticsGlobal().jumpsMadeID = id;
 	}
 
-	endMatch();
+	endGame();
 }

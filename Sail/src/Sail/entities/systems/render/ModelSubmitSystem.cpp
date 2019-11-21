@@ -3,16 +3,18 @@
 #include "..//..//components/ModelComponent.h"
 #include "..//..//components/RealTimeComponent.h"
 #include "..//..//components/TransformComponent.h"
-#include "..//..//components/ReplayTransformComponent.h"
 #include "..//..//components/CullingComponent.h"
+#include "..//..//components/RenderInActiveGameComponent.h"
+#include "..//..//components/RenderInReplayComponent.h"
 #include "..//..//..//Application.h"
 #include "..//..//Entity.h"
 
 template <typename T>
 ModelSubmitSystem<T>::ModelSubmitSystem() {
 	registerComponent<ModelComponent>(true, true, false);
-	registerComponent<T>(true, true, false);
+	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<CullingComponent>(false, true, false);
+	registerComponent<T>(true, false, false);
 }
 
 template <typename T>
@@ -20,7 +22,7 @@ void ModelSubmitSystem<T>::submitAll(const float alpha) {
 	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
 	for (auto& e : entities) {
 		ModelComponent* model = e->getComponent<ModelComponent>();
-		T* transform = e->getComponent<T>();
+		TransformComponent* transform = e->getComponent<TransformComponent>();
 		CullingComponent* culling = e->getComponent<CullingComponent>();
 
 		Renderer::RenderFlag flags = (model->getModel()->isAnimated()) ? Renderer::MESH_DYNAMIC : Renderer::MESH_STATIC;
@@ -40,5 +42,5 @@ void ModelSubmitSystem<T>::submitAll(const float alpha) {
 }
 
 
-template class ModelSubmitSystem<TransformComponent>;
-template class ModelSubmitSystem<ReplayTransformComponent>;
+template class ModelSubmitSystem<RenderInActiveGameComponent>;
+template class ModelSubmitSystem<RenderInReplayComponent>;
