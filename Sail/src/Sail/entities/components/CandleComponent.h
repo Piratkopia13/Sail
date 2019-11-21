@@ -27,11 +27,12 @@ public:
 
 
 
-	void kill(DamageSource source, Netcode::PlayerID shooterID) {
+	void kill(DamageSource source, Netcode::ComponentID killerID) {
 		health = 0;
 		wasHitThisTick = true;
 		lastDamageSource = source;
-		wasHitByPlayerID = shooterID;
+		wasHitByEntity = killerID;
+		wasHitByPlayerID = Netcode::getComponentOwner(killerID);
 	}
 
 	// This function is only called by the host
