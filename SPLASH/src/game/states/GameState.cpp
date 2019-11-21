@@ -754,8 +754,6 @@ bool GameState::render(float dt, float alpha) {
 	if (m_isInKillCamMode) {
 		killCamAlpha = m_componentSystems.killCamReceiverSystem->getKillCamAlpha(alpha);
 
-		//SAIL_LOG("alpha: " + std::to_string(alpha) + "kc_alpha: " + std::to_string(killCamAlpha));
-
 		m_componentSystems.killCamModelSubmitSystem->submitAll(killCamAlpha);
 		m_componentSystems.killCamMetaballSubmitSystem->submitAll(killCamAlpha);
 	} else {
@@ -764,8 +762,6 @@ bool GameState::render(float dt, float alpha) {
 		m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 		m_componentSystems.boundingboxSubmitSystem->submitAll();
 	}
-
-
 
 	m_componentSystems.guiSubmitSystem->submitAll();
 	m_componentSystems.beginEndFrameSystem->endFrameAndPresent();
@@ -877,11 +873,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.projectileSystem);
-
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
-	
-	//runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
 	runSystem(dt, m_componentSystems.candleThrowingSystem);
 	runSystem(dt, m_componentSystems.candleHealthSystem);
