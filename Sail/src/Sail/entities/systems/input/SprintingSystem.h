@@ -13,5 +13,8 @@ public:
 	void clean();
 	void stop() override;
 
+	void setCrosshair(Entity* pCrosshairEntity);
+
 private:
+	Entity* m_crosshair = nullptr;
 };

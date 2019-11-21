@@ -405,14 +405,14 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onPlayerDied = [](const PlayerDiedEvent& e) {
 		// Play kill sound if the player was the one who shot
-		if (e.shooterID == NWrapperSingleton::getInstance().getMyPlayerID()) {
+		if (Netcode::getComponentOwner(e.killerID) == NWrapperSingleton::getInstance().getMyPlayerID()) {
 			auto& killSound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::KILLING_BLOW];
 			killSound.isPlaying = true;
 			killSound.playOnce = true;
 		}
 
 		//TODO: Find out why death sound is high as fuck!
-		else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
+		else if (e.killerID == Netcode::INSANITY_COMP_ID) {
 			auto& insanitySound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::INSANITY_SCREAM];
 			insanitySound.isPlaying = true;
 			insanitySound.playOnce = true;

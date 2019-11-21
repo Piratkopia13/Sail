@@ -9,4 +9,9 @@ public:
 
 	float totalLifeTime;
 	float elapsedTime;
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+#endif
 };

@@ -68,8 +68,8 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	m_rendererWrapper.initialize();
 	ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	ECS::Instance()->createSystem<MetaballSubmitSystem<TransformComponent>>();
-	ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
+	ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInActiveGameComponent>>();
+	ECS::Instance()->createSystem<ModelSubmitSystem<RenderInActiveGameComponent>>();
 	ECS::Instance()->createSystem<GUISubmitSystem>();
 
 

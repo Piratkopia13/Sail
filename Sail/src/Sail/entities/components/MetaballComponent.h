@@ -9,5 +9,11 @@ public:
 
 	PBRMaterial material;
 	int renderGroupIndex = 0;
+
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+#endif
 };
 

@@ -11,6 +11,9 @@ public:
 	Netcode::ComponentID netEntityID;
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Text(std::string("netEntityID: " + std::to_string(netEntityID)).c_str());
 	}
