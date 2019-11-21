@@ -91,7 +91,9 @@ void ChatWindow::renderWindow() {
 }
 
 void ChatWindow::renderChat(float dt) {
+	m_timeSinceLastMessage += dt;
 
+	
 
 
 
@@ -214,10 +216,6 @@ void ChatWindow::renderChat(float dt) {
 
 
 	ImGui::End();
-
-
-
-
 }
 
 void ChatWindow::addSystemMessage(const std::string& message) {
@@ -261,7 +259,6 @@ bool ChatWindow::onRecievedText(const NetworkChatEvent& event) {
 
 
 bool ChatWindow::onPlayerTeamChanged(const NetworkPlayerChangedTeam& event) {
-	///PRINT MESSAGE
 	auto* settings = &m_app->getSettings();
 	std::unordered_map<std::string, SettingStorage::Setting>& gamemodeSettings = settings->gameSettingsStatic["gamemode"];
 	SettingStorage::Setting& selectedGameTeams = settings->gameSettingsStatic["Teams"][gamemodeSettings["types"].getSelected().name];
