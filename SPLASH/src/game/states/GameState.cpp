@@ -808,11 +808,17 @@ bool GameState::renderImgui(float dt) {
 	int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
 	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
 	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchLeft.tga");
-	for (int i = 0; i < nrOfTorchesLeft; i++) {
-		ImGui::Begin("TorchesLeft", nullptr, m_standaloneButtonflags);
-		ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(75,75));
-		ImGui::End();
+	if (ImGui::Begin("TorchesLeft", nullptr, m_standaloneButtonflags)) {
+		for (int i = 0; i < nrOfTorchesLeft; i++) {
+			ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55));
+			ImGui::SameLine(0.f,0);	
+		}
+		ImGui::SetWindowPos(ImVec2(
+			m_app->getWindow()->getWindowWidth()-ImGui::GetWindowSize().x,
+			m_app->getWindow()->getWindowHeight() - ImGui::GetWindowSize().y-100
+			));
 	}
+	ImGui::End();
 
 	return false;
 }
