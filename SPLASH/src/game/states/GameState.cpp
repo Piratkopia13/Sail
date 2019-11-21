@@ -24,10 +24,6 @@
 #include "API/DX12/renderer/DX12HybridRaytracerRenderer.h"
 #include "API/DX12/dxr/DXRBase.h"
 
-// TODO: Move to somewhere more appropriate
-constexpr size_t SLOW_MO_MULTIPLIER = 4;
-
-
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -42,7 +38,6 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
-	EventDispatcher::Instance().subscribe(Event::Type::TOGGLE_SLOW_MOTION, this);
 
 
 	// Get the Application instance
@@ -253,7 +248,6 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_SLOW_MOTION, this);
 }
 
 // Process input for the state
@@ -270,6 +264,9 @@ bool GameState::processInput(float dt) {
 	if (Input::IsKeyPressed(KeyBinds::START_KILLCAM) & cooldown > TOGGLE_TIMER) {
 		m_isInKillCamMode = !m_isInKillCamMode;
 		cooldown = 0.0f;
+		if (!m_isInKillCamMode) {
+			m_componentSystems.killCamReceiverSystem->stop();
+		}
 	}
 //#endif
 
@@ -434,16 +431,16 @@ bool GameState::processInput(float dt) {
 
 void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
-	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem>();
-	
+	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem<RenderInActiveGameComponent>>();
+
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
 
-	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem>();
+	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<RenderInActiveGameComponent>>();
 
 	m_componentSystems.speedLimitSystem = ECS::Instance()->createSystem<SpeedLimitSystem>();
 
-	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem>();
+	m_componentSystems.animationSystem = ECS::Instance()->createSystem<AnimationSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.animationChangerSystem = ECS::Instance()->createSystem<AnimationChangerSystem>();
 
 	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
@@ -539,8 +536,12 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create systems needed for the killcam
 	m_componentSystems.killCamReceiverSystem->init(playerID);
-	m_componentSystems.killCamModelSubmitSystem    = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInReplayComponent>>();
-	m_componentSystems.killCamMetaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInReplayComponent>>();
+	
+	m_componentSystems.killCamAnimationSystem             = ECS::Instance()->createSystem<AnimationSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamMetaballSubmitSystem        = ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamModelSubmitSystem           = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamMovementSystem              = ECS::Instance()->createSystem<MovementSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamMovementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<RenderInReplayComponent>>();
 
 }
 
@@ -618,7 +619,6 @@ bool GameState::onEvent(const Event& event) {
 		case Event::Type::NETWORK_DROPPED:                  onPlayerDropped((const NetworkDroppedEvent&)event); break;
 		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS: onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
 		case Event::Type::NETWORK_JOINED:                   onPlayerJoined((const NetworkJoinedEvent&)event); break;
-		case Event::Type::TOGGLE_SLOW_MOTION:               onToggleSlowMotion((const ToggleSlowMotionReplayEvent&)event); break;
 		default: break;
 	}
 
@@ -667,9 +667,6 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	return true;
 }
 
-void GameState::onToggleSlowMotion(const ToggleSlowMotionReplayEvent& event) {
-	m_slowMotionState = event.setting;
-}
 
 void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
 
@@ -731,15 +728,17 @@ bool GameState::fixedUpdate(float dt) {
 	}
 #endif
 
-	
-	updatePerTickComponentSystems(dt);
-
+	// This should happen before updatePerTickComponentSystems(dt) so don't move this function call
 	if (m_isInKillCamMode) {
 		updatePerTickKillCamComponentSystems(dt);
 	}
+	
+	updatePerTickComponentSystems(dt);
+
 
 	return true;
 }
+
 
 // Renders the state
 // alpha is a the interpolation value (range [0,1]) between the last two snapshots
@@ -753,11 +752,9 @@ bool GameState::render(float dt, float alpha) {
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
 
 	if (m_isInKillCamMode) {
-		if (m_slowMotionState == SlowMotionSetting::ENABLE) {
-			killCamAlpha = (m_killCamTickCounter + alpha) / SLOW_MO_MULTIPLIER;
-		} else {
-			killCamAlpha = alpha;
-		}
+		killCamAlpha = m_componentSystems.killCamReceiverSystem->getKillCamAlpha(alpha);
+
+		//SAIL_LOG("alpha: " + std::to_string(alpha) + "kc_alpha: " + std::to_string(killCamAlpha));
 
 		m_componentSystems.killCamModelSubmitSystem->submitAll(killCamAlpha);
 		m_componentSystems.killCamMetaballSubmitSystem->submitAll(killCamAlpha);
@@ -840,16 +837,15 @@ void GameState::shutDownGameState() {
 
 // TODO: Add more systems here that only deal with replay entities/components
 void GameState::updatePerTickKillCamComponentSystems(float dt) {
-
-	m_killCamTickCounter = (m_killCamTickCounter + 1) % SLOW_MO_MULTIPLIER;
-
-	// If slow motion is enabled only update once every SLOW_MO_MULTIPLIER ticks
-	if (m_slowMotionState == SlowMotionSetting::ENABLE && m_killCamTickCounter != 0) {
+	if (m_componentSystems.killCamReceiverSystem->skipUpdate()) {
 		return;
 	}
 
 	m_componentSystems.killCamReceiverSystem->prepareUpdate();
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
+	m_componentSystems.killCamMovementSystem->update(dt);
+	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
+	m_componentSystems.killCamAnimationSystem->update(dt);
 }
 
 // HERE BE DRAGONS
@@ -878,8 +874,10 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.projectileSystem);
+
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.animationSystem);
+	
 	//runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
 	runSystem(dt, m_componentSystems.candleThrowingSystem);
@@ -927,7 +925,12 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	if (m_showcaseProcGen) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
-	m_componentSystems.animationSystem->updatePerFrame();
+	
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamAnimationSystem->updatePerFrame();
+	} else {
+		m_componentSystems.animationSystem->updatePerFrame();
+	}
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
 
