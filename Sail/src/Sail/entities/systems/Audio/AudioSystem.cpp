@@ -477,8 +477,8 @@ bool AudioSystem::onEvent(const Event& event) {
 				? Audio::SoundType::WATER_IMPACT_MY_CANDLE 
 				: Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE);
 
-			//player->getComponent<AudioComponent>()->m_sounds[soundIndex].isPlaying = true;
-			//player->getComponent<AudioComponent>()->m_sounds[soundIndex].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[soundIndex].isPlaying = true;
+			player->getComponent<AudioComponent>()->m_sounds[soundIndex].playOnce = true;
 		}
 	};
 
