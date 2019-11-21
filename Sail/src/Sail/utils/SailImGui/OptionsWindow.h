@@ -15,4 +15,6 @@ public:
 private:
 	Application* m_app;
 	SettingStorage* m_settings;
+
+	void drawCrosshair();
 };

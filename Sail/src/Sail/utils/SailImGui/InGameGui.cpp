@@ -5,6 +5,7 @@
 
 #include "Sail/entities/components/SanityComponent.h"
 #include "Sail/entities/components/SprintingComponent.h"
+#include "Sail/entities/components/CrosshairComponent.h"
 
 InGameGui::InGameGui(bool showWindow) {
 }
@@ -29,8 +30,16 @@ void InGameGui::renderWindow() {
 		progresbarHeight - progresbarHeight * 2.2
 	));
 
-	ImGui::Begin("GUI", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | 
-		ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground);
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
+	flags |= ImGuiWindowFlags_NoResize;
+	flags |= ImGuiWindowFlags_NoMove;
+	flags |= ImGuiWindowFlags_NoNav; 
+	flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+	flags |= ImGuiWindowFlags_NoTitleBar;
+	flags |= ImGuiWindowFlags_AlwaysAutoResize; 
+	flags |= ImGuiWindowFlags_NoSavedSettings;
+	flags |= ImGuiWindowFlags_NoBackground;
+	ImGui::Begin("GUI", NULL, flags);
 
 	if (m_player) {
 
@@ -65,8 +74,209 @@ void InGameGui::renderWindow() {
 	}
 
 	ImGui::End();
+
+	if (m_crosshairEntity) {
+		if (!m_crosshairEntity->getComponent<CrosshairComponent>()->sprinting) {
+			renderCrosshair(screenWidth, screenHeight);
+		}
+	}
 }
 
 void InGameGui::setPlayer(Entity* player) {
 	m_player = player;
+}
+
+void InGameGui::setCrosshair(Entity* pCrosshairEntity) {
+	m_crosshairEntity = pCrosshairEntity;
+}
+
+void InGameGui::renderCrosshair(float screenWidth, float screenHeight) {
+	// Crosshair settings window
+	CrosshairComponent* c = m_crosshairEntity->getComponent<CrosshairComponent>();
+
+	// Crosshair
+	ImVec2 crosshairSize{
+		c->size,
+		c->size
+	};
+	ImVec2 center{
+		screenWidth * 0.505f,
+		screenHeight * 0.55f
+	};
+	ImVec2 topLeft{
+		center.x - crosshairSize.x * 0.5f,
+		center.y - crosshairSize.y * 0.5f
+	};
+	ImVec2 top{
+		topLeft.x + crosshairSize.x * 0.5f,
+		topLeft.y
+	};
+	ImVec2 bot{
+		center.x,
+		center.y + crosshairSize.y * 0.5f
+	};
+	ImVec2 right{
+		center.x + crosshairSize.x * 0.5f,
+		center.y
+	};
+	ImVec2 left{
+		center.x - crosshairSize.x * 0.5f,
+		center.y
+	};
+
+	ImGui::SetNextWindowPos(topLeft);
+	ImGui::SetNextWindowSize(crosshairSize);
+
+	ImGuiWindowFlags crosshairFlags = ImGuiWindowFlags_NoCollapse;
+	crosshairFlags |= ImGuiWindowFlags_NoResize;
+	crosshairFlags |= ImGuiWindowFlags_NoMove;
+	crosshairFlags |= ImGuiWindowFlags_NoNav;
+	crosshairFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+	crosshairFlags |= ImGuiWindowFlags_NoTitleBar;
+	crosshairFlags |= ImGuiWindowFlags_NoBackground;
+	ImGui::Begin("Crosshair", NULL, crosshairFlags);
+
+	const ImU32 color = ImColor(c->color);
+
+	ImVec2 center_padded_top{
+		top.x,
+		center.y - c->centerPadding
+	};
+	ImVec2 center_padded_bot{
+		top.x,
+		center.y + c->centerPadding
+	};
+	ImVec2 center_padded_right{
+		center.x + c->centerPadding,
+		right.y
+	};
+	ImVec2 center_padded_left{
+		center.x - c->centerPadding,
+		left.y
+	};
+
+	ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+	//		|
+	//   
+	//
+	draw_list->AddLine(
+		top,
+		center_padded_top,
+		color,
+		c->thickness
+	);
+
+	//		|
+	//   
+	//		|
+	draw_list->AddLine(
+		bot,
+		center_padded_bot,
+		color,
+		c->thickness
+	);
+
+	//		|
+	//		    --
+	//		|
+	draw_list->AddLine(
+		right,
+		center_padded_right,
+		color,
+		c->thickness
+	);
+
+	//		|
+	//	--	   --
+	//		|
+	draw_list->AddLine(
+		left,
+		center_padded_left,
+		color,
+		c->thickness
+	);
+
+
+
+	// Set to True/False by  CrosshairSystem
+	if (c->currentlyAltered) {
+		ImVec2 topRight{
+			right.x,
+			top.y
+		};
+		ImVec2 botRight{
+			right.x,
+			center.y + c->size * 0.5f
+		};
+		ImVec2 botLeft{
+			left.x,
+			botRight.y
+		};
+
+		ImVec2 center_padded_topLeft{
+			center.x - c->centerPadding,
+			center.y - c->centerPadding
+		};
+		ImVec2 center_padded_topRight{
+			center.x + c->centerPadding,
+			center.y - c->centerPadding
+		};
+		ImVec2 center_padded_botRight{
+			center.x + c->centerPadding,
+			center.y + c->centerPadding
+		};
+		ImVec2 center_padded_botLeft{
+			center.x - c->centerPadding,
+			center.y + c->centerPadding
+		};
+
+		// Set alpha-value of the color based on how long it has been altered for (F1->0)
+		ImVec4 onHitColor = c->color;
+		onHitColor.w = 1 - (c->passedTimeSinceAlteration / c->durationOfAlteredCrosshair);
+		const ImU32 onHitcolor = ImColor(onHitColor);
+
+		//	\
+		//
+		//
+		// Draw an additional cross
+		draw_list->AddLine(
+			topLeft,
+			center_padded_topLeft,
+			onHitcolor,
+			c->thickness
+		);
+		//	\	/
+		//
+		//
+		// Draw an additional cross
+		draw_list->AddLine(
+			topRight,
+			center_padded_topRight,
+			onHitcolor,
+			c->thickness
+		);
+		//	\	/
+		//
+		//		\
+		// Draw an additional cross
+		draw_list->AddLine(
+			botRight,
+			center_padded_botRight,
+			onHitcolor,
+			c->thickness
+		);
+		//	\	/
+		//
+		//	/   \
+		// Draw an additional cross
+		draw_list->AddLine(
+			botLeft,
+			center_padded_botLeft,
+			onHitcolor,
+			c->thickness
+		);
+	}
+
+	ImGui::End();
 }

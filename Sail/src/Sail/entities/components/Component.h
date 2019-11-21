@@ -55,6 +55,7 @@ public:
 	}
 #ifdef DEVELOPMENT
 	virtual void imguiRender(Entity** selected);
+	virtual const unsigned int getByteSize() const = 0;
 	const std::string getName() {
 		return typeid(*this).name();
 	}
@@ -81,6 +82,7 @@ public:
 		static ComponentTypeBitID BID = GetBIDofID(ComponentType::ID);
 		return BID;
 	}
+
 #ifdef DEVELOPMENT
 	const std::string getName() {
 		return typeid(ComponentType).name();

@@ -15,6 +15,12 @@ public:
 	~MapComponent() {
 	}
 
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+#endif
+
 //#ifdef _DEBUG
 //	const static int xsize = 7;
 //	const static int ysize = 7; //size of level
