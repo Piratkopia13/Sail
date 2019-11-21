@@ -636,11 +636,11 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 				float newNormalDot = glm::dot(newProjectionOnRayDir - newV[i], triangleNormal);
 
 				if ((std::signbit(oldNormalDot) != std::signbit(newNormalDot) && glm::dot(middle - newV[i], rayDir) > 0.0f) || std::signbit(oldRayDist) != std::signbit(newRayDist)) {
-					glm::vec3 toRayStart = rayStart - oldV[i];
-					float length = glm::min(glm::length(toRayStart), padding) - 0.001f;
+					/*glm::vec3 toRayStart = rayStart - oldV[i];
+					float length = glm::min(glm::length(toRayStart), padding) - 0.001f;*/
 
-					newV[i] = oldV[i] + glm::normalize(toRayStart) * length;
-					//newV[i] = oldV[i];
+					//newV[i] = oldV[i] + glm::normalize(toRayStart) * length;
+					newV[i] = oldV[i];
 				}
 			}
 

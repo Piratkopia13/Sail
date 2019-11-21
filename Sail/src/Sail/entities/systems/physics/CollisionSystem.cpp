@@ -198,12 +198,11 @@ void CollisionSystem::collisionUpdate(Entity* e, const float dt) {
 // Modifies Entity e's Movement- and CollisionComponent
 // Neither of which is used in the rest of updatePart() so modifying them should be fine
 const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::CollisionInfo>& collisions, const float dt) {
-	bool collisionFound = false;
-
 	MovementComponent* movement = e->getComponent<MovementComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
 	const BoundingBox* boundingBox = e->getComponent<BoundingBoxComponent>()->getBoundingBox();
 
+	bool collisionFound = false;
 	collision->onGround = false;
 
 	const size_t collisionCount = collisions.size();
@@ -215,6 +214,10 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 
 		//Gather info
 		gatherCollisionInformation(e, boundingBox, collisions, trueCollisions, sumVec, groundIndices, dt);
+
+		if (trueCollisions.size() > 0) {
+			collisionFound = true;
+		}
 
 		if (groundIndices.size() > 0) {
 			collision->onGround = true;
@@ -228,15 +231,19 @@ const bool CollisionSystem::handleCollisions(Entity* e, std::vector<Octree::Coll
 }
 
 const bool CollisionSystem::handleRagdollCollisions(Entity* e, const float dt) {
-	bool collisionFound = false;
-
 	MovementComponent* movementComp = e->getComponent<MovementComponent>();
 	TransformComponent* transComp = e->getComponent<TransformComponent>();
 	RagdollComponent* ragdollComp = e->getComponent<RagdollComponent>();
-
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
 
+	bool collisionFound = false;
 	collision->onGround = false;
+
+	glm::vec3 movement = movementComp->velocity;
+
+	std::vector<int> groundIndices;
+	glm::vec3 sumVec(0.0f);
+	std::vector<Octree::CollisionInfo> trueCollisions;
 
 	for (size_t i = 0; i < ragdollComp->contactPoints.size(); i++) {
 		//----WILL BE USED LATER ON WHEN MOMENTUM IS IMPLEMENTED----
@@ -258,26 +265,24 @@ const bool CollisionSystem::handleRagdollCollisions(Entity* e, const float dt) {
 		glm::vec3 updatedMovement = bbMovement; */
 		//----------------------------------------------------------
 
-		glm::vec3 movement = movementComp->velocity;
-
-		std::vector<int> groundIndices;
-		glm::vec3 sumVec(0.0f);
-		std::vector<Octree::CollisionInfo> trueCollisions;
-
 		//Gather info
 		gatherCollisionInformation(e, &ragdollComp->contactPoints[i].boundingBox, ragdollComp->contactPoints[i].collisions, trueCollisions, sumVec, groundIndices, dt);
-
-		if (groundIndices.size() > 0) {
-			collision->onGround = true;
-		}
-
-		//Update velocity
-		updateVelocityVec(e, movement, trueCollisions, sumVec, groundIndices, dt);
-
-		movementComp->velocity = movement;
 	}
 
-	return false;
+	if (trueCollisions.size() > 0) {
+		collisionFound = true;
+	}
+
+	if (groundIndices.size() > 0) {
+		collision->onGround = true;
+	}
+
+	//Update velocity
+	updateVelocityVec(e, movement, trueCollisions, sumVec, groundIndices, dt);
+
+	movementComp->velocity = movement;
+
+	return collisionFound;
 }
 
 void CollisionSystem::gatherCollisionInformation(Entity* e, const BoundingBox* boundingBox, std::vector<Octree::CollisionInfo>& collisions, std::vector<Octree::CollisionInfo>& trueCollisions, glm::vec3& sumVec, std::vector<int>& groundIndices, const float dt) {
