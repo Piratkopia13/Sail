@@ -418,23 +418,20 @@ float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float
 }
 
 // Calculate field potential from all active metaballs.
-float CalculateMetaballsPotential(in uint index, in float3 position) {
+float CalculateMetaballsPotential(in uint index, in float3 position, in uint start, in uint end) {
 	//return 1;
 	float sumFieldPotential = 0;
-	uint groupStart = CB_SceneData.metaballGroup[0].start;
-	uint nballs = CB_SceneData.metaballGroup[0].size;
-	uint groupEnd = groupStart + nballs;
 
 	int mid = index;
 	int nWeights = 30;
 
-	int start = mid - nWeights;
-	int end = mid + nWeights;
+	int start2 = mid - nWeights;
+	int end2 = mid + nWeights;
 
-	if (start < 0)//TODO:: GROUP START
-		start = 0;
-	if (end > nballs)
-		end = nballs;
+	if (start2 < start)//TODO:: GROUP START
+		start2 = start;
+	if (end2 > end)
+		end2 = end;
 
 	for (int i = start; i < end; i++) {
 		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], METABALL_RADIUS);
@@ -444,15 +441,15 @@ float CalculateMetaballsPotential(in uint index, in float3 position) {
 }
 
 // Calculate a normal via central differences.
-float3 CalculateMetaballsNormal(in uint index, in float3 position) {
+float3 CalculateMetaballsNormal(in uint index, in float3 position, in uint start, in uint end) {
 	float e = 0.5773 * 0.00001;
 	return normalize(float3(
-		CalculateMetaballsPotential(index, position + float3(-e, 0, 0)) -
-		CalculateMetaballsPotential(index, position + float3(e, 0, 0)),
-		CalculateMetaballsPotential(index, position + float3(0, -e, 0)) -
-		CalculateMetaballsPotential(index, position + float3(0, e, 0)),
-		CalculateMetaballsPotential(index, position + float3(0, 0, -e)) -
-		CalculateMetaballsPotential(index, position + float3(0, 0, e))));
+		CalculateMetaballsPotential(index, position + float3(-e, 0, 0), start, end) -
+		CalculateMetaballsPotential(index, position + float3(e, 0, 0), start, end),
+		CalculateMetaballsPotential(index, position + float3(0, -e, 0), start, end) -
+		CalculateMetaballsPotential(index, position + float3(0, e, 0), start, end),
+		CalculateMetaballsPotential(index, position + float3(0, 0, -e), start, end) -
+		CalculateMetaballsPotential(index, position + float3(0, 0, e), start, end)));
 }
 
 struct Ballhit {
@@ -461,7 +458,7 @@ struct Ballhit {
 	int index;
 };
 
-bool Step(in Ballhit hit, in RayDesc rayWorld){
+bool Step(in Ballhit hit, in RayDesc rayWorld, in uint start, in uint end){
 		
 	float tmin = hit.tmin, tmax = hit.tmax;
 	unsigned int MAX_LARGE_STEPS = 32;//If these steps dont hit any metaball no hit is reported.
@@ -474,7 +471,7 @@ bool Step(in Ballhit hit, in RayDesc rayWorld){
 
 	float3 currPos = rayWorld.Origin + t * rayWorld.Direction;
 	while (iStep++ < MAX_LARGE_STEPS) {
-		float sumFieldPotential = CalculateMetaballsPotential(hit.index, currPos); // Sum of all metaball field potentials.
+		float sumFieldPotential = CalculateMetaballsPotential(hit.index, currPos, start, end); // Sum of all metaball field potentials.
 
 		const float Threshold = 0.90f;
 
@@ -485,7 +482,7 @@ bool Step(in Ballhit hit, in RayDesc rayWorld){
 			for (int i = 0; i < MAX_SMALL_STEPS; i++) {
 				t += restep_step * restep_step_dir;
 				currPos = rayWorld.Origin + t * rayWorld.Direction;
-				float sumFieldPotential_recomp = CalculateMetaballsPotential(hit.index, currPos); // Sum of all metaball field potentials.
+				float sumFieldPotential_recomp = CalculateMetaballsPotential(hit.index, currPos, start, end); // Sum of all metaball field potentials.
 				if (sumFieldPotential_recomp >= Threshold) {
 					restep_step *= 0.5;
 					restep_step_dir = -1;
@@ -495,7 +492,7 @@ bool Step(in Ballhit hit, in RayDesc rayWorld){
 				}
 			}
 
-			attr.normal = float4(CalculateMetaballsNormal(hit.index, currPos), 0);
+			attr.normal = float4(CalculateMetaballsNormal(hit.index, currPos, start, end), 0);
 			ReportHit(t, 0, attr);
 			return true;
 		}
@@ -528,7 +525,7 @@ void IntersectionShader() {
 	Ballhit hits[MAX_HITS];
 	int nHits = 0;
 
-	for (uint i = 0; i < nballs; i++) {
+	for (uint i = groupStart; i < groupEnd; i++) {
 		if (intersectSphere(rayWorld, metaballs[i], METABALL_RADIUS, min, max, dummy)) {
 			hits[nHits].tmin = min;
 			hits[nHits].tmax = max + 1;
@@ -538,22 +535,22 @@ void IntersectionShader() {
 		}
 	}
 
-	//for (uint i = groupStart; i < groupEnd && nHits < MAX_HITS; i++) {
-	//	uint i2 = groupEnd - i - 1;
-	//	if (intersectSphere(rayWorld, metaballs[i2], METABALL_RADIUS, min, max, dummy)) {
-	//		hits[nHits].tmin = min;
-	//		hits[nHits].tmax = max + 1;
-	//		hits[nHits].index = i2;
-	//		nHits++;
-	//		break;
-	//	}
-	//}
+	for (uint i = groupStart; i < groupEnd && nHits < MAX_HITS; i++) {
+		uint i2 = groupEnd - i - 1;
+		if (intersectSphere(rayWorld, metaballs[i2], METABALL_RADIUS, min, max, dummy)) {
+			hits[nHits].tmin = min;
+			hits[nHits].tmax = max + 1;
+			hits[nHits].index = i2;
+			nHits++;
+			break;
+		}
+	}
 
 	if (nHits == 0)
 		return;
 
 	for (int curHit = 0; curHit < nHits; curHit++) {
-		if (Step(hits[curHit], rayWorld)) {
+		if (Step(hits[curHit], rayWorld, groupStart, groupEnd)) {
 			return;
 		}
 	}
