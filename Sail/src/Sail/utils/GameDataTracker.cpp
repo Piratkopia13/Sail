@@ -264,6 +264,7 @@ void GameDataTracker::renderFunStats() {
 	ImGui::Text(bdString.c_str());
 }
 
+#ifdef DEVELOPMENT
 void GameDataTracker::addDebugData() {
 	for (int i = -1; i > -10; i--) {
 		m_hostPlayerTracker[i].nKills = i*-1;
@@ -272,6 +273,7 @@ void GameDataTracker::addDebugData() {
 		m_nPlayersCurrentSession++;
 	}
 }
+#endif
 
 bool GameDataTracker::onEvent(const Event& e) {
 
