@@ -37,6 +37,7 @@ LobbyState::LobbyState(StateStack& stack)
 	m_imGuiHandler = m_app->getImGuiHandler();
 	m_settings = &m_app->getSettings();
 	m_optionsWindow.setPosition({ 300, 300 });
+	m_netInfo.showWindow(true);
 
 	m_textHeight = 52;
 	m_outerPadding = 15;
@@ -196,6 +197,9 @@ bool LobbyState::renderImgui(float dt) {
 	m_size.y = m_app->getWindow()->getWindowHeight() - m_outerPadding * 2;
 	m_pos.x = m_app->getWindow()->getWindowWidth()*0.66f - m_outerPadding - ((m_size.x < m_minSize.x) ? m_minSize.x : m_size.x);
 	m_pos.y = m_outerPadding;
+#ifdef DEVELOPMENT
+	m_netInfo.renderWindow();
+#endif
 
 
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
@@ -832,12 +836,12 @@ void LobbyState::renderMenu() {
 
 				//TODO: ONLY DO THIS IF GAMEMODE IS FFA
 				int teamID = 0;
-				for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
-					if (p.team != -1) {
-						NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(teamID % 12, p.id, false);
-						teamID++;
-					}
-				}
+				//for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+				//	if (p.team != -1) {
+				//		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(teamID % 12, p.id, false);
+				//		teamID++;
+				//	}
+				//}
 
 				m_network->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
 				m_network->setClientState(States::Game);
