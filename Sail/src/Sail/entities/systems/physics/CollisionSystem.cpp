@@ -121,7 +121,7 @@ bool CollisionSystem::surfaceFromCollisionPart(float dt, size_t start, size_t en
 				surfaceFromCollision(e, e->getComponent<BoundingBoxComponent>()->getBoundingBox(), collision->collisions);
 			}
 			else {
-				surfaceFromRagdollCollision(e);
+				surfaceFromRagdollCollision(e, collision->collisions);
 			}
 		}
 	}
@@ -426,6 +426,8 @@ void CollisionSystem::rayCastRagdollUpdate(Entity* e, float& dt) {
 
 	float closestHit = INFINITY;
 
+	std::vector<Octree::CollisionInfo> collisions;
+
 	for (size_t i = 0; i < ragdollComp->contactPoints.size(); i++) {
 		ragdollComp->contactPoints[i].collisions.clear();
 
@@ -433,10 +435,16 @@ void CollisionSystem::rayCastRagdollUpdate(Entity* e, float& dt) {
 		Octree::RayIntersectionInfo intersectionInfo;
 		float padding = glm::min(glm::min(ragdollComp->contactPoints[i].boundingBox.getHalfSize().x, ragdollComp->contactPoints[i].boundingBox.getHalfSize().y), ragdollComp->contactPoints[i].boundingBox.getHalfSize().z);
 		m_octree->getRayIntersection(ragdollComp->contactPoints[i].boundingBox.getPosition(), glm::normalize(movement->velocity), &intersectionInfo, e, padding, collision->doSimpleCollisions);
-		if (intersectionInfo.closestHit < closestHit && intersectionInfo.closestHit >= 0.f) {
-			closestHit = intersectionInfo.closestHit;
+		if (intersectionInfo.closestHit >= 0.f) {
+			if (intersectionInfo.closestHit < closestHit) {
+				closestHit = intersectionInfo.closestHit;
+			}
+			ragdollComp->contactPoints[i].collisions = intersectionInfo.info;
+
+			collisions.emplace_back();
+			collisions.back() = intersectionInfo.info[intersectionInfo.closestHitIndex];
 		}
-		ragdollComp->contactPoints[i].collisions = intersectionInfo.info;
+		
 	}
 
 	closestHit += 0.01f; //Force small forwards movement to avoid getting stuck in infinite loops
@@ -456,7 +464,7 @@ void CollisionSystem::rayCastRagdollUpdate(Entity* e, float& dt) {
 
 		//Collision update
 		if (handleRagdollCollisions(e, 0.0f)) {
-			surfaceFromRagdollCollision(e);
+			surfaceFromRagdollCollision(e, collisions);
 		}
 
 		rayCastRagdollUpdate(e, dt);
@@ -483,11 +491,11 @@ glm::vec3 CollisionSystem::surfaceFromCollision(Entity* e, BoundingBox* bounding
 	return distance;
 }
 
-void CollisionSystem::surfaceFromRagdollCollision(Entity* e) {
+void CollisionSystem::surfaceFromRagdollCollision(Entity* e, std::vector<Octree::CollisionInfo>& collisions) {
 	RagdollComponent* ragdollComp = e->getComponent<RagdollComponent>();
 	CollisionComponent* collision = e->getComponent<CollisionComponent>();
 	for (size_t i = 0; i < ragdollComp->contactPoints.size(); i++) {
-		glm::vec3 distance = surfaceFromCollision(e, &ragdollComp->contactPoints[i].boundingBox, collision->collisions);
+		glm::vec3 distance = surfaceFromCollision(e, &ragdollComp->contactPoints[i].boundingBox, collisions);
 
 		for (size_t j = 0; j < ragdollComp->contactPoints.size(); j++) {
 			if (j != i) {
