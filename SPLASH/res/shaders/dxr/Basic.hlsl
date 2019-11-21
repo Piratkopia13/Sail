@@ -258,9 +258,9 @@ void rayGen() {
 	// float2 reprojectedTexCoord = screenTexCoord;
 
 	// The following loop SOMETIMES causes the DXIL compiler to fail - not after the dll update!
-	[unroll]
 	uint shadowTextureIndex = 0;
 	uint lightIndex = 0;
+	[unroll]
 	while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
 		float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, lightIndex);
 		if (lightIndex == -1) {
@@ -412,13 +412,22 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
 	
-	// [unroll]
-	// for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
-	// 	payload.shadowTwo[i] = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, i);
-	// }
-	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
-		payload.shadowTwo[i] = 0.f;
+	// Write shadows for each light
+	uint shadowTextureIndex = 0;
+	uint lightIndex = 0;
+	[unroll]
+	while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
+		float shadowAmount = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, lightIndex);
+		if (lightIndex == -1) {
+			// No more lights available!
+			break;
+		}
+		payload.shadowTwo[lightIndex] = shadowAmount;
+		shadowTextureIndex++;
 	}
+	// for (uint j = 0; j < NUM_SHADOW_TEXTURES; j++) {
+	// 	payload.shadowTwo[j] = 0.f;
+	// }
 
 	payload.albedoTwo.rgb = albedoColor.rgb; // TODO: store alpha and use as team color amount
 	payload.normalTwo = normalInWorldSpace;

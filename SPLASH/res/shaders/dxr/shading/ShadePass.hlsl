@@ -32,7 +32,7 @@ cbuffer PSSceneCBuffer : register(b0) {
     float padding;
     PointlightInput pointLights[NUM_POINT_LIGHTS];
     SpotlightInput spotLights[NUM_POINT_LIGHTS];
-    IndexMap shadowTextureIndexMap[NUM_POINT_LIGHTS*2]; // Maps light indices to shadow texture indices    TODO: make array of structs
+    IndexMap shadowTextureIndexMap[NUM_POINT_LIGHTS * 2]; // Maps light indices to shadow texture indices
 }
 
 Texture2D<float4> albedoBounceOne : register(t0);
@@ -97,7 +97,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
     // Debug stuff
     // return float4(albedoOne, 1.0f);
     // return float4(worldNormalOne, 1.0f);
-    // return float4(shadowOne[1], 0.f, 0.f, 1.0f);
+    // return float4(shadowTwo[0], 0.f, 0.f, 1.0f);
     // return float4(shadowAmount.x, 0.f, 0.f, 1.0f) * 0.5 + pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor) * 0.5;
 }
 
