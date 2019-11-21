@@ -98,6 +98,30 @@ bool SettingStorage::deSerialize(const std::string& content, std::unordered_map<
 	return true;
 }
 
+const int SettingStorage::teamColorIndex(const int team) {
+	if (team < 12 && team >= -1) {
+		std::string name = "team" + std::to_string(team);
+		unsigned int value = (unsigned int)(int)gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().value;
+		return (unsigned int)(int)gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().value;
+	}
+	else {
+		return 0;
+	}
+}
+
+glm::vec3 SettingStorage::getColor(const int team) {
+	if (team < 12 && team >= -1) {
+		return glm::vec3(
+			gameSettingsDynamic["Color" + std::to_string(team)]["r"].value,
+			gameSettingsDynamic["Color" + std::to_string(team)]["g"].value,
+			gameSettingsDynamic["Color" + std::to_string(team)]["b"].value
+		);
+	}
+	else {
+		return glm::vec3(1, 1, 1);
+	}
+}
+
 SettingStorage::WantedType SettingStorage::matchType(const std::string& value) {
 	if (Reg::Number.match(value.c_str()) == value.size()) {
 		return WantedType::INT;
@@ -149,11 +173,21 @@ void SettingStorage::createApplicationDefaultSound() {
 }
 void SettingStorage::createApplicationDefaultMisc() {
 	applicationSettingsStatic["misc"] = std::unordered_map<std::string, Setting>();
+	applicationSettingsStatic["Crosshair"] = std::unordered_map<std::string, Setting>();
+	auto& crosshairSettings = applicationSettingsDynamic["Crosshair"];
+	crosshairSettings["Thickness"] = DynamicSetting(1.0f, 0.0f, 100.0f);
+	crosshairSettings["CenterPadding"] = DynamicSetting(10.0f, 0.0f, 20.0f);
+	crosshairSettings["Size"] = DynamicSetting(50.0f, 0.0f, 300.0f);
+	crosshairSettings["Color R"] = DynamicSetting(0.5f, 0.0f, 1.0f);
+	crosshairSettings["Color G"] = DynamicSetting(0.0f, 0.0f, 1.0f);
+	crosshairSettings["Color B"] = DynamicSetting(0.0f, 0.0f, 1.0f);
+	crosshairSettings["Color A"] = DynamicSetting(1.0f, 0.0f, 1.0f);
 }
 
 void SettingStorage::createGameDefaultStructure() {
 	createGameDefaultMap();
 	createGameModeDefault();
+	createGameColorsDefault();
 }
 
 void SettingStorage::createGameDefaultMap() {	
@@ -194,10 +228,64 @@ void SettingStorage::createGameModeDefault() {
 
 }
 
+void SettingStorage::createGameColorsDefault() {
+	//gameSettingsDynamic["teamColor"] = std::unordered_map<std::string, DynamicSetting>()
+	//Spectator color
+	gameSettingsDynamic["Color" + std::to_string(-1)]["r"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	gameSettingsDynamic["Color" + std::to_string(-1)]["g"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	gameSettingsDynamic["Color" + std::to_string(-1)]["b"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	gameSettingsDynamic["Color" + std::to_string(-1)]["a"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	//player colors
+
+
+	std::vector<glm::vec3> col({
+		{183,23,33}, // red
+		{0,68,253}, // Blue
+		{21,131,0}, // Green
+		{253,222,45}, // Yellow
+		{37,172,238}, // Teal
+		{83,3,130}, // Purple
+		{255,142,20}, // Orange
+		{234,95,176}, // Pink
+		{33,4,193}, // Violet
+		{82,83,147}, // light grey
+		{14,99,68}, // Dark Green
+		{148,254,143}, // light green
+	});
 
 
 
+	for (unsigned int i = 0; i < 12; i++) {
+		float f = (i / 12.0f) * glm::two_pi<float>();
+		glm::vec4 color(abs(cos(f * 2)), 1 - abs(cos(f * 1.4)), abs(sin(f * 1.1f)), 1.0f);
+		gameSettingsDynamic["Color" + std::to_string(i)]["r"] = DynamicSetting(col[i].r / 255.0f, 0.0f, 1.0f);
+		gameSettingsDynamic["Color" + std::to_string(i)]["g"] = DynamicSetting(col[i].g / 255.0f, 0.0f, 1.0f);
+		gameSettingsDynamic["Color" + std::to_string(i)]["b"] = DynamicSetting(col[i].b / 255.0f, 0.0f, 1.0f);
+		gameSettingsDynamic["Color" + std::to_string(i)]["a"] = DynamicSetting(1, 0.0f, 1.0f);
+	}
 
+	//Spectators
+	gameSettingsStatic["team" + std::to_string(-1)]["color"] = Setting(0, std::vector<Setting::Option>({
+			{ "-1", -1.0f },
+		}));
+	//Player teams
+	for (int i = 0; i < 12; i++) {
+		gameSettingsStatic["team" + std::to_string(i)]["color"] = Setting(i, std::vector<Setting::Option>({
+			{ "Red", 0.0f },
+			{ "Blue", 1.0f },
+			{ "Green", 2.0f },
+			{ "Yellow", 3.0f },
+			{ "Teal", 4.0f },
+			{ "Purple", 5.0f },
+			{ "Orange", 6.0f },
+			{ "Pink", 7.0f },
+			{ "Violet", 8.0f },
+			{ "Grey", 9.0f },
+			{ "Dark Green", 10.0f },
+			{ "Light Green", 11.0f },
+		}));
+	}
+}
 
 #pragma endregion
 

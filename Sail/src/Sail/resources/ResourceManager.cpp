@@ -1,7 +1,5 @@
 #include "pch.h"
 #include "ResourceManager.h"
-//#include "../graphics/shader/deferred/DeferredGeometryShader.h"
-//#include "audio/SoundManager.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/api/Mesh.h"
@@ -10,9 +8,11 @@ const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
 
 ResourceManager::ResourceManager() {
-	//m_soundManager = std::make_unique<SoundManager>();
-	m_assimpLoader = std::make_unique<AssimpLoader>();
 	m_fbxLoader = std::make_unique<FBXLoader>();
+	for (int i = 0; i < 5; i++) {
+		m_byteSize[i] = 0;
+	}
+	m_byteSize[RMDataType::Generic] += sizeof(*this);
 	m_defaultShader = nullptr;
 }
 ResourceManager::~ResourceManager() {
@@ -33,10 +33,12 @@ bool ResourceManager::setDefaultShader(Shader* shader) {
 	return false;
 }
 
-void ResourceManager::loadAudioData(const std::string& filename, IXAudio2* xAudio2) {
-	
+void ResourceManager::loadAudioData(const std::string& filename, IXAudio2* xAudio2) {	
 	if (!this->hasAudioData(filename)) {
-		m_audioDataAll.insert({ filename, std::make_unique<AudioData>(SAIL_DEFAULT_SOUND_LOCATION + filename, xAudio2) });
+		auto inserted = m_audioDataAll.insert({ filename, std::make_unique<AudioData>(SAIL_DEFAULT_SOUND_LOCATION + filename, xAudio2) });
+		if (inserted.second) {
+			m_byteSize[RMDataType::Audio] += inserted.first->second->getByteSize();
+		}
 	} 
 }
 
@@ -58,7 +60,10 @@ bool ResourceManager::hasAudioData(const std::string& filename) {
 //
 
 void ResourceManager::loadTextureData(const std::string& filename) {
-	m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename) });
+	auto inserted = m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename) });
+	if (inserted.second) {
+		m_byteSize[RMDataType::Textures] += inserted.first->second->getByteSize();
+	}
 }
 TextureData& ResourceManager::getTextureData(const std::string& filename) {
 	auto pos = m_textureDatas.find(filename);
@@ -103,6 +108,7 @@ void ResourceManager::addModel(const std::string& modelName, Model* model) {
 	SAIL_LOG("Added model: " + modelName);
 	model->setName(modelName);
 	m_models.insert({modelName, std::unique_ptr<Model>(model)});
+	m_byteSize[RMDataType::Models] += model->getByteSize();
 }
 
 bool ResourceManager::loadModel(const std::string& filename, Shader* shader, const ImporterType type) {
@@ -124,11 +130,8 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 	}
 
 	if (temp) {
-		float size = 0.f;
-		for (int i = 0; i < temp->getNumberOfMeshes(); i++) {
-			size += temp->getMesh(i)->getSize();
-		}
-		SAIL_LOG("Loaded model: " + filename + " (" + std::to_string(size / (1024 * 1024)) + "MB)");
+		SAIL_LOG("Loaded model: " + filename + " (" + std::to_string((float)temp->getByteSize() / (1024.f * 1024.f)) + "MB)");
+		m_byteSize[RMDataType::Models] += temp->getByteSize();
 		temp->setName(filename);
 		m_modelMutex.lock();
 		m_models.insert({ filename, std::unique_ptr<Model>(temp) });
@@ -136,10 +139,8 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 		return true;
 	}
 	else {
-#ifdef _DEBUG
 		SAIL_LOG_ERROR("Could not Load model: (" + filename + ")");
-		//assert(temp);
-#endif
+
 		return false;
 	}
 }
@@ -167,12 +168,17 @@ Model& ResourceManager::getModelCopy(const std::string& filename, Shader* shader
 	std::string nameCopy = getSuitableName(filename);
 	tempModel->setName(nameCopy);
 	SAIL_LOG("copied model: " + filename + ", using name: " + nameCopy);
+	m_byteSize[RMDataType::Models] += tempModel->getByteSize();
 	m_models.insert({ nameCopy, std::unique_ptr<Model>(tempModel) });
 
 	return *m_models.find(nameCopy)->second;
 }
 bool ResourceManager::hasModel(const std::string& filename) {
 	return m_models.find(filename) != m_models.end();
+}
+
+void ResourceManager::clearSceneData() {
+	m_fbxLoader->clearAllScenes();
 }
 
 void ResourceManager::loadAnimationStack(const std::string& fileName, const ImporterType type) {
@@ -192,16 +198,11 @@ void ResourceManager::loadAnimationStack(const std::string& fileName, const Impo
 
 	if (temp) {
 		m_animationStacks.insert({fileName, std::unique_ptr<AnimationStack>(temp)});
-		float size = 0.f;
-		for (int i = 0; i < m_animationStacks[fileName]->getAnimationCount(); i++) {
-			size += m_animationStacks[fileName]->getAnimation(i)->getMaxAnimationFrame() * m_animationStacks[fileName]->boneCount() * sizeof(glm::mat4);
-		}
-		Logger::Log("Animation size of '" + fileName + "' : " + std::to_string(size / (1024 * 1024)) + "MB");
+		SAIL_LOG("Animation size of '" + fileName + "' : " + std::to_string((float)m_animationStacks[fileName]->getByteSize() / (1024.f * 1024.f)) + "MB");
+		m_byteSize[RMDataType::Animations] += m_animationStacks[fileName]->getByteSize();
 	}
 	else {
-#ifdef _DEBUG
 		SAIL_LOG_ERROR("Could not Load model: (" + fileName + ")");
-#endif
 	}
 }
 
@@ -226,6 +227,34 @@ const unsigned int ResourceManager::numberOfTextures() const {
 	return m_textures.size();
 }
 
+const unsigned int ResourceManager::getByteSize() const {
+	unsigned int size = 0;
+	for (int i = 0; i < 5; i++) {
+		size += m_byteSize[i];
+	}
+	return size + sizeof(*this);
+}
+
+const unsigned int ResourceManager::getModelByteSize() const {
+	return m_byteSize[RMDataType::Models];
+}
+
+const unsigned int ResourceManager::getAnimationsByteSize() const {
+	return m_byteSize[RMDataType::Animations];
+}
+
+const unsigned int ResourceManager::getAudioByteSize() const {
+	return m_byteSize[RMDataType::Audio];
+}
+
+const unsigned int ResourceManager::getTextureByteSize() const {
+	return m_byteSize[RMDataType::Textures];
+}
+
+const unsigned int ResourceManager::getGenericByteSize() const {
+	return m_byteSize[RMDataType::Generic];
+}
+
 
 const std::string ResourceManager::getSuitableName(const std::string& name) {
 	unsigned int iterator = 1;
@@ -237,14 +266,3 @@ const std::string ResourceManager::getSuitableName(const std::string& name) {
 	}
 	return "broken";
 }
-
-//void ResourceManager::reloadShaders() {
-//	for (auto it = m_shaderSets.begin(); it != m_shaderSets.end(); ++it)
-//		it->second->reload();
-//}
-
-
-// Sound Manager
-//SoundManager* ResourceManager::getSoundManager() {
-//	return m_soundManager.get();
-//}

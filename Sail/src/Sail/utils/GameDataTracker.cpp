@@ -76,12 +76,7 @@ void GameDataTracker::logDistanceWalked(glm::vec3 vector) {
 	if (m_trackLocalStats) {
 		float distanceOfVector = sqrt(pow(vector.x, 2) + pow(vector.y, 2) + pow(vector.z, 2));
 		m_loggedData.distanceWalked += distanceOfVector;
-	}
-	
-}
-
-void GameDataTracker::logPlayerDeath(const std::string& killer, const std::string& killed, const std::string& deathType) {
-	m_killFeed.emplace_back(killer + " " + deathType + " " + killed);
+	}	
 }
 
 void GameDataTracker::logPlacement(Netcode::PlayerID playerID) {
@@ -159,12 +154,12 @@ void GameDataTracker::renderImgui() {
 		ImGui::Separator();
 
 		int placement = 1;
-		for (int i = 1; i < (int)tempPlacementMap.size() + 1; i++) {
-			if (tempPlacementMap[i].name.size() > 0) {
+		for (auto& p : tempPlacementMap) {
+			if (p.second.name.size() > 0) {
 				ImGui::Text(std::to_string(placement).c_str()); ImGui::NextColumn();
 				placement++;
-				ImGui::Text(tempPlacementMap[i].name.c_str()); ImGui::NextColumn();
-				ImGui::Text(std::to_string(tempPlacementMap[i].nKills).c_str()); ImGui::NextColumn();
+				ImGui::Text(p.second.name.c_str()); ImGui::NextColumn();
+				ImGui::Text(std::to_string(p.second.nKills).c_str()); ImGui::NextColumn();
 			}
 		}
 

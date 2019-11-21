@@ -33,14 +33,29 @@ static std::ofstream out("LogFiles/KillCamReceiverSystem.cpp.log");
 
 // TODO: register more components
 KillCamReceiverSystem::KillCamReceiverSystem() : ReceiverBase() {
-	registerComponent<ReplayComponent>(true, false, false);
-	registerComponent<ReplayTransformComponent>(true, true, true);
+	registerComponent<ReplayReceiverComponent>(true, false, false);
 
-	//EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
 }
 
 KillCamReceiverSystem::~KillCamReceiverSystem() {
-	//EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
+}
+
+void KillCamReceiverSystem::stop() {
+	// Clear the saved data
+	for (std::queue<std::string>& data : m_replayData) {
+		data = std::queue<std::string>();
+	}
+
+	m_currentWriteInd = 0;
+	m_currentReadInd  = 1;
+	m_hasStarted      = false;
+	m_idOfKillingProjectile = 0;
+}
+
+void KillCamReceiverSystem::init(Netcode::PlayerID player) {
+	initBase(player);
 }
 
 void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
@@ -53,8 +68,7 @@ void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
 // Prepare transform components for the next frame
 void KillCamReceiverSystem::prepareUpdate() {
 	for (auto e : entities) {
-
-		e->getComponent<ReplayTransformComponent>()->prepareUpdate();
+		e->getComponent<TransformComponent>()->prepareUpdate();
 	}
 }
 
@@ -70,11 +84,35 @@ void KillCamReceiverSystem::update(float dt) {
 
 // Should only be called when the killcam is active
 void KillCamReceiverSystem::processReplayData(float dt) {
+	// Add the entities to all relevant systems so that they for example will have their animations updated
+	if (!m_hasStarted) {
+		for (auto e : entities) {
+			e->tryToAddToSystems = true;
+			e->addComponent<RenderInReplayComponent>();
+		}
+		m_hasStarted = true;
+	}
+	
+	
 	std::lock_guard<std::mutex> lock(m_replayDataLock);
 
 	processData(dt, m_replayData[m_currentReadInd], false);
 }
 
+#ifdef DEVELOPMENT
+unsigned int KillCamReceiverSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	for (int i = 0; i < REPLAY_BUFFER_SIZE; i++) {
+		const auto& queue = m_replayData[i];
+		const size_t queueSize = queue.size();
+		size += queueSize * sizeof(std::string);								// string structure size
+		if (queueSize) {
+			size += queueSize * queue.front().capacity() * sizeof(unsigned char);	// approximate string character length
+		}
+	}
+	return size;
+}
+#endif
 
 void KillCamReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
 	//// Early exit if the entity already exists
@@ -104,17 +142,17 @@ void KillCamReceiverSystem::enableSprinklers() {
 	//ECS::Instance()->getSystem<SprinklerSystem>()->enableSprinklers();
 }
 
+// SHOULD REMAIN EMPTY FOR THE KILLCAM
+void KillCamReceiverSystem::endMatch(const GameDataForOthersInfo& info) {}
+
 void KillCamReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId, const Netcode::PlayerID shooterID) {
-	//for (auto& e : entities) {
-	//	if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
+	if (auto e = findFromNetID(candleId); e) {
+		e->getComponent<CandleComponent>()->wasJustExtinguished = true;
+		e->getComponent<CandleComponent>()->wasHitByPlayerID = shooterID;
 
-	//		e->getComponent<CandleComponent>()->wasJustExtinguished = true;
-	//		e->getComponent<CandleComponent>()->wasHitByPlayerID = shooterID;
-
-	//		return;
-	//	}
-	//}
-	//SAIL_LOG_WARNING("extinguishCandle called but no matching candle entity found");
+		return;
+	}
+	SAIL_LOG_WARNING("extinguishCandle called but no matching candle entity found");
 }
 
 void KillCamReceiverSystem::hitBySprinkler(const Netcode::ComponentID candleOwnerID) {
@@ -123,9 +161,29 @@ void KillCamReceiverSystem::hitBySprinkler(const Netcode::ComponentID candleOwne
 
 void KillCamReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 	//EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
+
+	if (auto candle = findFromNetID(candleID); candle) {
+
+		auto candleComp = candle->getComponent<CandleComponent>();
+		if (!candleComp->isLit) {
+			candleComp->health = MAX_HEALTH;
+			candleComp->respawns++;
+			candleComp->downTime = 0.f;
+			candleComp->isLit = true;
+			candleComp->userReignition = false;
+			candleComp->invincibleTimer = 1.5f;
+		}
+	} else {
+		SAIL_LOG_WARNING("igniteCandle called but no matching entity found");
+	}
 }
 
-void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
+// SHOULD REMAIN EMPTY FOR THE KILLCAM
+void KillCamReceiverSystem::matchEnded() {}
+
+void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::ComponentID killerID) {
+	destroyEntity(networkIdOfKilled);
+	
 	//if (auto e = findFromNetID(networkIdOfKilled); e) {
 	//	EventDispatcher::Instance().emit(PlayerDiedEvent(
 	//		e,
@@ -139,23 +197,40 @@ void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKil
 }
 
 void KillCamReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
-	//if (auto e = findFromNetID(id); e) {
-	//	auto animation = e->getComponent<AnimationComponent>();
-	//	animation->setAnimation(info.index);
-	//	animation->animationTime = info.time;
-	//	return;
-	//}
-	//SAIL_LOG_WARNING("setAnimation called but no matching entity found");
+	if (auto e = findFromNetID(id); e) {
+		auto animation = e->getComponent<AnimationComponent>();
+		animation->setAnimation(info.index);
+		animation->animationTime = info.time;
+		return;
+	}
+	SAIL_LOG_WARNING("setAnimation called but no matching entity found");
 }
 
 void KillCamReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId, const float health) {
-	//for (auto& e : entities) {
-	//	if (e->getComponent<NetworkReceiverComponent>()->m_id == candleId) {
-	//		e->getComponent<CandleComponent>()->health = health;
-	//		return;
-	//	}
-	//}
-	//SAIL_LOG_WARNING("setCandleHelath called but no matching candle entity found");
+	for (auto& e : entities) {
+		if (e->getComponent<ReplayReceiverComponent>()->m_id == candleId) {
+			auto candle = e->getComponent<CandleComponent>();
+			candle->health = health;
+			// Scale fire particles with health
+			auto particles = e->getComponent<ParticleEmitterComponent>();
+			particles->spawnRate = 0.01f * (MAX_HEALTH / candle->health);
+
+			if (candle->wasJustExtinguished) {
+				candle->health = 0.0f;
+				candle->isLit = false;
+				candle->wasJustExtinguished = false; // reset for the next tick
+			}
+
+			// COLOR/INTENSITY
+			float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
+
+			LightComponent* lc = e->getComponent<LightComponent>();
+
+			lc->getPointLight().setColor(tempHealthRatio * lc->defaultColor);
+			return;
+		}
+	}
+	SAIL_LOG_WARNING("setCandleHelath called but no matching candle entity found");
 }
 
 // The player who puts down their candle does this in CandleSystem and tests collisions
@@ -164,12 +239,51 @@ void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const 
 
 	//EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld));
 
+
+	Entity* player = nullptr;
+	Entity* candle = nullptr;
+
+	// Find the candle whose parent has the correct ID
+	for (auto candleEntity : entities) {
+		if (auto parentEntity = candleEntity->getParent(); parentEntity) {
+			if (parentEntity->getComponent<ReplayReceiverComponent>()->m_id == id) {
+				player = parentEntity;
+				candle = candleEntity;
+				break;
+			}
+		}
+	}
+
+	// candle exists => player exists (only need to check candle)
+	if (!candle) {
+		Logger::Warning("Holding candle toggled but no matching entity found");
+		return;
+	}
+
+	auto candleComp = candle->getComponent<CandleComponent>();
+	auto candleTransComp = candle->getComponent<TransformComponent>();
+
+	candleComp->isCarried = isHeld;
+	candleComp->wasCarriedLastUpdate = isHeld;
+	if (isHeld) {
+		candleTransComp->setTranslation(glm::vec3(10.f, 2.0f, 0.f));
+		candleTransComp->setParent(player->getComponent<TransformComponent>());
+
+		player->getComponent<AnimationComponent>()->rightHandEntity = candle;
+	} else {
+		candleTransComp->removeParent();
+		player->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
+
+		// Might be needed
+		ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+	}
+
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
 void KillCamReceiverSystem::setLocalPosition(const Netcode::ComponentID id, const glm::vec3& translation) {
 	if (auto e = findFromNetID(id); e) {
-		e->getComponent<ReplayTransformComponent>()->setTranslation(translation);
+		e->getComponent<TransformComponent>()->setTranslation(translation);
 		return;
 	}
 	SAIL_LOG_WARNING("setLocalPosition called but no matching entity found");
@@ -177,7 +291,7 @@ void KillCamReceiverSystem::setLocalPosition(const Netcode::ComponentID id, cons
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rotation) {
 	if (auto e = findFromNetID(id); e) {
-		e->getComponent<ReplayTransformComponent>()->setRotations(rotation);
+		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
 	}
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
@@ -185,11 +299,17 @@ void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::quat& rotation) {
 	if (auto e = findFromNetID(id); e) {
-		e->getComponent<ReplayTransformComponent>()->setRotations(rotation);
+		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
 	}
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
+
+// SHOULD REMAIN EMPTY FOR THE KILLCAM
+void KillCamReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement) {}
+
+// SHOULD PROABABLY REMAIN EMPTY FOR THE KILLCAM
+void KillCamReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {}
 
 // If I requested the projectile it has a local owner
 void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
@@ -205,7 +325,7 @@ void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	EntityFactory::CreateReplayProjectile(e, args);
 }
 
-void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::PlayerID senderId) {
+void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID killerID) {
 	//EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
 }
 
@@ -275,7 +395,6 @@ void KillCamReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {
 
 
 // These functions are only used by NetworkReceiverSystemHost so their implementations are empty here
-void KillCamReceiverSystem::endMatch() {}
 void KillCamReceiverSystem::endMatchAfterTimer(const float dt) {}
 void KillCamReceiverSystem::prepareEndScreen(const Netcode::PlayerID sender, const EndScreenInfo& info) {}
 void KillCamReceiverSystem::mergeHostsStats() {}
@@ -293,7 +412,7 @@ void KillCamReceiverSystem::playerDisconnect(const Netcode::PlayerID playerID)
 
 Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) const {
 	for (auto e : entities) {
-		if (e->getComponent<ReplayComponent>()->m_id == id) {
+		if (e->getComponent<ReplayReceiverComponent>()->m_id == id) {
 			return e;
 		}
 	}
@@ -302,9 +421,17 @@ Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) cons
 
 
 bool KillCamReceiverSystem::onEvent(const Event& event) {
+
+	auto onPlayerDeath = [&](const PlayerDiedEvent& e) {
+		if (Netcode::getComponentOwner(e.netIDofKilled) == m_playerID) {
+			m_idOfKillingProjectile = e.killerID;
+		}
+	};
+
+
 	switch (event.type) {
-	default: 
-		break;
+	case Event::Type::PLAYER_DEATH: onPlayerDeath((const PlayerDiedEvent&)event); break;
+	default: break;
 	}
 
 	return true;

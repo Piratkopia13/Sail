@@ -11,6 +11,10 @@ public:
 	void update(float dt) override;	
 	void updateSanityNetworked(Netcode::ComponentID id, float sanity);
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
+
 	float m_maxSanity = 100;
 	float m_minSanity = 0;
 private:

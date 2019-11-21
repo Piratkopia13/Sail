@@ -51,10 +51,11 @@ public:
 	RenderableTexture* getRenderableTexture(const std::string& name) const;
 
 	virtual void setCBufferVar(const std::string& name, const void* data, UINT size);
-	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
+	virtual bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
 
-	virtual void setStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex);
-	bool trySetStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex);
+	virtual void setStructBufferVar(const std::string& name, const void* data, UINT numElements);
+	virtual bool trySetStructBufferVar(const std::string& name, const void* data, UINT numElements);
+
 
 protected:
 	// Compiles shaders into blobs
@@ -148,11 +149,6 @@ protected:
 		}
 	};
 	ParsedData parsedData;
-
-private:
-	//std::vector<std::unique_ptr<ComputeShader>> m_css;
-	//std::unique_ptr<Shader> m_shaders;
-
 
 private:
 	void parse(const std::string& source);

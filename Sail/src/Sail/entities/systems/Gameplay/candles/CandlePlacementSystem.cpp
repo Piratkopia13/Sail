@@ -45,6 +45,8 @@ void CandlePlacementSystem::update(float dt) {
 		static const float candleHeight = 0.5f;
 		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrixWithUpdate() * glm::vec4(0, candleHeight, 0, 1);
 		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
+		
+			
 	}
 }
 
@@ -113,7 +115,7 @@ bool CandlePlacementSystem::onEvent(const Event& event) {
 
 		// candle exists => player exists (only need to check candle)
 		if (!candle) {
-			Logger::Warning("Holding candle toggled but no matching entity found");
+			SAIL_LOG_WARNING("Holding candle toggled but no matching entity found");
 			return;
 		}
 

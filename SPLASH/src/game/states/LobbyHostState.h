@@ -10,5 +10,5 @@ public:
 	LobbyHostState(StateStack& stack);
 	~LobbyHostState();
 private:
-	bool onMyTextInput(const TextInputEvent& event);
+	bool onMyTextInput(const ChatSent& event);
 };
