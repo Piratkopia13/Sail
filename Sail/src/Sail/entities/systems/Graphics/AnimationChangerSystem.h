@@ -21,7 +21,6 @@ public:
 	IDLE_DROP,
 	IDLE_THROW,
 	SPRINTING,
-	//RUNNING_DROP,
 	//RUNNING_THROW,
 	};
 };

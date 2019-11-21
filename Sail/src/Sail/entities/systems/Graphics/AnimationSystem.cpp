@@ -95,9 +95,20 @@ void AnimationSystem::updateTransforms(const float dt) {
 					animationC->animationIndex = animationC->currentTransition->toIndex;
 					//animationC->nextAnimation = nullptr;
 					animationC->currentTransition->to = nullptr;
+					animationC->nextAnimation = nullptr;
 				}
 			} else {
-				if (animationC->currentTransition->transpiredTime >= animationC->currentTransition->transitionTime) {
+				if (animationC->currentTransition->transpiredTime == 0.f) {
+					if (animationC->currentTransition->waitForEnd) {
+						if (animationC->animationTime + dt > animationC->currentAnimation->getMaxAnimationTime()) {
+							animationC->nextAnimation = animationC->currentTransition->to;
+							animationC->currentTransition->transpiredTime += dt;
+						}
+					} else {
+						animationC->nextAnimation = animationC->currentTransition->to;
+						animationC->currentTransition->transpiredTime += dt;
+					}
+				} else if (animationC->currentTransition->transpiredTime >= animationC->currentTransition->transitionTime) {
 					// Transition done
 					animationC->currentTransition->done = true;
 				} else {
@@ -122,9 +133,9 @@ void AnimationSystem::updateTransforms(const float dt) {
 		}*/
 		const unsigned int frame00 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::BEHIND);
 		const unsigned int frame01 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::INFRONT); // TODO: make getNextFrame function.
-		const unsigned int frame10 = animationC->currentTransition->to ? animationC->currentTransition->to->getFrameAtTime(animationC->currentTransition->transpiredTime, 
+		const unsigned int frame10 = animationC->nextAnimation ? animationC->nextAnimation->getFrameAtTime(animationC->currentTransition->transpiredTime,
 																														   Animation::BEHIND) : 0;
-		const unsigned int frame11 = animationC->currentTransition->to ? animationC->currentTransition->to->getFrameAtTime(animationC->currentTransition->transpiredTime, 
+		const unsigned int frame11 = animationC->nextAnimation ? animationC->nextAnimation->getFrameAtTime(animationC->currentTransition->transpiredTime,
 																														   Animation::INFRONT) : 0;
 
 		const unsigned int transformSize = animationC->currentAnimation->getAnimationTransformSize(frame00);
@@ -139,8 +150,8 @@ void AnimationSystem::updateTransforms(const float dt) {
 
 		const glm::mat4* transforms00 = animationC->currentAnimation->getAnimationTransform(frame00);
 		const glm::mat4* transforms01 = animationC->currentAnimation->getAnimationTransform(frame01);//frame01 > frame00 ? animationC->currentAnimation->getAnimationTransform(frame01) : nullptr;
-		const glm::mat4* transforms10 = animationC->currentTransition->to ? animationC->currentTransition->to->getAnimationTransform(frame10) : nullptr;
-		const glm::mat4* transforms11 = (animationC->currentTransition->to && frame11 > frame10) ? animationC->currentTransition->to->getAnimationTransform(frame11) : nullptr;
+		const glm::mat4* transforms10 = animationC->nextAnimation ? animationC->nextAnimation->getAnimationTransform(frame10) : nullptr;
+		const glm::mat4* transforms11 = (animationC->nextAnimation && frame11 > frame10) ? animationC->nextAnimation->getAnimationTransform(frame11) : nullptr;
 
 		// Origin of root bone - "hips"
 		const glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
@@ -150,8 +161,8 @@ void AnimationSystem::updateTransforms(const float dt) {
 		if (transforms00 && transforms01 && transforms10 && transforms11 && m_interpolate) {
 			const float frame00Time = animationC->currentAnimation->getTimeAtFrame(frame00);
 			const float frame01Time = animationC->currentAnimation->getTimeAtFrame(frame01);
-			const float frame10Time = animationC->currentTransition->to->getTimeAtFrame(frame10);
-			const float frame11Time = animationC->currentTransition->to->getTimeAtFrame(frame11);
+			const float frame10Time = animationC->nextAnimation->getTimeAtFrame(frame10);
+			const float frame11Time = animationC->nextAnimation->getTimeAtFrame(frame11);
 			// weight = time - time(0) / time(1) - time(0)
 
 			const float w0 = (animationC->animationTime - frame00Time) / (frame01Time - frame00Time);

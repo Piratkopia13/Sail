@@ -37,19 +37,14 @@ void AnimationChangerSystem::update(float dt) {
 			if (throwC->isDropping) {
 				if (velMag2 < 0.01f) {
 					animationC->setAnimation(IDLE_DROP);
-				} else {
-					// Replace the animation indices once they are implemented
-					animationC->setAnimation(IDLE_DROP);
-					//animationC->setAnimation(RUNNING_DROP);
-				}
-				if (animIndexBefore != animationC->animationIndex) {
-					animationC->animationTime = 0.f;
+					if (animIndexBefore != animationC->animationIndex) {
+						animationC->animationTime = 0.f;
+					}
 				}
 				continue;
-			} else if (throwC->isCharging || throwC->isThrowing) {
-				//animationC->updateDT = false;
+			} else if (throwC->isCharging || throwC->isThrowing && 
+					   !(animationC->currentTransition->toIndex == IDLE_THROW || animationC->currentTransition->toIndex == IDLE_THROW/*RUNNING_THROW*/)) {
 				if (velMag2 < 0.01f) {
-					// Replace the animation indices once they are implemented
 					animationC->setAnimation(IDLE_THROW);
 				} else {
 					// Replace the animation indices once they are implemented
@@ -61,11 +56,12 @@ void AnimationChangerSystem::update(float dt) {
 				}
 				continue;
 			// To make sure the animation isn't swapped before the animation is done
-			} else if ((animationC->animationIndex == 255/*IDLE_JUMP*/ ||
+			}/* else if ((animationC->animationIndex == 255/*RUNNING_THROW*//* ||
 					   animationC->animationIndex == IDLE_THROW) &&
-					   animationC->animationTime < (animationC->currentAnimation->getMaxAnimationTime() - dt)) {
+					   animationC->animationTime < (animationC->currentAnimation->getMaxAnimationTime() - dt) &&
+					   throwC->) {
 				continue;
-			}
+			}*/
 
 			auto sprintC = e->getComponent<SprintingComponent>();
 			if (sprintC->doSprint && sprintC->canSprint) {

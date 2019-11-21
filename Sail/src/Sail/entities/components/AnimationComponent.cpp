@@ -9,7 +9,7 @@ AnimationComponent::AnimationComponent(AnimationStack* animationStack) :
 	animationSpeed(1.0f),
 	animationName(""),
 	currentAnimation(nullptr),
-	//nextAnimation(nullptr),
+	nextAnimation(nullptr),
 	blending(false),
 	transformSize(0),
 	hasUpdated(false),
@@ -43,6 +43,11 @@ void AnimationComponent::setAnimation(const unsigned int index) {
 		// Transition
 		// Check if not already doing a transition to the said index
 		if (index != currentTransition->toIndex) {
+			if (animationIndex == 9 /*IDLE_THROW*/ || animationIndex == 11 /*RUNNING_THROW*/) {
+				currentTransition->waitForEnd = true;
+			} else {
+				currentTransition->waitForEnd = false;
+			}
 			currentTransition->done = false;
 			currentTransition->transpiredTime = 0.f;
 			currentTransition->transitionTime = 0.1f; // Should probably differ from animation to animation
