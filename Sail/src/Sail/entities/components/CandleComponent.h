@@ -2,6 +2,8 @@
 #include "Component.h"
 
 #include "Sail/netcode/NetcodeTypes.h"
+#include "Sail/netcode/NetworkedStructs.h"
+
 
 class Entity;
 
@@ -33,11 +35,12 @@ public:
 	}
 
 	// This function is only called by the host
-	void hitWithWater(float damage, DamageSource source, Netcode::PlayerID shooterID) {
+	void hitWithWater(float damage, DamageSource source, Netcode::ComponentID hitByEntity) {
 		if (health > 0.0f && invincibleTimer <= 0.0f) {
 			invincibleTimer = 0.4f; // TODO: Replace 0.4f with game settings
 			health -= damage;
-			wasHitByPlayerID = shooterID;
+			wasHitByEntity = hitByEntity;
+			wasHitByPlayerID = Netcode::getComponentOwner(hitByEntity);
 			wasHitThisTick = true;
 		}
 	}
@@ -51,13 +54,14 @@ public:
 public:
 	Entity* ptrToOwner = nullptr;
 
+	bool hitByLocalPlayer   = false;
 	bool wasHitByMeThisTick = false;
 	bool wasHitByWater = false;
-	bool isAlive = true;
-	bool isCarried = true;
+	bool isAlive       = true;
+	bool isCarried     = true;
 	bool wasCarriedLastUpdate = true;
-	bool isLit = true;
-	bool userReignition = false;
+	bool isLit                = true;
+	bool userReignition       = false;
 
 	/* Should probably be removed later */
 	float downTime = 0.f;
@@ -68,8 +72,9 @@ public:
 	int respawns = 0;
 
 	bool wasJustExtinguished = false;
-	bool wasHitThisTick = false;
+	bool wasHitThisTick      = false;
 	Netcode::PlayerID playerEntityID;
 	Netcode::PlayerID wasHitByPlayerID = 0;
+	Netcode::ComponentID wasHitByEntity = 0;
 	DamageSource lastDamageSource;
 };

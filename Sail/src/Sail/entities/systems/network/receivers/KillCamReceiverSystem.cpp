@@ -35,11 +35,11 @@ static std::ofstream out("LogFiles/KillCamReceiverSystem.cpp.log");
 KillCamReceiverSystem::KillCamReceiverSystem() : ReceiverBase() {
 	registerComponent<ReplayReceiverComponent>(true, false, false);
 
-	//EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
 }
 
 KillCamReceiverSystem::~KillCamReceiverSystem() {
-	//EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
 }
 
 void KillCamReceiverSystem::stop() {
@@ -51,6 +51,7 @@ void KillCamReceiverSystem::stop() {
 	m_currentWriteInd = 0;
 	m_currentReadInd  = 1;
 	m_hasStarted      = false;
+	m_idOfKillingProjectile = 0;
 }
 
 void KillCamReceiverSystem::init(Netcode::PlayerID player) {
@@ -180,7 +181,7 @@ void KillCamReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 // SHOULD REMAIN EMPTY FOR THE KILLCAM
 void KillCamReceiverSystem::matchEnded() {}
 
-void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::PlayerID playerIdOfShooter) {
+void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::ComponentID killerID) {
 	destroyEntity(networkIdOfKilled);
 	
 	//if (auto e = findFromNetID(networkIdOfKilled); e) {
@@ -324,7 +325,7 @@ void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	EntityFactory::CreateReplayProjectile(e, args);
 }
 
-void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::PlayerID senderId) {
+void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID killerID) {
 	//EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
 }
 
@@ -420,9 +421,17 @@ Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) cons
 
 
 bool KillCamReceiverSystem::onEvent(const Event& event) {
+
+	auto onPlayerDeath = [&](const PlayerDiedEvent& e) {
+		if (Netcode::getComponentOwner(e.netIDofKilled) == m_playerID) {
+			m_idOfKillingProjectile = e.killerID;
+		}
+	};
+
+
 	switch (event.type) {
-	default: 
-		break;
+	case Event::Type::PLAYER_DEATH: onPlayerDeath((const PlayerDiedEvent&)event); break;
+	default: break;
 	}
 
 	return true;
