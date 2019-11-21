@@ -31,8 +31,8 @@ bool PlayerSystem::onEvent(const Event& event) {
 			ModelComponent::getBID()
 			| CullingComponent::getBID() // needed ??
 			| BoundingBoxComponent::getBID()
-			| ReplayComponent::getBID()
-			| ReplayTransformComponent::getBID()
+			| ReplayReceiverComponent::getBID()
+			| AudioComponent::getBID()
 			);
 
 

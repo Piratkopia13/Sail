@@ -78,6 +78,10 @@ public:
 	void setAnimation(const std::string& name);
 	AnimationStack* getAnimationStack();
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		/* TODO: Fix component size */
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected);
 #endif
 

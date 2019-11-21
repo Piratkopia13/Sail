@@ -16,7 +16,6 @@ void OptionsWindow::renderWindow() {
 	
 	auto& stat = m_settings->applicationSettingsStatic;
 	auto& dynamic = m_settings->applicationSettingsDynamic;
-
 	static float x[4] = { 
 		ImGui::GetWindowContentRegionWidth()*0.5f,
 		0,
@@ -78,6 +77,34 @@ void OptionsWindow::renderWindow() {
 			dopt->setValue(val * 0.01f);
 		}
 	}	
+	
+	ImGui::Spacing();
+	ImGui::Spacing();
+	ImGui::Spacing();
+	// CROSSHAIR
+	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+	ImGui::Text("Crosshair");
+	ImGui::PopStyleColor();
+	ImGui::Separator();
+
+	const static std::vector<std::string> crossHairSettings = { "Thickness", "CenterPadding", "Size", "Color R", "Color G", "Color B", "Color A" };
+	for (auto& settingName : crossHairSettings) {
+		dopt = &dynamic["Crosshair"][settingName];
+		ImGui::Text(settingName.c_str());
+		ImGui::SameLine(x[0]);
+		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
+		if (ImGui::SliderFloat(std::string("##"+settingName).c_str(), &dopt->value, dopt->minVal, dopt->maxVal, "%.1f")) {
+		}
+	}
+
+
+	/* Left out because not fully implemented, make it so if you wish, henry! */
+	//Drawxhare
+	//if (ImGui::BeginChild("##XHARE", ImVec2(0, 100))) {
+	//	
+	//	//drawCrosshair();
+	//}
+	//ImGui::EndChild();
 }
 
 bool OptionsWindow::renderGameOptions() {
@@ -163,4 +190,204 @@ bool OptionsWindow::renderGameOptions() {
 	}
 
 	return settingsChanged;
+}
+
+void OptionsWindow::drawCrosshair() {
+	// Fetch current settings from settingsStorage
+	auto& stat = m_settings->applicationSettingsStatic;
+	auto& dynamic = m_settings->applicationSettingsDynamic;
+	float screenWidth = 100.0f;
+	float screenHeight = 100.0f;
+
+	screenWidth = ImGui::GetCurrentWindow()->Pos.x + 5;
+	screenHeight = ImGui::GetCurrentWindow()->Pos.y + 5;
+
+	auto& crosshairSettings = dynamic["Crosshair"];
+	float thickness = crosshairSettings["Thickness"].value;
+	float centerPadding = crosshairSettings["CenterPadding"].value;
+	float size = crosshairSettings["Size"].value;
+	float outerAlteredPadding = crosshairSettings["OuterAlteredPadding"].value;
+
+	// Crosshair
+	ImVec2 crosshairSize{
+		size,
+		size
+	};
+	ImVec2 center{
+		screenWidth * 0.5f,
+		screenHeight * 0.5f
+	};
+	ImVec2 topLeft{
+		center.x - crosshairSize.x * 0.5f,
+		center.y - crosshairSize.y * 0.5f
+	};
+	ImVec2 top{
+		topLeft.x + crosshairSize.x * 0.5f,
+		topLeft.y
+	};
+	ImVec2 bot{
+		center.x,
+		center.y + crosshairSize.y * 0.5f
+	};
+	ImVec2 right{
+		center.x + crosshairSize.x * 0.5f,
+		center.y
+	};
+	ImVec2 left{
+		center.x - crosshairSize.x * 0.5f,
+		center.y
+	};
+
+
+	//ImGui::SetNextWindowPos(topLeft);
+	//ImGui::SetNextWindowSize(crosshairSize);
+
+	ImGuiWindowFlags crosshairFlags = ImGuiWindowFlags_NoCollapse;
+	crosshairFlags |= ImGuiWindowFlags_NoResize;
+	crosshairFlags |= ImGuiWindowFlags_NoMove;
+	crosshairFlags |= ImGuiWindowFlags_NoNav;
+	crosshairFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+	crosshairFlags |= ImGuiWindowFlags_NoTitleBar;
+	crosshairFlags |= ImGuiWindowFlags_NoBackground;
+//	ImGui::Begin("Crosshair", NULL, crosshairFlags);
+
+	ImVec4 color2{ 1.0f, 0.0f, 0.0f, 1.0f };
+	const ImU32 color = ImColor(color2);
+
+	ImVec2 center_padded_top{
+		top.x,
+		center.y - centerPadding
+	};
+	ImVec2 center_padded_bot{
+		top.x,
+		center.y + centerPadding
+	};
+	ImVec2 center_padded_right{
+		center.x + centerPadding,
+		right.y
+	};
+	ImVec2 center_padded_left{
+		center.x - centerPadding,
+		left.y
+	};
+
+	ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+	//		|
+	//   
+	//
+	draw_list->AddLine(
+		top,
+		center_padded_top,
+		color,
+		thickness
+	);
+
+	//		|
+	//   
+	//		|
+	draw_list->AddLine(
+		bot,
+		center_padded_bot,
+		color,
+		thickness
+	);
+
+	//		|
+	//		    --
+	//		|
+	draw_list->AddLine(
+		right,
+		center_padded_right,
+		color,
+		thickness
+	);
+
+	//		|
+	//	--	   --
+	//		|
+	draw_list->AddLine(
+		left,
+		center_padded_left,
+		color,
+		thickness
+	);
+
+
+
+	// Set to True/False by  CrosshairSystem
+	ImVec2 topRight{
+		right.x,
+		top.y
+	};
+	ImVec2 botRight{
+		right.x,
+		center.y + size * 0.5f
+	};
+	ImVec2 botLeft{
+		left.x,
+		botRight.y
+	};
+
+	ImVec2 center_padded_topLeft{
+		center.x - centerPadding,
+		center.y - centerPadding
+	};
+	ImVec2 center_padded_topRight{
+		center.x + centerPadding,
+		center.y - centerPadding
+	};
+	ImVec2 center_padded_botRight{
+		center.x + centerPadding,
+		center.y + centerPadding
+	};
+	ImVec2 center_padded_botLeft{
+		center.x - centerPadding,
+		center.y + centerPadding
+	};
+
+	// Set alpha-value of the color based on how long it has been altered for (F1->0)
+	//onHitColor.w = 1 - (c->passedTimeSinceAlteration / c->durationOfAlteredCrosshair);
+	const ImU32 onHitcolor = color;//ImColor(onHitColor);
+
+	//	\
+	//
+	//
+	// Draw an additional cross
+	draw_list->AddLine(
+		topLeft,
+		center_padded_topLeft,
+		onHitcolor,
+		thickness
+	);
+	//	\	/
+	//
+	//
+	// Draw an additional cross
+	draw_list->AddLine(
+		topRight,
+		center_padded_topRight,
+		onHitcolor,
+		thickness
+	);
+	//	\	/
+	//
+	//		\
+	// Draw an additional cross
+	draw_list->AddLine(
+		botRight,
+		center_padded_botRight,
+		onHitcolor,
+		thickness
+	);
+	//	\	/
+	//
+	//	/   \
+	// Draw an additional cross
+	draw_list->AddLine(
+		botLeft,
+		center_padded_botLeft,
+		onHitcolor,
+		thickness
+	);
 }

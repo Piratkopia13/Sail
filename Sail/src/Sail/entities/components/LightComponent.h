@@ -18,6 +18,9 @@ public:
 		return m_pointLight;
 	}
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 		glm::vec col = m_pointLight.getColor();

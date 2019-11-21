@@ -119,6 +119,7 @@ size_t ECS::getNumEntities() {
 const ECS::SystemMap& ECS::getSystems() const {
 	return m_systems;
 }
+
 const unsigned int ECS::getByteSize() const {
 	unsigned int size = sizeof(*this);
 	size += m_entities.size() * sizeof(Entity::SPtr);
@@ -129,6 +130,20 @@ const unsigned int ECS::getByteSize() const {
 	}
 	size += m_entityRemovalSystem->getByteSize();
 	size += m_entityAdderSystem->getByteSize();
+
+	return size;
+}
+
+const unsigned int ECS::getByteSizeComponents() const {
+	unsigned int size = 0;
+	for (auto e : m_entities) {
+		const BaseComponent::Ptr* components = e->getComponents();
+		for (unsigned int index = 0; index < BaseComponent::nrOfComponentTypes(); index++) {
+			if (BaseComponent* ptr = components[index].get()) {
+				size += ptr->getByteSize();
+			}
+		}
+	}
 
 	return size;
 }

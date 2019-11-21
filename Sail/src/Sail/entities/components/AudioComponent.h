@@ -28,6 +28,12 @@ public:
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>> m_currentlyStreaming;
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		unsigned int size = sizeof(*this);
+		size += sizeof(std::pair<std::string, Audio::StreamRequestInfo>) * m_streamingRequests.size();
+		size += sizeof(std::pair<std::string, Audio::StreamRequestInfo>) * m_currentlyStreaming.size();
+		return size;
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Text("Currently Playing Sounds");
 		ImGui::Indent(10.0f);

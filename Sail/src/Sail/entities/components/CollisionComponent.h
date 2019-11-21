@@ -16,6 +16,11 @@ public:
 	std::vector<Octree::CollisionInfo> collisions; //Contains the info for current collisions
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		unsigned int size = sizeof(*this);
+		size += sizeof(Octree::CollisionInfo) * collisions.size();
+		return size;
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 		ImGui::DragFloat("##drag", &drag, 0.1f); ImGui::NextColumn();

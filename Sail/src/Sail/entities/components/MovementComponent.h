@@ -21,6 +21,9 @@ public:
 	float updateableDt = 0.0f;
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
 		ImGui::DragFloat3("##VEL", &velocity.x, 0.1f); ImGui::NextColumn();
