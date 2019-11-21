@@ -202,7 +202,8 @@ void GameDataTracker::renderPlacement() {
 		// key = placement, value = index in playerlist
 		for (auto& [key, value] : tempPlacementMap) {
 			Player* player = NWrapperSingleton::getInstance().getPlayer(value);
-			bool me = *player == NWrapperSingleton::getInstance().getMyPlayer();
+
+			bool me = player ? (*player == NWrapperSingleton::getInstance().getMyPlayer()):false;
 			///PLAYER NAME
 			//Player still in session
 			if (player) {
