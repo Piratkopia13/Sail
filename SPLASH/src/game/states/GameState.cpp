@@ -470,6 +470,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	// Create system which handles creation of projectiles
 	m_componentSystems.gunSystem = ECS::Instance()->createSystem<GunSystem>();
+	m_componentSystems.gunSystem->setOctree(m_octree);
 
 	// Create system which checks projectile collisions
 	m_componentSystems.projectileSystem = ECS::Instance()->createSystem<ProjectileSystem>();
