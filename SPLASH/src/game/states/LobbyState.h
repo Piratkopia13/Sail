@@ -4,6 +4,7 @@
 #include <string>
 #include <list>
 #include "Sail/utils/SailImGui/OptionsWindow.h"
+#include "Sail/utils/SailImGui/NetworkInfoWindow.h"
 
 struct Player;
 class NWrapper;
@@ -59,6 +60,7 @@ protected:
 private:
 	ImGuiHandler* m_imGuiHandler;
 	OptionsWindow m_optionsWindow;
+	NetworkInfoWindow m_netInfo;
 	bool m_ready;
 	// LobbyAudio
 	Entity* m_lobbyAudio = nullptr;
