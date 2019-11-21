@@ -622,8 +622,6 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 	unsigned int blasIndex = 0;
 	unsigned int instanceID = 0;
-	unsigned int instanceID_metaballGroup = 0;
-
 
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		auto& instanceList = it.second;
@@ -655,7 +653,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 	for (auto& it : m_bottomBuffers_Metaballs[frameIndex]) {
 		auto& instanceList = it.second;
 		for (auto& instance : instanceList.instanceList) {
-			pInstanceDesc->InstanceID = instanceID_metaballGroup++;	// exposed to the shader via InstanceID() - currently same for all instances of same material
+			pInstanceDesc->InstanceID = it.first;								// exposed to the shader via InstanceID() - currently same for all instances of same material
 			pInstanceDesc->InstanceMask = INSTANCE_MASK_METABALLS;
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)

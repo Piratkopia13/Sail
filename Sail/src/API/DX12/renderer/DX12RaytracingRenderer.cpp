@@ -67,6 +67,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	int gpuGroupIndex = 0;
 	int gpuGroupStartOffset = 0;
 	for (auto& group : m_metaballGroups) {
+
+		//std::reverse(group.second.balls.begin(), group.second.balls.end());
+
 		std::sort(group.second.balls.begin(), group.second.balls.end(),
 			[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
 			{
