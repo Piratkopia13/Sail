@@ -85,7 +85,7 @@ void InGameGui::renderWindow() {
 				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55),ImVec2(0,0),ImVec2(1,1),ImVec4(1,1,1,1));
 			}
 			else {
-				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 0, 0, 1));
+				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.3f, 0.3f, 0.3f, 1));
 			}
 			ImGui::SetWindowPos(ImVec2(screenWidth - ImGui::GetWindowSize().x-300, screenHeight - ImGui::GetWindowSize().y-50));
 		}
