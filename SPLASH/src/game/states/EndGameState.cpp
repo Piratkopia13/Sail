@@ -23,6 +23,11 @@ EndGameState::EndGameState(StateStack& stack) :
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::EndGame, 1);
 	}
 
+#ifdef DEVELOPMENT
+	//KEEP FOR DEBUGGING
+	//GameDataTracker::getInstance().init();
+	//GameDataTracker::getInstance().addDebugData();
+#endif
 	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove |
@@ -87,6 +92,9 @@ bool EndGameState::renderImgui(float dt) {
 	renderPersonalStats();
 	renderFunStats();
 
+	//WORK IN PROGRESS
+	//renderWinners();
+
 	ImGui::PopFont();
 
 	return true;
@@ -120,12 +128,9 @@ void EndGameState::renderMenu() {
 	if (ImGui::Begin("##GameOverMenu", nullptr, m_standaloneButtonflags)) {
 		if (NWrapperSingleton::getInstance().isHost()) {
 			if (SailImGui::TextButton("Lobby")) {
-
 				NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby);
 				this->requestStackPop();
 				this->requestStackPush(States::HostLobby);
-
-				ImGui::End();
 			}
 		}
 		if (SailImGui::TextButton("Main menu")) {
@@ -134,15 +139,10 @@ void EndGameState::renderMenu() {
 			GameDataTracker::getInstance().resetData();
 			this->requestStackPop();
 			this->requestStackPush(States::MainMenu);
-
-			ImGui::End();
 		}
 		if (SailImGui::TextButton("Quit")) {
 			PostQuitMessage(0);
-
-			ImGui::End();
 		}
-
 	}
 	ImGui::End();
 }
@@ -162,6 +162,7 @@ void EndGameState::renderScore() {
 	}
 	ImGui::End();
 }
+
 
 void EndGameState::renderPersonalStats() {
 	static ImVec2 size(200, 700);
@@ -192,6 +193,27 @@ void EndGameState::renderFunStats() {
 	ImGui::SetNextWindowSizeConstraints(ImVec2(786, 200), ImVec2(4000, 4000));
 	if (ImGui::Begin("##FUNSTATS", nullptr, m_backgroundOnlyflags)) {
 		GameDataTracker::getInstance().renderFunStats();
+	}
+	ImGui::End();
+
+
+}
+
+void EndGameState::renderWinners() {
+	//WORK IN PROGRESS
+	static ImVec2 size(200, 200);
+	static ImVec2 pos(0, m_padding);
+
+
+	size.x = m_app->getWindow()->getWindowWidth() * 0.6f;
+	pos.x = (m_app->getWindow()->getWindowWidth() - m_padding * 2) * 0.5f - size.x * 0.5f;
+	pos.y = (m_app->getWindow()->getWindowHeight() - m_padding - size.y);
+
+	ImGui::SetNextWindowPos(pos);
+	ImGui::SetNextWindowSize(size);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(786, 200), ImVec2(4000, 4000));
+	if (ImGui::Begin("##FUNSTATS", nullptr, m_backgroundOnlyflags)) {
+		GameDataTracker::getInstance().renderWinners();
 	}
 	ImGui::End();
 

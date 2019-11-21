@@ -34,6 +34,7 @@ private:
 	void renderScore();
 	void renderPersonalStats();
 	void renderFunStats();
+	void renderWinners();
 
 private:
 

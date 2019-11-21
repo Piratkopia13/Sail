@@ -30,6 +30,8 @@ struct HostStatsPerPlayer {
 	int nKills = 0;
 	int nDeaths = 0;
 	int placement = 0;
+	int damage = 0;
+	int damageTaken = 0;
 	std::string playerName;	//Stored here to handle disconnects.
 };
 
@@ -71,6 +73,7 @@ public:
 	void renderPlacement();
 	void renderPersonalStats();
 	void renderFunStats();
+	void renderWinners();
 
 #ifdef DEVELOPMENT
 	void addDebugData();

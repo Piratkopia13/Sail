@@ -50,6 +50,9 @@ void GameDataTracker::resetData() {
 			m_hostPlayerTracker[player.id].nKills = 0;
 			m_hostPlayerTracker[player.id].nDeaths = 0;
 			m_hostPlayerTracker[player.id].placement = 13;
+			m_hostPlayerTracker[player.id].damage = 0;
+			m_hostPlayerTracker[player.id].damageTaken = 0;
+
 			m_hostPlayerTracker[player.id].playerName = player.name;
 			m_nPlayersCurrentSession++;
 		}
@@ -157,7 +160,7 @@ void GameDataTracker::renderPlacement() {
 		1.0f
 	};
 	//KEEP
-	//ImGui::SliderFloat4("##DEBUG0", &a[0], 0.0f, 1.0f);
+	ImGui::SliderFloat4("##DEBUG0", &a[0], 0.0f, 1.0f);
 
 	float x[4] = {
 		ImGui::GetWindowContentRegionWidth()*a[0],
@@ -184,23 +187,29 @@ void GameDataTracker::renderPlacement() {
 
 	ImGui::Text(gamemode.c_str());
 	ImGui::Separator();
+	ImGui::Spacing();
 	ImGui::SameLine(x[0]);
-	SailImGui::rText("Extinguishes",0);
+	SailImGui::rText("Extinguishes",8);
 	ImGui::SameLine(x[1]);
-	SailImGui::rText("Torches Lost",0);
+	SailImGui::rText("Torches Lost",8);
 	ImGui::SameLine(x[2]);
-	SailImGui::rText("Damage",0);
+	SailImGui::rText("Damage",8);
 	ImGui::SameLine(x[3]);
-	SailImGui::rText("Damage Taken",0);
+	SailImGui::rText("Damage Taken",8);
 	ImGui::Spacing();
 
 	if (ImGui::BeginChild("##SCOREBOARD", ImVec2(0, 0))) {
 		// key = placement, value = index in playerlist
 		for (auto& [key, value] : tempPlacementMap) {
+			Player* player = NWrapperSingleton::getInstance().getPlayer(value);
+			bool me = *player == NWrapperSingleton::getInstance().getMyPlayer();
 			///PLAYER NAME
 			//Player still in session
-			if (Player* player = NWrapperSingleton::getInstance().getPlayer(value)) {
-
+			if (player) {
+				
+				if (me) {
+					ImGui::PushFont(handler->getFont("Beb24"));
+				}
 				glm::vec3 tempC(m_app->getSettings().getColor(m_app->getSettings().teamColorIndex(player->team)));
 				ImVec4 col(
 					tempC.x,
@@ -209,8 +218,9 @@ void GameDataTracker::renderPlacement() {
 					1
 				);
 				ImGui::PushStyleColor(ImGuiCol_Text, col);
-				ImGui::Text(m_hostPlayerTracker[value].playerName.c_str());
+				ImGui::Text(std::string(m_hostPlayerTracker[value].playerName + (me?"*":"")).c_str());
 				ImGui::PopStyleColor();
+		
 			}
 			//player not in session
 			else {
@@ -222,13 +232,17 @@ void GameDataTracker::renderPlacement() {
 			SailImGui::rText(std::to_string(m_hostPlayerTracker[value].nKills).c_str(), 0);
 			//TORCHES LOST
 			ImGui::SameLine(x[1]);
-			SailImGui::rText("x  ", 0);
+			SailImGui::rText(std::to_string(m_hostPlayerTracker[value].nDeaths).c_str(), 0);
 			//DAMAGE DONE
 			ImGui::SameLine(x[2]);
-			SailImGui::rText("x  ", 0);
+			SailImGui::rText(std::to_string(m_hostPlayerTracker[value].damage).c_str(), 0);
 			//DAMAGE TAKEN
 			ImGui::SameLine(x[3]);
-			SailImGui::rText("x  ", 0);
+			SailImGui::rText(std::to_string(m_hostPlayerTracker[value].damageTaken).c_str(), 0);
+
+			if (me) {
+				ImGui::PopFont();
+			}
 		}
 	}
 	ImGui::EndChild();
@@ -262,6 +276,13 @@ void GameDataTracker::renderFunStats() {
 	bdString = "Most jumps made by " +
 		m_hostPlayerTracker[m_loggedDataGlobal.jumpsMadeID].playerName + ": " + std::to_string(m_loggedDataGlobal.jumpsMade);
 	ImGui::Text(bdString.c_str());
+}
+
+void GameDataTracker::renderWinners() {
+
+
+
+
 }
 
 #ifdef DEVELOPMENT
