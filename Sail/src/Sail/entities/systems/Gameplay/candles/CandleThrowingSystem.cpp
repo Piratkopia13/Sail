@@ -65,9 +65,6 @@ void CandleThrowingSystem::update(float dt) {
 									e->getComponent<NetworkReceiverComponent>()->m_id
 								}
 							);
-							/*e->getComponent<NetworkSenderComponent>()->addMessageType(
-								Netcode::MessageType::START_THROWING
-							);*/
 						}
 
 						throwC->throwingTimer += dt;
@@ -77,23 +74,10 @@ void CandleThrowingSystem::update(float dt) {
 							throwC->isDropping = true;
 							throwC->doThrow = true;
 							// Begin drop animation
-						} else if (throwC->throwingTimer < CHARGE_AND_THROW_ANIM_LENGTH) {
-							// Play charge & throw animation
-
-							/*auto translation = throwC->chargeTime / throwC->maxChargingTime * maxBack +
-								throwC->throwingTimer / CHARGE_AND_THROW_ANIM_LENGTH * (maxForward - maxBack);
-							for (auto& child : e->getChildEntities()) {
-								if (child->hasComponent<CandleComponent>()) {
-									child->getComponent<TransformComponent>()->translate(translation);
-									continue;
-								}
-							}*/
 						} else {
 							// Do the throw
 							throwC->isThrowing = false;
 							throwC->doThrow = true;
-							/*auto translation = /*throwC->chargeTime / throwC->maxChargingTime * maxBack +
-								throwC->throwingTimer / CHARGE_AND_THROW_ANIM_LENGTH * (maxForward - maxBack);*/
 						}
 					}
 
@@ -136,9 +120,10 @@ void CandleThrowingSystem::update(float dt) {
 					moveC->velocity = throwC->direction * throwC->throwingTimer * throwC->throwChargeMultiplier + e->getComponent<MovementComponent>()->velocity;
 					moveC->constantAcceleration = glm::vec3(0.f, -9.82f, 0.f);
 					// Can be used once the torch light can be set inside the torch instead of on the top of it, LEAVE THIS CODE HERE!
-					//throwC->direction.y = 0.f;
-					//auto rotationAxis = glm::cross(glm::normalize(throwC->direction), glm::vec3(0.f, 1.f, 0.f));
-					//transC->setRotations(glm::angleAxis(glm::radians(-89.5f), rotationAxis));
+					auto dir = throwC->direction;
+					dir.y = 0.f;
+					auto rotationAxis = glm::cross(glm::normalize(dir), glm::vec3(0.f, 1.f, 0.f));
+					transC->setRotations(glm::angleAxis(glm::radians(-89.5f), rotationAxis));
 					torchE->addComponent<CollisionComponent>(true);
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 

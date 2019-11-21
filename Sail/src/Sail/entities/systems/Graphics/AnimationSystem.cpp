@@ -78,13 +78,7 @@ void AnimationSystem::updateTransforms(const float dt) {
 #endif
 			continue;
 		}
-		//remove empty transitions
-		/*while (animationC->transitions.size() > 0) {
-			if (animationC->transitions.front().to) {
-				break;
-			}
-			animationC->transitions.pop();
-		}*/
+
 		//transition update
 		if (animationC->currentTransition->to != nullptr) {
 			if (animationC->currentTransition->done) {
@@ -93,14 +87,13 @@ void AnimationSystem::updateTransforms(const float dt) {
 					animationC->currentAnimation = animationC->currentTransition->to;
 					animationC->animationTime = animationC->currentTransition->transpiredTime;
 					animationC->animationIndex = animationC->currentTransition->toIndex;
-					//animationC->nextAnimation = nullptr;
 					animationC->currentTransition->to = nullptr;
 					animationC->nextAnimation = nullptr;
 				}
 			} else {
 				if (animationC->currentTransition->transpiredTime == 0.f) {
 					if (animationC->currentTransition->waitForEnd) {
-						if (animationC->animationTime + dt > animationC->currentAnimation->getMaxAnimationTime()) {
+						if (animationC->animationTime + dt * animationC->animationSpeed > animationC->currentAnimation->getMaxAnimationTime()) {
 							animationC->nextAnimation = animationC->currentTransition->to;
 							animationC->currentTransition->transpiredTime += dt;
 						}
@@ -118,19 +111,6 @@ void AnimationSystem::updateTransforms(const float dt) {
 			}
 		}
 		
-		//set transition
-		/*if (!animationC->currentTransition && animationC->transitions.size() > 0) {
-			if (!animationC->transitions.front().waitForEnd) {
-				animationC->currentTransition = &animationC->transitions.front();
-				animationC->nextAnimation = animationC->currentTransition->to;
-			}
-			else {
-				if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime() - animationC->transitions.front().transitionTime) {
-					animationC->currentTransition = &animationC->transitions.front();
-					animationC->nextAnimation = animationC->currentTransition->to;
-				}
-			}
-		}*/
 		const unsigned int frame00 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::BEHIND);
 		const unsigned int frame01 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::INFRONT); // TODO: make getNextFrame function.
 		const unsigned int frame10 = animationC->nextAnimation ? animationC->nextAnimation->getFrameAtTime(animationC->currentTransition->transpiredTime,

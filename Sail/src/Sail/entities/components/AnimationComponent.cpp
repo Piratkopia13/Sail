@@ -59,11 +59,6 @@ void AnimationComponent::setAnimation(const unsigned int index) {
 			currentTransition->to = m_stack->getAnimation(currentTransition->toIndex);
 		}
 	}
-	/*animationIndex = index;
-	if (animationIndex > m_stack->getAnimationCount()) {
-		animationIndex = 0;
-	}
-	currentAnimation = m_stack->getAnimation(animationIndex);*/
 }
 void AnimationComponent::setAnimation(const std::string& name) {
 	animationIndex = m_stack->getAnimationIndex(name);
