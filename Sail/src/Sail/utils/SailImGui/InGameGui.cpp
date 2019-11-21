@@ -100,8 +100,8 @@ void InGameGui::renderCrosshair(float screenWidth, float screenHeight) {
 		c->size
 	};
 	ImVec2 center{
-		screenWidth * 0.5f,
-		screenHeight * 0.5f
+		screenWidth * 0.505f,
+		screenHeight * 0.55f
 	};
 	ImVec2 topLeft{
 		center.x - crosshairSize.x * 0.5f,
