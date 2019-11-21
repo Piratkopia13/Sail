@@ -41,6 +41,7 @@ void GameDataTracker::resetData() {
 	m_loggedDataGlobal.jumpsMadeID = NWrapperSingleton::getInstance().getMyPlayerID();
 	m_hostPlayerTracker.clear();
 
+	m_torchesLeft = 3;
 	m_nPlayersCurrentSession = 0;
 	for (auto player : m_network->getPlayers()) {
 
@@ -206,6 +207,14 @@ void GameDataTracker::renderImgui() {
 	ImGui::Text(localStatsString.c_str());
 
 	ImGui::End();
+}
+
+int GameDataTracker::getTorchesLeft() {
+	return m_torchesLeft;
+}
+
+void GameDataTracker::reduceTorchesLeft() {
+	m_torchesLeft--;
 }
 
 bool GameDataTracker::onEvent(const Event& e) {

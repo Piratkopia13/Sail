@@ -805,12 +805,14 @@ bool GameState::renderImgui(float dt) {
 	//ImGui::End();
 	//ECS::Instance()->getSystem<AnimationSystem>()->updateHands(lPos, rPos, lRot, rRot);
 
+	int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
 	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("pbr/Character/CharacterTex.tga");
-
-	ImGui::Begin("ImageTest", nullptr, m_standaloneButtonflags);
-	ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(100, 100));
-	ImGui::End();
+	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchLeft.tga");
+	for (int i = 0; i < nrOfTorchesLeft; i++) {
+		ImGui::Begin("TorchesLeft", nullptr, m_standaloneButtonflags);
+		ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(75,75));
+		ImGui::End();
+	}
 
 	return false;
 }
