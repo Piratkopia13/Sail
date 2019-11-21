@@ -66,7 +66,6 @@ float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal,
 	// Shoots a ray towards a random point on the light
 
 	const uint numSamples = 1; // Rays per light source per pixel
-    const float lightRadius = 0.08f; // TODO: tweak this!
 
 	bool skip = false;
 	PointlightInput p;
@@ -112,7 +111,7 @@ float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal,
 			perpL.x = 1.0;
 		}
 		// Use perpL to get a vector from worldPosition to the edge of the light sphere
-		float3 toLightEdge = normalize((p.position+perpL*lightRadius) - worldPosition);
+		float3 toLightEdge = normalize((p.position+perpL*LIGHT_RADIUS) - worldPosition);
 		// Angle between L and toLightEdge. Used as the cone angle when sampling shadow rays
 		float coneAngle = acos(dot(toLight, toLightEdge)) * 2.0f;
 		float distance = length(p.position - worldPosition);

@@ -46,7 +46,12 @@ float3 shadeWithLight(PointlightInput light, float3 worldPosition, float3 N, flo
     float3 H = normalize(V + L);
     float distance = length(light.position - worldPosition);
 
+    // Standard attenuation
     float attenuation = 1.f / (light.attConstant + light.attLinear * distance + light.attQuadratic * distance * distance);
+    // UE4 attenuation
+    // float lightRadius = 10.f;
+    // float attenuation = pow(saturate(1.f - pow(distance/lightRadius, 4.f)), 2.f) / (distance * distance + 1.f);
+    // attenuation = 1.f - attenuation;
     float3 radiance   = light.color * attenuation;
 
     float3 F  = fresnelSchlick(max(dot(H, V), 0.0f), F0);
