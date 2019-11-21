@@ -459,7 +459,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	//m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
 
-	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem>();
+	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
 
@@ -538,6 +538,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.killCamReceiverSystem->init(playerID);
 	
 	m_componentSystems.killCamAnimationSystem             = ECS::Instance()->createSystem<AnimationSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamLightSystem                 = ECS::Instance()->createSystem<LightSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMetaballSubmitSystem        = ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamModelSubmitSystem           = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementSystem              = ECS::Instance()->createSystem<MovementSystem<RenderInReplayComponent>>();
@@ -842,6 +843,8 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	}
 
 	m_componentSystems.killCamReceiverSystem->prepareUpdate();
+	m_componentSystems.killCamLightSystem->prepareFixedUpdate();
+
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
 	m_componentSystems.killCamMovementSystem->update(dt);
 	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
@@ -860,7 +863,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.spectateInputSystem->fixedUpdate(dt);
 
 	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
-	
+	m_componentSystems.lightSystem->prepareFixedUpdate();
+
 	// Update entities with info from the network and from ourself
 	// DON'T MOVE, should happen at the start of each tick
 	m_componentSystems.networkReceiverSystem->update(dt);
@@ -915,7 +919,11 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	if (!m_lightDebugWindow.isManualOverrideOn()) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
-		m_componentSystems.lightSystem->updateLights(&m_lights);
+		if (m_isInKillCamMode) {
+			m_componentSystems.killCamLightSystem->updateLights(&m_lights, m_componentSystems.killCamReceiverSystem->getKillCamAlpha(alpha));
+		} else {
+			m_componentSystems.lightSystem->updateLights(&m_lights, alpha);
+		}
 		m_componentSystems.lightListSystem->updateLights(&m_lights);
 		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha, dt);
 	}

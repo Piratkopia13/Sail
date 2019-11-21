@@ -24,7 +24,6 @@ class LevelGeneratorSystem;
 class KillCamReceiverSystem;
 class LevelSystem;
 class LifeTimeSystem;
-class LightSystem;
 class LightListSystem;
 class NetworkReceiverSystem;
 class NetworkSenderSystem;
@@ -50,6 +49,8 @@ class CrosshairSystem;
 // Systems that need duplicate versions for the killcam (due to slow motion and other reasons)
 template <typename T>
 class AnimationSystem;
+template <typename T>
+class LightSystem;
 template <typename T>
 class MetaballSubmitSystem;
 template <typename T>
@@ -80,7 +81,6 @@ struct Systems {
 	KillCamReceiverSystem*     killCamReceiverSystem     = nullptr;
 	LevelSystem*               levelSystem               = nullptr;
 	LifeTimeSystem*            lifeTimeSystem            = nullptr;
-	LightSystem*               lightSystem               = nullptr;
 	LightListSystem*           lightListSystem           = nullptr;
 	NetworkReceiverSystem*     networkReceiverSystem     = nullptr;
 	NetworkSenderSystem*       networkSenderSystem       = nullptr;
@@ -104,6 +104,8 @@ struct Systems {
 	// Systems that need duplicate versions for the killcam
 	AnimationSystem<RenderInActiveGameComponent>*             animationSystem                    = nullptr;
 	AnimationSystem<RenderInReplayComponent>*                 killCamAnimationSystem             = nullptr;
+	LightSystem<RenderInActiveGameComponent>*                 lightSystem                        = nullptr;
+	LightSystem<RenderInReplayComponent>*                     killCamLightSystem                 = nullptr;
 	MetaballSubmitSystem<RenderInActiveGameComponent>*        metaballSubmitSystem               = nullptr;
 	MetaballSubmitSystem<RenderInReplayComponent>*            killCamMetaballSubmitSystem        = nullptr;
 	ModelSubmitSystem<RenderInActiveGameComponent>*           modelSubmitSystem                  = nullptr;
