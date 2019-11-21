@@ -38,7 +38,7 @@ public:
 
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
-	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
+	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList, std::map<int, DXRBase::MetaballGroup>& metaballGroups);
 
 	void updateSceneData(Camera& cam, LightSetup& lights, const std::map<int, MetaballGroup>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
@@ -125,6 +125,8 @@ private:
 	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_decalCB;
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
+	std::vector<std::unordered_map<int, InstanceList>> m_bottomBuffers_Metaballs;
+
 	std::vector<AccelerationStructureBuffers> m_DXR_TopBuffer;
 
 	wComPtr<ID3D12StateObject> m_rtPipelineState;

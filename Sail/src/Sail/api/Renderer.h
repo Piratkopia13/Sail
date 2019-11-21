@@ -52,7 +52,8 @@ public:
 			} model;
 			struct {
 				Material* material;
-			} nonModel;
+				int gpuGroupIndex;
+			} metaball;
 		};
 	};
 

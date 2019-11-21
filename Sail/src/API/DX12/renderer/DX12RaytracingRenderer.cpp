@@ -72,14 +72,14 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		//		return a.distToCamera < b.distToCamera;
 		//	});
 
-		commandQueue.emplace_back();
+		/*commandQueue.emplace_back();
 		RenderCommand& cmd = commandQueue.back();
 		cmd.type = RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
 		cmd.flags = Renderer::MESH_DYNAMIC;
 		cmd.nonModel.material = nullptr;
 		cmd.transform = glm::identity<glm::mat4>();
 		cmd.transform = glm::transpose(cmd.transform);
-		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), true);
+		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), true);*/
 
 		//Calculate the needed size of m_next_metaball_aabb.
 		glm::vec3& pos = group.second.balls.front().pos;
@@ -141,7 +141,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateWaterData();
-	m_dxr.updateAccelerationStructures(commandQueue, cmdListCompute.Get());
+	m_dxr.updateAccelerationStructures(commandQueue, cmdListCompute.Get(), m_metaballGroups);
 	m_dxr.dispatch(m_outputTexture.get(), m_outputBloomTexture.get(), cmdListCompute.Get());
 	// AS has now been updated this frame, reset flag
 	for (auto& renderCommand : commandQueue) {
