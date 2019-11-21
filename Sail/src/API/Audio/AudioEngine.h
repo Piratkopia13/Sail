@@ -93,6 +93,9 @@ public:
 
 	void updateProjectileLowPass(float frequency, int indexToSource);
 
+	void startDeathSound(const std::string& filename, float volume);
+	void updateDeathvolume(float volume);
+
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const;
 #endif
@@ -112,6 +115,7 @@ private:
 	// Represents each loaded sound in the form of an 'object'
 	soundStruct m_sound[SOUND_COUNT];
 	soundStruct m_stream[STREAMED_SOUNDS_COUNT];
+	soundStruct m_deathSound;
 
 	int m_currSoundIndex = 0;
 	float m_tempDistance = 0;

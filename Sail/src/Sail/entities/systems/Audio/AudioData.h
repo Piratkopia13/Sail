@@ -61,7 +61,6 @@ namespace Audio {
 		glm::vec3 positionalOffset = { 0.f, 0.f, 0.f };
 		int soundID = -1;
 		int prevRandomNum = 0;
-		float delay = 0.0f;
 	};
 
 	// One for LITERALLY EVERY SOUND

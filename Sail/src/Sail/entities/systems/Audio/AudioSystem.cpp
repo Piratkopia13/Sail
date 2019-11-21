@@ -152,6 +152,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 	if (!m_hasOutputDevices) {	// Only run audiosystem if there are outputdevices on the computer
 		return;
 	}
+
+
+	
 	for (auto e : entities) {
 		auto audioC = e->getComponent<AudioComponent>();
 
@@ -162,66 +165,56 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			Audio::SoundInfo_General* soundGeneral;
 			Audio::SoundInfo_Unique* soundUnique;
 
+			
 			for (int soundTypeIndex = 0; soundTypeIndex < Audio::SoundType::COUNT; soundTypeIndex++) {
 				soundGeneral = &audioC->m_sounds[soundTypeIndex];
+
+				// Deal with all sounds & streams except death sound
+				if (soundTypeIndex == Audio::SoundType::DEATH) {
+					continue;
+				}
 
 				soundPoolSize = audioData.m_soundsUnique[soundTypeIndex].size();
 				if (soundPoolSize > 0) {
 					
-					// If the sound is meant to be delayed
-					if (soundGeneral->delay > 0.0f) {
-						// Decrease the delay and skip it
-						soundGeneral->delay -= dt;
-						SAIL_LOG("Skipped cus of delay: " + std::to_string(soundGeneral->delay));
-						continue;
-					}
-
 					if (soundGeneral->isPlaying) {
-
-						if (soundTypeIndex == 20) {
-
-						}
 
 						// Starts a new sound from relevant pool of sounds IF NOT ALREADY PLAYING
 						if (!soundGeneral->hasStartedPlaying) {
 
-							if (soundPoolSize > 1) {
-								randomSoundIndex = rand() % soundPoolSize;
-								if (randomSoundIndex == soundGeneral->prevRandomNum) {
-									randomSoundIndex++;
-									randomSoundIndex = (randomSoundIndex % soundPoolSize);
-								}
-								soundGeneral->prevRandomNum = randomSoundIndex;
-							}
-							else {
-								randomSoundIndex = 0;
-							}
+							randomSoundIndex = randomASoundIndex(soundPoolSize, soundGeneral);
 
-							// To make the code easier to read
 							soundUnique = &audioData.m_soundsUnique[soundTypeIndex].at(randomSoundIndex);
 							soundGeneral->volume = soundUnique->volume;
+							soundGeneral->hasStartedPlaying = true;
+							soundGeneral->durationElapsed = 0.0f;
+							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
 
+				
+							// To make the code easier to read
 							soundGeneral->soundID = m_audioEngine->beginSound(
 								soundUnique->fileName,
 								soundGeneral->effect,
 								soundGeneral->frequency,
 								soundGeneral->volume
 							);
-							soundGeneral->hasStartedPlaying = true;
-							soundGeneral->durationElapsed = 0.0f;
-							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
 							m_audioEngine->startSpecificSound(soundGeneral->soundID, soundUnique->volume);
 						}
 
 						// Update the sound with the current positions if it's playing
 						if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
+
+							//if (soundTypeIndex != Audio::SoundType::DEATH) {
 							m_audioEngine->updateSoundWithCurrentPosition(
 								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
 								soundGeneral->positionalOffset, alpha
 							);
-
 							m_audioEngine->setSoundVolume(soundGeneral->soundID, soundGeneral->volume);
-
+						//	}
+							//else {
+						//		m_audioEngine->updateDeathvolume(soundGeneral->volume);
+						//	}
+							
 							if (soundGeneral->effect == Audio::EffectType::PROJECTILE_LOWPASS) {
 								updateProjectileLowPass(soundGeneral);
 							}
@@ -230,15 +223,70 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 						}
 						else {
 							soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
-							m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+							
+							//if (soundTypeIndex != Audio::SoundType::DEATH) {
+							//	m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+							//}
 							soundGeneral->hasStartedPlaying = false;
 
 							soundGeneral->isPlaying = !soundGeneral->playOnce;
 						}
-						// If the sound should no longer be playing stop it and reset its timer
 					}
 					else if (soundGeneral->hasStartedPlaying) {
-						m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+						//if (soundTypeIndex != Audio::SoundType::DEATH) {
+						//	m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+						//}
+						
+						soundGeneral->hasStartedPlaying = false;
+						soundGeneral->durationElapsed = 0.0f;
+					}
+				}
+			}
+
+			// Deal with death sound
+			soundGeneral = &audioC->m_sounds[Audio::SoundType::DEATH];
+			if (soundGeneral->isPlaying) {
+				soundPoolSize = audioData.m_soundsUnique[Audio::SoundType::DEATH].size();
+
+				if (soundPoolSize > 0) {
+					if (soundGeneral->isPlaying) {
+						if (!soundGeneral->hasStartedPlaying) {
+
+							randomSoundIndex = randomASoundIndex(
+								soundPoolSize,
+								soundGeneral
+							);
+
+							randomSoundIndex = 0;
+
+							soundUnique = &audioData.m_soundsUnique[Audio::SoundType::DEATH].at(randomSoundIndex);
+							soundGeneral->volume = soundUnique->volume;
+							soundGeneral->hasStartedPlaying = true;
+							soundGeneral->durationElapsed = 0.0f;
+							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
+
+							m_audioEngine->startDeathSound(
+								soundUnique->fileName,
+								soundGeneral->volume
+							);
+							soundGeneral->playOnce = true;
+						}
+
+						// Update the sound with the current positions if it's playing
+						if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
+
+							m_audioEngine->updateDeathvolume(soundGeneral->volume);
+							soundGeneral->durationElapsed += dt;
+						}
+						else {
+							soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
+
+							soundGeneral->hasStartedPlaying = false;
+
+							soundGeneral->isPlaying = !soundGeneral->playOnce;
+						}
+					}
+					else if (soundGeneral->hasStartedPlaying) {
 						soundGeneral->hasStartedPlaying = false;
 						soundGeneral->durationElapsed = 0.0f;
 					}
@@ -279,11 +327,32 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 				m_k++;
 			}
 		}
+
+
+
 	}
 }
 
 void AudioSystem::stop() {
 	m_audioEngine->stopAllStreams();
+}
+
+int AudioSystem::randomASoundIndex(int soundPoolSize, Audio::SoundInfo_General* soundGeneral) {
+	int randomSoundIndex = -1;
+
+	if (soundPoolSize > 1) {
+		randomSoundIndex = rand() % soundPoolSize;
+		if (randomSoundIndex == soundGeneral->prevRandomNum) {
+			randomSoundIndex++;
+			randomSoundIndex = (randomSoundIndex % soundPoolSize);
+		}
+		soundGeneral->prevRandomNum = randomSoundIndex;
+	}
+	else {
+		randomSoundIndex = 0;
+	}
+
+	return randomSoundIndex;
 }
 
 void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC) {
@@ -421,7 +490,6 @@ bool AudioSystem::onEvent(const Event& event) {
 			auto& killSound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::KILLING_BLOW];
 			killSound.isPlaying = true;
 			killSound.playOnce = true;
-			killSound.delay = 1.0f;
 		}
 
 		//TODO: Find out why death sound is high as fuck!
@@ -434,7 +502,6 @@ bool AudioSystem::onEvent(const Event& event) {
 			auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
 			deathSound.isPlaying = true;
 			deathSound.playOnce = true;
-			deathSound.delay = 3.0f;
 		}
 	};
 
@@ -536,7 +603,16 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	switch (event.type) {
 	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
-	case Event::Type::PLAYER_DEATH: onPlayerDied((const PlayerDiedEvent&)event); break;
+	case Event::Type::PLAYER_DEATH: 
+		for (auto& entity : entities) {
+			AudioComponent* ac = entity->getComponent<AudioComponent>();
+			for (auto& sound : ac->m_sounds) {
+				sound.isPlaying = false;
+			}
+		}
+		m_audioEngine->stopAllStreams();
+		onPlayerDied((const PlayerDiedEvent&)event); 
+		break;
 	case Event::Type::PLAYER_JUMPED: onPlayerJumped((const PlayerJumpedEvent&)event); break;
 	case Event::Type::PLAYER_LANDED: onPlayerLanded((const PlayerLandedEvent&)event); break;
 	case Event::Type::START_SHOOTING: onStartShooting((const StartShootingEvent&)event); break;

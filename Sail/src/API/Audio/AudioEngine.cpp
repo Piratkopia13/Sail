@@ -104,6 +104,15 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 
 		// Create the source voice
 		hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+
+		// Also reset the xAPO + SubmixVoice
+		m_sound[indexValue].xapo.ReleaseAndGetAddressOf();
+		m_sound[indexValue].xapo = nullptr;
+		setUpxAPO(indexValue);
+
+		m_sound[indexValue].xAPOsubMixVoice->DestroyVoice();
+		m_sound[indexValue].xAPOsubMixVoice = nullptr;
+		createXAPOsubMixVoice(&m_sound[indexValue].xAPOsubMixVoice, m_sound[indexValue].xapo);
 	}
 
 	m_sound[indexValue].xAPOsubMixVoice->SetVolume(volume);
@@ -259,6 +268,68 @@ void AudioEngine::startSpecificSound(int index, float volume) {
 		hr = m_sound[index].sourceVoice->Start(0);
 		m_sound[index].sourceVoice->SetVolume(volume);
 	}
+}
+
+void AudioEngine::startDeathSound(const std::string& filename, float volume) {
+	if (!Application::getInstance()->getResourceManager().hasAudioData(filename)) {
+		SAIL_LOG_ERROR("That audio file has NOT been loaded yet!");
+		return;
+	}
+
+	m_deathSound.filename = filename;
+	HRESULT hr = S_OK;
+
+	// Is this the first time this function was called for this sound...
+	if (m_deathSound.sourceVoice == nullptr) {
+		// ... create a source voice for it,
+		hr = m_xAudio2->CreateSourceVoice(&m_deathSound.sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+		// ... set volume,
+		hr = m_deathSound.sourceVoice->SetVolume(volume);
+		// ... set up hrtf.
+		hr = CreateHrtfApo(nullptr, &m_deathSound.xapo);
+		hr = m_deathSound.xapo.As(&m_deathSound.hrtfParams);
+		hr = m_deathSound.hrtfParams->SetEnvironment(m_deathSound.environment);
+		if (FAILED(hr)) {
+			SAIL_LOG_ERROR("Failed to create Hrtf Apo for death sound");
+		}
+
+		// Create a submix specifically for this
+		createXAPOsubMixVoice(&m_deathSound.xAPOsubMixVoice, m_deathSound.xapo);
+	}
+
+	hr = m_deathSound.xAPOsubMixVoice->SetVolume(volume);
+	if (FAILED(hr)) {
+		SAIL_LOG_ERROR("Failed to set volume to death sound");
+	}
+
+	//			   										  xAPO
+	// [index].SourceVoice -----> [index].xAPOsubMixVoice ---> m_masterVoice
+	sendVoiceTosubMixVoice(
+		&m_deathSound.sourceVoice,
+		&m_deathSound.xAPOsubMixVoice,
+		false
+	);
+
+
+	hr = m_deathSound.sourceVoice->FlushSourceBuffers();
+
+	// Submit audio data to the source voice.
+	if (SUCCEEDED(hr)) {
+		hr = m_deathSound.sourceVoice->SubmitSourceBuffer(
+			Application::getInstance()->getResourceManager().getAudioData(m_deathSound.filename).getSoundBuffer());
+	}
+
+	if (SUCCEEDED(hr)) {
+		hr = m_deathSound.sourceVoice->Start(0);
+		hr = m_deathSound.sourceVoice->SetVolume(volume);
+	}
+
+	// Apply changes directly
+	m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL);
+}
+
+void AudioEngine::updateDeathvolume(float volume) {
+	m_deathSound.sourceVoice->SetVolume(volume);
 }
 
 void AudioEngine::stopSpecificSound(int index) {
@@ -511,29 +582,6 @@ void AudioEngine::createXAPOsubMixVoice(IXAudio2SubmixVoice* *source, Microsoft:
 		SAIL_LOG_ERROR("Attempted to create a xAPOsubMixVoice which already existed");
 		return;
 	}
-
-	//XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
-	//fxDesc.InitialState = TRUE;
-	//fxDesc.OutputChannels = 2;          // Stereo output
-	//fxDesc.pEffect = xapo.Get();        // HRTF xAPO set as the effect.
-
-	///*
-	//Possibly append the "reverb" effect in the effect chain here
-
-	//*/
-	//XAUDIO2_EFFECT_CHAIN fxChain{};
-	//fxChain.EffectCount = 1;
-	//fxChain.pEffectDescriptors = &fxDesc;
-	//XAUDIO2_VOICE_SENDS sends = {};
-	//XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
-	//sendDesc.pOutputVoice = m_masterVoice;
-	//sends.SendCount = 1;
-	//sends.pSends = &sendDesc;
-	//// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
-	//hr = m_xAudio2->CreateSubmixVoice(&submixVoice, 1, 48000, 0, 0, &sends, &fxChain);
-	//submixVoice->SetVolume(volume);
-
-	// ------------------- OLD ABOVE, NEW BELOW
 
 	XAUDIO2_EFFECT_DESCRIPTOR xAPOeffectDesc{};
 	XAUDIO2_EFFECT_CHAIN xAPOeffectChain{};
