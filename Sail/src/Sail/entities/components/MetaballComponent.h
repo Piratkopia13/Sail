@@ -8,5 +8,6 @@ public:
 	~MetaballComponent() {}
 
 	PBRMaterial material;
+	int renderGroupIndex = 0;
 };
 

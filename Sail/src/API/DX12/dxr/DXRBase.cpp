@@ -464,9 +464,13 @@ void DXRBase::updateMetaballpositions(const std::map<int, MetaballGroup>& metaba
 
 	int metaballIndex = 0;
 	int metaballOffsetBytes = 0;
-	int offsetInc = sizeof(Metaball::pos);
 
+	int offsetInc = sizeof(Metaball::pos);
+	int bufferMaxSize = sizeof(Metaball::pos) * MAX_NUM_METABALLS;
+	
 	for (auto group : metaballGroups) {
+		metaballOffsetBytes = group.second.gpuGroupStartOffset * offsetInc;
+
 		if (!m_aabb_desc_resources.count(group.second.index)) {
 			addMetaballGroupAABB(group.second.index);
 		}
@@ -483,7 +487,7 @@ void DXRBase::updateMetaballpositions(const std::map<int, MetaballGroup>& metaba
 		const std::vector<Metaball>& metaballs = group.second.balls;
 		size_t size = metaballs.size();
 
-		for (size_t i = 0; i < size; i++) {;
+		for (size_t i = 0; i < size && metaballOffsetBytes < bufferMaxSize; i++) {;
 			memcpy(static_cast<char*>(pPosMappedData) + metaballOffsetBytes, &metaballs[i].pos, offsetInc);
 			metaballOffsetBytes += offsetInc;
 		}		

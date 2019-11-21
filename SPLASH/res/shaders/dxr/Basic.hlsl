@@ -517,8 +517,9 @@ void IntersectionShader() {
 	float4 dummy;
 	float min;
 	float max;
-	uint groupStart = CB_SceneData.metaballGroup[0].start;
-	uint nballs = CB_SceneData.metaballGroup[0].size;
+	uint groupIndex = InstanceID();
+	uint groupStart = CB_SceneData.metaballGroup[groupIndex].start;
+	uint nballs = CB_SceneData.metaballGroup[groupIndex].size;
 	uint groupEnd = groupStart + nballs;
 
 	const uint MAX_HITS = 2;

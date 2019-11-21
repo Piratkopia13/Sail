@@ -389,7 +389,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 }
 
 Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory::ProjectileArguments& info) {
-	e->addComponent<MetaballComponent>();
+	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
 	e->addComponent<ProjectileComponent>(10.0f, info.hasLocalOwner); // TO DO should not be manually set to true
@@ -419,7 +419,7 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 }
 
 Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const ProjectileArguments& info) {
-	e->addComponent<MetaballComponent>();
+	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
 

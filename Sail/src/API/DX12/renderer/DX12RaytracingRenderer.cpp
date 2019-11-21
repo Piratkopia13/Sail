@@ -67,20 +67,11 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	int gpuGroupIndex = 0;
 	int gpuGroupStartOffset = 0;
 	for (auto& group : m_metaballGroups) {
-		//std::sort(group.second.balls.begin(), group.second.balls.end(),
-		//	[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
-		//	{
-		//		return a.distToCamera < b.distToCamera;
-		//	});
-
-		/*commandQueue.emplace_back();
-		RenderCommand& cmd = commandQueue.back();
-		cmd.type = RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
-		cmd.flags = Renderer::MESH_DYNAMIC;
-		cmd.nonModel.material = nullptr;
-		cmd.transform = glm::identity<glm::mat4>();
-		cmd.transform = glm::transpose(cmd.transform);
-		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), true);*/
+		std::sort(group.second.balls.begin(), group.second.balls.end(),
+			[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
+			{
+				return a.distToCamera < b.distToCamera;
+			});
 
 		//Calculate the needed size of m_next_metaball_aabb.
 		glm::vec3& pos = group.second.balls.front().pos;
