@@ -14,8 +14,6 @@ AnimationChangerSystem::AnimationChangerSystem() {
 	registerComponent<SprintingComponent>(true, true, false);
 }
 
-
-
 AnimationChangerSystem::~AnimationChangerSystem() {
 
 }
@@ -35,20 +33,24 @@ void AnimationChangerSystem::update(float dt) {
 			auto animIndexBefore = animationC->animationIndex;
 			float velMag2 = glm::length2(moveC->velocity);
 			if (throwC->isDropping) {
-				if (velMag2 < 0.01f) {
+				if (velMag2 < 0.1f) {
 					animationC->setAnimation(IDLE_DROP);
 					if (animIndexBefore != animationC->animationIndex) {
 						animationC->animationTime = 0.f;
 					}
 				}
 				continue;
-			} else if (throwC->isThrowing) {
-				if (velMag2 < 0.01f) {
+				// Keep for future fixes
+			} else if (throwC->isThrowing/* || 
+				(animationC->nextAnimation == nullptr && 
+					   (animationC->animationIndex == IDLE_THROW || animationC->animationIndex == RUNNING_THROW) && 
+						(animationC->animationTime + dt * animationC->animationSpeed < animationC->currentAnimation->getMaxAnimationTime()))*/) {
+				if (velMag2 < 0.1f) {
 					animationC->setAnimation(IDLE_THROW);
 				} else {
 					animationC->setAnimation(RUNNING_THROW);
 				}
-				if (animIndexBefore != animationC->animationIndex) {
+				if (!(animIndexBefore == IDLE_THROW || animIndexBefore == RUNNING_THROW)) {
 					animationC->animationTime = 0.f;
 				}
 				continue;
