@@ -418,6 +418,9 @@ bool GameState::processInput(float dt) {
 		m_componentSystems.lightListSystem->removePointLightFromDebugEntity();
 	}
 #endif
+	if (Input::WasKeyJustPressed(KeyBinds::UNLOAD_CPU_TEXTURES)) {
+		Application::getInstance()->getResourceManager().unloadTextures();
+	}
 #endif
 
 	return true;

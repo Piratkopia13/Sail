@@ -3,6 +3,7 @@
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/api/Mesh.h"
+#include "Sail/events/Events.h"
 
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
@@ -62,7 +63,7 @@ bool ResourceManager::hasAudioData(const std::string& filename) {
 void ResourceManager::loadTextureData(const std::string& filename) {
 	auto inserted = m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename) });
 	if (inserted.second) {
-		m_byteSize[RMDataType::Textures] += inserted.first->second->getByteSize();
+		m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
 	}
 }
 TextureData& ResourceManager::getTextureData(const std::string& filename) {
@@ -232,7 +233,7 @@ const unsigned int ResourceManager::getByteSize() const {
 	for (int i = 0; i < 5; i++) {
 		size += m_byteSize[i];
 	}
-	return size + sizeof(*this);
+	return size;
 }
 
 const unsigned int ResourceManager::getModelByteSize() const {
@@ -255,6 +256,18 @@ const unsigned int ResourceManager::getGenericByteSize() const {
 	return m_byteSize[RMDataType::Generic];
 }
 
+void ResourceManager::unloadTextures() {
+	m_textureDatas.clear();
+	m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
+}
+
+unsigned int ResourceManager::calculateTextureByteSize() const {
+	unsigned int size = 0;
+	for (auto& textureData : m_textureDatas) {
+		size += textureData.second->getByteSize();
+	}
+	return size;
+}
 
 const std::string ResourceManager::getSuitableName(const std::string& name) {
 	unsigned int iterator = 1;

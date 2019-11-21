@@ -14,7 +14,7 @@ class ShaderPipeline;
 class Shader;
 //class SoundManager;
 
-class ResourceManager {
+class ResourceManager final {
 public:
 	ResourceManager();
 	~ResourceManager();
@@ -105,7 +105,10 @@ public:
 	// SoundManager
 	//SoundManager* getSoundManager();
 
+	void unloadTextures();
+
 private:
+	unsigned int calculateTextureByteSize() const;
 	const std::string getSuitableName(const std::string& name);
 
 	enum RMDataType {
