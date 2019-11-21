@@ -160,7 +160,7 @@ void GameDataTracker::renderPlacement() {
 		1.0f
 	};
 	//KEEP
-	ImGui::SliderFloat4("##DEBUG0", &a[0], 0.0f, 1.0f);
+	//coImGui::SliderFloat4("##DEBUG0", &a[0], 0.0f, 1.0f);
 
 	float x[4] = {
 		ImGui::GetWindowContentRegionWidth()*a[0],
