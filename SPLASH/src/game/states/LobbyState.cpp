@@ -20,6 +20,7 @@
 #include "Sail/entities/components/AudioComponent.h"
 #include "Sail/utils/Utils.h"
 #include "Sail/utils/SailImGui/SailImGui.h"
+#include "../Game.h"
 
 LobbyState::LobbyState(StateStack& stack)
 	: State(stack),
@@ -168,6 +169,8 @@ bool LobbyState::render(float dt, float alpha) {
 
 bool LobbyState::renderImgui(float dt) {
 
+
+
 	//Keep all this
 	//ImGui::ShowDemoWindow();
 	static std::string font = "Beb30";
@@ -210,7 +213,7 @@ bool LobbyState::renderImgui(float dt) {
 	renderPlayerList();
 
 	// ------- CHAT LOG ------- 
-	renderChat();
+	//renderChat();
 
 	// -------- SETTINGS ----------
 	if (m_windowToRender == 1) {
@@ -234,12 +237,15 @@ bool LobbyState::renderImgui(float dt) {
 	}
 
 	ImGui::PopFont();
+	m_app->getChatWindow().renderChat(dt);
 
 	return false;
 }
 
 bool LobbyState::onEvent(const Event& event) {
 	State::onEvent(event);
+
+	
 
 	switch (event.type) {
 

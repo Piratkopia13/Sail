@@ -250,6 +250,10 @@ SettingStorage& Application::getSettings() {
 	return m_settingStorage;
 }
 
+ChatWindow& Application::getChatWindow() {
+	return m_chatWindow;
+}
+
 Camera* Application::getCurrentCamera() const {
 	return m_cameraRef;
 }
