@@ -203,39 +203,25 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 						// Update the sound with the current positions if it's playing
 						if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
-
-							//if (soundTypeIndex != Audio::SoundType::DEATH) {
 							m_audioEngine->updateSoundWithCurrentPosition(
 								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
 								soundGeneral->positionalOffset, alpha
 							);
 							m_audioEngine->setSoundVolume(soundGeneral->soundID, soundGeneral->volume);
-						//	}
-							//else {
-						//		m_audioEngine->updateDeathvolume(soundGeneral->volume);
-						//	}
 							
 							if (soundGeneral->effect == Audio::EffectType::PROJECTILE_LOWPASS) {
 								updateProjectileLowPass(soundGeneral);
 							}
 
 							soundGeneral->durationElapsed += dt;
-						}
-						else {
+						} else {
 							soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
 							
-							//if (soundTypeIndex != Audio::SoundType::DEATH) {
-							//	m_audioEngine->stopSpecificSound(soundGeneral->soundID);
-							//}
 							soundGeneral->hasStartedPlaying = false;
 
 							soundGeneral->isPlaying = !soundGeneral->playOnce;
 						}
-					}
-					else if (soundGeneral->hasStartedPlaying) {
-						//if (soundTypeIndex != Audio::SoundType::DEATH) {
-						//	m_audioEngine->stopSpecificSound(soundGeneral->soundID);
-						//}
+					} else if (soundGeneral->hasStartedPlaying) {
 						
 						soundGeneral->hasStartedPlaying = false;
 						soundGeneral->durationElapsed = 0.0f;
@@ -299,12 +285,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 				// If the request wants to start
 				if (m_i->second.startTRUE_stopFALSE == true) {
-					// Start playing stream
 					startPlayingRequestedStream(e, audioC);
-				}
-				// If the request wants to stop
-				else {
-					// Stop playing stream
+				} else { // If the request wants to stop
 					stopPlayingRequestedStream(e, audioC);
 				}
 			}
@@ -345,8 +327,7 @@ int AudioSystem::randomASoundIndex(int soundPoolSize, Audio::SoundInfo_General* 
 			randomSoundIndex = (randomSoundIndex % soundPoolSize);
 		}
 		soundGeneral->prevRandomNum = randomSoundIndex;
-	}
-	else {
+	} else {
 		randomSoundIndex = 0;
 	}
 
@@ -368,8 +349,7 @@ void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC)
 
 	if (streamIndex == -1) {
 		SAIL_LOG_ERROR("Too many sounds already streaming; failed to stream another one!");
-	}
-	else {
+	} else {
 		Application::getInstance()->pushJobToThreadPool(
 			[this, filename, streamIndex, volume, isPositionalAudio, isLooping, audioC](int id) {
 				return m_audioEngine->streamSound(filename, streamIndex, volume, isPositionalAudio, isLooping, audioC);
