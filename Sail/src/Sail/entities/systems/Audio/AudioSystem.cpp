@@ -243,7 +243,7 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 				}
 			}
 
-			// Deal with death sound
+			// Deal with death sound (Fixes LOUD deathsound issue)
 			soundGeneral = &audioC->m_sounds[Audio::SoundType::DEATH];
 			if (soundGeneral->isPlaying) {
 				soundPoolSize = audioData.m_soundsUnique[Audio::SoundType::DEATH].size();

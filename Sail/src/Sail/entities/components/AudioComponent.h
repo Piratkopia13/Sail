@@ -4,7 +4,6 @@
 #include "../Sail/src/Sail/entities/systems/Audio/AudioData.h"
 #include <string>
 #include <stack>
-#include <typeinfo>
 
 class AudioComponent : public Component<AudioComponent>
 {

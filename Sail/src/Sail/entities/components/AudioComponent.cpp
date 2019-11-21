@@ -11,9 +11,7 @@ AudioComponent::AudioComponent() {
 	}
 }
 
-AudioComponent::~AudioComponent() {
-	int asdf = 3;
-}
+AudioComponent::~AudioComponent() {}
 
 void AudioComponent::streamSoundRequest_HELPERFUNC(std::string filename, bool startTRUE_stopFALSE, float volume, bool isPositionalAudio, bool isLooping) {
 

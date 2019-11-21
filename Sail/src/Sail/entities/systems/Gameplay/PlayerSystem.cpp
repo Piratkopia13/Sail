@@ -36,7 +36,7 @@ bool PlayerSystem::onEvent(const Event& event) {
 			);
 
 
-		//// Remove all components from the candle and the gun that aren't needed for the replay
+		// Remove all components from the candle and the gun that aren't needed for the replay
 		for (Entity* c : e.killed->getChildEntities()) {
 			// Remove the parent from the transform components
 			if (c->hasComponent<TransformComponent>()) {
