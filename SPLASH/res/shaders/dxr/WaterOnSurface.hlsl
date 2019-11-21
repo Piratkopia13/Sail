@@ -8,7 +8,7 @@ void getWaterMaterialOnSurface(inout float3 albedo, inout float metalness, inout
 	arrSize.x = max(1, arrSize.x);
 	arrSize.y = max(1, arrSize.y);
 	arrSize.z = max(1, arrSize.z);
-	float3 waterArrSize = arrSize.x * arrSize.y * arrSize.z;
+	float waterArrSize = arrSize.x * arrSize.y * arrSize.z;
 	static const float cutoff = 0.2f;
 
 	float3 cellWorldSize = CB_SceneData.mapSize / arrSize;
@@ -39,7 +39,7 @@ void getWaterMaterialOnSurface(inout float3 albedo, inout float metalness, inout
 				uint start = (x == indMin.x) ? floor(((floatIndMin.x - floor(floatIndMin.x)) * 4.f) % 4) : 0;
 				uint end = (x == indMax.x) ? floor(((floatIndMax.x - floor(floatIndMax.x)) * 4.f) % 4) : 3;
 
-				[unroll]
+				// [unroll]
 				for (uint index = start; index <= end; index++) {
 					uint up = Utils::unpackQuarterFloat(packedR, index);
 					if (up > 0) {

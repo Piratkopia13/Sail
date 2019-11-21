@@ -144,7 +144,8 @@ void rayGen() {
 	ray.Direction = reflect(worldPosition - CB_SceneData.cameraPosition, worldNormal);
 	ray.TMin = 0.00001;
 	ray.TMax = 10000.0;
-	
+
+	// TODO: move this to helper method	
 	RayPayload payload;
 	payload.recursionDepth = 0;
 	payload.closestTvalue = 0;
@@ -175,11 +176,12 @@ void rayGen() {
 	ray.TMin = 0.00001;
 	ray.TMax = 10000.0;
 
+	// TODO: move this to helper method	
 	RayPayload payloadMetaball;
 	payloadMetaball.recursionDepth = 0;
 	payloadMetaball.closestTvalue = 0;
-	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
-		payloadMetaball.shadowTwo[i] = 0.f;
+	for (uint j = 0; j < NUM_SHADOW_TEXTURES; j++) {
+		payloadMetaball.shadowTwo[j] = 0.f;
 	}
 	payloadMetaball.albedoOne = 0.f;
 	payloadMetaball.albedoTwo = 0.f;
@@ -219,15 +221,17 @@ void rayGen() {
 	float totalShadowAmount = 0.f;
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
 	// float2 reprojectedTexCoord = screenTexCoord;
-	[unroll]
-	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
-		float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, i);
 
-		float2 cLast = InputShadowsLastFrame.SampleLevel(motionSS, float3(reprojectedTexCoord, i), 0).rg;
+	// The following loop SOMETIMES causes the DXIL compiler to fail - not after the dll update!
+	[unroll]
+	for (uint k = 0; k < NUM_SHADOW_TEXTURES; k++) {
+		float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, k);
+
+		float2 cLast = InputShadowsLastFrame.SampleLevel(motionSS, float3(reprojectedTexCoord, k), 0).rg;
 		// float2 cLast = 0.0f;
-		float2 shadow = float2(firstBounceShadow, payload.shadowTwo[i]);
+		float2 shadow = float2(firstBounceShadow, payload.shadowTwo[k]);
 		shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
-		lOutputShadows[uint3(launchIndex, i)] = shadow;
+		lOutputShadows[uint3(launchIndex, k)] = shadow;
 		totalShadowAmount += firstBounceShadow;
 	}
 	totalShadowAmount /= max(NUM_SHADOW_TEXTURES, 1);
@@ -241,7 +245,7 @@ void rayGen() {
 	float emisivenessTwo = mrao.a;
 	float3 worldPositionTwo = finalPayload.worldPositionTwo;
 	// Change material if second bounce color should be water on a surface
-	getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
+	// getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
 
 	// totalShadowAmount = 1 - totalShadowAmount * totalShadowAmount;
 	// aoOne = lerp(aoOne, originalAoOne, totalShadowAmount);
@@ -643,8 +647,8 @@ void IntersectionShader() {
 		}
 	}
 
-	for (uint i = 0; i < nballs && nHits < MAX_HITS; i++) {
-		uint i2 = nballs - i - 1;
+	for (uint j = 0; j < nballs && nHits < MAX_HITS; j++) {
+		uint i2 = nballs - j - 1;
 		if (intersectSphere(rayWorld, metaballs[i2], METABALL_RADIUS, min, max, dummy)) {
 			hits[nHits].tmin = min;
 			hits[nHits].tmax = max + 1;

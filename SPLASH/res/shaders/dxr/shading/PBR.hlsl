@@ -56,12 +56,13 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     float totalShadowAmount = 0.f;
 	uint numLights = 0;
     
+    [unroll]
     for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
         // float shadowAmount = 1.f;
         // if (i < 2) {
         //     shadowAmount = shadow[i];
         // }
-        float shadowAmount = shadow[min(i, NUM_SHADOW_TEXTURES - 1)];
+        float shadowAmount = shadow[min(i, NUM_SHADOW_TEXTURES - 1)]; // This line casues debug to not launch
         // float shadowAmount = 1.f;
         PointLightInput p = pointLights[i];
         
