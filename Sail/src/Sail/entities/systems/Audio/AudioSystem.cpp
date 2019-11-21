@@ -257,8 +257,6 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 								soundGeneral
 							);
 
-							randomSoundIndex = 0;
-
 							soundUnique = &audioData.m_soundsUnique[Audio::SoundType::DEATH].at(randomSoundIndex);
 							soundGeneral->volume = soundUnique->volume;
 							soundGeneral->hasStartedPlaying = true;
