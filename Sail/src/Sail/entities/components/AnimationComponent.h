@@ -98,7 +98,7 @@ public:
 	float animationSpeed;
 	std::string animationName;
 	Animation* currentAnimation;
-	//Animation* nextAnimation;
+	Animation* nextAnimation;
 	bool blending;
 	unsigned int transformSize;
 	bool hasUpdated;

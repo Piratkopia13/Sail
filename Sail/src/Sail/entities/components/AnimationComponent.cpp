@@ -9,7 +9,7 @@ AnimationComponent::AnimationComponent(AnimationStack* animationStack) :
 	animationSpeed(1.0f),
 	animationName(""),
 	currentAnimation(nullptr),
-	//nextAnimation(nullptr),
+	nextAnimation(nullptr),
 	blending(false),
 	transformSize(0),
 	hasUpdated(false),
@@ -39,10 +39,28 @@ AnimationComponent::~AnimationComponent() {
 }
 
 void AnimationComponent::setAnimation(const unsigned int index) {
+	const unsigned int IDLE_THROW = 9;
+	const unsigned int RUNNING_THROW = 11;
+	
+	
+
 	if (index != animationIndex) {
+		// Be able to switch between idle and running throwing animation
+		if ((animationIndex == IDLE_THROW || animationIndex == RUNNING_THROW) &&
+			(index == IDLE_THROW || index == RUNNING_THROW)) {
+			currentAnimation = m_stack->getAnimation(index);
+
+			return;
+		}
+
 		// Transition
 		// Check if not already doing a transition to the said index
 		if (index != currentTransition->toIndex) {
+			if (animationIndex == IDLE_THROW || animationIndex == RUNNING_THROW) {
+				currentTransition->waitForEnd = true;
+			} else {
+				currentTransition->waitForEnd = false;
+			}
 			currentTransition->done = false;
 			currentTransition->transpiredTime = 0.f;
 			currentTransition->transitionTime = 0.1f; // Should probably differ from animation to animation
@@ -54,11 +72,6 @@ void AnimationComponent::setAnimation(const unsigned int index) {
 			currentTransition->to = m_stack->getAnimation(currentTransition->toIndex);
 		}
 	}
-	/*animationIndex = index;
-	if (animationIndex > m_stack->getAnimationCount()) {
-		animationIndex = 0;
-	}
-	currentAnimation = m_stack->getAnimation(animationIndex);*/
 }
 void AnimationComponent::setAnimation(const std::string& name) {
 	animationIndex = m_stack->getAnimationIndex(name);

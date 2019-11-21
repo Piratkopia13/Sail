@@ -55,7 +55,7 @@ void CandleThrowingSystem::update(float dt) {
 						// Charging
 						throwC->chargeTime += dt;
 
-					} else if (throwC->isThrowing) {
+					} else {
 						if (throwC->throwingTimer == 0.f && throwC->chargeTime >= throwC->chargeToThrowThreshold) {
 							// Send start throw event
 							EventDispatcher::Instance().emit(StartThrowingEvent(e->getComponent<NetworkReceiverComponent>()->m_id));
@@ -65,9 +65,6 @@ void CandleThrowingSystem::update(float dt) {
 									e->getComponent<NetworkReceiverComponent>()->m_id
 								}
 							);
-							/*e->getComponent<NetworkSenderComponent>()->addMessageType(
-								Netcode::MessageType::START_THROWING
-							);*/
 						}
 
 						throwC->throwingTimer += dt;
@@ -77,23 +74,12 @@ void CandleThrowingSystem::update(float dt) {
 							throwC->isDropping = true;
 							throwC->doThrow = true;
 							// Begin drop animation
-						} else if (throwC->throwingTimer < CHARGE_AND_THROW_ANIM_LENGTH) {
-							// Play charge & throw animation
-
-							/*auto translation = throwC->chargeTime / throwC->maxChargingTime * maxBack +
-								throwC->throwingTimer / CHARGE_AND_THROW_ANIM_LENGTH * (maxForward - maxBack);
-							for (auto& child : e->getChildEntities()) {
-								if (child->hasComponent<CandleComponent>()) {
-									child->getComponent<TransformComponent>()->translate(translation);
-									continue;
-								}
-							}*/
-						} else {
+						} else if (throwC->throwingTimer >= CHARGE_AND_THROW_ANIM_LENGTH) {
 							// Do the throw
 							throwC->isThrowing = false;
 							throwC->doThrow = true;
-							/*auto translation = /*throwC->chargeTime / throwC->maxChargingTime * maxBack +
-								throwC->throwingTimer / CHARGE_AND_THROW_ANIM_LENGTH * (maxForward - maxBack);*/
+						} else {
+							throwC->isThrowing = true;
 						}
 					}
 
@@ -105,15 +91,18 @@ void CandleThrowingSystem::update(float dt) {
 					auto moveC = torchE->getComponent<MovementComponent>();
 
 					// Remove the candle from players hand
-					auto throwPos = glm::vec3(transC->getMatrixWithUpdate()[3]);
+					glm::vec3 throwPos = transC->getMatrixWithUpdate()[3];
 					auto parTrans = e->getComponent<TransformComponent>();
-					auto parTranslation = parTrans->getTranslation();
+					glm::vec3 parTranslation = parTrans->getMatrixWithUpdate()[3];
 					transC->removeParent();
-					transC->setRotations(glm::vec3{0.f,0.f,0.f});
+					transC->setRotations(glm::vec3(0.f,0.f,0.f));
 					e->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
 
 					// Set velocity and things
-					throwC->direction = Application::getInstance()->getCurrentCamera()->getDirection();//glm::normalize(-e->getComponent<TransformComponent>()->getForward()/*throwC->direction*/);
+					throwC->direction = Application::getInstance()->getCurrentCamera()->getDirection();
+
+					moveC->velocity = throwC->direction * throwC->throwingTimer * throwC->throwChargeMultiplier + e->getComponent<MovementComponent>()->velocity;
+					moveC->constantAcceleration = glm::vec3(0.f, -9.82f, 0.f);
 
 					// Making sure the torch isn't dropped inside an object
 					auto rayFrom = parTranslation;
@@ -121,24 +110,26 @@ void CandleThrowingSystem::update(float dt) {
 					Octree::RayIntersectionInfo rayInfo;
 					auto rayDir = throwPos - rayFrom;
 					auto rayDirNorm = glm::normalize(rayDir);
-					m_octree->getRayIntersection(rayFrom, rayDirNorm, &rayInfo, e->getParent(), 0.1f);
+					m_octree->getRayIntersection(rayFrom, rayDirNorm, &rayInfo, e, 0.1f);
 					if (!throwC->isDropping) {
-						throwPos += throwC->direction * 0.1f;
+						/*throwPos += throwC->direction * 0.8f;
+						throwPos += moveC->velocity * dt;*/
 					}
-					if (rayInfo.closestHit < glm::length(rayDir)) {
+					if (rayInfo.closestHitIndex != -1 && rayInfo.closestHit < glm::length(rayDir)) {
+						// TODO: Fix issue with this happening when looking at floor
 						throwPos = rayFrom + (rayInfo.closestHit - 0.1f) * rayDirNorm;
 					}
+
 
 					// Set initial throw position
 					transC->setTranslation(throwPos);
 
-					// Throw the torch
-					moveC->velocity = throwC->direction * throwC->throwingTimer * throwC->throwChargeMultiplier + e->getComponent<MovementComponent>()->velocity;
-					moveC->constantAcceleration = glm::vec3(0.f, -9.82f, 0.f);
+
 					// Can be used once the torch light can be set inside the torch instead of on the top of it, LEAVE THIS CODE HERE!
-					//throwC->direction.y = 0.f;
-					//auto rotationAxis = glm::cross(glm::normalize(throwC->direction), glm::vec3(0.f, 1.f, 0.f));
-					//transC->setRotations(glm::angleAxis(glm::radians(-89.5f), rotationAxis));
+					/*auto dir = throwC->direction;
+					dir.y = 0.f;
+					auto rotationAxis = glm::cross(glm::normalize(dir), glm::vec3(0.f, 1.f, 0.f));
+					transC->setRotations(glm::angleAxis(glm::radians(-89.5f), rotationAxis));*/
 					torchE->addComponent<CollisionComponent>(true);
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 
