@@ -129,7 +129,6 @@ void AnimationComponent::imguiRender(Entity** selected) {
 	}
 	for (unsigned int animationIndex = 0; animationIndex < stack->getAnimationCount(); animationIndex++) {
 		if (ImGui::Button(std::string("Switch to " + stack->getAnimation(animationIndex)->getName()).c_str())) {
-			//animationC->transitions.emplace(stack->getAnimation(animationIndex), transitionTime, transitionWait);
 			animationC->currentTransition->to = stack->getAnimation(animationIndex);
 			animationC->currentTransition->transitionTime = transitionTime;
 			animationC->currentTransition->transpiredTime = 0.f;

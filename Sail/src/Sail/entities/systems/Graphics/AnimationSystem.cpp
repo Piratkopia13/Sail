@@ -209,11 +209,7 @@ void AnimationSystem<T>::updateTransforms(const float dt) {
 			}
 		}
 
-		/*if (animationC->currentTransition) {
-			animationC->currentTransition->transpiredTime += dt * animationC->animationSpeed;
-		}*/
 		animationC->hasUpdated = true;
-
 
 		if (animationC->leftHandEntity) {
 			glm::mat4 res = animationC->transforms[10] * animationC->leftHandPosition;

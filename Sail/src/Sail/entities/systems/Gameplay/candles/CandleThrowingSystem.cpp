@@ -30,10 +30,6 @@ void CandleThrowingSystem::update(float dt) {
 	for (auto& e : entities) {
 		auto throwC = e->getComponent<ThrowingComponent>();
 
-		// TODO: To be removed once we have animations for it
-		auto maxBack = glm::vec3(0.f, 0.f, -0.5f);
-		auto maxForward = glm::vec3(0.f, 0.f, 0.0f);
-
 		Entity* torchE = nullptr;
 		for (auto& torch : e->getChildEntities()) {
 			if (torch->hasComponent<CandleComponent>() && !torch->isAboutToBeDestroyed()) {
@@ -112,6 +108,7 @@ void CandleThrowingSystem::update(float dt) {
 					auto rayDirNorm = glm::normalize(rayDir);
 					m_octree->getRayIntersection(rayFrom, rayDirNorm, &rayInfo, e, 0.1f);
 					if (!throwC->isDropping) {
+						// Keep this until throw is "flawless"
 						/*throwPos += throwC->direction * 0.8f;
 						throwPos += moveC->velocity * dt;*/
 					}
@@ -124,12 +121,6 @@ void CandleThrowingSystem::update(float dt) {
 					// Set initial throw position
 					transC->setTranslation(throwPos);
 
-
-					// Can be used once the torch light can be set inside the torch instead of on the top of it, LEAVE THIS CODE HERE!
-					/*auto dir = throwC->direction;
-					dir.y = 0.f;
-					auto rotationAxis = glm::cross(glm::normalize(dir), glm::vec3(0.f, 1.f, 0.f));
-					transC->setRotations(glm::angleAxis(glm::radians(-89.5f), rotationAxis));*/
 					torchE->addComponent<CollisionComponent>(true);
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 

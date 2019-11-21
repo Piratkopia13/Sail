@@ -429,7 +429,7 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		playerTrans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
 		animation->pitch = glm::radians(-m_pitch);
 
-		const glm::vec3 camPos = playerTrans->getMatrixWithUpdate()/*getRenderMatrix(alpha)*/ * glm::vec4(animation->headPositionLocalCurrent, 1.f);
+		const glm::vec3 camPos = playerTrans->getMatrixWithUpdate() * glm::vec4(animation->headPositionLocalCurrent, 1.f);
 
 		m_cam->setCameraPosition(camPos);
 	}
@@ -513,7 +513,6 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	if (Input::IsKeyPressed(KeyBinds::MOVE_UP)) { playerMovement.upMovement += 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN)) { playerMovement.upMovement -= 1.0f; }
 
-	//auto throwC = e->getComponent<ThrowingComponent>();
 	auto animC = e->getComponent<AnimationComponent>();
 	auto throwC = e->getComponent<ThrowingComponent>();
 	if (animC->animationIndex == 9/*IDLE_THROW*/ || animC->animationIndex == 11/*RUNNING_THROW*/ || throwC->chargeTime > 0.f) {

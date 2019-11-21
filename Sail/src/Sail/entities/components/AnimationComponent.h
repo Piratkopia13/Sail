@@ -121,7 +121,6 @@ public:
 
 	std::unique_ptr<VertexBuffer> tposeVBuffer;
 
-	//std::queue<Transition> transitions;
 	Transition* currentTransition;
 
 	// Used for upper body rotation
