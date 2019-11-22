@@ -885,9 +885,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.gameInputSystem->fixedUpdate(dt);
 	m_componentSystems.spectateInputSystem->fixedUpdate(dt);
 
-	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	m_componentSystems.prepareUpdateSystem->fixedUpdate(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
-	asdasd?
+	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	m_componentSystems.lightSystem->prepareFixedUpdate();
 
 	
