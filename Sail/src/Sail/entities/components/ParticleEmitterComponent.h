@@ -94,7 +94,7 @@ private:
 
 	struct ParticleData {
 		glm::vec3 position;
-		int animationIndex = 0;
+		float padding0;
 		glm::vec3 velocity;
 		float padding1;
 		glm::vec3 acceleration;

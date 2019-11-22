@@ -127,10 +127,9 @@ void ParticleEmitterComponent::updateTimers(float dt) {
 		int particlesToSpawn = (int)glm::floor(spawnTimer / glm::max(spawnRate, 0.0001f));
 		spawnParticles(particlesToSpawn);
 		//Decrease timer
-		spawnTimer -= particlesToSpawn * lifeTime;
+		spawnTimer -= spawnRate * particlesToSpawn;
 	}
 	spawnTimer += dt;
-	
 }
 
 void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm::vec3& cameraPos) {
@@ -184,7 +183,6 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		for (unsigned int i = 0; i < numPart; i++) {
 			const NewParticleInfo* newParticle_i = &m_cpuOutput[context->getSwapIndex()].newParticles[i];
 			m_inputData.particles[i].position = newParticle_i->pos;
-			m_inputData.particles[i].animationIndex++;// = m_animationIndex % 9;
 			m_inputData.particles[i].velocity = velocity + newParticle_i->spread;
 			m_inputData.particles[i].acceleration = acceleration;
 			m_inputData.particles[i].spawnTime = m_cpuOutput[context->getSwapIndex()].lastFrameTime - newParticle_i->spawnTime;
