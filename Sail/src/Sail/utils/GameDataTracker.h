@@ -69,6 +69,9 @@ public:
 
 	// Implemented in...
 	void renderImgui();							// ...EndState::renderImGui()
+	
+	int getTorchesLeft();
+	void reduceTorchesLeft();
 
 	void renderPlacement();
 	void renderPersonalStats();
@@ -78,6 +81,7 @@ public:
 #ifdef DEVELOPMENT
 	void addDebugData();
 #endif
+
 private:
 	Application* m_app;
 	NWrapperSingleton* m_network;
@@ -94,13 +98,13 @@ private:
 	int m_nPlayersCurrentSession;
 	std::vector<std::string> m_killFeed;
 
+	int m_torchesLeft = 3;
 	// -+-+-+-+-+- Singleton requirements below -+-+-+-+-+-
 public:
 	GameDataTracker(GameDataTracker const&) = delete;
 	void operator=(GameDataTracker const&) = delete;
 	static GameDataTracker& getInstance();
 private:
-
 	GameDataTracker();
 	virtual bool onEvent(const Event& e);
 	void playerDisconnected(const NetworkDisconnectEvent& e);

@@ -6,6 +6,7 @@
 #include "Sail/entities/components/SanityComponent.h"
 #include "Sail/entities/components/SprintingComponent.h"
 #include "Sail/entities/components/CrosshairComponent.h"
+#include "Sail/entities/components/CandleComponent.h"
 
 InGameGui::InGameGui(bool showWindow) {
 }
@@ -45,7 +46,12 @@ void InGameGui::renderWindow() {
 
 		SanityComponent* c1 = m_player->getComponent<SanityComponent>();
 		SprintingComponent* c2 = m_player->getComponent<SprintingComponent>();
-
+		CandleComponent* c3;
+		for (auto e : m_player->getChildEntities()) {
+			if (!e->isAboutToBeDestroyed() && e->hasComponent<CandleComponent>()) {
+				c3 = e->getComponent<CandleComponent>();
+			}
+		}
 		if (c1) {
 			float val = c1->sanity / 100.f;
 			float val_inv = 1 - val;
@@ -67,9 +73,21 @@ void InGameGui::renderWindow() {
 				val_inv = 1 - val;
 				color = ImVec4(1 - val_inv * 0.3, 0.6 - val_inv * 0.6, 0, 1);
 			}
-
-
 			CustomImGui::CustomProgressBar(val, ImVec2(-1, 0), "Stamina", color);
+		}
+		ImGui::End();
+		ImGui::Begin("TorchThrowButton", NULL, flags);
+		if (c3) {
+			auto* imguiHandler = Application::getInstance()->getImGuiHandler();
+			Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchThrow2.tga");
+
+			if (  c3->isLit && c3->isCarried && c3->candleToggleTimer > 2.f) {
+				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55),ImVec2(0,0),ImVec2(1,1),ImVec4(1,1,1,1));
+			}
+			else {
+				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.3f, 0.3f, 0.3f, 1));
+			}
+			ImGui::SetWindowPos(ImVec2(screenWidth - ImGui::GetWindowSize().x-300, screenHeight - ImGui::GetWindowSize().y-50));
 		}
 	}
 
