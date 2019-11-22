@@ -475,6 +475,7 @@ void AudioEngine::initialize() {
 	}
 	// Init streamObjects
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		std::cout << "SOURCE-V #4\n";
 		m_stream[i].sourceVoice = nullptr;
 		m_isStreaming[i] = false;
 		m_isFinished[i] = true;
@@ -850,6 +851,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 	if (m_stream[myIndex].sourceVoice != nullptr) {
 		m_stream[myIndex].sourceVoice->Stop();
 		m_stream[myIndex].sourceVoice->DestroyVoice();
+		std::cout << "SOURCE-V #5 - " << m_stream[myIndex].filename <<"\n";
 		m_stream[myIndex].sourceVoice = nullptr;
 		CloseHandle(m_overlapped[myIndex].hEvent);
 	}

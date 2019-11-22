@@ -315,7 +315,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			// Per currently streaming sound
 			for (m_k = audioC->m_currentlyStreaming.begin(); m_k != audioC->m_currentlyStreaming.end();) {
 				// Update its position in the world
-				updateStreamPosition(e, cam, alpha);
+				if (m_k->second.isPositionalAudio) {
+					updateStreamPosition(e, cam, alpha);
+				}
 				// Update volume if it has changed
 				if (m_k->second.prevVolume != m_k->second.volume) {
 					m_k->second.prevVolume = m_k->second.volume;
