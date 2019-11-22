@@ -38,7 +38,7 @@ private:
 	std::unique_ptr<DX12RenderableTexture> m_outputTexture;
 	std::unique_ptr<DX12RenderableTexture> m_outputBloomTexture;
 
-	std::map<int, DXRBase::MetaballGroup> m_metaballGroups;
+	std::map<int, DXRBase::MetaballGroup> m_metaballGroups_map;
 
 	// Decals
 	DXRShaderCommon::DecalData m_decals[MAX_DECALS];
