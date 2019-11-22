@@ -423,6 +423,7 @@ bool GameState::processInput(float dt) {
 	}
 #endif
 	if (Input::WasKeyJustPressed(KeyBinds::UNLOAD_CPU_TEXTURES)) {
+		Application::getInstance()->getResourceManager().logRemainingTextures();
 		Application::getInstance()->getResourceManager().unloadTextures();
 	}
 #endif

@@ -16,6 +16,7 @@
 #include "types/StopShootingEvent.h"
 #include "types/StopThrowingEvent.h"
 #include "types/StopWalkingEvent.h"
+#include "types/TextureUploadedToGPUEvent.h"
 #include "types/ToggleSlowMotionReplayEvent.h"
 #include "types/TorchExtinguishedEvent.h"
 #include "types/UpdateSanityEvent.h"

@@ -15,11 +15,14 @@ ResourceManager::ResourceManager() {
 	}
 	m_byteSize[RMDataType::Generic] += sizeof(*this);
 	m_defaultShader = nullptr;
+
+	EventDispatcher::Instance().subscribe(Event::Type::TEXTURE_UPLOADED_TO_GPU, this);
 }
 ResourceManager::~ResourceManager() {
 	for (auto it : m_shaderSets) {
 		delete it.second;
 	}
+	EventDispatcher::Instance().unsubscribe(Event::Type::TEXTURE_UPLOADED_TO_GPU, this);
 }
 
 //
@@ -258,7 +261,27 @@ const unsigned int ResourceManager::getGenericByteSize() const {
 
 void ResourceManager::unloadTextures() {
 	m_textureDatas.clear();
+	m_textureDatas = std::map<std::string, std::unique_ptr<TextureData>>();
 	m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
+}
+
+void ResourceManager::logRemainingTextures() const {
+	for (auto& textureData : m_textureDatas) {
+		SAIL_LOG(textureData.first + " still in CPU");
+	}
+}
+
+bool ResourceManager::onEvent(const Event& event) {
+	auto onTextureUploadedToGPU = [&](const TextureUploadedToGPUEvent& e) {
+		m_textureDatas.erase(e.fileName);
+		m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
+	};
+
+	switch (event.type) {
+	case Event::Type::TEXTURE_UPLOADED_TO_GPU: onTextureUploadedToGPU((const TextureUploadedToGPUEvent&)event); break;
+	default: break;
+	}
+	return true;
 }
 
 unsigned int ResourceManager::calculateTextureByteSize() const {

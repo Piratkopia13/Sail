@@ -9,12 +9,14 @@
 #include "loaders/AssimpLoader.h"
 #include "loaders/FBXLoader.h"
 
+#include "Sail/events/EventReceiver.h"
+
 //class DeferredGeometryShader;
 class ShaderPipeline;
 class Shader;
 //class SoundManager;
 
-class ResourceManager final {
+class ResourceManager final : public EventReceiver {
 public:
 	ResourceManager();
 	~ResourceManager();
@@ -106,6 +108,9 @@ public:
 	//SoundManager* getSoundManager();
 
 	void unloadTextures();
+	void logRemainingTextures() const;
+
+	bool onEvent(const Event& event) override;
 
 private:
 	unsigned int calculateTextureByteSize() const;

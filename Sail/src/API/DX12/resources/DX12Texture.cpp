@@ -6,6 +6,9 @@
 #include "../DX12ComputeShaderDispatcher.h"
 #include "../shader/DX12ShaderPipeline.h"
 
+#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/TextureUploadedToGPUEvent.h"
+
 Texture* Texture::Create(const std::string& filename) {
 	return SAIL_NEW DX12Texture(filename);
 }
@@ -45,7 +48,6 @@ DX12Texture::DX12Texture(const std::string& filename)
 
 	// Dont allow UAV access
 	uavHeapCDHs[0] = {0};
-
 }
 
 DX12Texture::~DX12Texture() {
@@ -83,6 +85,8 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	generateMips(cmdList);
 
 	m_isInitialized = true;
+
+	EventDispatcher::Instance().emit(TextureUploadedToGPUEvent(m_textureData.getFileName()));
 }
 
 bool DX12Texture::hasBeenInitialized() const {
