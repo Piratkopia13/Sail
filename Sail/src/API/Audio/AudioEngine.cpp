@@ -336,6 +336,67 @@ void AudioEngine::updateDeathvolume(float volume) {
 	m_deathSound.sourceVoice->SetVolume(volume);
 }
 
+void AudioEngine::startInsanitySound(const std::string& filename, float volume) {
+	if (!Application::getInstance()->getResourceManager().hasAudioData(filename)) {
+		SAIL_LOG_ERROR("That audio file has NOT been loaded yet!");
+		return;
+	}
+
+	m_insanitySound.filename = filename;
+	HRESULT hr = S_OK;
+
+	// Is this the first time this function was called for this sound...
+	if (m_insanitySound.sourceVoice == nullptr) {
+		// ... create a source voice for it,
+		hr = m_xAudio2->CreateSourceVoice(&m_insanitySound.sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+		// ... set volume,
+		hr = m_insanitySound.sourceVoice->SetVolume(volume);
+		// ... set up hrtf.
+		hr = CreateHrtfApo(nullptr, &m_insanitySound.xapo);
+		hr = m_insanitySound.xapo.As(&m_insanitySound.hrtfParams);
+		hr = m_insanitySound.hrtfParams->SetEnvironment(m_insanitySound.environment);
+		if (FAILED(hr)) {
+			SAIL_LOG_ERROR("Failed to create Hrtf Apo for insanitydeath sound");
+		}
+
+		// Create a submix specifically for this
+		createXAPOsubMixVoice(&m_insanitySound.xAPOsubMixVoice, m_insanitySound.xapo);
+	}
+
+	hr = m_insanitySound.xAPOsubMixVoice->SetVolume(volume);
+	if (FAILED(hr)) {
+		SAIL_LOG_ERROR("Failed to set volume to insanitydeath sound");
+	}
+
+	//			   										  xAPO
+	// [index].SourceVoice -----> [index].xAPOsubMixVoice ---> m_masterVoice
+	sendVoiceTosubMixVoice(
+		&m_insanitySound.sourceVoice,
+		&m_insanitySound.xAPOsubMixVoice,
+		false
+	);
+
+	hr = m_insanitySound.sourceVoice->FlushSourceBuffers();
+
+	// Submit audio data to the source voice.
+	if (SUCCEEDED(hr)) {
+		hr = m_insanitySound.sourceVoice->SubmitSourceBuffer(
+			Application::getInstance()->getResourceManager().getAudioData(m_insanitySound.filename).getSoundBuffer());
+	}
+
+	if (SUCCEEDED(hr)) {
+		hr = m_insanitySound.sourceVoice->Start(0);
+		hr = m_insanitySound.sourceVoice->SetVolume(volume);
+	}
+
+	// Apply changes directly
+	m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL);
+}
+
+void AudioEngine::updateInsanityVolume(float volume) {
+	m_insanitySound.sourceVoice->SetVolume(volume);
+}
+
 void AudioEngine::stopSpecificSound(int index) {
 	if (this->checkSoundIndex(index) && m_sound[index].sourceVoice != nullptr) {
 		m_sound[index].sourceVoice->Stop(0);

@@ -35,13 +35,10 @@ void SpectateInputSystem::update(float dt, float alpha) {
 }
 
 void SpectateInputSystem::initialize(Camera* cam) {
-	// If a camera doesn't exist...
 	if (m_cam == nullptr) {
-		// ... Create it
 		m_cam = SAIL_NEW CameraController(cam);
-	}
+	} 
 	else {
-		// Done in a weird way to fix a bug which broke spectator
 		CameraController* tempCam = m_cam;
 		Memory::SafeDelete(tempCam);
 		m_cam = SAIL_NEW CameraController(cam);

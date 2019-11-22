@@ -95,6 +95,8 @@ public:
 
 	void startDeathSound(const std::string& filename, float volume);
 	void updateDeathvolume(float volume);
+	void startInsanitySound(const std::string& filename, float volume);
+	void updateInsanityVolume(float volume);
 
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const;
@@ -117,6 +119,7 @@ private:
 	soundStruct m_sound[SOUND_COUNT];
 	soundStruct m_stream[STREAMED_SOUNDS_COUNT];
 	soundStruct m_deathSound;
+	soundStruct m_insanitySound;
 
 	int m_currSoundIndex = 0;
 	float m_tempDistance = 0;
