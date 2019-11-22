@@ -121,58 +121,114 @@ bool OptionsWindow::renderGameOptions() {
 	bool settingsChanged = false;
 	static auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 	static auto& stat = m_app->getSettings().gameSettingsStatic;
+	static auto& defaultMap = m_app->getSettings().defaultMaps;
 	
-	SailImGui::HeaderText("Map Settings");
+	SailImGui::HeaderText("Map");
 	ImGui::Separator();
 
-	SettingStorage::DynamicSetting* mapSizeX = &m_app->getSettings().gameSettingsDynamic["map"]["sizeX"];
-	SettingStorage::DynamicSetting* mapSizeY = &m_app->getSettings().gameSettingsDynamic["map"]["sizeY"];
 
-	static int size[] = { 0,0 };
-	size[0] = (int)mapSizeX->value;
-	size[1] = (int)mapSizeY->value;
-	ImGui::Text("MapSize"); 
+	ImGui::Text("Map:");
 	ImGui::SameLine(x[0]);
-	ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
-	if (ImGui::SliderInt2("##MapSizeXY", size, (int)mapSizeX->minVal, (int)mapSizeX->maxVal)) {
-		mapSizeX->value = size[0];
-		mapSizeY->value = size[1];
-		settingsChanged = true;
+
+	
+	std::string gamemode = stat["gamemode"]["types"].getSelected().name;
+	std::string currentMap = defaultMap[gamemode].getSelected().name;
+	if (ImGui::BeginCombo("##MAPCOMBO", currentMap.c_str())) {
+
+		unsigned int i = 0;
+		for (auto& option : defaultMap[gamemode].options) {
+			if (ImGui::Selectable(std::string(option.name).c_str(), option.name == currentMap)) {
+				defaultMap[gamemode].setSelected(i);
+				m_app->getSettings().setMap(stat["gamemode"]["types"].selected, i-1, 0); // TODO: Add playercount
+				settingsChanged = true;
+				break;
+			}
+			i++;
+		}
+		ImGui::EndCombo();
 	}
 
-	int seed = dynamic["map"]["seed"].value;
-	ImGui::Text("Seed"); 
-	ImGui::SameLine(x[0]);
-	ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
-	if (ImGui::InputInt("##SEED", &seed)) {
-		dynamic["map"]["seed"].setValue(seed);
-		settingsChanged = true;
-	}
-	ImGui::Text("Clutter"); 
-	ImGui::SameLine(x[0]);
-	ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
-	float val = m_app->getSettings().gameSettingsDynamic["map"]["clutter"].value * 100;
-	if (ImGui::SliderFloat("##Clutter",
-		&val,
-		m_app->getSettings().gameSettingsDynamic["map"]["clutter"].minVal * 100,
-		m_app->getSettings().gameSettingsDynamic["map"]["clutter"].maxVal * 100,
-		"%.1f%%"
-	)) {
-		m_app->getSettings().gameSettingsDynamic["map"]["clutter"].setValue(val * 0.01f);
-		settingsChanged = true;
-	}
 
-	SailImGui::HeaderText("Gamemode Settings");
-	ImGui::Separator();
+
+
 
 	SettingStorage::Setting* sopt = nullptr;
 	SettingStorage::DynamicSetting* dopt = nullptr;
 	unsigned int selected = 0;
 	std::string valueName = "";
 
+	static std::vector<std::string> MapOptions = { "sprinkler" };
+	for (auto& optionName : MapOptions) {
+		sopt = &stat["map"][optionName];
+		selected = sopt->selected;
+		ImGui::Text(optionName.c_str());
+		ImGui::SameLine(x[0]);
+		if (SailImGui::TextButton(std::string("<##" + optionName).c_str())) {
+			sopt->setSelected(selected - 1);
+		}
+		ImGui::SameLine(x[1]);
+		valueName = sopt->getSelected().name;
+		SailImGui::cText(valueName.c_str(), x[2]);
+		ImGui::SameLine(x[2]);
+		if (SailImGui::TextButton(std::string(">##" + optionName).c_str())) {
+			sopt->setSelected(selected + 1);
+		}
+	}
 
-	static std::vector<std::string> options = { "types"};
-	for (auto& optionName : options) {
+
+
+
+
+
+	if (ImGui::CollapsingHeader("Advanced Settings")) {
+		SettingStorage::DynamicSetting* mapSizeX = &m_app->getSettings().gameSettingsDynamic["map"]["sizeX"];
+		SettingStorage::DynamicSetting* mapSizeY = &m_app->getSettings().gameSettingsDynamic["map"]["sizeY"];
+
+		static int size[] = { 0,0 };
+		size[0] = (int)mapSizeX->value;
+		size[1] = (int)mapSizeY->value;
+		ImGui::Text("MapSize");
+		ImGui::SameLine(x[0]);
+		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
+		if (ImGui::SliderInt2("##MapSizeXY", size, (int)mapSizeX->minVal, (int)mapSizeX->maxVal)) {
+			mapSizeX->value = size[0];
+			mapSizeY->value = size[1];
+			settingsChanged = true;
+		}
+
+		int seed = dynamic["map"]["seed"].value;
+		ImGui::Text("Seed");
+		ImGui::SameLine(x[0]);
+		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
+		if (ImGui::InputInt("##SEED", &seed)) {
+			dynamic["map"]["seed"].setValue(seed);
+			settingsChanged = true;
+		}
+		ImGui::Text("Clutter");
+		ImGui::SameLine(x[0]);
+		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
+		float val = m_app->getSettings().gameSettingsDynamic["map"]["clutter"].value * 100;
+		if (ImGui::SliderFloat("##Clutter",
+			&val,
+			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].minVal * 100,
+			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].maxVal * 100,
+			"%.1f%%"
+		)) {
+			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].setValue(val * 0.01f);
+			settingsChanged = true;
+		}
+	}
+
+	
+
+	SailImGui::HeaderText("Gamemode Settings");
+	ImGui::Separator();
+
+
+
+
+	static std::vector<std::string> gameOptions = { "types"};
+	for (auto& optionName : gameOptions) {
 		sopt = &stat["gamemode"][optionName];
 		selected = sopt->selected;
 		ImGui::Text(optionName.c_str());
