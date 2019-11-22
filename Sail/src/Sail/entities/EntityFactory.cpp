@@ -93,9 +93,9 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	const Netcode::ComponentID torchCompID  = Netcode::getTorchCompID(playerID);
 	const Netcode::ComponentID gunCompID    = Netcode::getGunCompID(playerID);
 	
-	std::string logString = "My Player: " + std::to_string(playerID) + "\t" + std::to_string(playerCompID) + "\t" + std::to_string(gunCompID) + "\t" + std::to_string(torchCompID);
-	SAIL_LOG(logString);
-	OutputDebugStringA(logString.c_str());
+	//std::string logString = "My Player: " + std::to_string(playerID) + "\t" + std::to_string(playerCompID) + "\t" + std::to_string(gunCompID) + "\t" + std::to_string(torchCompID);
+	//SAIL_LOG(logString);
+	//OutputDebugStringA(logString.c_str());
 
 
 	// Create my player
@@ -148,18 +148,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	// For debugging
 	SAIL_LOG("My netcompID: " + std::to_string(playerCompID));
 
-	//// Tell other players to create my character
-	//NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-	//	Netcode::MessageType::CREATE_NETWORKED_PLAYER,
-	//	SAIL_NEW Netcode::MessageCreatePlayer{
-	//		netComponentID,
-	//		candleNetID,
-	//		gunNetID,
-	//		myPlayer->getComponent<TransformComponent>()->getCurrentTransformState().m_translation,
-	//	},
-	//	false
-	//	);
-
 
 	// REPLAY COPY OF THE ENTITY
 	CreateReplayPlayer(playerCompID, torchCompID, gunCompID, lightIndex, spawnLocation);
@@ -176,9 +164,9 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr& otherPlayer, Netcode::Player
 	const Netcode::ComponentID gunCompID    = Netcode::getGunCompID(playerID);
 	const glm::vec3 spawnLocation = { playerID * 10.f, -10.f, 0.f };
 
-	std::string logString = std::to_string(playerID) + "\t" + std::to_string(playerCompID) + "\t" + std::to_string(gunCompID) + "\t" + std::to_string(torchCompID);
-	SAIL_LOG(logString);
-	OutputDebugStringA(logString.c_str());
+	//std::string logString = std::to_string(playerID) + "\t" + std::to_string(playerCompID) + "\t" + std::to_string(gunCompID) + "\t" + std::to_string(torchCompID);
+	//SAIL_LOG(logString);
+	//OutputDebugStringA(logString.c_str());
 
 	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation, Netcode::getComponentOwner(playerCompID));
 	// Other players have a character model and animations

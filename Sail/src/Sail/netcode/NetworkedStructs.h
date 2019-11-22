@@ -204,19 +204,6 @@ namespace Netcode {
 		virtual ~MessageData() {}
 	};
 
-	class MessageCreatePlayer : public MessageData {
-	public:
-		MessageCreatePlayer(Netcode::ComponentID playerNetID, Netcode::ComponentID candleNetID, Netcode::ComponentID gunNetID, glm::vec3 pos)
-			: playerCompID(playerNetID), candleCompID(candleNetID), gunCompID(gunNetID), position(pos) {
-		}
-		virtual ~MessageCreatePlayer() {}
-
-		Netcode::ComponentID playerCompID;
-		Netcode::ComponentID candleCompID;
-		Netcode::ComponentID gunCompID;
-		glm::vec3 position;
-	};
-
 	class MessageSpawnProjectile : public MessageData {
 	public:
 		MessageSpawnProjectile(glm::vec3 translation_, glm::vec3 velocity_, 

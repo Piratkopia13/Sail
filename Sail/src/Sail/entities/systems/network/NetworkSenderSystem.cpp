@@ -362,16 +362,6 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->isHeld);
 	}
 	break;
-	//case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
-	//{
-	//	Netcode::MessageCreatePlayer* data = static_cast<Netcode::MessageCreatePlayer*>(event->data);
-
-	//	ar(data->playerCompID);
-	//	ar(data->candleCompID);
-	//	ar(data->gunCompID);
-	//	ArchiveHelpers::saveVec3(ar, data->position);
-	//}
-	//break;
 	case Netcode::MessageType::ENABLE_SPRINKLERS:
 	{
 		Netcode::MessageHitBySprinkler* data = static_cast<Netcode::MessageHitBySprinkler*>(event->data);
