@@ -233,6 +233,17 @@ GameState::GameState(StateStack& stack)
 	m_inGameGui.setCrosshair(crosshairEntity.get());
 	m_componentSystems.projectileSystem->setCrosshair(crosshairEntity.get());
 	m_componentSystems.sprintingSystem->setCrosshair(crosshairEntity.get());
+
+	// Flags for hud icons with imgui
+	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoBringToFrontOnFocus |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoBackground;
 }
 
 GameState::~GameState() {
@@ -808,6 +819,20 @@ bool GameState::renderImgui(float dt) {
 	//ImGui::End();
 	//ECS::Instance()->getSystem<AnimationSystem>()->updateHands(lPos, rPos, lRot, rRot);
 
+	int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
+	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
+	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchLeft.tga");
+	if (ImGui::Begin("TorchesLeft", nullptr, m_standaloneButtonflags)) {
+		for (int i = 0; i < nrOfTorchesLeft; i++) {
+			ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55));
+			ImGui::SameLine(0.f,0);	
+		}
+		ImGui::SetWindowPos(ImVec2(
+			m_app->getWindow()->getWindowWidth()-ImGui::GetWindowSize().x,
+			m_app->getWindow()->getWindowHeight() - ImGui::GetWindowSize().y-110
+			));
+	}
+	ImGui::End();
 
 	return false;
 }
