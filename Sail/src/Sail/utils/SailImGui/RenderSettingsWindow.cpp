@@ -6,6 +6,7 @@
 #include "Sail/entities/systems/graphics/AnimationSystem.h"
 #include "../Physics/Octree.h"
 #include "Sail/entities/components/ModelComponent.h"
+#include "Sail/entities/components/RenderInActiveGameComponent.h"
 #include "Sail/graphics/camera/Camera.h"
 #include "imgui.h"
 
