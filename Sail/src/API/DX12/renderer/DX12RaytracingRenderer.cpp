@@ -76,7 +76,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 			groupsToRemove.push_back(group.first);
 			continue;
 		}
-		//std::reverse(group.second.balls.begin(), group.second.balls.end());
 
 		std::sort(group.second.balls.begin(), group.second.balls.end(),
 			[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
