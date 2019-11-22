@@ -236,11 +236,10 @@ unsigned int DX12ShaderPipeline::setMaterial(PBRMaterial* material, void* cmdLis
 
 	for (int i = 0; i < nTextures; i++) {
 		if (textures[i]) {
-			if (!textures[i]->hasBeenInitialized()) {
-				textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList));
-			}
+			auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+			textures[i]->initBuffers(dxCmdList); // TODO: check if this is really always run on the direct queue
 
-			textures[i]->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			textures[i]->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 			m_context->getDevice()->CopyDescriptorsSimple(1, handle, textures[i]->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 		handle.ptr += m_context->getMainGPUDescriptorHeap()->getDescriptorIncrementSize();

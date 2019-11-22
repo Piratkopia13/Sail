@@ -59,6 +59,13 @@ MenuState::MenuState(StateStack& stack)
 	m_minSize = ImVec2(435, 500);
 	m_maxSize = ImVec2(1000, 1000);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
+
+
+	SAIL_LOG("getCompletedFenceValue: " + std::to_string(Application::getInstance()->getAPI<DX12API>()->getDirectQueue()->getCompletedFenceValue()));
+	SAIL_LOG("signal: " + std::to_string(Application::getInstance()->getAPI<DX12API>()->getDirectQueue()->signal()));
+	SAIL_LOG("getCompletedFenceValue: " + std::to_string(Application::getInstance()->getAPI<DX12API>()->getDirectQueue()->getCompletedFenceValue()));
+	SAIL_LOG("signal: " + std::to_string(Application::getInstance()->getAPI<DX12API>()->getDirectQueue()->signal()));
+	SAIL_LOG("getCompletedFenceValue: " + std::to_string(Application::getInstance()->getAPI<DX12API>()->getDirectQueue()->getCompletedFenceValue()));
 }
 
 MenuState::~MenuState() {
