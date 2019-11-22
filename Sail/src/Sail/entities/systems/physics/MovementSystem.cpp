@@ -1,12 +1,14 @@
 #include "pch.h"
 #include "MovementSystem.h"
-#include "..//..//components/TransformComponent.h"
-#include "..//..//components/MovementComponent.h"
-#include "..//..//Entity.h"
+#include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/MovementComponent.h"
+#include "Sail/entities/components/RagdollComponent.h"
+#include "Sail/entities/Entity.h"
 
 MovementSystem::MovementSystem() {
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<MovementComponent>(true, true, true);
+	registerComponent<RagdollComponent>(false, true, false);
 }
 
 void MovementSystem::update(float dt) {
