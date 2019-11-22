@@ -101,6 +101,7 @@ void AnimationSystem<T>::updateTransforms(const float dt) {
 						if (animationC->animationTime + dt * animationC->animationSpeed >= animationC->currentAnimation->getMaxAnimationTime()) {
 							animationC->nextAnimation = animationC->currentTransition->to;
 							animationC->currentTransition->transpiredTime += dt;
+							SAIL_LOG("Done with animation, begin transition");
 						}
 					} else {
 						animationC->nextAnimation = animationC->currentTransition->to;

@@ -78,7 +78,7 @@ public:
 	AnimationComponent(AnimationStack* animationStack);
 	~AnimationComponent();
 	
-	void setAnimation(const unsigned int index);
+	void setAnimation(const unsigned int index, const bool allowTransitionWait = true);
 	void setAnimation(const std::string& name);
 	AnimationStack* getAnimationStack();
 #ifdef DEVELOPMENT

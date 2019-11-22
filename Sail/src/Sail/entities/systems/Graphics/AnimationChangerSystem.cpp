@@ -46,9 +46,9 @@ void AnimationChangerSystem::update(float dt) {
 					   (animationC->animationIndex == IDLE_THROW || animationC->animationIndex == RUNNING_THROW) && 
 						(animationC->animationTime + dt * animationC->animationSpeed < animationC->currentAnimation->getMaxAnimationTime()))*/) {
 				if (velMag2 < 0.1f) {
-					animationC->setAnimation(IDLE_THROW);
+					animationC->setAnimation(IDLE_THROW, true);
 				} else {
-					animationC->setAnimation(RUNNING_THROW);
+					animationC->setAnimation(RUNNING_THROW, true);
 				}
 				if (!(animIndexBefore == IDLE_THROW || animIndexBefore == RUNNING_THROW)) {
 					animationC->animationTime = 0.f;

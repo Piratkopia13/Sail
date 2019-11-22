@@ -38,7 +38,7 @@ AnimationComponent::~AnimationComponent() {
 	Memory::SafeDeleteArr(transforms);
 }
 
-void AnimationComponent::setAnimation(const unsigned int index) {
+void AnimationComponent::setAnimation(const unsigned int index, const bool allowTransitionWait) {
 	const unsigned int IDLE_THROW = 9;
 	const unsigned int RUNNING_THROW = 11;
 	
@@ -56,7 +56,7 @@ void AnimationComponent::setAnimation(const unsigned int index) {
 		// Transition
 		// Check if not already doing a transition to the said index
 		if (index != currentTransition->toIndex) {
-			if (animationIndex == IDLE_THROW || animationIndex == RUNNING_THROW) {
+			if ((animationIndex == IDLE_THROW || animationIndex == RUNNING_THROW) && allowTransitionWait) {
 				currentTransition->waitForEnd = true;
 			} else {
 				currentTransition->waitForEnd = false;

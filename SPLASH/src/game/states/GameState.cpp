@@ -929,6 +929,14 @@ void GameState::updatePerTickComponentSystems(float dt) {
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
 	m_componentSystems.sprintingSystem->update(dt, alpha);
+
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamAnimationSystem->updatePerFrame();
+	} else {
+		m_componentSystems.animationSystem->update(dt);
+		m_componentSystems.animationSystem->updatePerFrame();
+	}
+
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->update(dt, alpha);
 	m_componentSystems.spectateInputSystem->update(dt, alpha);
@@ -952,12 +960,6 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 	
-	if (m_isInKillCamMode) {
-		m_componentSystems.killCamAnimationSystem->updatePerFrame();
-	} else {
-		m_componentSystems.animationSystem->update(dt);
-		m_componentSystems.animationSystem->updatePerFrame();
-	}
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
 
