@@ -301,11 +301,11 @@ const bool CollisionSystem::handleRagdollCollisions(Entity* e, std::vector<Octre
 			//float hitDot = glm::dot(glm::normalize(movementDiffs[i]), glm::normalize(offsetVector));
 			totalMovementDiff += movementDiffs[i];
 
-			/*if (calculateMomentum) {
+			if (calculateMomentum) {
 				glm::vec3 rotationVec = glm::normalize(glm::cross(offsetVector, movementDiffs[i]));
 				float angle = glm::atan(glm::length(movementDiffs[i]), glm::length(offsetVector));
 				totalRotation += rotationVec * angle;
-			}*/
+			}
 		}
 	}
 
