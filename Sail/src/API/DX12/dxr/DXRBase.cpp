@@ -108,7 +108,7 @@ void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
 	m_gbufferInputTextures = inputs;
 }
 
-void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList, std::map<int, DXRBase::MetaballGroup>& metaballGroups) {
+void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList, const std::vector<DXRBase::MetaballGroup*>& metaballGroups) {
 
 	unsigned int frameIndex = m_context->getSwapIndex();
 	unsigned int totalNumInstances = 0;
@@ -195,7 +195,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 		cmd.type = Renderer::RenderCommandType::RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
 		cmd.castShadows = true;
 		cmd.teamColorID = 0;
-		cmd.metaball.gpuGroupIndex = group.second.index;
+		cmd.metaball.gpuGroupIndex = group->index;
 
 		createBLAS(cmd, flagFastTrace, cmdList);
 		totalNumInstances++;
@@ -228,7 +228,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::map<int, MetaballGroup>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
 
 	updateMetaballpositions(metaballGroups);
 
@@ -243,8 +243,8 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::map<in
 	newData.nMetaballGroups = metaballGroups.size();
 
 	for (auto& group : metaballGroups) {
-		newData.metaballGroup[group.second.index].start = group.second.gpuGroupStartOffset;
-		newData.metaballGroup[group.second.index].size = group.second.balls.size();
+		newData.metaballGroup[group->index].start = group->gpuGroupStartOffset;
+		newData.metaballGroup[group->index].size = group->balls.size();
 	}
 
 	newData.nDecals = m_decalsToRender;
@@ -447,7 +447,7 @@ void DXRBase::rebuildWater() {
 	m_waterZChunkSize = m_waterArrSizes.z / m_maxWaterZChunk;
 }
 
-void DXRBase::updateMetaballpositions(const std::map<int, MetaballGroup>& metaballGroups) {
+void DXRBase::updateMetaballpositions(const std::vector<DXRBase::MetaballGroup*>& metaballGroups) {
 	if (metaballGroups.empty()) {
 		return;
 	}
@@ -469,22 +469,22 @@ void DXRBase::updateMetaballpositions(const std::map<int, MetaballGroup>& metaba
 	int bufferMaxSize = sizeof(Metaball::pos) * MAX_NUM_METABALLS;
 	
 	for (auto group : metaballGroups) {
-		metaballOffsetBytes = group.second.gpuGroupStartOffset * offsetInc;
+		metaballOffsetBytes = group->gpuGroupStartOffset * offsetInc;
 
-		if (!m_aabb_desc_resources.count(group.second.index)) {
-			addMetaballGroupAABB(group.second.index);
+		if (!m_aabb_desc_resources.count(group->index)) {
+			addMetaballGroupAABB(group->index);
 		}
 
 		//UPDATE AABB
-		aabb_res = m_aabb_desc_resources[group.second.index][m_context->getSwapIndex()];
+		aabb_res = m_aabb_desc_resources[group->index][m_context->getSwapIndex()];
 		hr = aabb_res->Map(0, nullptr, &pAabbMappedData);
 		DX12Utils::checkDeviceRemovalReason(m_context->getDevice(), hr);
 
-		memcpy(pAabbMappedData, &group.second.aabb, sizeof(D3D12_RAYTRACING_AABB));
+		memcpy(pAabbMappedData, &group->aabb, sizeof(D3D12_RAYTRACING_AABB));
 		aabb_res->Unmap(0, nullptr);
 
 		//UPDATE METABALLS
-		const std::vector<Metaball>& metaballs = group.second.balls;
+		const std::vector<Metaball>& metaballs = group->balls;
 		size_t size = metaballs.size();
 
 		for (size_t i = 0; i < size && metaballOffsetBytes < bufferMaxSize; i++) {;

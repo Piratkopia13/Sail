@@ -31,6 +31,7 @@ public:
 		int index;
 		int gpuGroupStartOffset; //offset in gpu structured buffer for metaball positions
 		std::vector<DXRBase::Metaball> balls;
+		float averageDistToCamera;
 		D3D12_RAYTRACING_AABB aabb;
 	};
 
@@ -39,9 +40,9 @@ public:
 
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
-	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList, std::map<int, DXRBase::MetaballGroup>& metaballGroups);
+	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList, const std::vector<DXRBase::MetaballGroup*>& metaballGroups);
 
-	void updateSceneData(Camera& cam, LightSetup& lights, const std::map<int, MetaballGroup>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	bool checkWaterAtWorldPosition(const glm::vec3& position);
@@ -108,7 +109,7 @@ private:
 	void createEmptyLocalRootSignature();
 
 	void initMetaballBuffers();
-	void updateMetaballpositions(const std::map<int, MetaballGroup>& metaballGroups);
+	void updateMetaballpositions(const std::vector<DXRBase::MetaballGroup*>& metaballGroups);
 
 	void initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle);
 	void addMetaballGroupAABB(int index);
