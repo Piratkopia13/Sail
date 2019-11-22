@@ -66,8 +66,16 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	int gpuGroupIndex = 0;
 	int gpuGroupStartOffset = 0;
+	int nMetaballs = 0;
+	std::vector<int> groupsToRemove;
 	for (auto& group : m_metaballGroups) {
-
+		if (gpuGroupIndex >= MAX_NUM_METABALL_GROUPS || nMetaballs >= MAX_NUM_METABALLS) {
+			group.second.balls.clear();
+			group.second.gpuGroupStartOffset = 0;
+			group.second.index = -1;
+			groupsToRemove.push_back(group.first);
+			continue;
+		}
 		//std::reverse(group.second.balls.begin(), group.second.balls.end());
 
 		std::sort(group.second.balls.begin(), group.second.balls.end(),
@@ -86,7 +94,12 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		nextMetaballAabb.MinX = pos.x - METABALL_RADIUS;
 		nextMetaballAabb.MinY = pos.y - METABALL_RADIUS;
 		nextMetaballAabb.MinZ = pos.z - METABALL_RADIUS;
-		for (size_t i = 1; i < group.second.balls.size() && i < MAX_NUM_METABALLS; i++) {
+		nMetaballs++;
+		for (size_t i = 1; i < group.second.balls.size(); i++) {
+			if (nMetaballs >= MAX_NUM_METABALLS) {
+				group.second.balls.erase(group.second.balls.begin() + i, group.second.balls.end());
+				break;
+			}
 			glm::vec3& pos = group.second.balls[i].pos;
 
 			if (nextMetaballAabb.MaxX < pos.x + METABALL_RADIUS) {
@@ -108,12 +121,18 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 			if (nextMetaballAabb.MinZ > pos.z - METABALL_RADIUS) {
 				nextMetaballAabb.MinZ = pos.z - METABALL_RADIUS;
 			}
+
+			nMetaballs++;
 		}
 
 		group.second.aabb = nextMetaballAabb;
 		group.second.index = gpuGroupIndex++;
 		group.second.gpuGroupStartOffset = gpuGroupStartOffset;
 		gpuGroupStartOffset += group.second.balls.size();
+	}
+	//Remove groups that do not fit in memory
+	for (auto i : groupsToRemove) {
+		m_metaballGroups.erase(i);
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_DXR_SHADER)) {
@@ -146,7 +165,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}
 
 	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue
-
 	RenderableTexture* renderOutput = m_outputTexture.get();
 	if (postProcessPipeline) {
 		// Run post processing
