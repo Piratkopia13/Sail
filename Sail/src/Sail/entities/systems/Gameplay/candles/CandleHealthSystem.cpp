@@ -29,7 +29,7 @@ void CandleHealthSystem::update(float dt) {
 
 	// The number of living candles, representing living players
 	size_t livingCandles = entities.size();
-
+	GameDataTracker::getInstance().setPlayersLeft(livingCandles);
 	for (auto e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
 		candle->wasHitByMeThisTick = false;

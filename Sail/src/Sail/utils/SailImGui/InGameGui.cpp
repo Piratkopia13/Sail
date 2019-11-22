@@ -110,15 +110,11 @@ void InGameGui::renderWindow() {
 
 	ImGui::End();
 
-
 	if (m_crosshairEntity) {
 		if (!m_crosshairEntity->getComponent<CrosshairComponent>()->sprinting) {
 			renderCrosshair(screenWidth, screenHeight);
 		}
 	}
-
-	renderNumberOfPlayersLeft(screenWidth, screenHeight);
-
 }
 
 void InGameGui::setPlayer(Entity* player) {
@@ -318,8 +314,4 @@ void InGameGui::renderCrosshair(float screenWidth, float screenHeight) {
 	}
 
 	ImGui::End();
-}
-
-void InGameGui::renderNumberOfPlayersLeft(float screenWidth, float screenHeight) {
-
 }

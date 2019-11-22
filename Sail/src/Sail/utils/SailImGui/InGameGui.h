@@ -19,5 +19,4 @@ private:
 
 	void renderCrosshair(float screenWidth, float screenHeight);
 
-	void renderNumberOfPlayersLeft(float screenWidth, float screenHeight);
 };
