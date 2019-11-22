@@ -70,7 +70,7 @@ struct GBuffers {
 	float4 normal               : SV_Target0;
 	float4 albedo               : SV_Target1;
 	float4 metalnessRoughnessAO : SV_Target2;
-    float4 motionVector         : SV_Target3;
+    float2 motionVector         : SV_Target3;
 };
 
 GBuffers PSMain(PSIn input) {
@@ -106,7 +106,7 @@ GBuffers PSMain(PSIn input) {
     float2 position = input.clipPos.xy / input.clipPos.w * 0.5f + 0.5f;
     float2 positionLastFrame = input.clipPosLastFrame.xy / input.clipPosLastFrame.w * 0.5f + 0.5f;
     // gbuffers.motionVector = float4(position * 0.5f + 0.5f, 0.0f, 1.0f);
-    gbuffers.motionVector = float4( (position - positionLastFrame) * 0.5f + 0.5f, 0.f, 1.0f);
+    gbuffers.motionVector = (position - positionLastFrame) * 0.5f + 0.5f;
 
     return gbuffers;
 }

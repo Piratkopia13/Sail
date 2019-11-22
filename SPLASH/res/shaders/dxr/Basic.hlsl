@@ -7,7 +7,7 @@ RaytracingAccelerationStructure gRtScene 			: register(t0);
 RWTexture2D<float4> gbuffer_normals 				: register(u0);
 RWTexture2D<float4> gbuffer_albedo 				    : register(u1);
 RWTexture2D<float4> gbuffer_texMetalnessRoughnessAO : register(u2);
-Texture2D<float4>   gbuffer_motionVectors			: register(t10);
+Texture2D<float2>   gbuffer_motionVectors			: register(t10);
 Texture2D<float>    gbuffer_depth 					: register(t11);
 
 // Decal textures
@@ -249,7 +249,7 @@ void rayGen() {
 	// Temporal filtering via an exponential moving average
 	float alpha = 0.3f; // Temporal fade, trading temporal stability for lag
 	// Reproject screenTexCoord to where it was last frame
-	float2 motionVector = gbuffer_motionVectors.SampleLevel(ss, screenTexCoord, 0).rg;
+	float2 motionVector = gbuffer_motionVectors.SampleLevel(ss, screenTexCoord, 0);
 	motionVector.y = 1.f - motionVector.y;
 	motionVector = motionVector * 2.f - 1.0f;
 
