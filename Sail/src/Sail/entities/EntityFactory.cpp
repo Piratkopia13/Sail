@@ -49,8 +49,8 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->setTexture("particles/test.tga");
 
 	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
-	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.05f));
-	ragdollComp->addContactPoint(glm::vec3(0.f, 0.37f, 0.0f), glm::vec3(0.05f));
+	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.08f));
+	ragdollComp->addContactPoint(glm::vec3(0.f, 0.37f, 0.0f), glm::vec3(0.08f));
 
 	PointLight pl;
 	pl.setColor(glm::vec3(0.55f, 0.5f, 0.45f));
@@ -83,7 +83,7 @@ void EntityFactory::AddCandleComponentsToPlayer(Entity::SPtr& player, const size
 		if (c->getName() == player->getName() + "Candle") {
 			c->addComponent<CandleComponent>()->playerEntityID = playerID;
 			c->addComponent<CollidableComponent>();
-			c->addComponent<TeamComponent>()->team = (playerID) % 12;
+			c->addComponent<TeamComponent>()->team = NWrapperSingleton::getInstance().getPlayer(playerID)->team;
 		}
 	}
 }
@@ -104,7 +104,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = true;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
-	myPlayer->addComponent<SprintingComponent>();
 	myPlayer->addComponent<ThrowingComponent>();
 	myPlayer->addComponent<RenderInActiveGameComponent>();
 
@@ -332,6 +331,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<CollidableComponent>();
 	playerEntity->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
 	playerEntity->addComponent<SanityComponent>()->sanity = 100.0f;
+	playerEntity->addComponent<SprintingComponent>();
 
 	// Give playerEntity a bounding box
 	playerEntity->addComponent<BoundingBoxComponent>(boundingBoxModel);
@@ -344,7 +344,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0, 0.9f, 0) + spawnLocation);
 
 	//give players teams
-	playerEntity->addComponent<TeamComponent>()->team = (playerID) % 12;
+	playerEntity->addComponent<TeamComponent>()->team = NWrapperSingleton::getInstance().getPlayer(playerID)->team;
 	
 
 	AnimationComponent* ac = playerEntity->addComponent<AnimationComponent>(stack);
