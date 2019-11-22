@@ -274,21 +274,17 @@ bool GameState::processInput(float dt) {
 	// Unpause Game
 	if (m_readyRestartAmbiance)
 	{
-		if (m_restartAmbianceTimer > 5.5f) {
-			std::cout << "1 - REQUESTING\n";
-			m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
-			m_readyRestartAmbiance = false;
-			m_restartAmbianceTimer = 0.0f;
-		}
-
-		else if (m_readyRestartAmbiance) {
-			m_restartAmbianceTimer += dt;
-		}
+		// Once all streaming has stopped, the first stream request is ignored BY THE SOUND API...
+		m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
+		// ... so we sent a request to start which won't work (and then a stop request for safety's sake)...
+		m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", false, 1.0f, false, true);
+		// ... and now a second request that WILL be registered. 100% of the time it works every time.
+		m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
+		m_readyRestartAmbiance = false;
 	}
 
 	// Pause game
 	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::SHOW_IN_GAME_MENU)) {
-		std::cout << "WEEOOOWWOOEWE\n";
 		m_readyRestartAmbiance = true;
 		ECS::Instance()->getSystem<AudioSystem>()->stop();
 		requestStackPush(States::InGameMenu);
@@ -834,7 +830,6 @@ void GameState::shutDownGameState() {
 	ECS::Instance()->stopAllSystems();
 	ECS::Instance()->destroyAllEntities();
 }
-
 
 // TODO: Add more systems here that only deal with replay entities/components
 void GameState::updatePerTickKillCamComponentSystems(float dt) {

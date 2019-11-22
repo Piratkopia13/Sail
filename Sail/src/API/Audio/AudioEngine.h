@@ -78,6 +78,7 @@ public:
 	void stopSpecificStream(int index);
 	void stopAllStreams();
 	void stopAllSounds();
+	void pauseAllSounds();
 
 	float getSoundVolume(int index);
 	float getStreamVolume(int index);
@@ -115,6 +116,7 @@ private:
 	// Represents each loaded sound in the form of an 'object'
 	soundStruct m_sound[SOUND_COUNT];
 	soundStruct m_stream[STREAMED_SOUNDS_COUNT];
+
 	soundStruct m_deathSound;
 
 	int m_currSoundIndex = 0;

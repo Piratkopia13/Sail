@@ -295,8 +295,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 		// - - - S T R E A M I N G  --------------------------------------------------------------------
 		{
 			// Deal with requests
+			if (audioC->m_streamingRequests.size() > 0)
 			for (m_i = audioC->m_streamingRequests.begin(); m_i != audioC->m_streamingRequests.end();) {
-				std::cout << "2 - Start Requested Stream \n";
 				// If the request wants to start
 				if (m_i->second.startTRUE_stopFALSE == true) {
 					// Start playing stream
@@ -333,6 +333,7 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 void AudioSystem::stop() {
 	m_audioEngine->stopAllStreams();
+	m_audioEngine->pauseAllSounds();
 
 	for (auto e : entities) {
 		auto audioC = e->getComponent<AudioComponent>();

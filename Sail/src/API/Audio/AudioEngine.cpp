@@ -364,6 +364,14 @@ void AudioEngine::stopAllSounds() {
 	}
 }
 
+void AudioEngine::pauseAllSounds() {
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		if (m_sound[i].sourceVoice != nullptr) {
+			m_sound[i].sourceVoice->Stop();
+		}
+	}
+}
+
 // Note: the sourceVoice's volume might not actually be doing anything atm, use the submix volume instead
 float AudioEngine::getSoundVolume(int index) {
 	float returnValue = 0.0f;
@@ -830,7 +838,11 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 		currentChunk = 0;
 		currentVolume = 0;
-		m_stream[myIndex].sourceVoice->Stop();
+		// There is a rare case where multi-threading means this sourceVoice MAY have been
+		// cleaned by another part of the system (AKA: Keep this nullptr check to avoid rare crash)
+		if (m_stream[myIndex].sourceVoice != nullptr) {
+			m_stream[myIndex].sourceVoice->Stop();
+		}
 	}
 	//
 	// Clean up
