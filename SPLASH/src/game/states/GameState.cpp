@@ -59,6 +59,7 @@ GameState::GameState(StateStack& stack)
 	m_app->getChatWindow()->setFadeThreshold(5.0f);
 	m_app->getChatWindow()->setFadeTime(5.0f);
 	m_app->getChatWindow()->resetMessageTime();
+	m_app->getChatWindow()->setRetainFocus(false);
 
 	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 	auto& settings = m_app->getSettings();
@@ -247,6 +248,7 @@ GameState::~GameState() {
 
 	m_app->getChatWindow()->setFadeThreshold(-1.0f);
 	m_app->getChatWindow()->setFadeTime(-1.0f);
+	m_app->getChatWindow()->setRetainFocus(true);
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);

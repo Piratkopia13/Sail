@@ -18,7 +18,8 @@ ChatWindow::ChatWindow(bool showWindow) :
 	m_fadeThreshold(-1.0f),
 	m_scrollToBottom(false),
 	m_messageLimit(30),
-	m_messageSizeLimit(30)
+	m_messageSizeLimit(30),
+	m_retainFocus(true)
 {
 	m_app = Application::getInstance();
 	m_settings = &m_app->getSettings();
@@ -132,6 +133,9 @@ void ChatWindow::renderChat(float dt) {
 
 	if (ImGui::Begin("##CHATWINDOW", nullptr, chatFlags)) {
 		ImGui::PushFont(m_imguiHandler->getFont("Beb20"));
+
+		ImGui::Checkbox("Focus", &m_retainFocus);
+
 		if (ImGui::BeginChild("##CHATTEXT", ImVec2(0, -ImGui::GetFrameHeightWithSpacing() - 10))) {
 			for (auto currentMessage : m_messages) {
 				//System or player which has left
@@ -170,23 +174,20 @@ void ChatWindow::renderChat(float dt) {
 		}
 		ImGui::EndChild();
 		ImGui::PopFont();
-
+		static bool sentThisFrame = false;
 		static bool justSent = false;
 		static bool releasedEnter = true;
 		justSent = false;
 		static char buf[101] = "";
 		strncpy_s(buf, m_message.c_str(), m_message.size());
-		if (ImGui::IsKeyPressed(SAIL_KEY_RETURN, false)) {
-			focus = true;
-			ImGui::SetKeyboardFocusHere(-1);
-			justSent = true;
 
-		}
 		if (ImGui::IsKeyReleased(SAIL_KEY_RETURN)) {
 			releasedEnter = true;
 		}
+
+		// TEXTINPUT
 		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.9f);
-		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha + 0.5f);
 		if (ImGui::InputTextWithHint("##ChatInput", (focus ? "" : "Press enter to chat"), buf, m_messageSizeLimit, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			m_message = buf;
 			if (m_message != "" && releasedEnter) {
@@ -196,23 +197,30 @@ void ChatWindow::renderChat(float dt) {
 			}
 			releasedEnter = false;
 			justSent = true;
-			ImGui::SetKeyboardFocusHere(0);
-
+	
 		}
 		else {
 			m_message = buf;
 		}
+
 		ImGui::PopStyleVar();
 		focus = ImGui::IsItemActive() || justSent;
+		// SENDBUTTON
 		ImGui::SameLine();
 		if (ImGui::Button(" >  ")) {
 			if (m_message != "") {
 				EventDispatcher::Instance().emit(ChatSent(m_message));
 				m_message = "";
 				justSent = true;
+				//sentLastFrame = true;
 			}
 		}
-
+		if (ImGui::IsKeyPressed(SAIL_KEY_RETURN, false) && !focus) {
+			if (m_retainFocus || !justSent) {
+				focus = true;
+				ImGui::SetKeyboardFocusHere(1);
+			}
+		}
 
 	}
 	if (pop) {
@@ -251,6 +259,10 @@ void ChatWindow::setFadeThreshold(const float& time) {
 
 void ChatWindow::resetMessageTime() {
 	m_timeSinceLastMessage = 0.0f;
+}
+
+void ChatWindow::setRetainFocus(const bool retain) {
+	m_retainFocus = retain;
 }
 
 

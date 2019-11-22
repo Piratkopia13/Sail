@@ -40,7 +40,7 @@ public:
 	void setFadeTime(const float& time);
 	void setFadeThreshold(const float& time);
 	void resetMessageTime();
-
+	void setRetainFocus(const bool retain);
 
 
 
@@ -72,6 +72,7 @@ private:
 	bool m_scrollToBottom;
 	unsigned int m_messageLimit;
 	unsigned int m_messageSizeLimit;
+	bool m_retainFocus;
 
 
 	ImGuiWindowFlags m_standaloneButtonflags;
