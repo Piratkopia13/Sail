@@ -118,10 +118,10 @@ void updateAnimation(int particleIndex) {
     
    
 
-    int textureSize = 3;
+    int textureSize = 8;
 
     //float test = inputBuffer.particles[particleIndex].animationIndex % 100;
-    int ai = (CSPhysicsBuffer[particleIndex].animationIndex += inputBuffer.frameTime) % (textureSize * textureSize);
+    int ai = 0; //(CSPhysicsBuffer[particleIndex].animationIndex += inputBuffer.frameTime * 30.f) % (4 * textureSize);
 
     float offset = 1.0f / textureSize;
     float ix = ai % textureSize;

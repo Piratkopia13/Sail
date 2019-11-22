@@ -122,12 +122,12 @@ void ParticleEmitterComponent::updateTimers(float dt) {
 		}
 	}
 
-	if (spawnTimer >= 10.f) {
+	if (spawnTimer >= spawnRate) {
 		//Spawn the correct number of particles
-		int particlesToSpawn = 1;// (int)glm::floor(spawnTimer / glm::max(spawnRate, 0.0001f));
+		int particlesToSpawn = (int)glm::floor(spawnTimer / glm::max(spawnRate, 0.0001f));
 		spawnParticles(particlesToSpawn);
 		//Decrease timer
-		spawnTimer = 0;
+		spawnTimer -= particlesToSpawn * lifeTime;
 	}
 	spawnTimer += dt;
 	
