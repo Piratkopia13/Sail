@@ -47,7 +47,6 @@ private:
 	GameDataTracker* m_gameDataTracker = nullptr;
 
 
-	float m_candleToggleTimer = 0.0f;
 
 	// --------- Earlier used variables below this line ---------
 	float m_runSpeed = 2.0;

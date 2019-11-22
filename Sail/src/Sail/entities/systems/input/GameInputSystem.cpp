@@ -82,12 +82,17 @@ void GameInputSystem::stop() {
 }
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
-	m_candleToggleTimer += dt;
 
 	for ( auto e : entities ) {
 		// Get player movement inputs
 		Movement playerMovement = getPlayerMovementInput(e);
 
+		//Update candleToggleTimer
+		for (auto torch : e->getChildEntities()) {
+			if (torch->hasComponent<CandleComponent>()) {
+				torch->getComponent<CandleComponent>()->candleToggleTimer += dt;
+			}
+		}
 		// Calculate forward vector for player
 		glm::vec3 forward = m_cam->getCameraDirection();
 
@@ -467,7 +472,17 @@ unsigned int GameInputSystem::getByteSize() const {
 
 void GameInputSystem::toggleCandleCarry(Entity* entity) {
 	// No need to do anything since it's to soon since last action
-	if (m_candleToggleTimer < CANDLE_TIMER) { return; }
+	if (entity->getComponent<CandleComponent>()) {
+		if (entity->getComponent<CandleComponent>()->candleToggleTimer < CANDLE_TIMER) { return; }
+	}
+
+	for (auto torch : entity->getChildEntities()) {
+		if (torch->hasComponent<CandleComponent>()) {
+			if (torch->getComponent<CandleComponent>()->candleToggleTimer < CANDLE_TIMER) {
+				return;
+			}
+		}
+	}
 
 	for (int i = 0; i < entity->getChildEntities().size(); i++) {
 		auto torchE = entity->getChildEntities()[i];
@@ -486,18 +501,18 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 								// We want to throw the torch
 								throwingComp->isThrowing = true;
 								throwingComp->isCharging = false;
-								m_candleToggleTimer = 0.f;
+								candleComp->candleToggleTimer = 0.f;
 							}
 						} else {
 							// Torch isn't carried so try to pick it up
 							candleComp->isCarried = true;
-							m_candleToggleTimer = 0.f;
+							candleComp->candleToggleTimer = 0.f;
 						}
 					} else if (candleComp->isCarried && throwingComp->wasChargingLastFrame) {
 						// We want to throw the torch
 						throwingComp->isCharging = false;
 						throwingComp->isThrowing = true;
-						m_candleToggleTimer = 0.f;
+						candleComp->candleToggleTimer = 0.f;
 					}
 				}
 			}
