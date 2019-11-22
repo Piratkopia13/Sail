@@ -38,7 +38,12 @@ void CandleThrowingSystem::update(float dt) {
 		}
 
 		if (torchE != nullptr) {
-			if (torchE->getComponent<CandleComponent>()->isLit) {
+			auto candleC = torchE->getComponent<CandleComponent>();
+			if (!candleC) {
+				SAIL_LOG_WARNING("CandleThrowingSystem::update: Candle component was a nullptr.");
+				return;
+			}
+			if (candleC->isLit) {
 				if (throwC->isDropping) {
 					throwC->dropTimer += dt;
 					if (throwC->dropTimer > DROP_ANIMATION_LENGTH) {
@@ -82,6 +87,8 @@ void CandleThrowingSystem::update(float dt) {
 				}
 
 				if (throwC->doThrow) {
+					candleC->candleToggleTimer = 1.8f;
+
 					// Time to throw
 					auto transC = torchE->getComponent<TransformComponent>();
 					auto moveC = torchE->getComponent<MovementComponent>();
@@ -139,7 +146,8 @@ void CandleThrowingSystem::update(float dt) {
 					throwC->chargeTime = 0.f;
 					throwC->throwingTimer = 0.f;
 					throwC->doThrow = false;
-					torchE->getComponent<CandleComponent>()->isCarried = false;
+					//throwC->isDropping = false;
+					candleC->isCarried = false;
 
 
 					continue;

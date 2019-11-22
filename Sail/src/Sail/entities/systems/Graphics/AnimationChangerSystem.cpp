@@ -41,7 +41,7 @@ void AnimationChangerSystem::update(float dt) {
 				}
 				continue;
 				// Keep for future fixes
-			} else if (throwC->isThrowing/* || 
+			} else if (throwC->isThrowing /*&& !animationC->throwAnimationDone /* || 
 				(animationC->nextAnimation == nullptr && 
 					   (animationC->animationIndex == IDLE_THROW || animationC->animationIndex == RUNNING_THROW) && 
 						(animationC->animationTime + dt * animationC->animationSpeed < animationC->currentAnimation->getMaxAnimationTime()))*/) {
@@ -53,8 +53,12 @@ void AnimationChangerSystem::update(float dt) {
 				if (!(animIndexBefore == IDLE_THROW || animIndexBefore == RUNNING_THROW)) {
 					animationC->animationTime = 0.f;
 				}
+
+				animationC->throwAnimationDone = false;
 				continue;
 			}
+
+			animationC->throwAnimationDone = false;
 
 			auto sprintC = e->getComponent<SprintingComponent>();
 			if (sprintC->doSprint && sprintC->canSprint) {

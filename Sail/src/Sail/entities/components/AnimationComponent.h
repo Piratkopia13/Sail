@@ -126,6 +126,9 @@ public:
 	// Used for upper body rotation
 	float pitch = 0.f;
 
+	// For some reason needed
+	bool throwAnimationDone = false;
+
 private:
 	AnimationStack* m_stack;
 };

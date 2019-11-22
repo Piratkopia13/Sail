@@ -76,9 +76,6 @@ template <typename T>
 void AnimationSystem<T>::updateTransforms(const float dt) { 
 	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
-		if (animationC->updateDT) {
-			addTime(animationC, dt);
-		}
 
 		if (!animationC->currentAnimation) {
 #if defined(_DEBUG)
@@ -101,7 +98,7 @@ void AnimationSystem<T>::updateTransforms(const float dt) {
 			} else {
 				if (animationC->currentTransition->transpiredTime == 0.f) {
 					if (animationC->currentTransition->waitForEnd) {
-						if (animationC->animationTime + dt * animationC->animationSpeed > animationC->currentAnimation->getMaxAnimationTime()) {
+						if (animationC->animationTime + dt * animationC->animationSpeed >= animationC->currentAnimation->getMaxAnimationTime()) {
 							animationC->nextAnimation = animationC->currentTransition->to;
 							animationC->currentTransition->transpiredTime += dt;
 						}
@@ -117,6 +114,10 @@ void AnimationSystem<T>::updateTransforms(const float dt) {
 					animationC->currentTransition->transpiredTime += dt;
 				}
 			}
+		}
+
+		if (animationC->updateDT) {
+			addTime(animationC, dt);
 		}
 		
 		const unsigned int frame00 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::BEHIND);

@@ -465,14 +465,10 @@ unsigned int GameInputSystem::getByteSize() const {
 #endif
 
 void GameInputSystem::toggleCandleCarry(Entity* entity) {
-	// No need to do anything since it's to soon since last action
-	if (entity->getComponent<CandleComponent>()) {
-		if (entity->getComponent<CandleComponent>()->candleToggleTimer < CANDLE_TIMER) { return; }
-	}
-
 	for (auto torch : entity->getChildEntities()) {
 		if (torch->hasComponent<CandleComponent>()) {
 			if (torch->getComponent<CandleComponent>()->candleToggleTimer < CANDLE_TIMER) {
+				// No need to do anything since it's to soon since last action
 				return;
 			}
 		}
@@ -494,7 +490,7 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 							if (throwingComp->chargeTime >= throwingComp->chargeToThrowThreshold) {
 								// We want to throw the torch
 								throwingComp->isCharging = false;
-								candleComp->candleToggleTimer = 0.f;
+								//candleComp->candleToggleTimer = 0.f;
 							}
 						} else {
 							// Torch isn't carried so try to pick it up
@@ -504,8 +500,7 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 					} else if (candleComp->isCarried && throwingComp->wasChargingLastFrame) {
 						// We want to throw the torch
 						throwingComp->isCharging = false;
-						throwingComp->isThrowing = true;
-						m_candleToggleTimer = 0.f;
+						//candleComp->candleToggleTimer = 0.f;
 					}
 				}
 			}
