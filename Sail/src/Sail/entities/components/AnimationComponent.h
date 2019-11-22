@@ -122,6 +122,7 @@ public:
 
 	// Used for upper body rotation
 	float pitch = 0.f;
+	float prevPitch = 0.f;
 
 private:
 	AnimationStack* m_stack;

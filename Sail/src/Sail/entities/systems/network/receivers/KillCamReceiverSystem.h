@@ -117,4 +117,10 @@ private:
 
 
 	Netcode::ComponentID m_idOfKillingProjectile = 0;
+	Netcode::ComponentID m_idOfKiller = 0;
+
+private:
+	// Helper functions
+	
+
 };

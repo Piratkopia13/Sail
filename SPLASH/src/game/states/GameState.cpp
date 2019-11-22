@@ -38,6 +38,7 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
+	EventDispatcher::Instance().subscribe(Event::Type::TOGGLE_KILLCAM, this);
 
 
 	// Get the Application instance
@@ -246,6 +247,7 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_KILLCAM, this);
 }
 
 // Process input for the state
@@ -537,12 +539,14 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.killCamReceiverSystem->init(playerID);
 	
 	m_componentSystems.killCamAnimationSystem             = ECS::Instance()->createSystem<AnimationSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamCameraSystem                = ECS::Instance()->createSystem<KillCamCameraSystem>();
 	m_componentSystems.killCamLightSystem                 = ECS::Instance()->createSystem<LightSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMetaballSubmitSystem        = ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamModelSubmitSystem           = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementSystem              = ECS::Instance()->createSystem<MovementSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<RenderInReplayComponent>>();
 
+	m_componentSystems.killCamCameraSystem->initialize(&m_cam);
 }
 
 void GameState::initConsole() {
@@ -619,6 +623,7 @@ bool GameState::onEvent(const Event& event) {
 		case Event::Type::NETWORK_DROPPED:                  onPlayerDropped((const NetworkDroppedEvent&)event); break;
 		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS: onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
 		case Event::Type::NETWORK_JOINED:                   onPlayerJoined((const NetworkJoinedEvent&)event); break;
+		case Event::Type::TOGGLE_KILLCAM:                   onToggleKillCam((const ToggleKillCamEvent&)event); break;
 		default: break;
 	}
 
@@ -665,6 +670,13 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	}
 	
 	return true;
+}
+
+void GameState::onToggleKillCam(const ToggleKillCamEvent& event) {
+	m_isInKillCamMode = event.isActive;
+	if (!m_isInKillCamMode) {
+		m_componentSystems.killCamReceiverSystem->stop();
+	}
 }
 
 
@@ -901,6 +913,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 }
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
+	const float killCamAlpha = m_componentSystems.killCamReceiverSystem->getKillCamAlpha(alpha);
+
 	// TODO? move to its own thread
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 	// Updates keyboard/mouse input and the camera
@@ -912,7 +926,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		if (m_isInKillCamMode) {
-			m_componentSystems.killCamLightSystem->updateLights(&m_lights, m_componentSystems.killCamReceiverSystem->getKillCamAlpha(alpha));
+			m_componentSystems.killCamLightSystem->updateLights(&m_lights, killCamAlpha);
 		} else {
 			m_componentSystems.lightSystem->updateLights(&m_lights, alpha);
 		}
@@ -928,6 +942,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	
 	if (m_isInKillCamMode) {
 		m_componentSystems.killCamAnimationSystem->updatePerFrame();
+		m_componentSystems.killCamCameraSystem->update(dt, killCamAlpha);
 	} else {
 		m_componentSystems.animationSystem->updatePerFrame();
 	}

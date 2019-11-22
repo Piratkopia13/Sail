@@ -4,10 +4,8 @@
 
 // TODO: Remove unnecessary includes
 
-#include "Sail/entities/components/NetworkReceiverComponent.h"
+#include "Sail/entities/components/components.h"
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
-#include "Sail/entities/components/OnlineOwnerComponent.h"
-#include "Sail/entities/components/LocalOwnerComponent.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 #include "Sail/entities/systems/Gameplay/SprinklerSystem.h"
 
@@ -54,6 +52,7 @@ void KillCamReceiverSystem::stop() {
 	m_currentReadInd  = 1;
 	m_hasStarted      = false;
 	m_idOfKillingProjectile = 0;
+	m_idOfKiller = 0;
 }
 
 void KillCamReceiverSystem::init(Netcode::PlayerID player) {
@@ -91,19 +90,38 @@ void KillCamReceiverSystem::update(float dt) {
 // Should only be called when the killcam is active
 void KillCamReceiverSystem::processReplayData(float dt) {
 	// Add the entities to all relevant systems so that they for example will have their animations updated
+
+	const bool wasKilledByAPlayer = m_idOfKillingProjectile != 0 
+		&& m_idOfKillingProjectile != Netcode::INSANITY_COMP_ID
+		&& m_idOfKillingProjectile != Netcode::SPRINKLER_COMP_ID;
+	const Netcode::PlayerID killerID = Netcode::getComponentOwner(m_idOfKillingProjectile);
+
 	if (!m_hasStarted) {
 		for (auto e : entities) {
 			e->tryToAddToSystems = true;
 			e->addComponent<RenderInReplayComponent>();
+
+
+			if (wasKilledByAPlayer && e->hasComponent<PlayerComponent>()
+				&& killerID == Netcode::getComponentOwner(e->getComponent<ReplayReceiverComponent>()->m_id)) 
+			{
+				e->addComponent<KillerComponent>();
+
+				SAIL_LOG("I was killed by: " + NWrapperSingleton::getInstance().getPlayer(killerID)->name);
+			}
 		}
 		m_hasStarted = true;
 	}
-	
-	
+
 	std::lock_guard<std::mutex> lock(m_replayDataLock);
 
 	processData(dt, m_replayData[m_currentReadInd], false);
 	m_currentReadInd = ++m_currentReadInd % REPLAY_BUFFER_SIZE;
+
+	// If we've reached the end of the killcam we should end it
+	if (m_currentReadInd == m_currentWriteInd) {
+		EventDispatcher::Instance().emit(ToggleKillCamEvent(false));
+	}
 }
 
 
@@ -209,6 +227,7 @@ void KillCamReceiverSystem::setAnimation(const Netcode::ComponentID id, const An
 		auto animation = e->getComponent<AnimationComponent>();
 		animation->setAnimation(info.index);
 		animation->animationTime = info.time;
+		animation->prevPitch = animation->pitch;
 		animation->pitch = info.pitch;
 		return;
 	}
@@ -441,6 +460,7 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 	auto onToggleSlowMotion = [&](const ToggleSlowMotionReplayEvent& e) {
 		m_slowMotionState = e.setting;
 	};
+
 
 	switch (event.type) {
 	case Event::Type::PLAYER_DEATH:       onPlayerDeath((const PlayerDiedEvent&)event); break;

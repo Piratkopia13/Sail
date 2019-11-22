@@ -41,6 +41,7 @@ private:
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
 	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
+	void onToggleKillCam(const ToggleKillCamEvent& event);
 
 	void shutDownGameState();
 

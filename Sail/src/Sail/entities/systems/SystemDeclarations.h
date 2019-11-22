@@ -21,6 +21,7 @@ class GUISubmitSystem;
 class GunSystem;
 class HostSendToSpectatorSystem;
 class LevelGeneratorSystem;
+class KillCamCameraSystem;
 class KillCamReceiverSystem;
 class LevelSystem;
 class LifeTimeSystem;
@@ -78,6 +79,7 @@ struct Systems {
 	GUISubmitSystem*           guiSubmitSystem           = nullptr;
 	GunSystem*                 gunSystem                 = nullptr;
 	HostSendToSpectatorSystem* hostSendToSpectatorSystem = nullptr;
+	KillCamCameraSystem*       killCamCameraSystem       = nullptr;
 	KillCamReceiverSystem*     killCamReceiverSystem     = nullptr;
 	LevelSystem*               levelSystem               = nullptr;
 	LifeTimeSystem*            lifeTimeSystem            = nullptr;

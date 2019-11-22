@@ -30,6 +30,8 @@
 #include "input/SprintingSystem.h"
 #include "input/SpectateInputSystem.h"
 
+#include "killcam/KillCamCameraSystem.h"
+
 #include "light/LightSystem.h"
 #include "light/LightListSystem.h"
 #include "light/SpotLightSystem.h"

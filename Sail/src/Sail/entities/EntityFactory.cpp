@@ -107,6 +107,9 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<ThrowingComponent>();
 	myPlayer->addComponent<RenderInActiveGameComponent>();
 
+	// TODO: REMOVE
+	myPlayer->addComponent<KillerComponent>();
+
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
 	// Define the position for the camera
@@ -230,13 +233,19 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 	replayPlayer->addComponent<ReplayReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 
 	// Remove components that shouldn't be used by entities in the killcam
-	replayPlayer->removeComponent<PlayerComponent>();
+	//replayPlayer->removeComponent<PlayerComponent>();
 	replayPlayer->removeComponent<CollidableComponent>();
 	replayPlayer->removeComponent<SpeedLimitComponent>();
 	replayPlayer->removeComponent<SanityComponent>();
 	replayPlayer->removeComponent<AudioComponent>(); // TODO: Remove this line when we start having audio in the killcam
 	replayPlayer->removeComponent<GunComponent>();
 	replayPlayer->removeComponent<BoundingBoxComponent>();
+
+
+	// So that we can get their camera positions in the replay
+	AnimationComponent* ac = replayPlayer->getComponent<AnimationComponent>();
+	ac->is_camFollowingHead = true;
+	ac->headPositionMatrix = glm::translate(glm::identity<glm::mat4>(), ac->headPositionLocalDefault);
 
 
 	// Create the player

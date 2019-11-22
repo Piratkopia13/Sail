@@ -105,10 +105,11 @@ void CandleHealthSystem::update(float dt) {
 							}
 						}
 
-						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-							Netcode::MessageType::MATCH_ENDED,
-							nullptr
-						);
+						// COMMENTED OUT FOR TESTING
+						//NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						//	Netcode::MessageType::MATCH_ENDED,
+						//	nullptr
+						//);
 					}
 				}
 			}

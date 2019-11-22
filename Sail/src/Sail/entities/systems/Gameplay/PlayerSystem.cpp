@@ -77,6 +77,11 @@ bool PlayerSystem::onEvent(const Event& event) {
 			const auto& dir = glm::normalize(middleOfLevel - pos);
 			const auto& rots = Utils::getRotations(dir);
 			transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));
+
+
+			// TODO: we should probably have a short delay and a death animation or something before 
+			// the killcam starts
+			EventDispatcher::Instance().emit(ToggleKillCamEvent(true));
 		} else {
 			// if it wasn't our player then remove all components that aren't needed for replay and 
 			// add lifetime component so that it eventually gets destroyed
