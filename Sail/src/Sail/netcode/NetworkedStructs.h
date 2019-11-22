@@ -7,6 +7,14 @@
 namespace Netcode {
 	// Global counter
 	extern std::atomic<ComponentID> gNetworkIDCounter;
+
+	static constexpr ComponentID UNINITIALIZED = 0;
+	static constexpr ComponentID PLAYER_VALUE  = 1;
+	static constexpr ComponentID GUN_VALUE     = 2;
+	static constexpr ComponentID TORCH_VALUE   = 3;
+	static constexpr ComponentID RESET_VALUE   = 4;
+
+	static void resetIDCounter() { gNetworkIDCounter = RESET_VALUE; }
 	static ComponentID createNetworkID()    { return ++gNetworkIDCounter; }
 	static ComponentID nrOfNetworkObjects() { return gNetworkIDCounter; }
 
@@ -27,15 +35,30 @@ namespace Netcode {
 	static constexpr PlayerID    NONE_PLAYER_ID_START = 200;
 #pragma endregion
 
+	static constexpr ComponentID generateID(PlayerID playerID, ComponentID counter) {
+		return (counter | (static_cast<ComponentID>(playerID) << SHIFT_AMOUNT));
+	}
+
 	// Generates a unique ID for a NetworkSenderComponent based on the player's PlayerID
 	static ComponentID generateUniqueComponentID(PlayerID ownerID) {
-		return (createNetworkID() | (static_cast<ComponentID>(ownerID) << SHIFT_AMOUNT));
+		return generateID(ownerID, createNetworkID());
 	}
 	// Extract the PlayerID of the owner of a NetworkComponent from the component's ID
 	static constexpr PlayerID getComponentOwner(ComponentID componentID) {
 		return static_cast<PlayerID>(componentID >> SHIFT_AMOUNT);
 	}
 
+	static ComponentID getPlayerCompID(PlayerID playerID) {
+		return generateID(playerID, PLAYER_VALUE);
+	}
+
+	static ComponentID getGunCompID(PlayerID playerID) {
+		return generateID(playerID, GUN_VALUE);
+	}
+
+	static ComponentID getTorchCompID(PlayerID playerID) {
+		return generateID(playerID, TORCH_VALUE);
+	}
 
 	/*
 	  Enums for the kind of entities/data that will be sent over the network,
@@ -56,8 +79,8 @@ namespace Netcode {
 	// TODO: should be one message type for tracked entities and one for events
 	// The message type decides how the subsequent data will be parsed and used
 	enum class MessageType : __int8 {
-		CREATE_NETWORKED_PLAYER = 1,
-		DESTROY_ENTITY,
+		//CREATE_NETWORKED_PLAYER,
+		DESTROY_ENTITY = 1,
 		CHANGE_LOCAL_POSITION,
 		CHANGE_LOCAL_ROTATION,
 		CHANGE_ABSOLUTE_POS_AND_ROT,

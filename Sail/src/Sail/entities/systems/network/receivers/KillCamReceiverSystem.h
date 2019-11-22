@@ -116,5 +116,5 @@ private:
 	size_t m_killCamTickCounter = 0; // Counts ticks in the range [ 0, SLOW_MO_MULTIPLIER )
 
 
-	Netcode::ComponentID m_idOfKillingProjectile = 0;
+	Netcode::ComponentID m_idOfKillingProjectile = Netcode::UNINITIALIZED;
 };

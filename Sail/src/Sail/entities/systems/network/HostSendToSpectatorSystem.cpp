@@ -46,7 +46,7 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID Play
 	// Find how many players are alive so that the receiver knows how many messages to receive
 	for (auto e : entities) {
 		if (e->getComponent<NetworkSenderComponent>()->m_entityType == Netcode::EntityType::PLAYER_ENTITY) {
-			nrOfEvents++;
+			//nrOfEvents++;
 
 			for (auto c : e->getChildEntities()) {
 				if (c->hasComponent<CandleComponent>() && !c->getComponent<CandleComponent>()->isCarried) {
@@ -73,8 +73,7 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID Play
 			for (auto c : e->getChildEntities()) {
 				if (c->hasComponent<CandleComponent>()) {
 					candleID = c->getComponent<NetworkSenderComponent>()->m_id;
-				}
-				else {
+				} else {
 					if (e->hasComponent<GunComponent>()) {
 						gunID = c->getComponent<NetworkSenderComponent>()->m_id;
 					}
@@ -87,11 +86,11 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID Play
 			//}
 			glm::vec3 position = e->getComponent<TransformComponent>()->getCurrentTransformState().m_translation;
 
-			ar(Netcode::MessageType::CREATE_NETWORKED_PLAYER);
-			ar(nsc->m_id); // Send the player's componentID
-			ar(candleID);  // Send the player's candle's componentID
-			ar(gunID);     // Send the player's gun's componentID
-			ArchiveHelpers::saveVec3(ar, position); // Send the player's current position
+			//ar(Netcode::MessageType::CREATE_NETWORKED_PLAYER);
+			//ar(nsc->m_id); // Send the player's componentID
+			//ar(candleID);  // Send the player's candle's componentID
+			//ar(gunID);     // Send the player's gun's componentID
+			//ArchiveHelpers::saveVec3(ar, position); // Send the player's current position
 
 
 			for (auto c : e->getChildEntities()) {

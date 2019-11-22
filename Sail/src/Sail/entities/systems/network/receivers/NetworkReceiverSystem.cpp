@@ -77,19 +77,19 @@ unsigned int NetworkReceiverSystem::getByteSize() const {
 #endif
 
 void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
-	// Early exit if the entity already exists
-	if (findFromNetID(info.playerCompID)) {
-		return;
-	}
+	//// Early exit if the entity already exists
+	//if (findFromNetID(info.playerCompID)) {
+	//	return;
+	//}
 
-	auto e = ECS::Instance()->createEntity("networkedEntity");
-	instantAddEntity(e.get());
+	//auto e = ECS::Instance()->createEntity("networkedEntity");
+	//instantAddEntity(e.get());
 
-	SAIL_LOG("Created player with id: " + std::to_string(info.playerCompID));
+	//SAIL_LOG("Created player with id: " + std::to_string(info.playerCompID));
 
-	// lightIndex set to 999, can probably be removed since it no longer seems to be used
-	EntityFactory::CreateOtherPlayer(e, info.playerCompID, info.candleID, info.gunID, 999, pos);
-	ECS::Instance()->addAllQueuedEntities();
+	//// lightIndex set to 999, can probably be removed since it no longer seems to be used
+	//EntityFactory::CreateOtherPlayer(e, info.playerCompID, info.candleID, info.gunID, 999, pos);
+	//ECS::Instance()->addAllQueuedEntities();
 }
 
 void NetworkReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
