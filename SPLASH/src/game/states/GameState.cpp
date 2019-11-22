@@ -930,15 +930,16 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 
+
+	m_componentSystems.gameInputSystem->processMouseInput(dt);
 	if (m_isInKillCamMode) {
 		m_componentSystems.killCamAnimationSystem->updatePerFrame();
 	} else {
 		m_componentSystems.animationSystem->update(dt);
 		m_componentSystems.animationSystem->updatePerFrame();
 	}
-
 	// Updates keyboard/mouse input and the camera
-	m_componentSystems.gameInputSystem->update(dt, alpha);
+	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 	m_componentSystems.spectateInputSystem->update(dt, alpha);
 
 	// There is an imgui debug toggle to override lights

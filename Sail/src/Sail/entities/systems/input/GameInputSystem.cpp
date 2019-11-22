@@ -54,7 +54,6 @@ void GameInputSystem::fixedUpdate(float dt) {
 }
 
 void GameInputSystem::update(float dt, float alpha) {
-	this->processMouseInput(dt);
 	this->updateCameraPosition(alpha);
 }
 
