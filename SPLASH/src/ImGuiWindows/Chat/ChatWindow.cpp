@@ -16,6 +16,7 @@ ChatWindow::ChatWindow(bool showWindow) :
 	m_timeSinceLastMessage(0.0f),
 	m_fadeTime(-1.0f),
 	m_fadeThreshold(-1.0f),
+	m_backgroundOpacityMul(0.4f),
 	m_scrollToBottom(false),
 	m_messageLimit(30),
 	m_messageSizeLimit(30),
@@ -99,10 +100,6 @@ void ChatWindow::renderWindow() {
 void ChatWindow::renderChat(float dt) {
 	m_timeSinceLastMessage += dt;
 
-	
-
-
-
 	ImGuiWindowFlags chatFlags = ImGuiWindowFlags_NoCollapse;
 	chatFlags |= ImGuiWindowFlags_NoResize;
 	chatFlags |= ImGuiWindowFlags_NoMove;
@@ -130,13 +127,30 @@ void ChatWindow::renderChat(float dt) {
 
 	}
 
+	ImVec4 borderCol(ImGui::GetStyleColorVec4(ImGuiCol_Border));
+	borderCol.z* m_backgroundOpacityMul;
+	ImGui::PushStyleColor(ImGuiCol_Border, borderCol);
+
+	ImVec4 bgCol(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+	bgCol.z* m_backgroundOpacityMul;
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, bgCol);
 
 	if (ImGui::Begin("##CHATWINDOW", nullptr, chatFlags)) {
 		ImGui::PushFont(m_imguiHandler->getFont("Beb20"));
-
-		ImGui::Checkbox("Focus", &m_retainFocus);
-
-		if (ImGui::BeginChild("##CHATTEXT", ImVec2(0, -ImGui::GetFrameHeightWithSpacing() - 10))) {
+#ifdef DEVELOPMENT
+		ImGui::Checkbox("Focus", &m_retainFocus); 
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(50);
+		ImGui::SliderFloat("Threshold", &m_fadeThreshold, -1.0f, 15.0f);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(50);
+		ImGui::SliderFloat("time", &m_fadeTime, -1.0f, 15.0f);
+		ImGui::SameLine();
+		if (ImGui::Button("res")) {
+			m_timeSinceLastMessage = 0.0f;
+		}
+#endif
+		if (ImGui::BeginChild("##CHATTEXT", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
 			for (auto currentMessage : m_messages) {
 				//System or player which has left
 				if (currentMessage.id == 255 || currentMessage.id == 254) {
@@ -215,10 +229,11 @@ void ChatWindow::renderChat(float dt) {
 				//sentLastFrame = true;
 			}
 		}
-		if (ImGui::IsKeyPressed(SAIL_KEY_RETURN, false) && !focus) {
+		if (ImGui::IsKeyPressed(SAIL_KEY_RETURN, false)) {
+			
 			if (m_retainFocus || !justSent) {
 				focus = true;
-				ImGui::SetKeyboardFocusHere(1);
+				ImGui::SetKeyboardFocusHere(-1);
 			}
 		}
 
@@ -226,7 +241,7 @@ void ChatWindow::renderChat(float dt) {
 	if (pop) {
 		ImGui::PopStyleVar();
 	}
-
+	ImGui::PopStyleColor(2);
 
 	ImGui::End();
 }

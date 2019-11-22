@@ -74,6 +74,7 @@ private:
 	unsigned int m_messageSizeLimit;
 	bool m_retainFocus;
 
+	float m_backgroundOpacityMul;
 
 	ImGuiWindowFlags m_standaloneButtonflags;
 	ImGuiWindowFlags m_backgroundOnlyflags;
