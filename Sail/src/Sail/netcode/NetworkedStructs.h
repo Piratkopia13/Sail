@@ -79,7 +79,6 @@ namespace Netcode {
 	// TODO: should be one message type for tracked entities and one for events
 	// The message type decides how the subsequent data will be parsed and used
 	enum class MessageType : __int8 {
-		//CREATE_NETWORKED_PLAYER,
 		DESTROY_ENTITY = 1,
 		CHANGE_LOCAL_POSITION,
 		CHANGE_LOCAL_ROTATION,
@@ -115,7 +114,6 @@ namespace Netcode {
 	}; 
 	
 	static const std::string MessageNames[] = {
-		"CREATE_NETWORKED_PLAYER",
 		"DESTROY_ENTITY",
 		"CHANGE_LOCAL_POSITION",
 		"CHANGE_LOCAL_ROTATION",

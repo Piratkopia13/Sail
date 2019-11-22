@@ -60,9 +60,6 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID Play
 	for (auto e : entities) {
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
 
-		// When creating a player the code here must match the code in
-		// NetworkSenderSystem::writeEventToArchive()
-		// ... case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
 		switch (nsc->m_entityType) {
 		case Netcode::EntityType::PLAYER_ENTITY:
 		{
