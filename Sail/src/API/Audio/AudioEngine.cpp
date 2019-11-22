@@ -83,7 +83,13 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 		// ... create a source voice for it,
 		hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
 		// ... set volume,
-		m_sound[indexValue].sourceVoice->SetVolume(volume);
+		if (FAILED(hr)) {
+			SAIL_LOG_WARNING("Failed to create a sourcevoice!");
+		}
+		hr = m_sound[indexValue].sourceVoice->SetVolume(volume);
+		if (FAILED(hr)) {
+			SAIL_LOG_WARNING("Failed to set volume to a sourcevoice!");
+		}
 		// ... set up hrtf.
 		setUpxAPO(indexValue);
 
@@ -92,9 +98,18 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 	}
 	else {
 		// Reset; preparing for re-creation
-		m_sound[indexValue].sourceVoice->Stop();
-		m_sound[indexValue].sourceVoice->FlushSourceBuffers();
-		m_sound[indexValue].sourceVoice->Discontinuity();
+		hr = m_sound[indexValue].sourceVoice->Stop();
+		if (FAILED(hr)) {
+			SAIL_LOG_WARNING("Failed to stop a sourcevoice!");
+		}
+		hr = m_sound[indexValue].sourceVoice->FlushSourceBuffers();
+		if (FAILED(hr)) {
+			SAIL_LOG_WARNING("Failed to flush a sourcevoice!");
+		}
+		hr = m_sound[indexValue].sourceVoice->Discontinuity();
+		if (FAILED(hr)) {
+			SAIL_LOG_WARNING("Failed to create a sourcevoice!");
+		}
 
 		// Destroy to source voice to reset settings completely
 		m_sound[indexValue].sourceVoice->DestroyVoice();
@@ -447,6 +462,36 @@ unsigned int AudioEngine::getByteSize() const {
 
 	return size;
 }
+
+void AudioEngine::logDebugData() {
+	using namespace std;
+	XAUDIO2_PERFORMANCE_DATA data;
+	m_xAudio2->GetPerformanceData(&data);
+	string log = "";
+	string activeLog = "";
+	string perFrameLog = "";
+	activeLog += string("ActiveMatrixMixCount: ")			+= to_string(data.ActiveMatrixMixCount)		  += string(" ");
+	activeLog += string("ActiveResamplerCount: ")			+= to_string(data.ActiveResamplerCount)		  += string(" ");
+	activeLog += string("ActiveSourceVoiceCount: ")		+= to_string(data.ActiveSourceVoiceCount)	  += string(" ");
+	activeLog += string("ActiveSubmixVoiceCount: ")		+= to_string(data.ActiveSubmixVoiceCount)	  += string(" ");
+	activeLog += string("ActiveXmaSourceVoices: ")		+= to_string(data.ActiveXmaSourceVoices)	  += string(" ");
+	activeLog += string("ActiveXmaStreams: ")				+= to_string(data.ActiveXmaStreams)			  += string(" ");
+	activeLog += string("TotalSourceVoiceCount: ") += to_string(data.TotalSourceVoiceCount) += string(" ");
+	perFrameLog += string("AudioCyclesSinceLastQuery: ")	+= to_string(data.AudioCyclesSinceLastQuery)  += string(" ");
+	perFrameLog += string("CurrentLatencyInSamples: ")		+= to_string(data.CurrentLatencyInSamples)	  += string(" ");    
+	perFrameLog += string("MaximumCyclesPerQuantum: ")		+= to_string(data.MaximumCyclesPerQuantum)	  += string(" ");
+	perFrameLog += string("MinimumCyclesPerQuantum: ") += to_string(data.MinimumCyclesPerQuantum) += string(" ");
+	perFrameLog += string("TotalCyclesSinceLastQueryv: ") += to_string(data.TotalCyclesSinceLastQuery) += string(" ");
+	log += string("MemoryUsageInBytes: ")			+= to_string(data.MemoryUsageInBytes)		  += string(" ");
+	log += string("GlitchesSinceEngineStarted: ") += to_string(data.GlitchesSinceEngineStarted)	  += string(" ");
+		
+	SAIL_LOG(activeLog.c_str());
+	cout << "\n";
+	SAIL_LOG(log.c_str());
+	cout << "\n";
+	SAIL_LOG(perFrameLog.c_str());
+	cout << " ------------------------ NEW AUDIO FRAME --------------------------------- \n";
+}
 #endif
 
 void AudioEngine::initialize() {
@@ -469,12 +514,33 @@ void AudioEngine::initialize() {
 	}
 }
 
+void AudioEngine::activateDebugLayer() {
+	XAUDIO2_DEBUG_CONFIGURATION debugConfig = {};
+	debugConfig.TraceMask = XAUDIO2_LOG_WARNINGS;		// Also enables LOG_ERRORS
+	debugConfig.TraceMask |= XAUDIO2_LOG_DETAIL;		// Also enables LOG_INFO
+	debugConfig.TraceMask |= XAUDIO2_LOG_FUNC_CALLS;	// Also enables LOG_API_CALLS
+	debugConfig.TraceMask |= XAUDIO2_LOG_TIMING;
+	debugConfig.TraceMask |= XAUDIO2_LOG_LOCKS;
+	debugConfig.TraceMask |= XAUDIO2_LOG_MEMORY;
+	debugConfig.TraceMask |= XAUDIO2_LOG_STREAMING;
+	debugConfig.BreakMask = XAUDIO2_LOG_ERRORS;
+	m_xAudio2->SetDebugConfiguration(&debugConfig, nullptr);
+
+#if (_WIN32_WINNT >= WIN_32_WINNT_WIN10)
+	SAIL_LOG("AUDIOENGINE: Xaudio 2.9 Debugging enabled | Windows 10");
+#elif (_WIN32_WINNT >= WIN_32_WINNT_WIN8)
+	SAIL_LOG("AUDIOENGINE: Xaudio 2.8 debugging enabled | Windows 8");
+#else
+	SAIL_LOG("AUDIOENGINE: Xaudio 2.7 debugging enabled");
+#endif
+}
+
 HRESULT AudioEngine::initXAudio2() {
 	UINT32 flags = XAUDIO2_1024_QUANTUM;
 
-//#ifdef _DEBUG
-//	flags |= XAUDIO2_DEBUG_ENGINE;
-//#endif
+#ifdef DEVELOPMENT
+	flags |= XAUDIO2_DEBUG_ENGINE;
+#endif
 
 	HRESULT hr = XAudio2Create(&m_xAudio2, flags);
 
@@ -483,10 +549,18 @@ HRESULT AudioEngine::initXAudio2() {
 	// Mastering voice will be automatically destroyed when XAudio2 instance is destroyed.
 	if (SUCCEEDED(hr)) {
 		hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice, 2, 48000);
-	}	
+	}
+
+	
+
+#if DEVELOPMENT
+	// Activate debug layer if we're in development
+	activateDebugLayer();
+#endif
 
 	return hr;
 }
+
 
 int AudioEngine::fetchSoundIndex() {
 	m_currSoundIndex++;

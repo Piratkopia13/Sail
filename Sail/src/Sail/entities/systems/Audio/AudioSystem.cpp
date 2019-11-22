@@ -192,8 +192,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 				
 							// To make the code easier to read
-							if (Audio::SoundType::INSANITY_SCREAM) {
-
+							if (soundTypeIndex == Audio::SoundType::INSANITY_SCREAM) {
+								std::cout << " ---- STARTED PLAYING INSANITY SOUND ---- \n";
 							}
 							soundGeneral->soundID = m_audioEngine->beginSound(
 								soundUnique->fileName,
@@ -206,6 +206,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 						// Update the sound with the current positions if it's playing
 						if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
+							if (soundTypeIndex == Audio::SoundType::INSANITY_SCREAM) {
+								std::cout << " ---- UPDATING INSANITY SOUND ---- \n";
+							}
 							m_audioEngine->updateSoundWithCurrentPosition(
 								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
 								soundGeneral->positionalOffset, alpha
@@ -218,6 +221,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 							soundGeneral->durationElapsed += dt;
 						} else {
+							if (soundTypeIndex == Audio::SoundType::INSANITY_SCREAM) {
+								std::cout << " ---- STOPPED PLAYING INSANITY SOUND ---- \n";
+							}
 							soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
 							
 							soundGeneral->hasStartedPlaying = false;
@@ -310,10 +316,11 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 				m_k++;
 			}
 		}
-
-
-
 	}
+
+#ifdef DEVELOPMENT
+	m_audioEngine->logDebugData();
+#endif
 }
 
 void AudioSystem::stop() {
@@ -483,6 +490,7 @@ bool AudioSystem::onEvent(const Event& event) {
 			auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
 			deathSound.isPlaying = true;
 			deathSound.playOnce = true;
+			
 		}
 	};
 

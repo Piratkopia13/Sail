@@ -98,6 +98,7 @@ public:
 
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const;
+	void logDebugData();
 #endif
 
 private: 
@@ -122,6 +123,7 @@ private:
 	//std::atomic<int> m_currStreamIndex = 0;
 
 	void initialize();
+	void activateDebugLayer();
 
 	BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
 	bool m_isStreaming[STREAMED_SOUNDS_COUNT];
