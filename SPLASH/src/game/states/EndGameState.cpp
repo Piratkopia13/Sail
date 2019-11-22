@@ -92,6 +92,8 @@ bool EndGameState::renderImgui(float dt) {
 	renderPersonalStats();
 	renderFunStats();
 
+
+	m_app->getChatWindow()->renderChat(dt);
 	//WORK IN PROGRESS
 	//renderWinners();
 
