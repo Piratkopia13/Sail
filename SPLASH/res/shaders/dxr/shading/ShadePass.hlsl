@@ -32,7 +32,7 @@ cbuffer PSSceneCBuffer : register(b0) {
     float padding;
     PointlightInput pointLights[NUM_POINT_LIGHTS];
     SpotlightInput spotLights[NUM_POINT_LIGHTS];
-    IndexMap shadowTextureIndexMap[NUM_POINT_LIGHTS * 2]; // Maps light indices to shadow texture indices
+    IndexMap shadowTextureIndexMap[NUM_POINT_LIGHTS*2]; // Maps light indices to shadow texture indices
 }
 
 Texture2D<float4> albedoBounceOne : register(t0);

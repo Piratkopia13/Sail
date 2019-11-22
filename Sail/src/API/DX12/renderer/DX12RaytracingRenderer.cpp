@@ -167,8 +167,20 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}
 
 	if (camera && lightSetup) {
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, teamColors, (postProcessPipeline) ? false : true);
+		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, teamColors);
 	}
+
+	bool hardShadows = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 0.f;
+	static bool hardShadowsLastFrame = false;
+	if (hardShadows != hardShadowsLastFrame) {
+		// Shadow setting changed this frame - handle it
+		if (hardShadows) {
+			// Destroy all textures but one
+		} else {
+			// Create all textures
+		}
+	}
+	hardShadowsLastFrame = hardShadows;
 
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateWaterData();
@@ -179,17 +191,18 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		renderCommand.hasUpdatedSinceLastRender[frameIndex] = false;
 	}
 
-	// Copy output shadow texture to last shadow texture
-	m_outputTextures.shadows->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
-	m_shadowsLastFrame->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_COPY_DEST);
-	cmdListCompute->CopyResource(m_shadowsLastFrame->getResource(), m_outputTextures.shadows->getResource());
-	m_outputTextures.shadows->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	m_shadowsLastFrame->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	DX12RenderableTexture* shadedOutput = m_outputTextures.positionsOne.get(); // Positions is used as the shaded output when running hard shadows
+	if (!hardShadows) {
+		// Copy output shadow texture to last shadow texture
+		m_outputTextures.shadows->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+		m_shadowsLastFrame->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_COPY_DEST);
+		cmdListCompute->CopyResource(m_shadowsLastFrame->getResource(), m_outputTextures.shadows->getResource());
+		m_outputTextures.shadows->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		m_shadowsLastFrame->transitionStateTo(cmdListCompute.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-	auto filteredShadows = runDenoising(cmdListCompute.Get());
-	auto shadedOutput = runShading(cmdListDirectShading.Get(), filteredShadows);
-
-	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue
+		auto filteredShadows = runDenoising(cmdListCompute.Get());
+		shadedOutput = runShading(cmdListDirectShading.Get(), filteredShadows);
+	}
 
 	RenderableTexture* renderOutput = shadedOutput;
 	if (postProcessPipeline) {

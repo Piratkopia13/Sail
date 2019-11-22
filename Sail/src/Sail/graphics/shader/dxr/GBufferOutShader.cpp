@@ -17,7 +17,7 @@ GBufferOutShader::GBufferOutShader()
 	// Enable back-face culling
 	shaderPipeline->setCullMode(GraphicsAPI::BACKFACE);
 	shaderPipeline->setNumRenderTargets(4);
-	static_cast<DX12ShaderPipeline*>(shaderPipeline)->setRenderTargetFormat(3, DXGI_FORMAT_R16G16B16A16_FLOAT);
+	static_cast<DX12ShaderPipeline*>(shaderPipeline)->setRenderTargetFormat(3, DXGI_FORMAT_R16G16_FLOAT);
 
 	// Finish the shader creation
 	finish();

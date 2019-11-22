@@ -242,6 +242,23 @@ void rayGen() {
 		worldNormal = payloadMetaball.normalOne;
 	}
 
+	
+	//////////////////////////
+	//     Hard shadows     //
+	//////////////////////////
+	if (CB_SceneData.doHardShadows) {
+		// Shade scene
+		lOutputPositionsOne[launchIndex] = float4(1.f, 0.f, 0.f, 1.0f);
+		// Write bloom pass input
+		lOutputBloom[launchIndex] = float4(0.f, 0.f, 0.f, 1.f);
+		return; // Stop here, all code below is for soft shadows
+	}
+
+
+	//////////////////////////
+	//     Soft shadows     //
+	//////////////////////////
+
 	// Get shadow from first bounce
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
@@ -257,7 +274,6 @@ void rayGen() {
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
 	// float2 reprojectedTexCoord = screenTexCoord;
 
-	// The following loop SOMETIMES causes the DXIL compiler to fail - not after the dll update!
 	uint shadowTextureIndex = 0;
 	uint lightIndex = 0;
 	[unroll]
@@ -287,7 +303,7 @@ void rayGen() {
 	float emisivenessTwo = mrao.a;
 	float3 worldPositionTwo = finalPayload.worldPositionTwo;
 	// Change material if second bounce color should be water on a surface
-	// getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
+	getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
 
 	// totalShadowAmount = 1 - totalShadowAmount * totalShadowAmount;
 	// aoOne = lerp(aoOne, originalAoOne, totalShadowAmount);

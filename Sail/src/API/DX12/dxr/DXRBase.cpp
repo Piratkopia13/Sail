@@ -213,7 +213,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const std::vector<glm::vec3>& teamColors) {
 	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
 	updateMetaballpositions(metaballs, m_next_metaball_aabb);
 
@@ -227,7 +227,7 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
 	newData.nMetaballs = m_metaballsToRender;
 	newData.nDecals = m_decalsToRender;
-	newData.doTonemapping = doToneMapping;
+	newData.doHardShadows = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 0.f;;
 	newData.waterArraySize = m_waterArrSizes;
 	newData.mapSize = m_mapSize;
 	newData.mapStart = m_mapStart;
