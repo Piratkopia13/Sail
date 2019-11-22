@@ -72,10 +72,13 @@ void Entity::removeComponent(ComponentTypeID id) {
 	const ComponentTypeBitID bid = GetBIDofID(id);
 
 	if ((m_componentTypes & bid).any()) {
-		m_components[id].reset();
+		m_components[id].reset(nullptr);
 
 		// Set the component type bit to 0 if it was 1
-		m_componentTypes ^= bid;
+		std::bitset<MAX_NUM_COMPONENTS_TYPES> bits = 1;
+		bits <<= id;									// set a 1 to the type bit
+		bits = ~bits;									// set a 0 to the type bit and rest to 1
+		m_componentTypes = m_componentTypes & bits;		// keep the values of each not except the type bit which is now 0
 
 		// Remove this entity from systems which required the removed component
 		removeFromSystems();
