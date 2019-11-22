@@ -70,6 +70,8 @@ public:
 	// TODO: Replace using game settings when that is implemented
 	float health = MAX_HEALTH;
 
+	float candleToggleTimer = 0.0f;
+
 	int respawns = 0;
 
 	bool wasJustExtinguished = false;

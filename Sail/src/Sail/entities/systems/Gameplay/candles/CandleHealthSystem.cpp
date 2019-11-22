@@ -172,6 +172,10 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 				candleC->isLit = false;
 				candleC->wasJustExtinguished = false; // reset for the next tick
 
+				if (torchE->hasComponent<LocalOwnerComponent>()) {
+					GameDataTracker::getInstance().reduceTorchesLeft();
+				}
+
 				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candleC->wasHitByPlayerID != candleC->playerEntityID) {
 					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
 				} else if (candleC->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
@@ -194,6 +198,10 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 	}
 
 	return true;
+}
+
+const int CandleHealthSystem::getMaxNumberOfRespawns() {
+	return m_maxNumRespawns;
 }
 
 #ifdef DEVELOPMENT
