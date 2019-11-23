@@ -28,7 +28,7 @@ private:
 	TextureData& m_textureData;
 	D3D12_RESOURCE_DESC m_textureDesc;
 
-	wComPtr<ID3D12Resource1> m_textureUploadBuffer;
+	wComPtr<ID3D12Resource> m_textureUploadBuffer;
 	DX12API::CommandQueue* m_queueUsedForUpload;
 	UINT64 m_initFenceVal;
 
