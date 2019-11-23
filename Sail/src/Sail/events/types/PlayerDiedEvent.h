@@ -5,15 +5,15 @@
 class Entity;
 
 struct PlayerDiedEvent : public Event {
-	PlayerDiedEvent(Entity* _killed, Entity* _myPlayer, const Netcode::PlayerID _shooterID, const Netcode::ComponentID _netIDkilled)
+	PlayerDiedEvent(Entity* _killed, Entity* _myPlayer, const Netcode::ComponentID _killerID, const Netcode::ComponentID _netIDkilled)
 		: Event(Event::Type::PLAYER_DEATH)
 		, killed(_killed)
 		, myPlayer(_myPlayer)
-		, shooterID(_shooterID)
+		, killerID(_killerID)
 		, netIDofKilled(_netIDkilled) {}
 
 	Entity* killed;
 	Entity* myPlayer;
-	const Netcode::PlayerID shooterID;
+	const Netcode::ComponentID killerID;
 	const Netcode::ComponentID netIDofKilled;
 };

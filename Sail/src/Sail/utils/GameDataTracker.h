@@ -8,7 +8,7 @@
 #include "../SPLASH/src/game/events/NetworkDisconnectEvent.h"
 
 class NWrapperSingleton;
-
+class Application;
 struct InduvidualStats {
 	int bulletsFired;
 	float distanceWalked;
@@ -30,6 +30,8 @@ struct HostStatsPerPlayer {
 	int nKills = 0;
 	int nDeaths = 0;
 	int placement = 0;
+	int damage = 0;
+	int damageTaken = 0;
 	std::string playerName;	//Stored here to handle disconnects.
 };
 
@@ -68,7 +70,20 @@ public:
 	// Implemented in...
 	void renderImgui();							// ...EndState::renderImGui()
 	
+	int getTorchesLeft();
+	void reduceTorchesLeft();
+
+	void renderPlacement();
+	void renderPersonalStats();
+	void renderFunStats();
+	void renderWinners();
+
+#ifdef DEVELOPMENT
+	void addDebugData();
+#endif
+
 private:
+	Application* m_app;
 	NWrapperSingleton* m_network;
 
 	InduvidualStats m_loggedData;
@@ -83,14 +98,16 @@ private:
 	int m_nPlayersCurrentSession;
 	std::vector<std::string> m_killFeed;
 
+	int m_torchesLeft = 3;
 	// -+-+-+-+-+- Singleton requirements below -+-+-+-+-+-
 public:
 	GameDataTracker(GameDataTracker const&) = delete;
 	void operator=(GameDataTracker const&) = delete;
 	static GameDataTracker& getInstance();
 private:
-
 	GameDataTracker();
 	virtual bool onEvent(const Event& e);
 	void playerDisconnected(const NetworkDisconnectEvent& e);
+
+
 };

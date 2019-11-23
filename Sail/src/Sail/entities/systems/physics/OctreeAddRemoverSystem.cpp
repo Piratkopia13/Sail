@@ -63,3 +63,9 @@ void OctreeAddRemoverSystem::setCulling(bool activated, Camera* camera) {
 	m_doCulling = activated;
 	m_cullCamera = camera;
 }
+
+#ifdef DEVELOPMENT
+unsigned int OctreeAddRemoverSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif

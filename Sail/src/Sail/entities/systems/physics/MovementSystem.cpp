@@ -1,21 +1,23 @@
 #include "pch.h"
 #include "MovementSystem.h"
 #include "..//..//components/TransformComponent.h"
-#include "..//..//components/ReplayTransformComponent.h"
 #include "..//..//components/MovementComponent.h"
+#include "..//..//components/RenderInActiveGameComponent.h"
+#include "..//..//components/RenderInReplayComponent.h"
 #include "..//..//Entity.h"
 
 template <typename T>
 MovementSystem<T>::MovementSystem() {
-	registerComponent<T>(true, true, true);
+	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<MovementComponent>(true, true, true);
+	registerComponent<T>(true, false, false);
 }
 
 template <typename T>
 void MovementSystem<T>::update(float dt) {
 	for (auto& e : entities) {
 
-		T* transform = e->getComponent<T>();
+		TransformComponent* transform = e->getComponent<TransformComponent>();
 		MovementComponent* movement = e->getComponent<MovementComponent>();
 
 		// Update velocity
@@ -34,5 +36,6 @@ void MovementSystem<T>::update(float dt) {
 	}
 }
 
-template class MovementSystem<TransformComponent>;
-template class MovementSystem<ReplayTransformComponent>;
+
+template class MovementSystem<RenderInActiveGameComponent>;
+template class MovementSystem<RenderInReplayComponent>;

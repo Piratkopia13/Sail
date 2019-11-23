@@ -77,12 +77,17 @@ void GameInputSystem::stop() {
 }
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
-	m_candleToggleTimer += dt;
 
 	for ( auto e : entities ) {
 		// Get player movement inputs
 		Movement playerMovement = getPlayerMovementInput(e);
 
+		//Update candleToggleTimer
+		for (auto torch : e->getChildEntities()) {
+			if (torch->hasComponent<CandleComponent>()) {
+				torch->getComponent<CandleComponent>()->candleToggleTimer += dt;
+			}
+		}
 		// Calculate forward vector for player
 		glm::vec3 forward = m_cam->getCameraDirection();
 
@@ -367,9 +372,9 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			m_yaw -= mouseDelta.x * m_lookSensitivityMouse;
 		}
 
-		// Lock pitch to the range -70 - 30
-		if (m_pitch >= 30) {
-			m_pitch = 30;
+		// Lock pitch to the range -70 - 55
+		if (m_pitch >= 55) {
+			m_pitch = 55;
 		}
 		else if (m_pitch <= -70) {
 			m_pitch = -70;
@@ -452,9 +457,27 @@ CameraController* GameInputSystem::getCamera() const {
 	return m_cam;
 }
 
+#ifdef DEVELOPMENT
+unsigned int GameInputSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	size += sizeof(CameraController);
+	return size;
+}
+#endif
+
 void GameInputSystem::toggleCandleCarry(Entity* entity) {
 	// No need to do anything since it's to soon since last action
-	if (m_candleToggleTimer < CANDLE_TIMER) { return; }
+	if (entity->getComponent<CandleComponent>()) {
+		if (entity->getComponent<CandleComponent>()->candleToggleTimer < CANDLE_TIMER) { return; }
+	}
+
+	for (auto torch : entity->getChildEntities()) {
+		if (torch->hasComponent<CandleComponent>()) {
+			if (torch->getComponent<CandleComponent>()->candleToggleTimer < CANDLE_TIMER) {
+				return;
+			}
+		}
+	}
 
 	for (int i = 0; i < entity->getChildEntities().size(); i++) {
 		auto torchE = entity->getChildEntities()[i];
@@ -473,18 +496,18 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 								// We want to throw the torch
 								throwingComp->isThrowing = true;
 								throwingComp->isCharging = false;
-								m_candleToggleTimer = 0.f;
+								candleComp->candleToggleTimer = 0.f;
 							}
 						} else {
 							// Torch isn't carried so try to pick it up
 							candleComp->isCarried = true;
-							m_candleToggleTimer = 0.f;
+							candleComp->candleToggleTimer = 0.f;
 						}
 					} else if (candleComp->isCarried && throwingComp->wasChargingLastFrame) {
 						// We want to throw the torch
 						throwingComp->isCharging = false;
 						throwingComp->isThrowing = true;
-						m_candleToggleTimer = 0.f;
+						candleComp->candleToggleTimer = 0.f;
 					}
 				}
 			}

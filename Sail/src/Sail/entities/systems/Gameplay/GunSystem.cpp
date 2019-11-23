@@ -34,6 +34,10 @@ GunSystem::~GunSystem() {
 
 }
 
+void GunSystem::setOctree(Octree* octree) {
+	m_octree = octree;
+}
+
 void GunSystem::update(float dt) {
 	for (auto& e : entities) {
 		GunComponent* gun = e->getComponent<GunComponent>();
@@ -80,6 +84,12 @@ void GunSystem::update(float dt) {
 	}
 }
 
+#ifdef DEVELOPMENT
+unsigned int GunSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
+
 void GunSystem::alterProjectileSpeed(GunComponent* gun) {
 	gun->projectileSpeed = gun->baseProjectileSpeed + (gun->projectileSpeedRange * (gun->gunOverloadvalue/gun->gunOverloadThreshold));
 }
@@ -118,17 +128,28 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 
 		randPos += glm::normalize(velocity) * (Utils::rnd() * randomSpread * 2 - randomSpread) * 5.0f;
 
-		// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
-		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-			Netcode::MessageType::SPAWN_PROJECTILE,
-			SAIL_NEW Netcode::MessageSpawnProjectile{
-				gun->position + randPos,
-				velocity,
-				Netcode::generateUniqueComponentID(myPlayerID), // Generate unique ComponentID here for our own projectiles
-				e->getComponent<NetworkSenderComponent>()->m_id,
-				frequency
-			}
-		);
+		auto rayFrom = e->getComponent<TransformComponent>()->getTranslation();
+		rayFrom.y = gun->position.y;
+		Octree::RayIntersectionInfo rayInfo;
+		auto rayDir = gun->position - rayFrom;
+		auto rayDirNorm = glm::normalize(rayDir);
+
+		m_octree->getRayIntersection(rayFrom, rayDirNorm, &rayInfo, e, 0.1f);
+		if (!(rayInfo.closestHit < glm::length(rayDir))) {
+			// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
+			NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+				Netcode::MessageType::SPAWN_PROJECTILE,
+				SAIL_NEW Netcode::MessageSpawnProjectile{
+					gun->position + randPos,
+					velocity,
+					Netcode::generateUniqueComponentID(myPlayerID), // Generate unique ComponentID here for our own projectiles
+					e->getComponent<NetworkSenderComponent>()->m_id,
+					frequency
+				}
+			);
+		}
+
+
 	}
 }
 

@@ -8,13 +8,11 @@
 #include "Sail/ai/states/AttackingState.h"
 #include "Sail/ai/states/FleeingState.h"
 #include "Sail/ai/states/SearchingState.h"
-#include "Sail/entities/components/LocalOwnerComponent.h"
-#include "Sail/entities/components/OnlineOwnerComponent.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/graphics/geometry/factory/StringModel.h"
 #include "Sail/graphics/geometry/factory/QuadModel.h"
-#include "Sail/entities/components/GUIComponent.h"
-#include "Sail/entities/components/SanityComponent.h"
+
+#include "Sail/entities/systems/network/receivers/KillCamReceiverSystem.h"
 
 void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos, size_t lightIndex) {
 	// Candle has a model and a bounding box
@@ -50,16 +48,16 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->lifeTime = 0.13f;
 	particleEmitterComp->setTexture("particles/fire.tga");
 
+	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
+	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.08f));
+	ragdollComp->addContactPoint(glm::vec3(0.f, 0.37f, 0.0f), glm::vec3(0.08f));
+
 	PointLight pl;
 	pl.setColor(glm::vec3(0.55f, 0.5f, 0.45f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .5f, lightPos.z));
 	pl.setAttenuation(0.f, 0.f, 0.2f);
 	pl.setIndex(lightIndex);
 	candle->addComponent<LightComponent>(pl);
-
-
-	// Components needed for killcam
-	candle->addComponent<ReplayTransformComponent>();
 }
 
 Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
@@ -76,10 +74,6 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 	gun->addComponent<TransformComponent>();
 	gun->addComponent<CullingComponent>();
 
-
-	// Components needed for killcam
-	gun->addComponent<ReplayTransformComponent>();
-
 	return gun;
 }
 
@@ -89,7 +83,7 @@ void EntityFactory::AddCandleComponentsToPlayer(Entity::SPtr& player, const size
 		if (c->getName() == player->getName() + "Candle") {
 			c->addComponent<CandleComponent>()->playerEntityID = playerID;
 			c->addComponent<CollidableComponent>();
-			c->addComponent<TeamComponent>()->team = (playerID) % 12;
+			c->addComponent<TeamComponent>()->team = NWrapperSingleton::getInstance().getPlayer(playerID)->team;
 		}
 	}
 }
@@ -105,14 +99,13 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 
 	Netcode::ComponentID netComponentID = myPlayer->getComponent<NetworkSenderComponent>()->m_id;
 	myPlayer->addComponent<NetworkReceiverComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
-	myPlayer->addComponent<ReplayComponent>(netComponentID, Netcode::EntityType::PLAYER_ENTITY);
 	myPlayer->addComponent<LocalOwnerComponent>(netComponentID);
 	myPlayer->addComponent<CollisionComponent>();
 	myPlayer->getComponent<ModelComponent>()->renderToGBuffer = true;
 	myPlayer->addComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	myPlayer->addComponent<RealTimeComponent>();
-	myPlayer->addComponent<SprintingComponent>();
 	myPlayer->addComponent<ThrowingComponent>();
+	myPlayer->addComponent<RenderInActiveGameComponent>();
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
@@ -129,20 +122,20 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 		if (c->getName() == myPlayer->getName() + "WaterGun") {
 			gunNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::GUN_ENTITY, playerID)->m_id;
 			c->addComponent<NetworkReceiverComponent>(gunNetID, Netcode::EntityType::GUN_ENTITY);
-			c->addComponent<ReplayComponent>(gunNetID, Netcode::EntityType::GUN_ENTITY);
 			//leave this for now
 			//c->addComponent<GunComponent>();]
 			c->addComponent<RealTimeComponent>(); // The player's gun is updated each frame
+			c->addComponent<RenderInActiveGameComponent>();
 		}
 
 		// Add a localOwnerComponent to our candle so that we can differentiate it from other candles
 		if (c->hasComponent<CandleComponent>()) {
 			candleNetID = c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, playerID)->m_id;
 			c->addComponent<NetworkReceiverComponent>(candleNetID, Netcode::EntityType::CANDLE_ENTITY);
-			c->addComponent<ReplayComponent>(candleNetID, Netcode::EntityType::CANDLE_ENTITY);
 			c->addComponent<LocalOwnerComponent>(netComponentID);
 			c->addComponent<RealTimeComponent>(); // The player's candle is updated each frame
 			c->addComponent<MovementComponent>();
+			c->addComponent<RenderInActiveGameComponent>();
 		}
 	}
 
@@ -161,6 +154,10 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 		false
 		);
 
+
+	// REPLAY COPY OF THE ENTITY
+	CreateReplayPlayer(netComponentID, candleNetID, gunNetID, lightIndex, spawnLocation);
+
 	return myPlayer;
 }
 
@@ -170,15 +167,16 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 	Netcode::ComponentID playerCompID, 
 	Netcode::ComponentID candleCompID, 
 	Netcode::ComponentID gunCompID, 
-	size_t lightIndex, glm::vec3 spawnLocation) {
+	size_t lightIndex, glm::vec3 spawnLocation) 
+{
 	EntityFactory::CreateGenericPlayer(otherPlayer, lightIndex, spawnLocation, Netcode::getComponentOwner(playerCompID));
 	// Other players have a character model and animations
 
 	auto rec = otherPlayer->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 
-	otherPlayer->addComponent<ReplayComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
-
 	otherPlayer->addComponent<OnlineOwnerComponent>(playerCompID);
+	otherPlayer->addComponent<RenderInActiveGameComponent>();
+
 
 	// Create the player
 	AddCandleComponentsToPlayer(otherPlayer, lightIndex, Netcode::getComponentOwner(playerCompID));
@@ -190,10 +188,9 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 			if ( NWrapperSingleton::getInstance().isHost()) {
 				c->addComponent<NetworkSenderComponent>(Netcode::EntityType::GUN_ENTITY, gunCompID)->m_id = rec->m_id;
 			}
-
-			c->addComponent<ReplayComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
-
 			c->addComponent<OnlineOwnerComponent>(playerCompID);
+			c->addComponent<RenderInActiveGameComponent>();
+
 		}
 
 		if (c->hasComponent<CandleComponent>()) {
@@ -203,15 +200,68 @@ void EntityFactory::CreateOtherPlayer(Entity::SPtr otherPlayer,
 				c->addComponent<NetworkSenderComponent>(Netcode::EntityType::CANDLE_ENTITY, candleCompID)->m_id = rec->m_id;
 			}
 
-			c->addComponent<ReplayComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
-
 			c->addComponent<OnlineOwnerComponent>(playerCompID);
+			c->addComponent<RenderInActiveGameComponent>();
 		}
 	}
 
 	if (NWrapperSingleton::getInstance().isHost()) {
 		otherPlayer->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, playerCompID, Netcode::MessageType::UPDATE_SANITY)->m_id = rec->m_id;
 	}
+
+
+	// REPLAY COPY OF THE ENTITY
+	CreateReplayPlayer(playerCompID, candleCompID, gunCompID, lightIndex, spawnLocation);
+}
+
+
+// Creates a copy of the player but does not immediately include it in any systems until the killcam is started and
+// KillCamReceiverSystem starts running.
+Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID, 
+	Netcode::ComponentID gunCompID, size_t lightIndex, glm::vec3 spawnLocation) 
+{
+	Entity::SPtr replayPlayer = ECS::Instance()->createEntity("ReplayPlayer");
+	replayPlayer->tryToAddToSystems = false;
+
+	// replay players spawn under the map since if they die long before the killcam spawns they won't be removed until
+	// the match ends
+	CreateGenericPlayer(replayPlayer, lightIndex, { 0.f, -100.f, 0.f }, Netcode::getComponentOwner(playerCompID), true);
+	
+	replayPlayer->addComponent<ReplayReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
+
+	// Remove components that shouldn't be used by entities in the killcam
+	replayPlayer->removeComponent<PlayerComponent>();
+	replayPlayer->removeComponent<CollidableComponent>();
+	replayPlayer->removeComponent<SpeedLimitComponent>();
+	replayPlayer->removeComponent<SanityComponent>();
+	replayPlayer->removeComponent<AudioComponent>(); // TODO: Remove this line when we start having audio in the killcam
+	replayPlayer->removeComponent<GunComponent>();
+	replayPlayer->removeComponent<BoundingBoxComponent>();
+
+
+	// Create the player
+	AddCandleComponentsToPlayer(replayPlayer, lightIndex, Netcode::getComponentOwner(playerCompID));
+
+	for (Entity* c : replayPlayer->getChildEntities()) {
+		if (c->getName() == replayPlayer->getName() + "WaterGun") {
+			c->addComponent<ReplayReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
+			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
+			c->removeComponent<BoundingBoxComponent>();
+		}
+		if (c->hasComponent<CandleComponent>()) {
+			c->addComponent<ReplayReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
+			c->removeComponent<CollidableComponent>();
+			c->removeComponent<BoundingBoxComponent>();
+			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
+		}
+	}
+
+	ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(replayPlayer.get());
+
+	// Note: The RenderInReplayComponent is added to these entities once KillCamReceiverSystem start running so don't
+	//       add those components here
+
+	return replayPlayer;
 }
 
 void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t lightIndex, glm::vec3 spawnLocation) {
@@ -221,9 +271,21 @@ void EntityFactory::CreatePerformancePlayer(Entity::SPtr playerEnt, size_t light
 	Netcode::ComponentID playerCompID = playerEnt->addComponent<NetworkSenderComponent>(Netcode::EntityType::PLAYER_ENTITY, Netcode::PlayerID(100), Netcode::MessageType::ANIMATION)->m_id;
 	playerEnt->addComponent<NetworkReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 	playerEnt->addComponent<MovementComponent>();
+	playerEnt->addComponent<RenderInActiveGameComponent>();
 
 	// Create the player
 	AddCandleComponentsToPlayer(playerEnt, lightIndex, 0);
+
+
+	for (Entity* c : playerEnt->getChildEntities()) {
+		if (c->getName() == playerEnt->getName() + "WaterGun") {
+			c->addComponent<RenderInActiveGameComponent>();
+		}
+		if (c->hasComponent<CandleComponent>()) {
+			c->addComponent<RenderInActiveGameComponent>();
+		}
+	}
+
 
 	perfromancePlayerID++;
 }
@@ -243,8 +305,8 @@ Entity::SPtr EntityFactory::CreateMySpectator(Netcode::PlayerID playerID, size_t
 	return mySpectator;
 }
 
-// Creates a player enitty without a candle and without a model
-void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation, Netcode::PlayerID playerID) {
+// Creates a player entity without a candle and without a model
+void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation, Netcode::PlayerID playerID, bool doNotAddToSystems) {
 	std::string modelName = "Doc.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* characterModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, shader);
@@ -269,6 +331,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<CollidableComponent>();
 	playerEntity->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
 	playerEntity->addComponent<SanityComponent>()->sanity = 100.0f;
+	playerEntity->addComponent<SprintingComponent>();
 
 	// Give playerEntity a bounding box
 	playerEntity->addComponent<BoundingBoxComponent>(boundingBoxModel);
@@ -278,16 +341,20 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<AudioComponent>();
 
 	playerEntity->addComponent<GunComponent>();
-	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(1.6f, 0.9f, 1.f) + spawnLocation);
+	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0, 0.9f, 0) + spawnLocation);
 
 	//give players teams
-	playerEntity->addComponent<TeamComponent>()->team = (playerID) % 12;
+	playerEntity->addComponent<TeamComponent>()->team = NWrapperSingleton::getInstance().getPlayer(playerID)->team;
+	
 
 	AnimationComponent* ac = playerEntity->addComponent<AnimationComponent>(stack);
 	ac->currentAnimation = stack->getAnimation(1);
 
 
 	auto candle = ECS::Instance()->createEntity(playerEntity->getName() + "Candle");
+	if (doNotAddToSystems) {
+		candle->tryToAddToSystems = false;
+	}
 	CreateCandle(candle, glm::vec3(0.f, 0.f, 0.f), lightIndex);
 	playerEntity->addChildEntity(candle.get());
 
@@ -298,6 +365,9 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	ac->rightHandPosition = ac->rightHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, 0.646f, -0.300f)));
 
 	auto gun = CreateWaterGun(playerEntity->getName() + "WaterGun");
+	if (doNotAddToSystems) {
+		gun->tryToAddToSystems = false;
+	}
 	playerEntity->addChildEntity(gun.get());
 
 	// Attach the candle to the player's left hand
@@ -305,9 +375,6 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	ac->leftHandPosition = glm::identity<glm::mat4>();
 	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.563f, 1.059f, 0.110f));
 	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
-
-	// Components needed for killcam
-	playerEntity->addComponent<ReplayTransformComponent>();
 }
 
 Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterModel, const glm::vec3& pos, Model* lightModel, size_t lightIndex, NodeSystem* ns) {
@@ -380,9 +447,10 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 	e->addComponent<CollidableComponent>();
 	e->addComponent<CullingComponent>();
 
+	e->addComponent<RenderInActiveGameComponent>();
 
 	// Components needed to be rendered in the killcam
-	e->addComponent<ReplayTransformComponent>(pos, rot, scale);
+	e->addComponent<RenderInReplayComponent>();
 
 	return e;
 }
@@ -394,7 +462,8 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 	e->addComponent<ProjectileComponent>(10.0f, info.hasLocalOwner); // TO DO should not be manually set to true
 	e->getComponent<ProjectileComponent>()->ownedBy = info.ownersNetId;
 	e->addComponent<TransformComponent>(info.pos);
-	
+
+
 	if (info.hasLocalOwner == true) {
 		e->addComponent<LocalOwnerComponent>(info.ownersNetId);
 		e->addComponent<NetworkSenderComponent>(Netcode::EntityType::PROJECTILE_ENTITY, info.netCompId);
@@ -414,6 +483,8 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 	collision->bounciness = 0.0f;
 	collision->padding = 0.15f;
 
+	e->addComponent<RenderInActiveGameComponent>();
+
 	return e;
 }
 
@@ -422,12 +493,14 @@ Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const Project
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
 
-	e->addComponent<ReplayTransformComponent>(info.pos);
-	e->addComponent<ReplayComponent>(info.netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
+	e->addComponent<TransformComponent>(info.pos);
+	e->addComponent<ReplayReceiverComponent>(info.netCompId, Netcode::EntityType::PROJECTILE_ENTITY);
 
 	MovementComponent* movement = e->addComponent<MovementComponent>();
 	movement->velocity = info.velocity;
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+
+	e->addComponent<RenderInReplayComponent>();
 
 	return e;
 }
@@ -466,4 +539,12 @@ Entity::SPtr EntityFactory::CreateGUIEntity(const std::string& name, const std::
 	ent->addComponent<GUIComponent>(&Application::getInstance()->getResourceManager().getModel(name + "Model"));
 
 	return ent;
+}
+
+Entity::SPtr EntityFactory::CreateCrosshairEntity(const std::string& name) {
+	auto entity = ECS::Instance()->createEntity(name);
+
+	entity->addComponent<CrosshairComponent>();
+
+	return entity;
 }

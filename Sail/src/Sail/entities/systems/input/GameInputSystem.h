@@ -28,6 +28,11 @@ public:
 	void updateCameraPosition(float alpha);
 	CameraController* getCamera() const;
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
+
+public:
 	LevelSystem* m_mapPointer;
 
 private:
@@ -42,7 +47,6 @@ private:
 	GameDataTracker* m_gameDataTracker = nullptr;
 
 
-	float m_candleToggleTimer = 0.0f;
 
 	// --------- Earlier used variables below this line ---------
 	float m_runSpeed = 2.0;

@@ -15,7 +15,7 @@ void NetworkReceiverSystemClient::handleIncomingData(const std::string& data) {
 	pushDataToBuffer(data);
 }
 
-void NetworkReceiverSystemClient::endMatch() {
+void NetworkReceiverSystemClient::endGame() {
 	m_gameStatePtr->requestStackClear();
 	m_gameStatePtr->requestStackPush(States::EndGame);
 }

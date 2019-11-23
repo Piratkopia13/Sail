@@ -101,6 +101,18 @@ bool MenuState::render(float dt, float alpha) {
 }
 
 bool MenuState::renderImgui(float dt) {
+
+	// Showcasing imgui texture rendering - remove when everyone who needs to know how this works knows how this works.
+#ifdef DEVELOPMENT
+	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
+	Application::getInstance()->getResourceManager().loadTexture("Crosshair.tga");
+	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Crosshair.tga");
+
+	ImGui::Begin("ImageTest");
+	ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(100, 100));
+	ImGui::End();
+#endif
+
 	
 	//Keep
 #ifdef DEVELOPMENT

@@ -21,7 +21,13 @@ void NetworkReceiverSystemHost::handleIncomingData(const std::string& data) {
 	m_netSendSysPtr->pushDataToBuffer(data);
 }
 
-void NetworkReceiverSystemHost::endMatch() {
+#ifdef DEVELOPMENT
+unsigned int NetworkReceiverSystemHost::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
+
+void NetworkReceiverSystemHost::endGame() {
 	m_startEndGameTimer = true;
 }
 
@@ -69,7 +75,7 @@ void NetworkReceiverSystemHost::prepareEndScreen(const Netcode::PlayerID sender,
 	}
 
 	// Send data back in Netcode::MessageType::ENDGAME_STATS
-	endMatch(); // Starts the end game timer. Runs only for the host
+	endGame(); // Starts the end game timer. Runs only for the host
 
 }
 
@@ -91,5 +97,5 @@ void NetworkReceiverSystemHost::mergeHostsStats() {
 		gdt->getStatisticsGlobal().jumpsMadeID = id;
 	}
 
-	endMatch();
+	endGame();
 }

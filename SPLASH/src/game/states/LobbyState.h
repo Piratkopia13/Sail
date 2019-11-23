@@ -4,10 +4,11 @@
 #include <string>
 #include <list>
 #include "Sail/utils/SailImGui/OptionsWindow.h"
+#include "Sail/utils/SailImGui/NetworkInfoWindow.h"
 
 struct Player;
 class NWrapper;
-class TextInputEvent;
+struct TextInputEvent;
 class AudioComponent;
 
 struct ChatSent;
@@ -46,7 +47,7 @@ protected:
 	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
 	std::string m_message;
-	std::list<std::string> m_messages;
+	std::list<Message> m_messages;
 
 	// Front-End Functions
 	bool inputToChatLog(const MSG& msg);
@@ -59,6 +60,7 @@ protected:
 private:
 	ImGuiHandler* m_imGuiHandler;
 	OptionsWindow m_optionsWindow;
+	NetworkInfoWindow m_netInfo;
 	bool m_ready;
 	// LobbyAudio
 	Entity* m_lobbyAudio = nullptr;
@@ -71,6 +73,10 @@ private:
 	bool m_firstFrame = true;	// Used solely for ImGui
 	bool m_chatFocus = true;	// Used solely for ImGui
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
+	float m_timeSinceLastMessage;
+	float m_fadeTime;
+	float m_fadeThreshold;
+	bool m_scrollToBottom;
 
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	bool m_settingsChanged;
@@ -88,6 +94,7 @@ private:
 
 	bool m_renderGameSettings;
 	bool m_renderApplicationSettings;
+
 
 
 
