@@ -28,6 +28,24 @@ namespace Utils {
 
 		return shadowPayload.isHit;
     }
+
+    RayPayload makeEmptyPayload() {
+        RayPayload payload;
+        payload.recursionDepth = 0;
+        payload.closestTvalue = 0;
+        for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
+            payload.shadowTwo[i] = 0.f;
+        }
+        payload.albedoOne = 0.f;
+        payload.albedoTwo = 0.f;
+        payload.normalOne = 0.f;
+        payload.normalTwo = 0.f;
+        payload.metalnessRoughnessAOOne = 0.f;
+        payload.metalnessRoughnessAOTwo = 0.f;
+        payload.worldPositionOne = 0.f;
+        payload.worldPositionTwo = 0.f;
+        return payload;
+    }
 #endif
 
     // Barycentric interpolation

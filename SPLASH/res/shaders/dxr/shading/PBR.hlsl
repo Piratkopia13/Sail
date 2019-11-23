@@ -77,17 +77,42 @@ float3 shadeWithLight(PointlightInput light, float3 worldPosition, float3 N, flo
     return (kD * albedo / PI + specular) * radiance * NdotL * shadowAmount;
 }
 
-float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, float3 albedo, float emissivness, float metalness, float roughness, float ao, float shadow[NUM_SHADOW_TEXTURES], float3 reflectionColor) {
-    float3 N = normalize(worldNormal); 
-    float3 V = normalize(invViewDir);
+// PBR input structs
+struct IndexMap {
+    int index;
+    float3 padding;
+};
+struct PBRScene {
+    PointlightInput pointLights[NUM_POINT_LIGHTS];
+    SpotlightInput spotLights[NUM_POINT_LIGHTS];
+    Texture2D<float4> brdfLUT;
+    SamplerState sampler;
+    // Only used for soft shadows
+    float shadow[NUM_SHADOW_TEXTURES];
+    IndexMap shadowTextureIndexMap[NUM_POINT_LIGHTS*2]; // Maps light indices to shadow texture indices
+};
+struct PBRPixel {
+    float3 worldPosition;
+    float3 worldNormal;
+    float3 invViewDir;
+    float3 albedo;
+    float emissiveness;
+    float metalness;
+    float roughness;
+    float ao;
+};
+
+float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
+    float3 N = normalize(pixel.worldNormal); 
+    float3 V = normalize(pixel.invViewDir);
 
     float3 F0 = 0.04f;
-    F0        = lerp(F0, albedo, metalness);
+    F0        = lerp(F0, pixel.albedo, pixel.metalness);
 
     // Reflectance equation
     float3 Lo = 0.0f;
     // Add emissive materials
-	Lo += albedo * 2.2 * emissivness;
+	Lo += pixel.albedo * 2.2 * pixel.emissiveness;
 
     float totalShadowAmount = 0.f;
 	uint numLights = 0;
@@ -97,14 +122,14 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         // Point lights
         [unroll]
         for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-            int shadowTextureIndex = shadowTextureIndexMap[i].index;
+            int shadowTextureIndex = scene.shadowTextureIndexMap[i].index;
             if (shadowTextureIndex == -1) {
                 // No shadow texture is bound to this light, skip it
                 continue;
             }
-            float shadowAmount = shadow[shadowTextureIndex];
+            float shadowAmount = scene.shadow[shadowTextureIndex];
             // float shadowAmount = 1.f;
-            PointlightInput p = pointLights[i];
+            PointlightInput p = scene.pointLights[i];
             
             // Ignore point light if color is black
             if (all(p.color == 0.0f)) {
@@ -117,26 +142,26 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
             }
             totalShadowAmount += shadowAmount;
 
-            Lo += shadeWithLight(p, worldPosition, N, V, F0, albedo, metalness, roughness, shadowAmount);
+            Lo += shadeWithLight(p, pixel.worldPosition, N, V, F0, pixel.albedo, pixel.metalness, pixel.roughness, shadowAmount);
         }
-        //Spotlights
+        // Spotlights
         [unroll]
 		for (int j = 0; j < NUM_POINT_LIGHTS; j++) {
-            int shadowTextureIndex = shadowTextureIndexMap[j + NUM_POINT_LIGHTS].index;
+            int shadowTextureIndex = scene.shadowTextureIndexMap[j + NUM_POINT_LIGHTS].index;
             if (shadowTextureIndex == -1) {
                 // No shadow texture is bound to this light, skip it
                 continue;
             }
-            float shadowAmount = shadow[shadowTextureIndex];
+            float shadowAmount = scene.shadow[shadowTextureIndex];
 
-			SpotlightInput p = spotLights[j];
+			SpotlightInput p = scene.spotLights[j];
 
 			// Ignore point light if color is black
 			if (all(p.color == 0.0f) || p.angle == 0) {
 				continue;
 			}
 
-			float3 L = normalize(p.position - worldPosition);
+			float3 L = normalize(p.position - pixel.worldPosition);
 			float angle = dot(L, normalize(p.direction));
             // Ignore if angle is outside light
             // abs is used to make spotlights bidirectional
@@ -151,7 +176,8 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
             }
             totalShadowAmount += shadowAmount;
 
-            Lo += shadeWithLight((PointlightInput)p, worldPosition, N, V, F0, albedo, metalness, roughness, shadowAmount);
+            PointlightInput castedP = (PointlightInput)p; // Not doing the cast on a separate line breaks shader compilation
+            Lo += shadeWithLight(castedP, pixel.worldPosition, N, V, F0, pixel.albedo, pixel.metalness, pixel.roughness, shadowAmount);
             // Lo = float3(shadowAmount, shadowAmount, shadowAmount);
 		}
     }
@@ -160,19 +186,19 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 	// This fixes water being visible in darkness
 	totalShadowAmount /= max(numLights, 1);
 	totalShadowAmount = (totalShadowAmount * totalShadowAmount);
-	ao = lerp(0.f, ao, totalShadowAmount);
+	pixel.ao = lerp(0.f, pixel.ao, totalShadowAmount);
 
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT
-    float3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, roughness);
+    float3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, pixel.roughness);
 
     float3 kS = F;
     float3 kD = 1.0f - kS;
-    kD *= 1.0f - metalness;	  
+    kD *= 1.0f - pixel.metalness;	  
     
     // Assume constant irradiance since game is played indoors with no or few indirect light sources
     // This could be read from a skymap or irradiance probe
     float3 irradiance = 0.0f;
-    float3 diffuse    = irradiance * albedo;
+    float3 diffuse    = irradiance * pixel.albedo;
     
     float3 R = reflect(-V, N);  
 
@@ -181,7 +207,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
     if (all(reflectionColor == -1.f)) {
         // Parse negative reflection as no color
         // Use color from only direct light and irradiance
-        ambient = irradiance * albedo * ao;
+        ambient = irradiance * pixel.albedo * pixel.ao;
     } else {
         // Use reflectionColor parameter
         float3 prefilteredColor = reflectionColor;
@@ -189,9 +215,9 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         // Assume roughness = 0
         // This is a very rough approximation used because ray traced reflections are always perfect
         // and blurring them to make accurate PBR calculations is very expensive in real-time
-        float2 envBRDF = brdfLUT.SampleLevel(PSss, float2(max(dot(N, V), 0.0f), roughness), 0).rg;
+        float2 envBRDF = scene.brdfLUT.SampleLevel(scene.sampler, float2(max(dot(N, V), 0.0f), pixel.roughness), 0).rg;
         float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-        ambient = (kD * diffuse + specular) * ao;
+        ambient = (kD * diffuse + specular) * pixel.ao;
     }
 
     // Add the (improvised) ambient term to get the final color of the pixel

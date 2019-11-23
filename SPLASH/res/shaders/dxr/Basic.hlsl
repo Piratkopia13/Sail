@@ -45,6 +45,7 @@ SamplerState motionSS : register(s1);
 #define RAYTRACING
 #include "Utils.hlsl"
 #include "WaterOnSurface.hlsl"
+#include "shading/PBR.hlsl"
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid.
 inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
@@ -143,8 +144,9 @@ void rayGen() {
 
 	// ---------------------------------------------------
 	// --- Calculate world position from depth texture ---
+	// ---------------------------------------------------
 
-	// TODO: move calculations to cpu
+	// These calculations could be moved to the cpu
 	float projectionA = CB_SceneData.farZ / (CB_SceneData.farZ - CB_SceneData.nearZ);
 	float projectionB = (-CB_SceneData.farZ * CB_SceneData.nearZ) / (CB_SceneData.farZ - CB_SceneData.nearZ);
 
@@ -156,8 +158,6 @@ void rayGen() {
 
 	float3 screenVS = mul(CB_SceneData.clipToView, float4(screenPos, 0.f, 1.0f)).xyz;
 	float3 viewRay = float3(screenVS.xy / screenVS.z, 1.f);
-
-	// float3 viewRay = normalize(float3(screenPos, 1.0f));
 	float4 vsPosition = float4(viewRay * linearDepth, 1.0f);
 
 	float3 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition).xyz;
@@ -180,22 +180,7 @@ void rayGen() {
 	ray.TMin = 0.00001;
 	ray.TMax = 10000.0;
 
-	// TODO: move this to helper method	
-	RayPayload payload;
-	payload.recursionDepth = 0;
-	payload.closestTvalue = 0;
-	for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
-		payload.shadowTwo[i] = 0.f;
-	}
-	payload.albedoOne = 0.f;
-	payload.albedoTwo = 0.f;
-	payload.normalOne = 0.f;
-	payload.normalTwo = 0.f;
-	payload.metalnessRoughnessAOOne = 0.f;
-	payload.metalnessRoughnessAOTwo = 0.f;
-	payload.worldPositionOne = 0.f;
-	payload.worldPositionTwo = 0.f;
-
+	RayPayload payload = Utils::makeEmptyPayload();
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
 
 	//===========MetaBalls RT START===========
@@ -211,22 +196,7 @@ void rayGen() {
 	ray.TMin = 0.00001;
 	ray.TMax = 10000.0;
 
-	// TODO: move this to helper method	
-	RayPayload payloadMetaball;
-	payloadMetaball.recursionDepth = 0;
-	payloadMetaball.closestTvalue = 0;
-	for (uint j = 0; j < NUM_SHADOW_TEXTURES; j++) {
-		payloadMetaball.shadowTwo[j] = 0.f;
-	}
-	payloadMetaball.albedoOne = 0.f;
-	payloadMetaball.albedoTwo = 0.f;
-	payloadMetaball.normalOne = 0.f;
-	payloadMetaball.normalTwo = 0.f;
-	payloadMetaball.metalnessRoughnessAOOne = 0.f;
-	payloadMetaball.metalnessRoughnessAOTwo = 0.f;
-	payloadMetaball.worldPositionOne = 0.f;
-	payloadMetaball.worldPositionTwo = 0.f;
-
+	RayPayload payloadMetaball = Utils::makeEmptyPayload();
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
 	//===========MetaBalls RT END===========
 
