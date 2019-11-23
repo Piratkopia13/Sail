@@ -13,6 +13,7 @@ Texture* Texture::Create(const std::string& filename) {
 DX12Texture::DX12Texture(const std::string& filename) 
 	: m_isInitialized(false)
 	, m_textureData(getTextureData(filename))
+	, m_initFenceVal(UINT64_MAX)
 {
 	context = Application::getInstance()->getAPI<DX12API>();
 	// Dont create one resource per swap buffer
@@ -45,7 +46,6 @@ DX12Texture::DX12Texture(const std::string& filename)
 
 	// Dont allow UAV access
 	uavHeapCDHs[0] = {0};
-
 }
 
 DX12Texture::~DX12Texture() {
@@ -53,10 +53,18 @@ DX12Texture::~DX12Texture() {
 }
 
 void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
-	//The lock_guard will make sure multiple threads wont try to initialize the same texture
+	// This method is called at least once every frame that this texture is used for rendering
+
+	// The lock_guard will make sure multiple threads wont try to initialize the same texture
 	std::lock_guard<std::mutex> lock(m_initializeMutex);
-	if (m_isInitialized)
+
+	if (m_isInitialized) {
+		// Release the upload heap as soon as the texture has been uploaded to the GPU
+		if (m_textureUploadBuffer && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
+			m_textureUploadBuffer.ReleaseAndGetAddressOf();
+		}
 		return;
+	}
 
 	UINT64 textureUploadBufferSize;
 	// this function gets the size an upload buffer needs to be to upload a texture to the gpu.
@@ -65,7 +73,6 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	context->getDevice()->GetCopyableFootprints(&m_textureDesc, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
 
 	// Create the upload heap
-	// TODO: release the upload heap when it has been copied to the default buffer
 	// This could be done in a buffer manager owned by dx12api
 	m_textureUploadBuffer.Attach(DX12Utils::CreateBuffer(context->getDevice(), textureUploadBufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 	m_textureUploadBuffer->SetName(L"Texture upload buffer");
@@ -81,6 +88,14 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
 
 	generateMips(cmdList);
+
+	auto type = cmdList->GetType();
+	m_queueUsedForUpload = (type == D3D12_COMMAND_LIST_TYPE_DIRECT) ? context->getDirectQueue() : context->getComputeQueue();
+	// Schedule a signal to be called directly after this command list has executed
+	// This allows us to know when the texture has been uploaded to the GPU
+	m_queueUsedForUpload->scheduleSignal([this](UINT64 signaledValue) {
+		m_initFenceVal = signaledValue;
+	});
 
 	m_isInitialized = true;
 }
