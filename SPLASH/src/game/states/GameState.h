@@ -106,9 +106,6 @@ private:
 
 	bool m_isInKillCamMode = false;
 
-	// TEST
-	DX12DDSTexture* m_testDDSTexture;
-
 #ifdef _PERFORMANCE_TEST
 	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
 

@@ -138,7 +138,7 @@ PBRTestState::PBRTestState(StateStack& stack)
 
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(20.f, 20.f), shader, glm::vec2(4.0f));
 	//m_planeModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/ice/albedo.tga");
-	m_testDDSTexture = new DX12DDSTexture("res/textures/pbr/Tiles/CF_Albedo.dds");
+	m_testDDSTexture = new DX12DDSTexture("res/textures/pbr/DDS/Tiles/CF_Albedo.dds");
 	m_planeModel->getMesh(0)->getMaterial()->manuallySetTexture(m_testDDSTexture, 0);
 	//m_planeModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/ice/metalnessRoughnessAO.tga");
 	//m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/ice/normal.tga");

@@ -103,13 +103,20 @@ GameState::GameState(StateStack& stack)
 	initSystems(playerID);
 
 	// Textures needs to be loaded before they can be used
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
+	/*Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
 
 	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_MRAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_NM.tga");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_NM.tga");*/
+	Application::getInstance()->getResourceManager().loadTexture("pbr/DDS/Doc/Doc_Albedo.dds");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/DDS/Doc/Doc_MRAO.dds");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/DDS/Doc/Doc_NM.dds");
+
+	Application::getInstance()->getResourceManager().loadTexture("pbr/DDS/WaterGun/Watergun_Albedo.dds");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/DDS/WaterGun/Watergun_MRAO.dds");
+	Application::getInstance()->getResourceManager().loadTexture("pbr/DDS/WaterGun/Watergun_NM.dds");
 
 	// Font sprite map texture
 	Application::getInstance()->getResourceManager().loadTexture(GUIText::fontTexture);
@@ -153,8 +160,6 @@ GameState::GameState(StateStack& stack)
 	//EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f));
 	auto crosshairEntity = EntityFactory::CreateCrosshairEntity("crosshairEntity");
 
-	// TEST TODO: Check if this texture actually works
-	//m_testDDSTexture = new DX12DDSTexture("res/textures/pbr/Tiles/CF_Albedo.dds");
 	// Level Creation
 	
 	createLevel(shader, boundingBoxModel);

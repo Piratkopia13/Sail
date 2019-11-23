@@ -16,17 +16,15 @@ DX12DDSTexture::DX12DDSTexture(const std::string& filename)
 	: m_isInitialized(false) {
 	context = Application::getInstance()->getAPI<DX12API>();
 
-	/*ThrowIfFailed(LoadDDSTextureFromFile(context->getDevice(), filename, textureDefaultBuffers[0].ReleaseAndGetAddressOf(),
-											 ddsData, subresources));*/
 	std::wstring wide_string = std::wstring(filename.begin(), filename.end());
-	DirectX::LoadDDSTextureFromFile(context->getDevice(), wide_string.c_str(), textureDefaultBuffers[0].ReleaseAndGetAddressOf(),
-						   m_ddsData, m_subresources);
+	ThrowIfFailed(DirectX::LoadDDSTextureFromFile(context->getDevice(), wide_string.c_str(), textureDefaultBuffers[0].ReleaseAndGetAddressOf(),
+						   m_ddsData, m_subresources));
 
 	// Don't create one resource per swap buffer
 	useOneResource = true;
 
 	m_textureDesc = textureDefaultBuffers[0]->GetDesc();
-	m_textureDesc.MipLevels = 1;
+	m_textureDesc.MipLevels = 4;
 
 	// A texture rarely updates its data, if at all, so it is stored in a default heap
 	state[0] = D3D12_RESOURCE_STATE_COPY_DEST;
@@ -72,9 +70,9 @@ void DX12DDSTexture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	DX12Utils::UpdateSubresources(cmdList, textureDefaultBuffers[0].Get(), m_textureUploadBuffer.Get(),
 					   0, 0, static_cast<UINT>(m_subresources.size()), m_subresources.data());
 
-	//DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
+	DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
 
-	//generateMips(cmdList);
+	generateMips(cmdList);
 
 	m_isInitialized = true;
 }
