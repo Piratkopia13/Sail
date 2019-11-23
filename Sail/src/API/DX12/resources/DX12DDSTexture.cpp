@@ -16,12 +16,11 @@ DX12DDSTexture::DX12DDSTexture(const std::string& filename)
 	: m_isInitialized(false) {
 	context = Application::getInstance()->getAPI<DX12API>();
 
-	std::unique_ptr<uint8_t[]> ddsData;
 	/*ThrowIfFailed(LoadDDSTextureFromFile(context->getDevice(), filename, textureDefaultBuffers[0].ReleaseAndGetAddressOf(),
 											 ddsData, subresources));*/
 	std::wstring wide_string = std::wstring(filename.begin(), filename.end());
 	DirectX::LoadDDSTextureFromFile(context->getDevice(), wide_string.c_str(), textureDefaultBuffers[0].ReleaseAndGetAddressOf(),
-						   ddsData, m_subresources);
+						   m_ddsData, m_subresources);
 
 	// Don't create one resource per swap buffer
 	useOneResource = true;

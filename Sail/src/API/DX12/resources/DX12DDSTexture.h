@@ -34,4 +34,6 @@ private:
 
 	std::vector<D3D12_SUBRESOURCE_DATA> m_subresources;
 
+	std::unique_ptr<uint8_t[]> m_ddsData;
+
 };
