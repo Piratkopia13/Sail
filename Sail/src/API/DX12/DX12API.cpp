@@ -710,22 +710,6 @@ void DX12API::initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type, LPCWSTR na
 	cmd.list->Close();
 }
 
-/* TODO: remove
-void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists, D3D12_COMMAND_LIST_TYPE type) const {
-	// Command lists needs to be closed before sent to this method
-	if (type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
-		m_directCommandQueue->get()->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
-	} else if (type == D3D12_COMMAND_LIST_TYPE_COMPUTE) {
-		m_computeCommandQueue->get()->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
-	} else {
-		SAIL_LOG_ERROR("Cannot execute CommandLists of type " + std::to_string(type));
-	}
-}
-
-void DX12API::executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) const {
-	m_directCommandQueue->get()->ExecuteCommandLists(nLists, cmdLists);
-}*/
-
 void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
 	cmdList->OMSetRenderTargets(1, &m_currentRenderTargetCDH, true, &m_dsvDescHandle);
 
@@ -897,6 +881,7 @@ void DX12API::CommandQueue::scheduleSignal(std::function<void(UINT64)> func) {
 void DX12API::CommandQueue::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) {
 	// Command lists needs to be closed before sent to this method
 	m_commandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
+	// Signal and return fence values to scheduled lambdas
 	for (auto& func : m_queuedSignals) {
 		func(this->signal());
 	}
@@ -904,7 +889,9 @@ void DX12API::CommandQueue::executeCommandLists(std::initializer_list<ID3D12Comm
 }
 
 void DX12API::CommandQueue::executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) {
+	// Command lists needs to be closed before sent to this method
 	m_commandQueue->ExecuteCommandLists(nLists, cmdLists);
+	// Signal and return fence values to scheduled lambdas
 	for (auto& func : m_queuedSignals) {
 		func(this->signal());
 	}

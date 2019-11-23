@@ -61,7 +61,6 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	if (m_isInitialized) {
 		// Release the upload heap as soon as the texture has been uploaded to the GPU
 		if (m_textureUploadBuffer && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
-			SAIL_LOG(std::string("Texture upload buffer released! for ") + std::to_string((UINT64)this));
 			m_textureUploadBuffer.ReleaseAndGetAddressOf();
 		}
 		return;
