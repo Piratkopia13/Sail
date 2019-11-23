@@ -88,11 +88,8 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 void ResourceManager::loadTexture(const std::string& filename) {
 	auto path = std::filesystem::path(SAIL_DEFAULT_TEXTURE_LOCATION + filename);
 	if (path.has_extension() && std::filesystem::exists(path)) {
-		if (path.extension().compare(".tga") == 0) {
+		if (path.extension().compare(".tga") == 0 || path.extension().compare(".dds") == 0) {
 			m_textures.insert({filename, std::unique_ptr<Texture>(Texture::Create(path.string()))});
-		} else if (path.extension().compare(".dds") == 0) {
-			// something
-			m_textures.insert({filename, std::unique_ptr<Texture>(&DX12DDSTexture(path.string()))});
 		} else {
 			SAIL_LOG_ERROR(filename + " does not have a supported texture format.");
 		}

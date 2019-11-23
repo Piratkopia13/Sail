@@ -25,7 +25,7 @@ private:
 	static const unsigned int MIP_LEVELS = 4;
 
 	DX12API* context;
-	TextureData& m_textureData;
+	TextureData* m_textureData;
 	D3D12_RESOURCE_DESC m_textureDesc;
 
 	wComPtr<ID3D12Resource> m_textureUploadBuffer;
@@ -35,4 +35,9 @@ private:
 	std::mutex m_initializeMutex;
 	bool m_isInitialized;
 
+	bool m_isDDSTexture;
+
+	std::vector<D3D12_SUBRESOURCE_DATA> m_subresources;
+
+	std::unique_ptr<uint8_t[]> m_ddsData;
 };
