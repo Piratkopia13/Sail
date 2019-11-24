@@ -1005,6 +1005,7 @@ void DXRBase::updateShaderTables() {
 		}
 		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_rtPipelineState.Get(), 96U);
 		tableBuilder.addShader(m_rayGenName);
+		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
 		tableBuilder.addDescriptor(m_rtOutputAlbedoUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputNormalsUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_rtOutputMetalnessRoughnessAoUavGPUHandles[frameIndex].ptr);
@@ -1081,8 +1082,6 @@ void DXRBase::updateShaderTables() {
 						for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
 							tableBuilder.addDescriptor(m_rtMeshHandles[frameIndex][blasIndex].textureHandles[textureNum].ptr, blasIndex * 2);
 						}
-					} else if (parameterName == "sys_brdfLUT") {
-						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
 					} else {
 						SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
 					}
@@ -1134,6 +1133,7 @@ void DXRBase::createDXRGlobalRootSignature() {
 
 void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
+	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureRayGen->addDescriptorTable("OutputAlbedoUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 3);
 	m_localSignatureRayGen->addDescriptorTable("OutputNormalsUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 4);
 	m_localSignatureRayGen->addDescriptorTable("OutputMetalnessRoughnessAOUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 5);
@@ -1171,7 +1171,6 @@ void DXRBase::createRayGenLocalRootSignature() {
 
 void DXRBase::createHitGroupLocalRootSignature() {
 	m_localSignatureHitGroup_mesh = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal");
-	m_localSignatureHitGroup_mesh->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
 	m_localSignatureHitGroup_mesh->addSRV("VertexBuffer", 1, 0);
 	m_localSignatureHitGroup_mesh->addSRV("IndexBuffer", 1, 1);
 	m_localSignatureHitGroup_mesh->addCBV("MeshCBuffer", 1, 0);

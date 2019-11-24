@@ -88,8 +88,8 @@ struct PBRScene {
     Texture2D<float4> brdfLUT;
     SamplerState sampler;
     // Only used for soft shadows
-    float shadow[NUM_SHADOW_TEXTURES];
-    IndexMap shadowTextureIndexMap[NUM_POINT_LIGHTS*2]; // Maps light indices to shadow texture indices
+    float shadow[NUM_TOTAL_LIGHTS];
+    IndexMap shadowTextureIndexMap[NUM_TOTAL_LIGHTS]; // Maps light indices to shadow texture indices
 };
 struct PBRPixel {
     float3 worldPosition;

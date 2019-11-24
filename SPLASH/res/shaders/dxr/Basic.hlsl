@@ -2,6 +2,7 @@
 #include "Common_hlsl_cpp.hlsl"
 
 RaytracingAccelerationStructure gRtScene 			: register(t0);
+Texture2D<float4> sys_brdfLUT 						: register(t5);
 
 // Gbuffer inputs/outputs
 RWTexture2D<float4> gbuffer_normals 				: register(u0);
@@ -169,7 +170,7 @@ void rayGen() {
 	float metalnessOne = mrao.r;
 	float roughnessOne = mrao.g;
 	float aoOne = mrao.b;
-	float emisivenessOne = mrao.a;
+	float emissivenessOne = pow(1 - mrao.a, 2);
 	float originalAoOne = aoOne;
 	// Change material if first bounce color should be water on a surface
 	getWaterMaterialOnSurface(albedoOne, metalnessOne, roughnessOne, aoOne, worldNormal, worldPosition); // TODO: fix and uncomment
@@ -212,13 +213,122 @@ void rayGen() {
 		worldNormal = payloadMetaball.normalOne;
 	}
 
+
+	// Second bounce information
+	float3 albedoTwo = finalPayload.albedoTwo.rgb;
+	float3 worldNormalTwo = finalPayload.normalTwo.rgb;
+	mrao = finalPayload.metalnessRoughnessAOTwo;
+	float metalnessTwo = mrao.r;
+	float roughnessTwo = mrao.g;
+	float aoTwo = mrao.b;
+	float emissivenessTwo = pow(1 - mrao.a, 2);
+	float3 worldPositionTwo = finalPayload.worldPositionTwo;
+	// Change material if second bounce color should be water on a surface
+	getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
+
 	
 	//////////////////////////
 	//     Hard shadows     //
 	//////////////////////////
 	if (CB_SceneData.doHardShadows) {
 		// Shade scene
-		lOutputPositionsOne[launchIndex] = float4(1.f, 0.f, 0.f, 1.0f);
+
+		PBRPixel pixelOne;
+		pixelOne.worldPosition = worldPosition;
+		pixelOne.worldNormal = worldNormal;
+		pixelOne.albedo = albedoOne;
+		pixelOne.emissiveness = emissivenessOne;
+		pixelOne.metalness = metalnessOne;
+		pixelOne.roughness = roughnessOne;
+		pixelOne.ao = aoOne;
+
+		PBRPixel pixelTwo;
+		pixelTwo.worldPosition = worldPositionTwo;
+		pixelTwo.worldNormal = worldNormalTwo;
+		pixelTwo.albedo = albedoTwo;
+		pixelTwo.emissiveness = emissivenessTwo;
+		pixelTwo.metalness = metalnessTwo;
+		pixelTwo.roughness = roughnessTwo;
+		pixelTwo.ao = aoTwo;
+
+		pixelOne.invViewDir = CB_SceneData.cameraPosition - pixelOne.worldPosition;
+    	pixelTwo.invViewDir = pixelOne.worldPosition - pixelTwo.worldPosition;
+
+		float shadowOne[NUM_TOTAL_LIGHTS];
+		float shadowTwo[NUM_TOTAL_LIGHTS];
+		// Cast hard shadow rays, 1spp
+		{
+			// Point lights
+			[unroll]
+			for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
+				float shadowOneVal = 0.f;
+				float shadowTwoVal = 0.f;
+				PointlightInput p = CB_SceneData.pointLights[i];
+				// Ignore point light if color is black
+				if (!all(p.color == 0.0f)) {
+					float distance = length(p.position - worldPosition);
+					float3 direction = normalize(p.position - worldPosition);
+					shadowOneVal = (float)Utils::rayHitAnything(worldPosition, worldNormal, direction, distance);
+
+					distance = length(p.position - worldPositionTwo);
+					direction = normalize(p.position - worldPositionTwo);
+					shadowTwoVal = (float)Utils::rayHitAnything(worldPositionTwo, worldNormalTwo, direction, distance);
+				}
+				shadowOne[i] = 1.f - shadowOneVal;
+				shadowTwo[i] = 1.f - shadowTwoVal;
+			}
+			// Spotlights
+			[unroll]
+			for (int j = 0; j < NUM_POINT_LIGHTS; j++) {
+				float shadowOneVal = 0.f;
+				float shadowTwoVal = 0.f;
+				SpotlightInput p = CB_SceneData.spotLights[j];
+
+				// Ignore point light if color is black
+				if (!(all(p.color == 0.0f) || p.angle == 0)) {
+					float3 L = normalize(p.position - worldPosition);
+					float angle = dot(L, normalize(p.direction));
+					// Ignore if angle is outside light
+					if (abs(angle) > p.angle) {
+						float distance = length(p.position - worldPosition);
+						float3 direction = normalize(p.position - worldPosition);
+						shadowOneVal = (float)Utils::rayHitAnything(worldPosition, worldNormal, direction, distance);
+					}
+
+					L = normalize(p.position - worldPositionTwo);
+					angle = dot(L, normalize(p.direction));
+					// Ignore if angle is outside light
+					if (abs(angle) > p.angle) {
+						float distance = length(p.position - worldPositionTwo);
+						float3 direction = normalize(p.position - worldPositionTwo);
+						shadowTwoVal = (float)Utils::rayHitAnything(worldPositionTwo, worldNormalTwo, direction, distance);
+					}
+				}
+				shadowOne[j + NUM_POINT_LIGHTS] = 1.f - shadowOneVal;
+				shadowTwo[j + NUM_POINT_LIGHTS] = 1.f - shadowTwoVal;
+			}
+		}
+
+		PBRScene scene;
+		// Shade the reflection
+		scene.pointLights = CB_SceneData.pointLights;
+		scene.spotLights = CB_SceneData.spotLights;
+		scene.brdfLUT = sys_brdfLUT;
+		scene.sampler = ss;
+		scene.shadow = shadowTwo;
+		// Map shadow "textures" sequentally
+		for (uint k = 0; k < NUM_TOTAL_LIGHTS; k++) {
+			scene.shadowTextureIndexMap[k].index = k;
+		}
+		float4 secondBounceColor = pbrShade(scene, pixelTwo, -1.f);
+
+		// Shade the first hit
+		scene.shadow = shadowOne;
+		lOutputPositionsOne[launchIndex] = pbrShade(scene, pixelOne, secondBounceColor.rgb);
+		// lOutputPositionsOne[launchIndex] = float4(pixelOne.albedo, 1.0f);
+		// lOutputPositionsOne[launchIndex] = secondBounceColor;
+
+
 		// Write bloom pass input
 		lOutputBloom[launchIndex] = float4(0.f, 0.f, 0.f, 1.f);
 		return; // Stop here, all code below is for soft shadows
@@ -264,17 +374,6 @@ void rayGen() {
 	}
 	totalShadowAmount /= max(NUM_SHADOW_TEXTURES, 1);
 
-	float3 albedoTwo = finalPayload.albedoTwo.rgb;
-	float3 worldNormalTwo = finalPayload.normalTwo.rgb;
-	mrao = finalPayload.metalnessRoughnessAOTwo;
-	float metalnessTwo = mrao.r;
-	float roughnessTwo = mrao.g;
-	float aoTwo = mrao.b;
-	float emisivenessTwo = mrao.a;
-	float3 worldPositionTwo = finalPayload.worldPositionTwo;
-	// Change material if second bounce color should be water on a surface
-	getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
-
 	// totalShadowAmount = 1 - totalShadowAmount * totalShadowAmount;
 	// aoOne = lerp(aoOne, originalAoOne, totalShadowAmount);
 	// albedoOne.x = totalShadowAmount;
@@ -302,11 +401,11 @@ void rayGen() {
 	// Overwrite gbuffers
 	gbuffer_albedo[launchIndex] = float4(albedoOne, 1.0f);
 	gbuffer_normals[launchIndex] = float4(worldNormal * 0.5f + 0.5f, 1.0f);
-	gbuffer_texMetalnessRoughnessAO[launchIndex] = float4(metalnessOne, roughnessOne, aoOne, emisivenessOne);
+	gbuffer_texMetalnessRoughnessAO[launchIndex] = float4(metalnessOne, roughnessOne, aoOne, emissivenessOne);
 	// Write outputs
 	lOutputAlbedo[launchIndex] = float4(albedoTwo, 1.0f);
 	lOutputNormals[launchIndex] = float4(worldNormalTwo * 0.5f + 0.5f, 1.0f);
-	lOutputMetalnessRoughnessAO[launchIndex] = float4(metalnessTwo, roughnessTwo, aoTwo, emisivenessTwo);
+	lOutputMetalnessRoughnessAO[launchIndex] = float4(metalnessTwo, roughnessTwo, aoTwo, emissivenessTwo);
 	lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
 	lOutputPositionsTwo[launchIndex] = float4(worldPositionTwo, 1.0f);
 }

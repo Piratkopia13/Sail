@@ -30,7 +30,7 @@ cbuffer PSSceneCBuffer : register(b0) {
     float padding;
     PointlightInput pointLights[NUM_POINT_LIGHTS];
     SpotlightInput spotLights[NUM_POINT_LIGHTS];
-    IndexMap shadowTextureIndexMap[NUM_POINT_LIGHTS*2]; // Maps light indices to shadow texture indices
+    IndexMap shadowTextureIndexMap[NUM_TOTAL_LIGHTS]; // Maps light indices to shadow texture indices
 }
 
 Texture2D<float4> albedoBounceOne : register(t0);
@@ -59,7 +59,10 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
     pixelOne.worldNormal = normalsBounceOne.Sample(PSss, input.texCoord).xyz * 2.f - 1.f;
     pixelTwo.worldNormal = normalsBounceTwo.Sample(PSss, input.texCoord).xyz * 2.f - 1.f;
-
+    
+    pixelOne.worldPosition = worldPositionsOne.Sample(PSss, input.texCoord).xyz;
+    pixelTwo.worldPosition = worldPositionsTwo.Sample(PSss, input.texCoord).xyz;
+    
     pixelOne.albedo = albedoBounceOne.Sample(PSss, input.texCoord).rgb;
     pixelTwo.albedo = albedoBounceTwo.Sample(PSss, input.texCoord).rgb;
 
@@ -71,20 +74,21 @@ float4 PSMain(PSIn input) : SV_Target0 {
     pixelTwo.roughness = metalnessRoughnessAoTwo.g;
     pixelOne.ao = metalnessRoughnessAoOne.b;
     pixelTwo.ao = metalnessRoughnessAoTwo.b;
-    pixelOne.emissiveness = pow(1 - metalnessRoughnessAoOne.a, 2);
-    pixelTwo.emissiveness = pow(1 - metalnessRoughnessAoTwo.a, 2);
+    pixelOne.emissiveness = metalnessRoughnessAoOne.a;
+    pixelTwo.emissiveness = metalnessRoughnessAoTwo.a;
 
-    float shadowOne[NUM_SHADOW_TEXTURES];
-    float shadowTwo[NUM_SHADOW_TEXTURES];
+    float shadowOne[NUM_TOTAL_LIGHTS];
+    float shadowTwo[NUM_TOTAL_LIGHTS];
     for (uint i = 0; i < NUM_SHADOW_TEXTURES; i++) {
         float2 shadowAmount = shadows.Sample(PSss, float3(input.texCoord, i)).rg; // z parameter in texCoords is the array index
         shadowOne[i] = shadowAmount.r;
         shadowTwo[i] = shadowAmount.g;
     }
-
-    // Calculate world position for first bounce (stored a depth)
-    pixelOne.worldPosition = worldPositionsOne.Sample(PSss, input.texCoord).xyz;
-    pixelTwo.worldPosition = worldPositionsTwo.Sample(PSss, input.texCoord).xyz;
+    // Fill out the rest of the array with zeros if NUM_SHADOW_TEXTURES < NUM_TOTAL_LIGHTS
+    for (uint j = NUM_SHADOW_TEXTURES; j < NUM_TOTAL_LIGHTS; j++) {
+        shadowOne[j] = 0.f;
+        shadowTwo[j] = 0.f;
+    }
     
     pixelOne.invViewDir = cameraPosition - pixelOne.worldPosition;
     pixelTwo.invViewDir = pixelOne.worldPosition - pixelTwo.worldPosition;
@@ -104,8 +108,9 @@ float4 PSMain(PSIn input) : SV_Target0 {
     return pbrShade(scene, pixelOne, secondBounceColor.rgb);
     
     // Debug stuff
+    // return secondBounceColor;
     // return float4(albedoOne, 1.0f);
-    // return float4(worldNormalOne, 1.0f);
+    // return float4(pixelOne.worldNormal, 1.0f);
     // return float4(shadowTwo[0], 0.f, 0.f, 1.0f);
     // return float4(shadowAmount.x, 0.f, 0.f, 1.0f) * 0.5 + pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor) * 0.5;
 }
