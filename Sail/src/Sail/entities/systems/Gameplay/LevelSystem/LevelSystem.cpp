@@ -1418,6 +1418,11 @@ const RoomInfo LevelSystem::getRoomInfo(int ID) {
 	return info;
 }
 
+int *** LevelSystem::getTiles() {
+	return tileArr;
+}
+
+
 #ifdef DEVELOPMENT
 unsigned int LevelSystem::getByteSize() const {
 	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);

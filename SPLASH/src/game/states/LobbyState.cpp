@@ -153,6 +153,10 @@ bool LobbyState::update(float dt, float alpha) {
 		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 		m_network->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
 		m_settingsChanged = false;
+		std::string gamemode = m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().name;
+		std::string map = m_settings->defaultMaps[gamemode].getSelected().name;
+		NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
+		wrapper->setLobbyName(wrapper->getLobbyName().substr(0, wrapper->getLobbyName().find_first_of(";")) + ";" + gamemode + ";" + map);
 		m_timeSinceLastUpdate = 0.0f;
 	}
 	m_timeSinceLastUpdate += dt;
@@ -170,7 +174,7 @@ bool LobbyState::renderImgui(float dt) {
 
 	//Keep all this
 	//ImGui::ShowDemoWindow();
-	static std::string font = "Beb30";
+	static std::string font = "Beb24";
 	//ImGui::PushFont(m_imGuiHandler->getFont(font));
 	//
 	//if (ImGui::Begin("IMGUISETTINGS")) {
