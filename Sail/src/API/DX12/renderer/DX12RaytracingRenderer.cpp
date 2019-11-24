@@ -298,7 +298,15 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 	static_cast<DX12VertexBuffer&>(m_fullscreenModel->getMesh(0)->getVertexBuffer()).init(cmdList);
 
 	m_shadedOutput->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	cmdList->OMSetRenderTargets(1, &m_shadedOutput->getRtvCDH(), false, nullptr);
+	m_outputBloomTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	// Bind shaded and bloom outputs
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2] {
+		m_shadedOutput->getRtvCDH(),
+		m_outputBloomTexture->getRtvCDH()
+	};
+	cmdList->OMSetRenderTargets(2, rtvHandles, false, nullptr);
+	//cmdList->OMSetRenderTargets(1, &m_shadedOutput->getRtvCDH(), false, nullptr);
 	cmdList->RSSetViewports(1, m_context->getViewport());
 	cmdList->RSSetScissorRects(1, m_context->getScissorRect());
 
@@ -372,6 +380,7 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 	m_outputTextures.metalnessRoughnessAO->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	m_outputTextures.positionsOne->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	m_outputTextures.positionsTwo->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	m_outputBloomTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	shadows->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
 	return m_shadedOutput.get();

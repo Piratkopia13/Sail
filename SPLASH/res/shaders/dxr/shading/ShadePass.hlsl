@@ -51,8 +51,12 @@ Texture2D<float4> brdfLUT : register(t9);
 
 SamplerState PSss : register(s0);
 
-
-float4 PSMain(PSIn input) : SV_Target0 {
+struct Outputs {
+	float4 shaded   : SV_Target0;
+	float4 bloom    : SV_Target1;
+};
+Outputs PSMain(PSIn input) {
+    Outputs output;
 
     PBRPixel pixelOne;
     PBRPixel pixelTwo;
@@ -105,7 +109,12 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
     // Shade the first hit
     scene.shadow = shadowOne;
-    return pbrShade(scene, pixelOne, secondBounceColor.rgb);
+    float4 outputColor = pbrShade(scene, pixelOne, secondBounceColor.rgb);
+    // return outputColor;
+    output.shaded = outputColor;
+
+    // Write bloom pass input
+    output.bloom = float4((length(outputColor.rgb) > 1.0f) ? outputColor.rgb : 0.f, 1.0f);
     
     // Debug stuff
     // return secondBounceColor;
@@ -113,5 +122,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
     // return float4(pixelOne.worldNormal, 1.0f);
     // return float4(shadowTwo[0], 0.f, 0.f, 1.0f);
     // return float4(shadowAmount.x, 0.f, 0.f, 1.0f) * 0.5 + pbrShade(worldPositionOne, worldNormalOne, invViewDirOne, albedoOne, metalnessOne, roughnessOne, aoOne, shadowOne, secondBounceColor) * 0.5;
+
+    return output;
 }
 

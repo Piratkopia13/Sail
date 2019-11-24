@@ -321,16 +321,14 @@ void rayGen() {
 			scene.shadowTextureIndexMap[k].index = k;
 		}
 		float4 secondBounceColor = pbrShade(scene, pixelTwo, -1.f);
-
 		// Shade the first hit
 		scene.shadow = shadowOne;
-		lOutputPositionsOne[launchIndex] = pbrShade(scene, pixelOne, secondBounceColor.rgb);
-		// lOutputPositionsOne[launchIndex] = float4(pixelOne.albedo, 1.0f);
-		// lOutputPositionsOne[launchIndex] = secondBounceColor;
-
+		float4 outputColor = pbrShade(scene, pixelOne, secondBounceColor.rgb);
+		lOutputPositionsOne[launchIndex] = outputColor;
 
 		// Write bloom pass input
-		lOutputBloom[launchIndex] = float4(0.f, 0.f, 0.f, 1.f);
+		lOutputBloom[launchIndex] = float4((length(outputColor.rgb) > 1.0f) ? outputColor.rgb : 0.f, 1.0f);
+
 		return; // Stop here, all code below is for soft shadows
 	}
 
@@ -374,29 +372,11 @@ void rayGen() {
 	}
 	totalShadowAmount /= max(NUM_SHADOW_TEXTURES, 1);
 
+	// Interpolation to shade water in shadows nicely, currently done in shadepass instead
 	// totalShadowAmount = 1 - totalShadowAmount * totalShadowAmount;
 	// aoOne = lerp(aoOne, originalAoOne, totalShadowAmount);
 	// albedoOne.x = totalShadowAmount;
 	// albedoOne.yz = 0.f;
-
-	// Hard shadows mix test
-	// {
-	// 	// Ignore light if its color is black
-	// 	SpotlightInput p = CB_SceneData.spotLights[i];
-	// 	if (!(all(p.color == 0.0f) || p.angle == 0)) {
-	// 		float3 L = normalize(p.position - worldPosition);
-	// 		float angle = dot(L, normalize(p.direction));
-	// 		if (abs(angle) > p.angle) {
-	// 			float distance = length(p.position - worldPosition);
-	// 			if (Utils::rayHitAnything(worldPosition, L, distance)) {
-	// 				albedoOne = 0.f;
-	// 				metalnessOne = 0.f;
-	// 				roughnessOne = 0.f;
-	// 				aoOne = 0.f;
-	// 			}
-	// 		}
-	// 	}
-	// }
 
 	// Overwrite gbuffers
 	gbuffer_albedo[launchIndex] = float4(albedoOne, 1.0f);
