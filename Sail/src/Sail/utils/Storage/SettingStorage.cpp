@@ -16,7 +16,7 @@ SettingStorage::SettingStorage(const std::string& file) {
 }
 
 SettingStorage::~SettingStorage() {
-
+	
 
 }
 

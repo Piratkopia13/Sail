@@ -87,7 +87,7 @@ void OptionsWindow::renderWindow() {
 	ImGui::PopStyleColor();
 	ImGui::Separator();
 
-	const static std::vector<std::string> crossHairSettings = { "Thickness", "CenterPadding", "Size", "Color R", "Color G", "Color B", "Color A" };
+	const static std::vector<std::string> crossHairSettings = { "Thickness", "CenterPadding", "Size"};
 	for (auto& settingName : crossHairSettings) {
 		dopt = &dynamic["Crosshair"][settingName];
 		ImGui::Text(settingName.c_str());
@@ -96,6 +96,36 @@ void OptionsWindow::renderWindow() {
 		if (ImGui::SliderFloat(std::string("##"+settingName).c_str(), &dopt->value, dopt->minVal, dopt->maxVal, "%.1f")) {
 		}
 	}
+	ImVec4 col (
+			dynamic["Crosshair"]["Color R"].value,
+			dynamic["Crosshair"]["Color G"].value,
+			dynamic["Crosshair"]["Color B"].value,
+			dynamic["Crosshair"]["Color A"].value
+	);
+
+	ImGui::Text("Color");
+	ImGui::SameLine(x[0]);
+	//ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - x[0]);
+	ImGui::ColorButton("##ColorPickerasd", col);
+
+		dynamic["Crosshair"]["Color R"].setValue(col.x);
+		dynamic["Crosshair"]["Color G"].setValue(col.y);
+		dynamic["Crosshair"]["Color B"].setValue(col.z);
+		dynamic["Crosshair"]["Color A"].setValue(col.z);
+	
+
+
+	//ImGui::Text("Color");
+	//ImGui::SameLine(x[0]);
+	//ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - x[0]);
+	//if (ImGui::ColorPicker4("##ASDAS", color)) {
+	//
+	//	dynamic["Crosshair"]["Color R"].setValue(color[0]);
+	//	dynamic["Crosshair"]["Color G"].setValue(color[1]);
+	//	dynamic["Crosshair"]["Color B"].setValue(color[2]);
+	//	dynamic["Crosshair"]["Color A"].setValue(color[3]);
+	//}
+
 
 
 	/* Left out because not fully implemented, make it so if you wish, henry! */
