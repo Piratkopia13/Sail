@@ -150,7 +150,7 @@ bool OptionsWindow::renderGameOptions() {
 	//ImGui::Text(std::string(std::to_string((int)ImGui::GetCursorPosX()) + ";" + std::to_string((int)ImGui::GetColumnOffset()) + ";" + std::to_string((int)ImGui::GetColumnWidth())).c_str());
 	//ImGui::NextColumn();
 	
-	ImGui::Text("Map:");
+	ImGui::Text("Map Selection");
 	//ImGui::SameLine(x[0]);
 	ImGui::NextColumn();
 	
@@ -171,17 +171,11 @@ bool OptionsWindow::renderGameOptions() {
 		}
 		ImGui::EndCombo();
 	}
-
+	
 	ImGui::NextColumn();
-	//ImGui::Columns(1);
-	if (ImGui::BeginChild("##MAPPRINT", ImVec2(200,200))) {
-		drawMap();
-
-	}
-	ImGui::EndChild();
 
 
-	ImGui::Columns(2);
+
 
 	SettingStorage::Setting* sopt = nullptr;
 	SettingStorage::DynamicSetting* dopt = nullptr;
@@ -201,12 +195,27 @@ bool OptionsWindow::renderGameOptions() {
 		ImGui::SameLine(1);
 		valueName = sopt->getSelected().name;
 
-		SailImGui::cText(valueName.c_str(), ImGui::GetColumnOffset() + ImGui::GetColumnWidth());
-		ImGui::SameLine(ImGui::GetColumnWidth()-30);
+		SailImGui::cText(valueName.c_str(), ImGui::GetColumnOffset() + ImGui::GetColumnWidth()-20);
+		ImGui::SameLine(ImGui::GetColumnWidth()-40);
 		if (SailImGui::TextButton(std::string(">##" + optionName).c_str())) {
 			sopt->setSelected(selected + 1);
 		}
 	}
+
+	ImGui::NextColumn();
+	ImGui::Columns(1);
+	ImGui::Spacing();
+	ImGui::Spacing();
+	ImGui::Columns(2, "##DASDA2", false);
+	//ImGui::SetColumnWidth(0, 100);
+	ImGui::Text("Preview");
+	ImGui::NextColumn();
+	//ImGui::Columns(1);
+	if (ImGui::BeginChild("##MAPPRINT", ImVec2(0, 150))) {
+		drawMap();
+
+	}
+	ImGui::EndChild();
 
 	ImGui::Columns(1);
 
@@ -236,7 +245,7 @@ bool OptionsWindow::renderGameOptions() {
 		int seed = dynamic["map"]["seed"].value;
 		ImGui::Text("Seed");
 		ImGui::SameLine(x[0]);
-		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f - 96);
+		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f - 86);
 		if (ImGui::InputInt("##SEED", &seed,0,0)) {
 			dynamic["map"]["seed"].setValue(seed);
 			settingsChanged = true;
@@ -532,30 +541,28 @@ void OptionsWindow::drawMap() {
 		ImGui::GetWindowHeight() - 10
 	);
 	float size = 0;
-	if (maxX >= maxY) {
-		size = (float)(screenSize.x) / (float)maxX;
+	size = (float)(screenSize.x) / (float)maxX;
+	if (size * maxY > screenSize.y) {
+		size = (float)(screenSize.y) / (float)maxY;
 	}
-	else {
-	
-		size = (float)(screenSize.y) / (float)maxY ;
-	}
-
 
 
 	ImDrawList* draw_list = ImGui::GetWindowDrawList();
 	ImVec2 p = ImGui::GetCursorScreenPos();
-	p.x += (ImGui::GetWindowContentRegionWidth()) * 0.5f - size*maxX*0.5f;
-	float ox = p.x + 4.0f, oy = p.y + 4.0f;
+	p.x += (ImGui::GetWindowContentRegionWidth()) * 0.5f - (size*maxX*0.5f);
+	float ox = p.x, oy = p.y;
 
 	ImU32 red = ImColor(ImVec4(1,0,0,1));
+	ImU32 black = ImColor(ImVec4(0, 0, 0, 1));
 
 	for (unsigned int x = 0; x < maxX; x++) {
 		for (unsigned int y = 0; y < maxY; y++) {
 			//ImVec4 col((float)x / (float)maxX, (float)y / (float)maxY, 1, 1);
+
 			ImVec4 col(
-				(float)tiles[x][y][1]/(float)rooms,
-				(float)tiles[x][y][1]/(float)rooms,
-				(float)tiles[x][y][1]/(float)rooms,
+				(float)tiles[x][y][1]/((float)rooms*0.33f),
+				1.0f-((float)tiles[x][y][1]/((float)rooms*0.66f)),
+				1.0f-(float)tiles[x][y][1]/(float)rooms,
 				1
 			);
 			
@@ -564,7 +571,7 @@ void OptionsWindow::drawMap() {
 			draw_list->AddRectFilled(
 				ImVec2(ox + (x * size), oy + (y * size)),
 				ImVec2(ox + (x * size) + size, oy + (y * size) + size),
-				color
+				tiles[x][y][1] == 0 ? black : color
 			);
 
 			if (tiles[x][y][2] > 0) {

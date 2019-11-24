@@ -129,7 +129,7 @@ if (m_usePercentage) {
 
 	
 
-	static std::string font = "Beb27";
+	static std::string font = "Beb24";
 
 #ifdef DEVELOPMENT
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
@@ -502,10 +502,14 @@ void MenuState::renderServerBrowser() {
 #endif
 		if (ImGui::BeginChild("Lobbies", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
 			// Per hosted game
-			ImGui::Columns(5, "testColumns", false);
-			ImGui::SetColumnOffset(1,ImGui::GetWindowContentRegionWidth()-600);
-			ImGui::SetColumnOffset(2,ImGui::GetWindowContentRegionWidth()-400);
-			ImGui::SetColumnOffset(3,ImGui::GetWindowContentRegionWidth()-200);
+
+			static float p[4] = { 0.24,0.46,0.65,0.4};
+			ImGui::SliderFloat4("asd", &p[0], 0.0f, 1.0f);
+
+			ImGui::Columns(5, "serverbrowserColumns", false);
+			ImGui::SetColumnOffset(1,ImGui::GetWindowContentRegionWidth() * p[0]);
+			ImGui::SetColumnOffset(2,ImGui::GetWindowContentRegionWidth() * p[1]);
+			ImGui::SetColumnOffset(3,ImGui::GetWindowContentRegionWidth() * p[2]);
 			ImGui::SetColumnOffset(4,ImGui::GetWindowContentRegionWidth()-100);
 			ImGui::Separator();
 			ImGui::Text("Lobby"); ImGui::NextColumn();
