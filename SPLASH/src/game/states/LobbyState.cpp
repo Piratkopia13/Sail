@@ -174,7 +174,7 @@ bool LobbyState::renderImgui(float dt) {
 
 	//Keep all this
 	//ImGui::ShowDemoWindow();
-	static std::string font = "Beb24";
+	static std::string font = "Beb27";
 	//ImGui::PushFont(m_imGuiHandler->getFont(font));
 	//
 	//if (ImGui::Begin("IMGUISETTINGS")) {
