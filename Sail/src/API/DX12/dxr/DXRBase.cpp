@@ -213,18 +213,20 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const std::vector<glm::vec3>& teamColors) {
+void DXRBase::updateSceneData(Camera* cam, LightSetup* lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const std::vector<glm::vec3>& teamColors) {
 	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
 	updateMetaballpositions(metaballs, m_next_metaball_aabb);
 
 	DXRShaderCommon::SceneCBuffer newData = {};
-	newData.viewToWorld = glm::inverse(cam.getViewMatrix());
-	newData.clipToView = glm::inverse(cam.getProjMatrix());
-	newData.nearZ = cam.getNearZ();
-	newData.farZ = cam.getFarZ();
-	newData.cameraPosition = cam.getPosition();
-	newData.cameraDirection = cam.getDirection();
-	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
+	if (cam) {
+		newData.viewToWorld = glm::inverse(cam->getViewMatrix());
+		newData.clipToView = glm::inverse(cam->getProjMatrix());
+		newData.nearZ = cam->getNearZ();
+		newData.farZ = cam->getFarZ();
+		newData.cameraPosition = cam->getPosition();
+		newData.cameraDirection = cam->getDirection();
+		newData.projectionToWorld = glm::inverse(cam->getViewProjection());
+	}
 	newData.nMetaballs = m_metaballsToRender;
 	newData.nDecals = m_decalsToRender;
 	newData.doHardShadows = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 0.f;;
@@ -238,11 +240,13 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 		newData.teamColors[i] = glm::vec4(teamColors[i], 1.0f);
 	}
 
-	auto& plData = lights.getPointLightsData();
-	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
+	if (lights) {
+		auto& plData = lights->getPointLightsData();
+		memcpy(newData.pointLights, plData.pLights, sizeof(plData));
 
-	auto& slData = lights.getSpotLightsData();
-	memcpy(newData.spotLights, slData.sLights, sizeof(slData));
+		auto& slData = lights->getSpotLightsData();
+		memcpy(newData.spotLights, slData.sLights, sizeof(slData));
+	}
 
 	m_sceneCB->updateData(&newData, sizeof(newData));
 }

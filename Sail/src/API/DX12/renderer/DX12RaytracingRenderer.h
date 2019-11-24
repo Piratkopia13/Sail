@@ -62,6 +62,8 @@ private:
 	std::unique_ptr<Model> m_fullscreenModel;
 	ShadePassShader* m_shadeShader;
 
+	bool m_hardShadowsLastFrame;
+
 	DX12ComputeShaderDispatcher m_computeShaderDispatcher;
 
 	std::vector<DXRBase::Metaball> m_metaballs;

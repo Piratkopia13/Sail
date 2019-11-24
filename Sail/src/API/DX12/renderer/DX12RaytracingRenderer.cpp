@@ -38,7 +38,8 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_outputTextures.positionsOne = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "PositionOneTexture", Texture::R16G16B16A16_FLOAT)));
 	m_outputBloomTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Raytracing renderer bloom output texture", Texture::R16G16B16A16_FLOAT)));
 	// Initialize textures used for soft shadows if setting is enabled
-	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 1.f) {
+	m_hardShadowsLastFrame = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 0.f;
+	if (!m_hardShadowsLastFrame) {
 		createSoftShadowsTextures();
 	}
 
@@ -162,13 +163,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		}
 	}
 
-	if (camera && lightSetup) {
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, teamColors);
-	}
-
 	bool hardShadows = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 0.f;
-	static bool hardShadowsLastFrame = false;
-	if (hardShadows != hardShadowsLastFrame) {
+	if (hardShadows != m_hardShadowsLastFrame) {
 		m_context->waitForGPU();
 		// Shadow setting changed this frame - handle it
 		if (hardShadows) {
@@ -186,8 +182,9 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 			createSoftShadowsTextures();
 		}
 	}
-	hardShadowsLastFrame = hardShadows;
-
+	m_hardShadowsLastFrame = hardShadows;
+	
+	m_dxr.updateSceneData(camera, lightSetup, m_metaballs, m_nextMetaballAabb, teamColors);
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateWaterData();
 	m_dxr.updateAccelerationStructures(commandQueue, cmdListCompute.Get());
@@ -222,7 +219,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		}
 	}
 	DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(renderOutput);
-	//DX12RenderableTexture* dxRenderOutput = static_cast<DX12RenderableTexture*>(shadedOutput);
 
 	// Execute compute command list to do AS updates and ray dispatching
 	cmdListCompute->Close();
@@ -255,10 +251,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	// Wait for the compute queue to finish (doing post processing) befor executing resource copying
 	m_context->getDirectQueue()->wait(fenceVal);
 	m_context->executeCommandLists({ cmdListDirectCopy.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
-
-	// Next compute queue execution must wait on the copying to finish
-	/*fenceVal = m_context->getDirectQueue()->signal();
-	m_context->getComputeQueue()->wait(fenceVal);*/
 }
 
 DX12RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsCommandList4* cmdList) {
@@ -479,14 +471,14 @@ void DX12RaytracingRenderer::createSoftShadowsTextures() {
 }
 
 bool DX12RaytracingRenderer::onResize(const WindowResizeEvent& event) {
-	m_outputTextures.albedo->resize(event.width, event.height);
-	m_outputTextures.normal->resize(event.width, event.height);
-	m_outputTextures.metalnessRoughnessAO->resize(event.width, event.height);
-	m_outputTextures.shadows->resize(event.width, event.height);
-	m_outputTextures.positionsOne->resize(event.width, event.height);
-	m_outputTextures.positionsTwo->resize(event.width, event.height);
-	m_shadowsLastFrame->resize(event.width, event.height);
-	m_shadedOutput->resize(event.width, event.height);
-	m_outputBloomTexture->resize(event.width, event.height);
+	if (m_outputTextures.albedo)				{ m_outputTextures.albedo->resize(event.width, event.height); }
+	if (m_outputTextures.normal)				{ m_outputTextures.normal->resize(event.width, event.height); }
+	if (m_outputTextures.metalnessRoughnessAO)	{ m_outputTextures.metalnessRoughnessAO->resize(event.width, event.height); }
+	if (m_outputTextures.shadows)				{ m_outputTextures.shadows->resize(event.width, event.height); }
+	if (m_outputTextures.positionsOne)			{ m_outputTextures.positionsOne->resize(event.width, event.height); }
+	if (m_outputTextures.positionsTwo)			{ m_outputTextures.positionsTwo->resize(event.width, event.height); }
+	if (m_shadowsLastFrame)						{ m_shadowsLastFrame->resize(event.width, event.height); }
+	if (m_shadedOutput)							{ m_shadedOutput->resize(event.width, event.height); }
+	if (m_outputBloomTexture)					{ m_outputBloomTexture->resize(event.width, event.height); }
 	return true;
 }
