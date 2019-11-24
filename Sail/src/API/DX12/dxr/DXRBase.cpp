@@ -477,17 +477,25 @@ void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* outputBloomT
 		//texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE); // This transition is done in RaytracingRenderer::runShading()
 		m_context->getDevice()->CopyDescriptorsSimple(1, cdh[frameIndex], texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	};
-	copyDescriptor(outputBloomTexture, m_rtOutputBloomTextureUavCPUHandles);
-	copyDescriptor(output.albedo.get(), m_rtOutputAlbedoUavCPUHandles);
-	copyDescriptor(output.normal.get(), m_rtOutputNormalsUavCPUHandles);
-	copyDescriptor(output.metalnessRoughnessAO.get(), m_rtOutputMetalnessRoughnessAoUavCPUHandles);
-	copyDescriptor(output.shadows.get(), m_rtOutputShadowsUavCPUHandles);
 	copyDescriptor(output.positionsOne.get(), m_rtOutputPositionsOneUavCPUHandles);
-	copyDescriptor(output.positionsTwo.get(), m_rtOutputPositionsTwoUavCPUHandles);
+	copyDescriptor(outputBloomTexture, m_rtOutputBloomTextureUavCPUHandles);
 
-	if (shadowsLastFrameInput) { // Doesnt exist first frame
+	if (shadowsLastFrameInput) {
+		// Copy descriptor for textures only used when soft shadows are enabled
+		copyDescriptor(output.albedo.get(), m_rtOutputAlbedoUavCPUHandles);
+		copyDescriptor(output.normal.get(), m_rtOutputNormalsUavCPUHandles);
+		copyDescriptor(output.metalnessRoughnessAO.get(), m_rtOutputMetalnessRoughnessAoUavCPUHandles);
+		copyDescriptor(output.shadows.get(), m_rtOutputShadowsUavCPUHandles);
+		copyDescriptor(output.positionsTwo.get(), m_rtOutputPositionsTwoUavCPUHandles);
+		
 		// Copy history input texture srv
 		m_context->getDevice()->CopyDescriptorsSimple(1, m_rtInputShadowsLastFrameUavCPUHandles[frameIndex], shadowsLastFrameInput->getSrvCDH(lastFrameIndex), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		// TODO: transition in batch
+		output.albedo->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		output.normal->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		output.metalnessRoughnessAO->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		output.shadows->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	}
 
 	//Set constant buffer descriptor heap
@@ -496,11 +504,6 @@ void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* outputBloomT
 
 
 	// Let's raytrace
-	// TODO: transition in batch
-	output.albedo->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	output.normal->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	output.metalnessRoughnessAO->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	output.shadows->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 	D3D12_DISPATCH_RAYS_DESC raytraceDesc = {};
 	raytraceDesc.Width = Application::getInstance()->getWindow()->getWindowWidth();
@@ -838,7 +841,7 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		}
 
 		// Initialize decal SRVs
-		initDecals(&gpuHandle, &cpuHandle);
+		//initDecals(&gpuHandle, &cpuHandle);
 
 		// Store heap start for views that might update in runtime
 		// Half of the rest of the list is allocated for each swap frame
@@ -888,23 +891,24 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 	}
 
 	// Make sure decal textures has been initialized
-	{
-		auto& decalTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[0]));
-		if (!decalTex.hasBeenInitialized()) {
-			decalTex.initBuffers(cmdList);
-			decalTex.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		}
-		auto& decalTex1 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[1]));
-		if (!decalTex1.hasBeenInitialized()) {
-			decalTex1.initBuffers(cmdList);
-			decalTex1.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		}
-		auto& decalTex2 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[2]));
-		if (!decalTex2.hasBeenInitialized()) {
-			decalTex2.initBuffers(cmdList);
-			decalTex2.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		}
-	}
+	// Decals are currently not used, uncomment if they ever are
+	//{
+	//	auto& decalTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[0]));
+	//	if (!decalTex.hasBeenInitialized()) {
+	//		decalTex.initBuffers(cmdList);
+	//		decalTex.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	//	}
+	//	auto& decalTex1 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[1]));
+	//	if (!decalTex1.hasBeenInitialized()) {
+	//		decalTex1.initBuffers(cmdList);
+	//		decalTex1.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	//	}
+	//	auto& decalTex2 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[2]));
+	//	if (!decalTex2.hasBeenInitialized()) {
+	//		decalTex2.initBuffers(cmdList);
+	//		decalTex2.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	//	}
+	//}
 
 	// Update descriptors for vertices, indices, textures etc
 	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtHeapCPUHandle[frameIndex];
@@ -1016,9 +1020,10 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addDescriptor(m_rtInputShadowsLastFrameUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartUAVGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartSRVGPUHandles[frameIndex].ptr);
-		tableBuilder.addDescriptor(m_decalTexGPUHandles.ptr);
+		// Decals are currently not used, uncomment if they ever are
+		/*tableBuilder.addDescriptor(m_decalTexGPUHandles.ptr);
 		D3D12_GPU_VIRTUAL_ADDRESS decalCBHandle = m_decalCB->getBuffer()->GetGPUVirtualAddress();
-		tableBuilder.addDescriptor(decalCBHandle);
+		tableBuilder.addDescriptor(decalCBHandle);*/
 		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
 	}
 
@@ -1145,8 +1150,8 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputOutputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 0U, 3);
 
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, 2);
-	m_localSignatureRayGen->addDescriptorTable("decalTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 17, 0U, 3U);
-	m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);
+	//m_localSignatureRayGen->addDescriptorTable("decalTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 17, 0U, 3U);
+	//m_localSignatureRayGen->addCBV("DecalCBuffer", 2, 0);
 	m_localSignatureRayGen->addStaticSampler();
 
 	// Border sampler used to sample InputShadowsLastFrame

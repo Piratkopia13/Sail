@@ -34,6 +34,7 @@ public:
 	DXRBase* getDXRBase();
 
 private:
+	void createSoftShadowsTextures();
 	DX12RenderableTexture* runDenoising(ID3D12GraphicsCommandList4* cmdList);
 	DX12RenderableTexture* runShading(ID3D12GraphicsCommandList4* cmdList, DX12RenderableTexture* shadows);
 	bool onResize(const WindowResizeEvent& event);

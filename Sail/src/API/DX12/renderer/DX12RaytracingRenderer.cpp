@@ -34,21 +34,13 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
 
-	// Initialize raytracing output textures
-	// m_outputTextures contains all reflection bounce information
-	// gbuffer textures contains first "bounce" information
-	m_outputTextures.albedo = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT albedo secound boucne output")));
-	m_outputTextures.metalnessRoughnessAO = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT mrao secound boucne output")));
-	m_outputTextures.normal = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT normal secound boucne output")));
-	m_outputTextures.shadows = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "CurrentFrameShadowTexture", Texture::R8G8, false, false, NUM_SHADOW_TEXTURES)));
+	// Initialize textures used for both hard and soft shadows
 	m_outputTextures.positionsOne = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "PositionOneTexture", Texture::R16G16B16A16_FLOAT)));
-	m_outputTextures.positionsTwo = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "PositionTwoTexture", Texture::R16G16B16A16_FLOAT)));
-	// init shaded output texture - this is written to in a rasterisation pass
-	m_shadedOutput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT shaded output")));
-	// Init raytracing input texture
-	m_shadowsLastFrame = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "LastFrameShadowTexture", Texture::R8G8, false, false, NUM_SHADOW_TEXTURES)));
-	// Init bloom output texture
 	m_outputBloomTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Raytracing renderer bloom output texture", Texture::R16G16B16A16_FLOAT)));
+	// Initialize textures used for soft shadows if setting is enabled
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 1.f) {
+		createSoftShadowsTextures();
+	}
 
 	m_brdfTexture = &app->getResourceManager().getTexture("pbr/brdfLUT.tga");
 
@@ -68,12 +60,16 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	if (postProcessPipeline) {
 		// Make sure output textures are in a higher precision format to accomodate values > 1
-		m_shadedOutput->changeFormat(Texture::R16G16B16A16_FLOAT);
+		if (m_shadedOutput) {
+			m_shadedOutput->changeFormat(Texture::R16G16B16A16_FLOAT);
+		}
 		m_outputBloomTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
 	} else {
 		// Make sure output textures are in a format that can be directly copied to the back buffer
 		// Please note that no tone mapping is applied when post process is turned off.
-		m_shadedOutput->changeFormat(Texture::R8G8B8A8);
+		if (m_shadedOutput) {
+			m_shadedOutput->changeFormat(Texture::R8G8B8A8);
+		}
 		m_outputBloomTexture->changeFormat(Texture::R8G8B8A8);
 	}
 
@@ -173,11 +169,21 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	bool hardShadows = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 0.f;
 	static bool hardShadowsLastFrame = false;
 	if (hardShadows != hardShadowsLastFrame) {
+		m_context->waitForGPU();
 		// Shadow setting changed this frame - handle it
 		if (hardShadows) {
-			// Destroy all textures but one
+			// Destroy all textures but shading and bloom outputs
+			m_outputTextures.albedo.reset();
+			m_outputTextures.metalnessRoughnessAO.reset();
+			m_outputTextures.normal.reset();
+			m_outputTextures.shadows.reset();
+			m_outputTextures.positionsTwo.reset();
+			m_shadedOutput.reset();
+			m_shadowsLastFrame.reset();
+			
 		} else {
 			// Create all textures
+			createSoftShadowsTextures();
 		}
 	}
 	hardShadowsLastFrame = hardShadows;
@@ -452,6 +458,24 @@ void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {
 
 DXRBase* DX12RaytracingRenderer::getDXRBase() {
 	return &m_dxr;
+}
+
+void DX12RaytracingRenderer::createSoftShadowsTextures() {
+	Application* app = Application::getInstance();
+	auto windowWidth = app->getWindow()->getWindowWidth();
+	auto windowHeight = app->getWindow()->getWindowHeight();
+	// Initialize raytracing output textures
+	// m_outputTextures contains all reflection bounce information
+	// gbuffer textures contains first "bounce" information
+	m_outputTextures.albedo = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT albedo secound boucne output")));
+	m_outputTextures.metalnessRoughnessAO = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT mrao secound boucne output")));
+	m_outputTextures.normal = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT normal secound boucne output")));
+	m_outputTextures.shadows = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "CurrentFrameShadowTexture", Texture::R8G8, false, false, NUM_SHADOW_TEXTURES)));
+	m_outputTextures.positionsTwo = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "PositionTwoTexture", Texture::R16G16B16A16_FLOAT)));
+	// init shaded output texture - this is written to in a rasterisation pass
+	m_shadedOutput = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "RT shaded output")));
+	// Init raytracing input texture
+	m_shadowsLastFrame = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "LastFrameShadowTexture", Texture::R8G8, false, false, NUM_SHADOW_TEXTURES)));
 }
 
 bool DX12RaytracingRenderer::onResize(const WindowResizeEvent& event) {

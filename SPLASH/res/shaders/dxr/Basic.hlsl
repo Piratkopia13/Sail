@@ -12,9 +12,9 @@ Texture2D<float2>   gbuffer_motionVectors			: register(t10);
 Texture2D<float>    gbuffer_depth 					: register(t11);
 
 // Decal textures
-Texture2D<float4> decal_texAlbedo 					: register(t17); // NOT USED
-Texture2D<float4> decal_texNormal 					: register(t18); // NOT USED
-Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19); // NOT USED
+// Texture2D<float4> decal_texAlbedo 					: register(t17); // NOT USED
+// Texture2D<float4> decal_texNormal 					: register(t18); // NOT USED
+// Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19); // NOT USED
 
 RWTexture2D<float4> lOutputAlbedo		 		: register(u3);		// RGB
 RWTexture2D<float4> lOutputNormals 				: register(u4); 	// XYZ
@@ -27,13 +27,13 @@ Texture2DArray<float2> InputShadowsLastFrame 	: register(t20); 	// last frame Sh
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);
-ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0); // NOT USED
+// ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0); // NOT USED
 
 StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
 StructuredBuffer<float3> metaballs : register(t1, space2);
 
-StructuredBuffer<uint> waterData : register(t6, space0); // NOT USED
+StructuredBuffer<uint> waterData : register(t6, space0);
 
 // Closest hit textures
 Texture2D<float4> sys_texAlbedo : register(t2);
