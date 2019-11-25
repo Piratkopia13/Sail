@@ -314,17 +314,21 @@ bool OptionsWindow::renderGameOptions() {
 
 
 	if (mapChanged) {
-		m_levelSystem->destroyWorld();
-		m_levelSystem->seed = dynamic["map"]["seed"].value;
-		m_levelSystem->clutterModifier = dynamic["map"]["clutter"].value * 100;
-		m_levelSystem->xsize = dynamic["map"]["sizeX"].value;
-		m_levelSystem->ysize = dynamic["map"]["sizeY"].value;
-		
-		m_levelSystem->generateMap();
+		updateMap();
 	}
 
 
 	return settingsChanged;
+}
+
+void OptionsWindow::updateMap() {
+	m_levelSystem->destroyWorld();
+	m_levelSystem->seed = m_settings->gameSettingsDynamic["map"]["seed"].value;
+	m_levelSystem->clutterModifier = m_settings->gameSettingsDynamic["map"]["clutter"].value * 100;
+	m_levelSystem->xsize = m_settings->gameSettingsDynamic["map"]["sizeX"].value;
+	m_levelSystem->ysize = m_settings->gameSettingsDynamic["map"]["sizeY"].value;
+
+	m_levelSystem->generateMap();
 }
 
 void OptionsWindow::drawCrosshair() {

@@ -50,6 +50,7 @@ LobbyState::LobbyState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+	EventDispatcher::Instance().subscribe(Event::Type::SETTINGS_UPDATED, this);
 
 	m_ready = false;
 
@@ -107,6 +108,7 @@ LobbyState::~LobbyState() {
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::SETTINGS_UPDATED, this);
 }
 
 bool LobbyState::processInput(float dt) {
@@ -227,6 +229,7 @@ bool LobbyState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE:	onPlayerTeamRequest((const NetworkPlayerRequestedTeamChange&)event); break;
 	case Event::Type::NETWORK_PLAYER_CHANGED_TEAM:	onPlayerTeamChanged((const NetworkPlayerChangedTeam&)event); break;
+	case Event::Type::SETTINGS_UPDATED:	onSettingsChanged(); break;
 
 	default:
 		break;
@@ -272,6 +275,15 @@ bool LobbyState::onPlayerTeamRequest(const NetworkPlayerRequestedTeamChange& eve
 
 bool LobbyState::onPlayerTeamChanged(const NetworkPlayerChangedTeam& event) {	
 	
+	return true;
+}
+
+bool LobbyState::onSettingsChanged() {
+
+	if (!NWrapperSingleton::getInstance().isHost()) {
+		m_optionsWindow.updateMap();
+	}
+
 	return true;
 }
 
