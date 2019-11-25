@@ -394,7 +394,7 @@ void AudioSystem::dealWithDeathSound(AudioComponent* audioC, float dt) {
 					soundGeneral->playOnce = true;
 				}
 
-				// Update the sound with the current positions if it's playing
+				// Update the sound with the current positions if it's playing.
 				if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
 
 					m_audioEngine->updateDeathvolume(soundGeneral->volume);
