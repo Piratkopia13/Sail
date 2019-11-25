@@ -244,7 +244,7 @@ const bool CollisionSystem::handleRagdollCollisions(Entity* e, std::vector<Octre
 
 	for (size_t i = 0; i < ragdollComp->contactPoints.size(); i++) {
 		//----Avoid spinning into things----
-		glm::vec3 globalCenterOfMass = transComp->getMatrixWithUpdate() * glm::vec4(ragdollComp->localCenterOfMass, 1.0f);
+		/*glm::vec3 globalCenterOfMass = transComp->getMatrixWithUpdate() * glm::vec4(ragdollComp->localCenterOfMass, 1.0f);
 		glm::vec3 offsetVector = transComp->getMatrixWithUpdate() * glm::vec4(ragdollComp->contactPoints[i].localOffSet, 1.0f) - glm::vec4(globalCenterOfMass, 1.0f);
 		if (glm::length2(offsetVector) > 0.f) {
 			Octree::RayIntersectionInfo tempInfo;
@@ -257,7 +257,7 @@ const bool CollisionSystem::handleRagdollCollisions(Entity* e, std::vector<Octre
 					ragdollComp->contactPoints[j].boundingBox.setPosition(ragdollComp->contactPoints[j].boundingBox.getPosition() + translation);
 				}
 			}
-		}
+		}*/
 		//----------------------------------
 
 		std::vector<int> groundIndices;
@@ -272,13 +272,14 @@ const bool CollisionSystem::handleRagdollCollisions(Entity* e, std::vector<Octre
 		}
 
 		movementDiffs.emplace_back();
+		movementDiffs.back() = { 0.f, 0.f, 0.f };
+
+		glm::vec3 bbMovement(0.f);
+		bbMovement += getAngularVelocity(e, ragdollComp->contactPoints[i].localOffSet, ragdollComp->localCenterOfMass);
+		bbMovement += movementComp->velocity;
 
 		if (trueCollisions.size() > 0) {
 			collisionFound = true;
-
-			glm::vec3 bbMovement(0.f);
-			bbMovement += getAngularVelocity(e, ragdollComp->contactPoints[i].localOffSet, ragdollComp->localCenterOfMass);
-			bbMovement += movementComp->velocity;
 
 			glm::vec3 updatedMovement = bbMovement;
 
@@ -287,31 +288,41 @@ const bool CollisionSystem::handleRagdollCollisions(Entity* e, std::vector<Octre
 
 			movementDiffs.back() = updatedMovement - bbMovement;
 		}
-		else {
-			movementDiffs.back() = { 0.f, 0.f, 0.f };
-		}
 	}
 
 	glm::vec3 totalMovementDiff(0.f);
 	glm::vec3 totalRotation(0.f);
+	int movCounter = 0;
 
 	for (size_t i = 0; i < ragdollComp->contactPoints.size(); i++) {
 		glm::vec3 offsetVector = transComp->getMatrixWithUpdate() * glm::vec4(ragdollComp->contactPoints[i].localOffSet, 1.0f) - transComp->getMatrixWithUpdate() * glm::vec4(ragdollComp->localCenterOfMass, 1.0f);
-		if (glm::length2(movementDiffs[i]) > 0.f && glm::length2(offsetVector) > 0.f) {
-			//float hitDot = glm::dot(glm::normalize(movementDiffs[i]), glm::normalize(offsetVector));
-			totalMovementDiff += movementDiffs[i];
+		if (glm::length2(movementDiffs[i]) > 0.001f && glm::length2(offsetVector) > 0.001f) {
+			float hitDot = glm::max(glm::dot(glm::normalize(movementDiffs[i]), glm::normalize(-offsetVector)), 0.f);
+			totalMovementDiff += movementDiffs[i] * hitDot;
+			movCounter++;
 
 			if (calculateMomentum) {
 				glm::vec3 rotationVec = glm::normalize(glm::cross(offsetVector, movementDiffs[i]));
-				float angle = glm::atan(glm::length(movementDiffs[i]), glm::length(offsetVector));
-				totalRotation += rotationVec * angle;
+				glm::vec3 movementVec = glm::normalize(glm::cross(offsetVector, rotationVec));
+
+				movementVec = movementVec * glm::dot(movementDiffs[i], movementVec);
+
+				float angle = glm::atan(glm::length(movementVec), glm::length(offsetVector));
+				totalRotation += rotationVec * angle * angle * 0.5f;
 			}
+		}
+		else if (glm::length2(movementDiffs[i]) > 0.001f) { //Center of mass collision
+			totalMovementDiff = movementDiffs[i];
+			totalRotation = { 0.f, 0.f, 0.f };
+			movCounter = 1;
+			break;
 		}
 	}
 
-	movementComp->velocity += totalMovementDiff;
-	movementComp->rotation += totalRotation;
-
+	movementComp->velocity += totalMovementDiff / glm::max((float)movCounter, 1.0f);
+	if (glm::length2(totalRotation) > 0.0001f) {
+		movementComp->rotation = totalRotation;
+	}
 
 	return collisionFound;
 }
@@ -547,7 +558,7 @@ glm::vec3 CollisionSystem::getAngularVelocity(Entity* e, const glm::vec3& offset
 	glm::vec3 offsetVector = transComp->getMatrixWithUpdate() * glm::vec4(offset, 1.0f) - transComp->getMatrixWithUpdate() * glm::vec4(centerOfMass, 1.0f);
 
 	glm::vec3 bbDir = glm::cross(offsetVector, movementComp->rotation);
-	if (glm::length2(bbDir) > 0.0000001f) {
+	if (glm::length2(bbDir) > 0.0001f) {
 		bbDir = glm::normalize(bbDir);
 		float bbVelocity = (glm::length(movementComp->rotation) / 2.0f * glm::pi<float>()) * glm::length(offsetVector) * 2.0f * glm::pi<float>();
 		glm::vec3 bbMovement = bbDir * bbVelocity;

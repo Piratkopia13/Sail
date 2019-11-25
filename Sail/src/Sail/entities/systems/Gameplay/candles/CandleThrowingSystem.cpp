@@ -135,13 +135,11 @@ void CandleThrowingSystem::update(float dt) {
 					// Throw the torch
 					moveC->velocity = throwC->direction * throwC->throwingTimer * throwC->throwChargeMultiplier + e->getComponent<MovementComponent>()->velocity;
 					moveC->constantAcceleration = glm::vec3(0.f, -9.82f, 0.f);
-					moveC->rotation = { 0.f, 0.f, 0.f };
-					// Can be used once the torch light can be set inside the torch instead of on the top of it, LEAVE THIS CODE HERE!
 					//throwC->direction.y = 0.f;
-					//auto rotationAxis = glm::cross(glm::normalize(throwC->direction), glm::vec3(0.f, 1.f, 0.f));
-					//transC->setRotations(glm::angleAxis(glm::radians(-89.5f), rotationAxis));
+					auto rotationAxis = glm::normalize(glm::cross(throwC->direction, glm::vec3(0.f, 1.f, 0.f)));
+					moveC->rotation = rotationAxis * -6.14f * 2.0f;
 					auto* collComp = torchE->addComponent<CollisionComponent>(true);
-					collComp->bounciness = 0.2f;
+					collComp->bounciness = 0.0f;
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 
 					// Send stop throw event

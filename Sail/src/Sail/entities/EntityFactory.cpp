@@ -49,6 +49,8 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->setTexture("particles/fire.tga");
 
 	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
+	ragdollComp->localCenterOfMass = { 0.f, 0.f, 0.f };
+	ragdollComp->addContactPoint(glm::vec3(0.f, -0.2f, 0.f), glm::vec3(0.08f));
 	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.08f));
 	ragdollComp->addContactPoint(glm::vec3(0.f, 0.37f, 0.0f), glm::vec3(0.08f));
 
