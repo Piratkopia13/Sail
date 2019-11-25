@@ -302,7 +302,6 @@ bool GameState::processInput(float dt) {
 	// Unpause Game
 	if (m_readyRestartAmbiance) {
 		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(false);
-		m_ambianceIsStarting = true;
 		m_readyRestartAmbiance = false;
 	}
 
