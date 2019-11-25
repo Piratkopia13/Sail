@@ -37,7 +37,8 @@
 
 AudioEngine::AudioEngine() {
 	HRESULT hr;
-	hr = CoInitialize(nullptr);
+	//hr = CoInitialize(nullptr);
+	hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
 #pragma region ERROR_CHECKING
 	try {
@@ -643,9 +644,14 @@ HRESULT AudioEngine::initXAudio2() {
 	// Mastering voice will be automatically destroyed when XAudio2 instance is destroyed.
 	if (SUCCEEDED(hr)) {
 		hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice, 2, 48000);
-	}
 
-	
+		if (FAILED(hr)) {
+			assert(false);
+		}
+	}
+	else {
+		SAIL_LOG_ERROR("Failed to create Xaudio2");
+	}
 
 #if DEVELOPMENT
 	// Activate debug layer if we're in development
