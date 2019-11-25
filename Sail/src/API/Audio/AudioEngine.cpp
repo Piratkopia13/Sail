@@ -112,15 +112,6 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 
 		// Create the source voice
 		hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
-
-		//// Also reset the xAPO + SubmixVoice
-		//m_sound[indexValue].xapo.ReleaseAndGetAddressOf();
-		//m_sound[indexValue].xapo = nullptr;
-		//setUpxAPO(indexValue);
-
-		//m_sound[indexValue].xAPOsubMixVoice->DestroyVoice();
-		//m_sound[indexValue].xAPOsubMixVoice = nullptr;
-		//createXAPOsubMixVoice(&m_sound[indexValue].xAPOsubMixVoice, m_sound[indexValue].xapo);
 	}
 
 	m_sound[indexValue].xAPOsubMixVoice->SetVolume(volume);
@@ -356,6 +347,14 @@ void AudioEngine::pause_unpause_AllStreams(bool pauseTRUE_unpauseFALSE)
 {
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
 		this->m_isStreamPaused[i] = pauseTRUE_unpauseFALSE;
+		if (this->m_stream[i].sourceVoice != nullptr) {
+			if (pauseTRUE_unpauseFALSE == true) {
+				this->m_stream[i].sourceVoice->Stop();
+			}
+			else {
+				this->m_stream[i].sourceVoice->Start();
+			}
+		}
 	}
 }
 
@@ -706,10 +705,6 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 				}
 			}
 
-			// creating a 'sourceVoice' for WAV file-type
-			//if (SUCCEEDED(hr)) {
-			//	hr = m_xAudio2->CreateSourceVoice(&m_stream[myIndex].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
-			//}
 			hr = m_xAudio2->CreateSourceVoice(&m_stream[myIndex].sourceVoice, wfx, 0, 1.0f, &voiceContext);
 			if (hr != S_OK) {
 				SAIL_LOG_ERROR("Failed to create source voice!");
@@ -765,13 +760,6 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			// Reading from the file (when time-since-last-read has passed threshold)
 			while ((currentPosition < metadata.lengthBytes) && m_isStreaming[myIndex]) {
 				while (m_isStreamPaused[myIndex]); // Wait while paused
-				//if (GetAsyncKeyState(VK_ESCAPE)) {
-				//	m_isStreaming[myIndex] = false;
-				//	while (GetAsyncKeyState(VK_ESCAPE) && m_isStreaming[myIndex]) {
-				//		Sleep(10);
-				//	}
-				//	break;
-				//}
 
 				DWORD cbValid = std::min(STREAMING_BUFFER_SIZE, static_cast<int>(metadata.lengthBytes - static_cast<UINT32>(currentPosition)));
 				m_overlapped[myIndex].Offset = metadata.offsetBytes + currentPosition;
@@ -788,11 +776,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 				currentPosition += cbValid;
 
-				//
-				// At this point the read is progressing in the background and we are free to do
-				// other processing while we wait for it to finish. For the purposes of this sample,
-				// however, we'll just go to sleep until the read is done.
-				//
+				// Sleep while waiting for currently-playing chunk to finish
 				if (wait) {
 					WaitForSingleObject(m_overlapped[myIndex].hEvent, INFINITE);
 				}
