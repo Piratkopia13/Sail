@@ -15,10 +15,3 @@ LobbyHostState::LobbyHostState(StateStack& stack)
 LobbyHostState::~LobbyHostState() {
 
 }
-
-bool LobbyHostState::onMyTextInput(const ChatSent& event) {
-
-
-
-	return true;
-}

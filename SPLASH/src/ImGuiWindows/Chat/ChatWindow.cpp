@@ -40,22 +40,6 @@ ChatWindow::ChatWindow(bool showWindow) :
 
 
 
-	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
-		ImGuiWindowFlags_NoResize |
-		ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoNav |
-		ImGuiWindowFlags_NoBringToFrontOnFocus |
-		ImGuiWindowFlags_NoTitleBar |
-		ImGuiWindowFlags_AlwaysAutoResize |
-		ImGuiWindowFlags_NoSavedSettings |
-		ImGuiWindowFlags_NoBackground;
-	m_backgroundOnlyflags = ImGuiWindowFlags_NoCollapse |
-		ImGuiWindowFlags_NoResize |
-		ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoNav |
-		ImGuiWindowFlags_NoTitleBar |
-		ImGuiWindowFlags_NoSavedSettings;
-
 
 }
 
@@ -158,7 +142,7 @@ void ChatWindow::renderChat(float dt) {
 				}
 				//Player
 				else {
-					if (auto * player = NWrapperSingleton::getInstance().getPlayer(currentMessage.id)) {
+					if (auto * player = m_network->getPlayer(currentMessage.id)) {
 						int team = player->team;
 						glm::vec3 temp = m_settings->getColor(m_settings->teamColorIndex(team));
 						ImVec4 col(
@@ -206,7 +190,7 @@ void ChatWindow::renderChat(float dt) {
 			m_message = buf;
 			if (m_message != "" && releasedEnter) {
 				//Send Message
-				EventDispatcher::Instance().emit(ChatSent(m_message));
+				m_eventDispatcher->emit(ChatSent(m_message));
 				m_message = "";
 			}
 			releasedEnter = false;
@@ -223,7 +207,7 @@ void ChatWindow::renderChat(float dt) {
 		ImGui::SameLine();
 		if (ImGui::Button(" >  ")) {
 			if (m_message != "") {
-				EventDispatcher::Instance().emit(ChatSent(m_message));
+				m_eventDispatcher->emit(ChatSent(m_message));
 				m_message = "";
 				justSent = true;
 				//sentLastFrame = true;
@@ -285,8 +269,8 @@ bool ChatWindow::onMyTextInput(const ChatSent& event) {
 
 	if (m_network->isHost()) {
 		addMessage(
-			NWrapperSingleton::getInstance().getMyPlayer().id,
-			NWrapperSingleton::getInstance().getMyPlayer().name,
+			m_network->getMyPlayer().id,
+			m_network->getMyPlayer().name,
 			event.msg
 		);
 	}
@@ -307,7 +291,7 @@ bool ChatWindow::onPlayerTeamChanged(const NetworkPlayerChangedTeam& event) {
 	std::unordered_map<std::string, SettingStorage::Setting>& gamemodeSettings = settings->gameSettingsStatic["gamemode"];
 	SettingStorage::Setting& selectedGameTeams = settings->gameSettingsStatic["Teams"][gamemodeSettings["types"].getSelected().name];
 
-	Player* p = NWrapperSingleton::getInstance().getPlayer(event.playerID);
+	Player* p = m_network->getPlayer(event.playerID);
 
 	int currentlySelected = 0;
 	for (auto t : selectedGameTeams.options) {
@@ -317,7 +301,7 @@ bool ChatWindow::onPlayerTeamChanged(const NetworkPlayerChangedTeam& event) {
 		currentlySelected++;
 	}
 	
-	std::string content = NWrapperSingleton::getInstance().getMyPlayerID() == event.playerID ? "You" : NWrapperSingleton::getInstance().getPlayer(event.playerID)->name;
+	std::string content = m_network->getMyPlayerID() == event.playerID ? "You" : m_network->getPlayer(event.playerID)->name;
 	content += " changed team to " + selectedGameTeams.options[currentlySelected > 0].name;
 	addMessage(255, "", content);
 	return true;

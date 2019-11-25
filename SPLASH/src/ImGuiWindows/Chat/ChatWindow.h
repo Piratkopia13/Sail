@@ -63,7 +63,6 @@ private:
 	EventDispatcher* m_eventDispatcher;
 	NWrapperSingleton* m_network;
 	
-
 	std::string m_message;
 	std::list<ChatMessage> m_messages;
 	float m_timeSinceLastMessage;
@@ -75,8 +74,4 @@ private:
 	bool m_retainFocus;
 
 	float m_backgroundOpacityMul;
-
-	ImGuiWindowFlags m_standaloneButtonflags;
-	ImGuiWindowFlags m_backgroundOnlyflags;
-
 };
