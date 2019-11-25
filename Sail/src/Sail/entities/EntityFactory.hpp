@@ -29,11 +29,7 @@ namespace EntityFactory {
 
 	Entity::SPtr CreateMyPlayer(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation);
 
-	void CreateOtherPlayer(Entity::SPtr otherPlayer, 
-		Netcode::ComponentID playerCompID, 
-		Netcode::ComponentID candleCompID, 
-		Netcode::ComponentID gunCompID, 
-		size_t lightIndex, glm::vec3 spawnLocation);
+	void CreateOtherPlayer(Entity::SPtr& otherPlayer, Netcode::PlayerID playerID, size_t lightIndex);
 	
 	Entity::SPtr CreateReplayPlayer(Netcode::ComponentID playerCompID, Netcode::ComponentID candleCompID,
 		Netcode::ComponentID gunCompID, size_t lightIndex, glm::vec3 spawnLocation);
