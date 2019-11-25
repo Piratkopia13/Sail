@@ -7,6 +7,7 @@
 #include "Sail/entities/components/SprintingComponent.h"
 #include "Sail/entities/components/CrosshairComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
+#include "Sail/entities/components/SpectatorComponent.h"
 
 InGameGui::InGameGui(bool showWindow) {
 }
@@ -42,7 +43,7 @@ void InGameGui::renderWindow() {
 	flags |= ImGuiWindowFlags_NoBackground;
 	ImGui::Begin("GUI", NULL, flags);
 
-	if (m_player) {
+	if (m_player && !m_player->hasComponent<SpectatorComponent>()) {
 
 		SanityComponent* c1 = m_player->getComponent<SanityComponent>();
 		SprintingComponent* c2 = m_player->getComponent<SprintingComponent>();
