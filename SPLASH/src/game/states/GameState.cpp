@@ -25,6 +25,9 @@
 #include "API/DX12/dxr/DXRBase.h"
 
 
+
+constexpr int SPECTATOR_TEAM = -1;
+
 GameState::GameState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
@@ -39,6 +42,8 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 
+	// Reset the counter used to generate unique ComponentIDs for the network
+	Netcode::resetIDCounter();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
@@ -155,9 +160,7 @@ GameState::GameState(StateStack& stack)
 	createLevel(shader, boundingBoxModel);
 
 	// Player creation
-
-	// team -1 = spectator
-	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == -1) {
+	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
 		
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
@@ -167,10 +170,7 @@ GameState::GameState(StateStack& stack)
 
 		m_player = EntityFactory::CreateMySpectator(playerID, m_currLightIndex++, spawnLocation).get();
 
-	}
-	else {
-	
-
+	} else {
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
 		for (int i = -1; i < id; i++) {
@@ -181,12 +181,18 @@ GameState::GameState(StateStack& stack)
 	}
 
 	
+	// Spawn other players
+	for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+		if (p.team != SPECTATOR_TEAM && p.id != playerID) {
+			auto otherPlayer = ECS::Instance()->createEntity("Player: " + p.name);
+			EntityFactory::CreateOtherPlayer(otherPlayer, p.id, m_currLightIndex++);
+		}
+	}
+
 	
 	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
 	m_componentSystems.networkReceiverSystem->setGameState(this);
 	
-
-
 
 	// Bots creation
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
@@ -224,10 +230,6 @@ GameState::GameState(StateStack& stack)
 	// Clear all water on the level
 	EventDispatcher::Instance().emit(ResetWaterEvent());
 
-	if (!m_isSingleplayer) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.
-	}
-
 
 	m_inGameGui.setPlayer(m_player);
 	m_inGameGui.setCrosshair(crosshairEntity.get());
@@ -244,6 +246,12 @@ GameState::GameState(StateStack& stack)
 		ImGuiWindowFlags_AlwaysAutoResize |
 		ImGuiWindowFlags_NoSavedSettings |
 		ImGuiWindowFlags_NoBackground;
+
+
+	// Keep this at the bottom
+	if (!m_isSingleplayer) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.
+	}
 }
 
 GameState::~GameState() {
@@ -713,8 +721,10 @@ bool GameState::update(float dt, float alpha) {
 bool GameState::fixedUpdate(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
-	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | "
+#ifdef DEVELOPMENT
+	m_app->getWindow()->setWindowTitle("S.P.L.A.S.H2O | Development | "
 		+ Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
+#endif
 
 	static float counter = 0.0f;
 	static float size = 1.0f;
@@ -884,7 +894,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
-	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
 	runSystem(dt, m_componentSystems.candleThrowingSystem);
 	runSystem(dt, m_componentSystems.candleHealthSystem);
@@ -913,8 +922,17 @@ void GameState::updatePerTickComponentSystems(float dt) {
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
 	m_componentSystems.sprintingSystem->update(dt, alpha);
+
+
+	m_componentSystems.gameInputSystem->processMouseInput(dt);
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamAnimationSystem->updatePerFrame();
+	} else {
+		m_componentSystems.animationSystem->update(dt);
+		m_componentSystems.animationSystem->updatePerFrame();
+	}
 	// Updates keyboard/mouse input and the camera
-	m_componentSystems.gameInputSystem->update(dt, alpha);
+	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 	m_componentSystems.spectateInputSystem->update(dt, alpha);
 
 	// There is an imgui debug toggle to override lights
@@ -936,11 +954,6 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 	
-	if (m_isInKillCamMode) {
-		m_componentSystems.killCamAnimationSystem->updatePerFrame();
-	} else {
-		m_componentSystems.animationSystem->updatePerFrame();
-	}
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
 
