@@ -22,6 +22,9 @@
 
 #include "Sail/events/EventDispatcher.h"
 
+#include "Sail/graphics/camera/CameraController.h"
+
+
 //#define _LOG_TO_FILE
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 #include <fstream>
@@ -52,14 +55,23 @@ void KillCamReceiverSystem::stop() {
 	m_currentWriteInd = 0;
 	m_currentReadInd  = 1;
 	m_hasStarted      = false;
-	m_idOfKiller      = 0;
-	m_idOfKillingProjectile = 0;
+	m_idOfKiller      = Netcode::UNINITIALIZED;
+	m_idOfKillingProjectile = Netcode::UNINITIALIZED;
 	m_killerPlayer = nullptr;
 	m_killerProjectile = nullptr;
+	m_trackingProjectile = false;
+	m_cam = nullptr;
+
+	m_projectilePos = { 0,0,0 };
+	m_killerHeadPos = { 0,0,0 };
 }
 
-void KillCamReceiverSystem::init(Netcode::PlayerID player) {
+void KillCamReceiverSystem::init(Netcode::PlayerID player, Camera* cam) {
 	initBase(player);
+
+	if (m_cam == nullptr) {
+		m_cam = SAIL_NEW CameraController(cam);
+	}
 }
 
 void KillCamReceiverSystem::handleIncomingData(const std::string& data) {
@@ -91,23 +103,53 @@ void KillCamReceiverSystem::update(float dt) {
 }
 
 void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
-	// only update the camera's position if a player killed us
-	//if (m_idOfKillingProjectile != Netcode::N)
-
-
+	// Helper function
 	auto interpolate = [](float prev, float current, float alpha) {
 		return (alpha * current) + ((1.0f - alpha) * prev);
 	};
 
-	for (auto e : entities) {
-		AnimationComponent* animation = e->getComponent<AnimationComponent>();
-		//BoundingBoxComponent* playerBB  = e->getComponent<BoundingBoxComponent>();
-		TransformComponent* transform = e->getComponent<TransformComponent>();
+	// only update the camera's position if a player killed us
+	if (m_idOfKillingProjectile == Netcode::UNINITIALIZED || m_killerPlayer == nullptr) {
+		return;
+	}
 
-		const glm::vec3 finalPos = transform->getRenderMatrix(alpha) * glm::vec4(animation->headPositionLocalCurrent, 1.f);
-		const glm::vec3 camPos = glm::vec3(finalPos);
+	static bool TEST = true;
 
-		m_cam->setCameraPosition(camPos);
+	AnimationComponent* animation = m_killerPlayer->getComponent<AnimationComponent>();
+	//BoundingBoxComponent* playerBB  = e->getComponent<BoundingBoxComponent>();
+	TransformComponent* transform = m_killerPlayer->getComponent<TransformComponent>();
+
+	if (m_killerPlayer != nullptr) {
+		m_killerHeadPos = transform->getRenderMatrix(alpha) * glm::vec4(animation->headPositionLocalCurrent, 1.f);
+	}
+
+
+	if (m_trackingProjectile) {
+		// Follow the killing piece of water in slow motion
+		if (m_killerProjectile != nullptr) {
+			m_projectilePos = m_killerProjectile->getComponent<TransformComponent>()->getInterpolatedTranslation(alpha);
+		}
+
+
+		if (TEST) {
+			SAIL_LOG("H: x: " + std::to_string(m_killerHeadPos.x) + "\ty: " + std::to_string(m_killerHeadPos.y) + "\tz: " + std::to_string(m_killerHeadPos.z));
+			SAIL_LOG("P: x: " + std::to_string(m_projectilePos.x) + "\ty: " + std::to_string(m_projectilePos.y) + "\tz: " + std::to_string(m_projectilePos.z));
+			SAIL_LOG("D: " + std::to_string(glm::distance(m_killerHeadPos, m_projectilePos)));
+
+			TEST = false;
+		}
+
+		const glm::vec3 headToProjectile = m_projectilePos - m_killerHeadPos;
+		//const glm::vec3 lookAt = m_projectilePos - headToProjectile;
+		const glm::vec3 camDir = glm::normalize(headToProjectile);
+		const glm::vec3 cameraPos = m_projectilePos - (0.7f * camDir) + glm::vec3(0.f, 0.3f, 0.f);
+
+		m_cam->setCameraPosition(cameraPos);
+		m_cam->setCameralookAt(m_projectilePos);
+		//m_cam->setCameraDirection(camDir);
+	} else {
+		// Show the killer's perspective
+		m_cam->setCameraPosition(m_killerHeadPos);
 
 		const glm::quat rot = glm::angleAxis(-interpolate(animation->prevPitch, animation->pitch, alpha), glm::vec3(1, 0, 0));
 		const glm::quat rotated = glm::normalize(rot * transform->getInterpolatedRotation(alpha));
@@ -115,8 +157,8 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 		const glm::vec3 forwards = rotated * glm::vec3(0.f, 0.f, 1.f);
 
 		m_cam->setCameraDirection(forwards);
-
 	}
+
 }
 
 // Should only be called when the killcam is active
@@ -176,6 +218,15 @@ unsigned int KillCamReceiverSystem::getByteSize() const {
 void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
 		e->queueDestruction();
+		
+		if (entityID == m_idOfKillingProjectile) {
+			m_killerProjectile = nullptr;
+		}
+
+		if (entityID == m_idOfKiller) {
+			m_killerPlayer = nullptr;
+		}
+
 		return;
 	}
 	SAIL_LOG_WARNING("destoryEntity called but no matching entity found");
@@ -373,6 +424,7 @@ void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	// Start the slow motion when the killing projectile spawns
 	if (info.projectileID == m_idOfKillingProjectile) {
 		m_slowMotionState = SlowMotionSetting::ENABLE;
+		m_trackingProjectile = true;
 		m_killerProjectile = e.get();
 	}
 }

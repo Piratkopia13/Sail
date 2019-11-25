@@ -555,7 +555,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 
 	// Create systems needed for the killcam
-	m_componentSystems.killCamReceiverSystem->init(playerID);
+	m_componentSystems.killCamReceiverSystem->init(playerID, &m_cam);
 	
 	m_componentSystems.killCamAnimationSystem             = ECS::Instance()->createSystem<AnimationSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamCameraSystem                = ECS::Instance()->createSystem<KillCamCameraSystem>();
@@ -975,7 +975,8 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	
 	if (m_isInKillCamMode) {
 		m_componentSystems.killCamAnimationSystem->updatePerFrame();
-		m_componentSystems.killCamCameraSystem->update(dt, killCamAlpha);
+		//m_componentSystems.killCamCameraSystem->update(dt, killCamAlpha);
+		m_componentSystems.killCamReceiverSystem->updatePerFrame(dt, killCamAlpha);
 	} else {
 		m_componentSystems.animationSystem->updatePerFrame();
 	}

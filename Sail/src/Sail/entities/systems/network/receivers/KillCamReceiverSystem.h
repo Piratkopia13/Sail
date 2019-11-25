@@ -12,18 +12,20 @@
 class GameState;
 class NetworkSenderSystem;
 class GameDataTracker;
+class Camera;
+class CameraController;
 
 class KillCamReceiverSystem : public ReceiverBase, public EventReceiver {
 public:
 	// Packets from the past five seconds are saved so that they can be replayed in the killcam.
 	static constexpr size_t REPLAY_BUFFER_SIZE = TICKRATE * 5;
-	static constexpr size_t SLOW_MO_MULTIPLIER = 10;
+	static constexpr size_t SLOW_MO_MULTIPLIER = 20;
 
 public:
 	KillCamReceiverSystem();
 	virtual ~KillCamReceiverSystem();
 
-	void init(Netcode::PlayerID player);
+	void init(Netcode::PlayerID player, Camera* cam);
 	void handleIncomingData(const std::string& data) override;
 	void update (float dt) override;
 	void updatePerFrame(float dt, float alpha);
@@ -116,11 +118,17 @@ private:
 	size_t m_killCamTickCounter = 0; // Counts ticks in the range [ 0, SLOW_MO_MULTIPLIER )
 
 
-	Netcode::ComponentID m_idOfKillingProjectile = 0;
-	Netcode::ComponentID m_idOfKiller = 0;
+	Netcode::ComponentID m_idOfKillingProjectile = Netcode::UNINITIALIZED;
+	Netcode::ComponentID m_idOfKiller = Netcode::UNINITIALIZED;
 
 	Entity* m_killerPlayer = nullptr;
 	Entity* m_killerProjectile = nullptr;
+	bool m_trackingProjectile = false;
+
+	CameraController* m_cam = nullptr; //TODO: initialize
+
+	glm::vec3 m_projectilePos = { 0,0,0 };
+	glm::vec3 m_killerHeadPos = { 0,0,0 };
 
 private:
 	// Helper functions
