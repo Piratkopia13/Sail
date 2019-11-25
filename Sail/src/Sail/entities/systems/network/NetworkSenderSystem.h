@@ -37,7 +37,7 @@ public:
 #endif
 
 private:
-	void writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar);
+	void writeMessageToArchive(const Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar);
 	void writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive& ar);
 	
 private:
