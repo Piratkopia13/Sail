@@ -24,8 +24,9 @@ ParticleSystem::ParticleSystem() {
 }
 
 ParticleSystem::~ParticleSystem() {
-	for (auto& emitter : m_emitters) {
-		delete[] emitter.second.physicsBufferDefaultHeap;
+	for (auto& it : m_emitters) {
+		auto& emitter = it.second;
+		delete[] emitter.physicsBufferDefaultHeap;
 	}
 }
 
@@ -61,9 +62,10 @@ void ParticleSystem::update(float dt) {
 			it.second.isDead = true;
 		}
 	}
-	// Remove from m_emitters those which are dead and is not in use by any renderers/not used for 4 frames
+	// Remove from m_emitters those which are dead and is not in use by any renderers/not used for 2 frames
 	for (auto& it = std::begin(m_emitters); it != std::end(m_emitters);) {
-		if (it->second.framesDead >= 4) {
+		if (it->second.framesDead >= 2) {
+			delete[] it->second.physicsBufferDefaultHeap;
 			it = m_emitters.erase(it);
 		} else {
 			++it;
