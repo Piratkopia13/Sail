@@ -718,7 +718,7 @@ bool GameState::update(float dt, float alpha) {
 	m_killFeedWindow.updateTiming(dt);	
 	waitForOtherPlayers();
 
-	//Don't update game if game have not started. This is to sync all players to start at the same time
+	// Don't update game if game have not started. This is to sync all players to start at the same time
 	if (!m_gameStarted) {
 		return true;
 	}
@@ -768,7 +768,6 @@ bool GameState::fixedUpdate(float dt) {
 	}
 	
 	updatePerTickComponentSystems(dt);
-
 
 	return true;
 }
@@ -949,7 +948,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
 	m_componentSystems.sprintingSystem->update(dt, alpha);
-
 
 	m_componentSystems.gameInputSystem->processMouseInput(dt);
 	if (m_isInKillCamMode) {
