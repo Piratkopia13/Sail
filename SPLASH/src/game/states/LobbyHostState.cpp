@@ -15,12 +15,3 @@ LobbyHostState::LobbyHostState(StateStack& stack)
 LobbyHostState::~LobbyHostState() {
 
 }
-
-bool LobbyHostState::onMyTextInput(const ChatSent& event) {
-		Message temp{ NWrapperSingleton::getInstance().getMyPlayer().id, m_message };
-		addMessageToChat(temp);
-		m_network->sendChatMsg(m_message);
-
-
-	return true;
-}

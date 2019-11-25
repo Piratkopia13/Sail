@@ -62,6 +62,11 @@ struct GameOnLanDescription {
 	States::ID currentState;
 };
 
+struct Message {
+	Netcode::PlayerID senderID;
+	std::string content;
+};
+
 class NWrapper : public NetworkEventHandler {
 public:
 	NWrapper(Network* pNetwork);
