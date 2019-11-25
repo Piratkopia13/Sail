@@ -91,6 +91,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 }
 
 Application::~Application() {
+	m_settingStorage.saveToFile("res/data/settings.saildata");
 	delete Input::GetInstance();
 }
 
