@@ -114,6 +114,7 @@ private:
 	// All the messages that have been sent/received over the network in the past few seconds
 	// Will be used like a ring buffer
 	std::array<std::queue<std::string>, REPLAY_BUFFER_SIZE> m_replayData;
+	std::array<std::vector<Netcode::ComponentID>, REPLAY_BUFFER_SIZE> m_notHoldingTorches;
 	std::mutex m_replayDataLock;
 
 	size_t m_currentWriteInd = 0;

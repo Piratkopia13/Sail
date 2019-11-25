@@ -49,7 +49,7 @@ GameState::GameState(StateStack& stack)
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
-	m_gameStarted = m_isSingleplayer; //Delay gamestart untill everyOne is ready if playing multiplayer
+	m_gameStarted = m_isSingleplayer; //Delay start of game until everyOne is ready if playing multiplayer
 	
 
 

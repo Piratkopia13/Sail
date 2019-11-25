@@ -38,11 +38,13 @@ KillCamReceiverSystem::KillCamReceiverSystem() : ReceiverBase() {
 
 	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
 	EventDispatcher::Instance().subscribe(Event::Type::TOGGLE_SLOW_MOTION, this);
+	EventDispatcher::Instance().subscribe(Event::Type::TORCH_NOT_HELD, this);
 }
 
 KillCamReceiverSystem::~KillCamReceiverSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_SLOW_MOTION, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::TORCH_NOT_HELD, this);
 }
 
 void KillCamReceiverSystem::stop() {
@@ -50,6 +52,11 @@ void KillCamReceiverSystem::stop() {
 	for (std::queue<std::string>& data : m_replayData) {
 		data = std::queue<std::string>();
 	}
+
+	for (std::vector<Netcode::ComponentID>& data : m_notHoldingTorches) {
+		data.clear();
+	}
+
 
 	m_slowMotionState = SlowMotionSetting::DISABLE;
 	m_currentWriteInd = 0;
@@ -96,9 +103,11 @@ void KillCamReceiverSystem::update(float dt) {
 		std::lock_guard<std::mutex> lock(m_replayDataLock);
 
 		m_currentWriteInd = ++m_currentWriteInd % REPLAY_BUFFER_SIZE;
-		m_currentReadInd  = ++m_currentReadInd  % REPLAY_BUFFER_SIZE;
+		m_currentReadInd = ++m_currentReadInd % REPLAY_BUFFER_SIZE;
 
-		m_replayData[m_currentWriteInd] = std::queue<std::string>(); // Clear the current write-position's queue in the ring buffer
+		// Clear the current write-position's queue in the ring buffer
+		m_replayData[m_currentWriteInd] = std::queue<std::string>();
+		m_notHoldingTorches[m_currentWriteInd].clear();
 	}
 }
 
@@ -116,7 +125,6 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 	static bool TEST = true;
 
 	AnimationComponent* animation = m_killerPlayer->getComponent<AnimationComponent>();
-	//BoundingBoxComponent* playerBB  = e->getComponent<BoundingBoxComponent>();
 	TransformComponent* transform = m_killerPlayer->getComponent<TransformComponent>();
 
 	if (m_killerPlayer != nullptr) {
@@ -174,17 +182,26 @@ void KillCamReceiverSystem::processReplayData(float dt) {
 		const Netcode::PlayerID killerID = Netcode::getComponentOwner(m_idOfKillingProjectile);
 
 		for (auto e : entities) {
+			const Netcode::ComponentID compID = e->getComponent<ReplayReceiverComponent>()->m_id;
+			
 			e->tryToAddToSystems = true;
 			e->addComponent<RenderInReplayComponent>();
 
 
-			if (e->hasComponent<PlayerComponent>()
-				&& killerID == Netcode::getComponentOwner(e->getComponent<ReplayReceiverComponent>()->m_id)) 
-			{
-				e->addComponent<KillerComponent>();
-				m_killerPlayer = e;
+			if (e->hasComponent<PlayerComponent>()) {
+				if (killerID == Netcode::getComponentOwner(compID)) {
+					e->addComponent<KillerComponent>();
+					m_killerPlayer = e;
 
-				SAIL_LOG("I was killed by: " + NWrapperSingleton::getInstance().getPlayer(killerID)->name);
+					SAIL_LOG("I was killed by: " + NWrapperSingleton::getInstance().getPlayer(killerID)->name);
+				}
+
+				// Put torches where they were at that point in time
+				for (Netcode::ComponentID& notHolding : m_notHoldingTorches[m_currentReadInd]) {
+					if (compID == notHolding) {
+						setCandleState(compID, false);
+					}
+				}
 			}
 		}
 		m_hasStarted = true;
@@ -557,10 +574,16 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 		m_slowMotionState = e.setting;
 	};
 
+	auto onTorchNotHeld = [&](const TorchNotHeldEvent& e) {
+		if (!m_hasStarted) {
+			m_notHoldingTorches[m_currentWriteInd].push_back(e.netCompID);
+		}
+	};
 
 	switch (event.type) {
 	case Event::Type::PLAYER_DEATH:       onPlayerDeath((const PlayerDiedEvent&)event); break;
 	case Event::Type::TOGGLE_SLOW_MOTION: onToggleSlowMotion((const ToggleSlowMotionReplayEvent&)event); break;
+	case Event::Type::TORCH_NOT_HELD:     onTorchNotHeld((const TorchNotHeldEvent&)event); break;
 	default: break;
 	}
 
