@@ -43,6 +43,10 @@ public:
 		}
 	}
 
+	float getKillCamDelta(const float delta) const {
+		return (m_slowMotionState == SlowMotionSetting::ENABLE) ? (delta / SLOW_MO_MULTIPLIER) : delta;
+	}
+
 	// If slow motion is enabled only update once every SLOW_MO_MULTIPLIER ticks
 	bool skipUpdate() {
 		m_killCamTickCounter = (m_killCamTickCounter + 1) % SLOW_MO_MULTIPLIER;

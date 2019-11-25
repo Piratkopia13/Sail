@@ -965,7 +965,7 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
 	m_componentSystems.killCamMovementSystem->update(dt);
 	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
-	m_componentSystems.killCamAnimationSystem->update(dt);
+	//m_componentSystems.killCamAnimationSystem->update(dt);
 }
 
 // HERE BE DRAGONS
@@ -1023,6 +1023,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	const float killCamAlpha = m_componentSystems.killCamReceiverSystem->getKillCamAlpha(alpha);
+	const float killCamDelta = m_componentSystems.killCamReceiverSystem->getKillCamDelta(dt);
 
 	// TODO? move to its own thread
 	m_componentSystems.sprintingSystem->update(dt, alpha);
@@ -1030,6 +1031,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 
 	m_componentSystems.gameInputSystem->processMouseInput(dt);
 	if (m_isInKillCamMode) {
+		m_componentSystems.killCamAnimationSystem->update(killCamDelta);
 		m_componentSystems.killCamAnimationSystem->updatePerFrame();
 	} else {
 		m_componentSystems.animationSystem->update(dt);
