@@ -37,7 +37,6 @@
 
 AudioEngine::AudioEngine() {
 	HRESULT hr;
-	//hr = CoInitialize(nullptr);
 	hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
 #pragma region ERROR_CHECKING
