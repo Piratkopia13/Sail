@@ -72,6 +72,7 @@ private:
 	Entity* m_gameMusic = nullptr;
 	Entity* m_ambiance = nullptr;
 	bool m_readyRestartAmbiance = false;
+	bool m_ambianceIsStarting = false;
 	Systems m_componentSystems;
 	LightSetup m_lights;
 	Profiler m_profiler;

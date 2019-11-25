@@ -63,6 +63,14 @@ AudioEngine::~AudioEngine() {
 	for (auto& e : m_sound) {
 		e.xapo.ReleaseAndGetAddressOf();
 	}
+
+	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		m_isStreaming[i] = false;
+		m_isStreamPaused[i] = false;
+		m_isFinished[i] = true;
+		m_overlapped[i] = { 0 };
+		m_streamLocks[i].store(false);
+	}
 }
 
 void AudioEngine::loadSound(const std::string& filename) {
@@ -344,6 +352,13 @@ void AudioEngine::stopSpecificStream(int index) {
 	}
 }
 
+void AudioEngine::pause_unpause_AllStreams(bool pauseTRUE_unpauseFALSE)
+{
+	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		this->m_isStreamPaused[i] = pauseTRUE_unpauseFALSE;
+	}
+}
+
 void AudioEngine::stopAllStreams() {
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
 		m_isStreaming[i] = false;
@@ -478,6 +493,7 @@ void AudioEngine::initialize() {
 		std::cout << "SOURCE-V #4\n";
 		m_stream[i].sourceVoice = nullptr;
 		m_isStreaming[i] = false;
+		m_isStreamPaused[i] = false;
 		m_isFinished[i] = true;
 		m_overlapped[i] = { 0 };
 		m_streamLocks[i].store(false);
@@ -748,13 +764,14 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 			// Reading from the file (when time-since-last-read has passed threshold)
 			while ((currentPosition < metadata.lengthBytes) && m_isStreaming[myIndex]) {
-				if (GetAsyncKeyState(VK_ESCAPE)) {
-					m_isStreaming[myIndex] = false;
-					while (GetAsyncKeyState(VK_ESCAPE) && m_isStreaming[myIndex]) {
-						Sleep(10);
-					}
-					break;
-				}
+				while (m_isStreamPaused[myIndex]); // Wait while paused
+				//if (GetAsyncKeyState(VK_ESCAPE)) {
+				//	m_isStreaming[myIndex] = false;
+				//	while (GetAsyncKeyState(VK_ESCAPE) && m_isStreaming[myIndex]) {
+				//		Sleep(10);
+				//	}
+				//	break;
+				//}
 
 				DWORD cbValid = std::min(STREAMING_BUFFER_SIZE, static_cast<int>(metadata.lengthBytes - static_cast<UINT32>(currentPosition)));
 				m_overlapped[myIndex].Offset = metadata.offsetBytes + currentPosition;
@@ -850,14 +867,13 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 	//
 	if (m_stream[myIndex].sourceVoice != nullptr) {
 		m_stream[myIndex].sourceVoice->Stop();
-		m_stream[myIndex].sourceVoice->DestroyVoice();
+		//m_stream[myIndex].sourceVoice->DestroyVoice();
 		std::cout << "SOURCE-V #5 - " << m_stream[myIndex].filename <<"\n";
 		m_stream[myIndex].sourceVoice = nullptr;
 		CloseHandle(m_overlapped[myIndex].hEvent);
 	}
 
 	m_isFinished[myIndex] = true;
-	m_streamLocks[myIndex].store(false);
 }
 
 //--------------------------------------------------------------------------------------

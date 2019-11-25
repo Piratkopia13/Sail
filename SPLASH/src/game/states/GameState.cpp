@@ -23,6 +23,7 @@
 #include "API/DX12/DX12API.h"
 #include "API/DX12/renderer/DX12HybridRaytracerRenderer.h"
 #include "API/DX12/dxr/DXRBase.h"
+#include "../Sail/src/API/Audio/AudioEngine.h"
 
 
 GameState::GameState(StateStack& stack)
@@ -287,22 +288,28 @@ bool GameState::processInput(float dt) {
 #endif
 
 	// Unpause Game
-	if (m_readyRestartAmbiance)
-	{
-		// Once all streaming has stopped, the first stream request is ignored BY THE SOUND API...
-		//m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
-		// ... so we sent a request to start which won't work (and then a stop request for safety's sake)...
-		//m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", false, 1.0f, false, true);
-		// ... and now a second request that WILL be registered. 100% of the time it works every time.
-		m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
-		m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
+	if (m_readyRestartAmbiance) {
+		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(false);
+		m_ambianceIsStarting = true;
 		m_readyRestartAmbiance = false;
 	}
+
+	//if (m_ambiance->getComponent<AudioComponent>()->m_currentlyStreaming.front().first != "res/sounds/ambient/ambiance_lab.xwb")
+	//{
+	//	// Once all streaming has stopped, the first stream request is ignored BY THE SOUND API...
+	//	//m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
+	//	// ... so we sent a request to start which won't work (and then a stop request for safety's sake)...
+	//	//m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", false, 1.0f, false, true);
+	//	// ... and now a second request that WILL be registered. 100% of the time it works every time.
+	//	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
+	//	//m_ambianceIsStarting = false;
+	//}
 
 	// Pause game
 	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::SHOW_IN_GAME_MENU)) {
 		m_readyRestartAmbiance = true;
-		ECS::Instance()->getSystem<AudioSystem>()->stop();
+		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(true);
+		//ECS::Instance()->getSystem<AudioSystem>()->stop();
 		requestStackPush(States::InGameMenu);
 	}
 

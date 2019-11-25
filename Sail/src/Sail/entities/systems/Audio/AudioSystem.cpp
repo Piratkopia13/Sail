@@ -334,6 +334,7 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 }
 
 void AudioSystem::stop() {
+	m_audioEngine->pause_unpause_AllStreams(false);
 	m_audioEngine->stopAllStreams();
 	m_audioEngine->pauseAllSounds();
 
@@ -344,7 +345,6 @@ void AudioSystem::stop() {
 		audioC->m_streamingRequests.clear();
 	}
 }
-
 int AudioSystem::randomASoundIndex(int soundPoolSize, Audio::SoundInfo_General* soundGeneral) {
 	int randomSoundIndex = -1;
 
