@@ -714,7 +714,7 @@ bool GameState::fixedUpdate(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
 #ifdef DEVELOPMENT
-	m_app->getWindow()->setWindowTitle("S.P.L.A.S.H.2.O | Development | "
+	m_app->getWindow()->setWindowTitle("S.P.L.A.S.H2O | Development | "
 		+ Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
 #endif
 
