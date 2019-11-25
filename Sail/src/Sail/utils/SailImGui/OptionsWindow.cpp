@@ -96,35 +96,39 @@ void OptionsWindow::renderWindow() {
 		if (ImGui::SliderFloat(std::string("##"+settingName).c_str(), &dopt->value, dopt->minVal, dopt->maxVal, "%.1f")) {
 		}
 	}
-	ImVec4 col (
-			dynamic["Crosshair"]["Color R"].value,
-			dynamic["Crosshair"]["Color G"].value,
-			dynamic["Crosshair"]["Color B"].value,
-			dynamic["Crosshair"]["Color A"].value
-	);
+	//ImVec4 col (
+	//		dynamic["Crosshair"]["ColorR"].value,
+	//		dynamic["Crosshair"]["ColorG"].value,
+	//		dynamic["Crosshair"]["ColorB"].value,
+	//		dynamic["Crosshair"]["ColorA"].value
+	//);
+	//
+	//ImGui::Text("Color");
+	//ImGui::SameLine(x[0]);
+	////ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - x[0]);
+	//ImGui::ColorButton("##ColorPickerasd", col);
+	//dynamic["Crosshair"]["ColorR"].setValue(col.x);
+	//dynamic["Crosshair"]["ColorG"].setValue(col.y);
+	//dynamic["Crosshair"]["ColorB"].setValue(col.z);
+	//dynamic["Crosshair"]["ColorA"].setValue(col.z);
+	
+	float color[4] = {
+		dynamic["Crosshair"]["ColorR"].value,
+		dynamic["Crosshair"]["ColorG"].value,
+		dynamic["Crosshair"]["ColorB"].value,
+		dynamic["Crosshair"]["ColorA"].value
+	};
 
 	ImGui::Text("Color");
 	ImGui::SameLine(x[0]);
-	//ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - x[0]);
-	ImGui::ColorButton("##ColorPickerasd", col);
-
-		dynamic["Crosshair"]["Color R"].setValue(col.x);
-		dynamic["Crosshair"]["Color G"].setValue(col.y);
-		dynamic["Crosshair"]["Color B"].setValue(col.z);
-		dynamic["Crosshair"]["Color A"].setValue(col.z);
+	ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - x[0]);
+	if (ImGui::ColorPicker4("##ASDAS", color)) {
 	
-
-
-	//ImGui::Text("Color");
-	//ImGui::SameLine(x[0]);
-	//ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - x[0]);
-	//if (ImGui::ColorPicker4("##ASDAS", color)) {
-	//
-	//	dynamic["Crosshair"]["Color R"].setValue(color[0]);
-	//	dynamic["Crosshair"]["Color G"].setValue(color[1]);
-	//	dynamic["Crosshair"]["Color B"].setValue(color[2]);
-	//	dynamic["Crosshair"]["Color A"].setValue(color[3]);
-	//}
+		dynamic["Crosshair"]["ColorR"].setValue(color[0]);
+		dynamic["Crosshair"]["ColorG"].setValue(color[1]);
+		dynamic["Crosshair"]["ColorB"].setValue(color[2]);
+		dynamic["Crosshair"]["ColorA"].setValue(color[3]);
+	}
 
 
 
