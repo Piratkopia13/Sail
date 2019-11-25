@@ -171,7 +171,7 @@ void NWrapperSingleton::setNSS(NetworkSenderSystem* NSS_) {
 }
 
 void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* data, bool alsoSendToSelf) {
-	if (type < Netcode::MessageType::CREATE_NETWORKED_PLAYER || Netcode::MessageType::COUNT < type) {
+	if (type < Netcode::MessageType::DESTROY_ENTITY || Netcode::MessageType::COUNT < type) {
 		SAIL_LOG_ERROR("TRIED TO QUEUE AN INVALID EVENT: (" + std::to_string((int)type) + ")");
 	}
 

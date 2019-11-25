@@ -55,7 +55,6 @@ public:
 	}
 #endif
 private:
-	void createPlayer    (const PlayerComponentInfo& info, const glm::vec3& pos)                  override;
 	void destroyEntity   (const Netcode::ComponentID entityID)                                    override;
 	void enableSprinklers()                                                                       override;
 	void endMatch        (const GameDataForOthersInfo& info)                                      override;

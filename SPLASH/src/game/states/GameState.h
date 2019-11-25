@@ -83,6 +83,7 @@ private:
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
 	InGameGui m_inGameGui;
+	ImGuiWindowFlags m_standaloneButtonflags;
 	NetworkInfoWindow m_networkInfoImGuiWindow;
 
 	size_t m_currLightIndex;

@@ -90,6 +90,8 @@ void ProjectileSystem::update(float dt) {
 		// The projectile owner is responsible for destroying their own projectiles
 		if (collidedThisTick && !e->isAboutToBeDestroyed() && e->hasComponent<LocalOwnerComponent>() && Utils::rnd() < DESTRUCTION_PROBABILITY) {
 			e->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::DESTROY_ENTITY);
+			
+			// This is fine since NetworkSenderSystem will run before EntityRemovalSystem
 			e->queueDestruction();
 		}
 

@@ -173,22 +173,6 @@ unsigned int KillCamReceiverSystem::getByteSize() const {
 }
 #endif
 
-void KillCamReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
-	//// Early exit if the entity already exists
-	//if (findFromNetID(info.playerCompID)) {
-	//	return;
-	//}
-
-	//auto e = ECS::Instance()->createEntity("networkedEntity");
-	//instantAddEntity(e.get());
-
-	//SAIL_LOG("Created player with id: " + std::to_string(info.playerCompID));
-
-	//// lightIndex set to 999, can probably be removed since it no longer seems to be used
-	//EntityFactory::CreateOtherPlayer(e, info.playerCompID, info.candleID, info.gunID, 999, pos);
-
-}
-
 void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
 		e->queueDestruction();
