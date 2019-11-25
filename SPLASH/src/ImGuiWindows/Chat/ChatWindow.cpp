@@ -112,11 +112,11 @@ void ChatWindow::renderChat(float dt) {
 	}
 
 	ImVec4 borderCol(ImGui::GetStyleColorVec4(ImGuiCol_Border));
-	borderCol.z* m_backgroundOpacityMul;
+	borderCol.z*= m_backgroundOpacityMul;
 	ImGui::PushStyleColor(ImGuiCol_Border, borderCol);
 
 	ImVec4 bgCol(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
-	bgCol.z* m_backgroundOpacityMul;
+	bgCol.z*= m_backgroundOpacityMul;
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, bgCol);
 
 	if (ImGui::Begin("##CHATWINDOW", nullptr, chatFlags)) {
@@ -185,7 +185,7 @@ void ChatWindow::renderChat(float dt) {
 
 		// TEXTINPUT
 		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.9f);
-		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha + 0.5f);
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha + 0.3f);
 		if (ImGui::InputTextWithHint("##ChatInput", (focus ? "" : "Press enter to chat"), buf, m_messageSizeLimit, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			m_message = buf;
 			if (m_message != "" && releasedEnter) {
