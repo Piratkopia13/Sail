@@ -9,7 +9,7 @@
 #include "states/SplashScreenState.h"
 
 Game::Game(HINSTANCE hInstance)
-	: Application(1280, 720, "S.P.L.A.S.H.2.O", hInstance)
+	: Application(1280, 720, "S.P.L.A.S.H2O", hInstance)
 	, m_stateStack()
 	
 {
@@ -17,9 +17,9 @@ Game::Game(HINSTANCE hInstance)
 	registerStates(); 
 
 #ifdef DEVELOPMENT
-	Application::getInstance()->getWindow()->setWindowTitle("S.P.L.A.S.H.2.O | Development");
+	Application::getInstance()->getWindow()->setWindowTitle("S.P.L.A.S.H2O | Development");
 #else
-	Application::getInstance()->getWindow()->setWindowTitle("S.P.L.A.S.H.2.O");
+	Application::getInstance()->getWindow()->setWindowTitle("S.P.L.A.S.H2O");
 #endif
 
 	// Set starting state
