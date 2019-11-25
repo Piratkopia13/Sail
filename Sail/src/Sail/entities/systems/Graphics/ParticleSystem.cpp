@@ -61,11 +61,10 @@ void ParticleSystem::update(float dt) {
 			it.second.isDead = true;
 		}
 	}
-	// Remove from m_emitters those which are dead and is not in use by any renderers
+	// Remove from m_emitters those which are dead and is not in use by any renderers/not used for 4 frames
 	for (auto& it = std::begin(m_emitters); it != std::end(m_emitters);) {
-		if (it->second.framesDead > 4) {
+		if (it->second.framesDead >= 4) {
 			it = m_emitters.erase(it);
-			SAIL_LOG("Emitter deleted!");
 		} else {
 			++it;
 		}
@@ -73,18 +72,18 @@ void ParticleSystem::update(float dt) {
 }
 
 void ParticleSystem::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm::vec3& cameraPos) {
+	// Increase dead frame count on dead emitters
+	for (auto& it : m_emitters) {
+		auto& emitterData = it.second;
+		if (emitterData.isDead) {
+			emitterData.framesDead++;
+		}
+	}
+
 	m_dispatcher->begin(cmdList);
 	for (auto& e : entities) {
 		auto* emitterComp = e->getComponent<ParticleEmitterComponent>();
 
-		// Increase dead frame count on dead emitters
-		if (m_emitters.find(e) != m_emitters.end()) {
-			auto& emitterData = m_emitters.at(e);
-			if (emitterData.isDead) {
-				emitterData.framesDead++;
-				SAIL_LOG("Increased emitter framesDead to " + std::to_string(emitterData.framesDead));
-			}
-		}
 		if (!emitterComp || !emitterComp->hasBeenCreatedInSystem()) {
 			continue;
 		}
