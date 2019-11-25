@@ -111,10 +111,12 @@ const int SettingStorage::teamColorIndex(const int team) {
 
 glm::vec3 SettingStorage::getColor(const int team) {
 	if (team < 12 && team >= -1) {
+		auto& gameSettingsD = gameSettingsDynamic["Color" + std::to_string(team)];
+
 		return glm::vec3(
-			gameSettingsDynamic["Color" + std::to_string(team)]["r"].value,
-			gameSettingsDynamic["Color" + std::to_string(team)]["g"].value,
-			gameSettingsDynamic["Color" + std::to_string(team)]["b"].value
+			gameSettingsD["r"].value,
+			gameSettingsD["g"].value,
+			gameSettingsD["b"].value
 		);
 	}
 	else {
@@ -141,35 +143,35 @@ void SettingStorage::createApplicationDefaultStructure() {
 }
 
 void SettingStorage::createApplicationDefaultGraphics() {
-	applicationSettingsStatic["graphics"] = std::unordered_map<std::string, Setting>();
-	applicationSettingsStatic["graphics"]["fullscreen"] = Setting(1, std::vector<Setting::Option>({
+	auto& applicationSettingsS = applicationSettingsStatic["graphics"] = std::unordered_map<std::string, Setting>();
+	applicationSettingsS["fullscreen"] = Setting(1, std::vector<Setting::Option>({
 		{ "on", 1.0f }, 
 		{ "off",0.0f } 
 	}));
-	applicationSettingsStatic["graphics"]["fxaa"] = Setting(1, std::vector<Setting::Option>({
+	applicationSettingsS["fxaa"] = Setting(1, std::vector<Setting::Option>({
 		{ "off", 0.0f },
 		{ "on", 1.0f },
 		}));
-	applicationSettingsStatic["graphics"]["bloom"] = Setting(1, std::vector<Setting::Option>({
+	applicationSettingsS["bloom"] = Setting(1, std::vector<Setting::Option>({
 		{ "off", 0.0f },
 		{ "on", 0.2f },
 		{ "all the bloom", 1.0f },
 	}));
-	applicationSettingsStatic["graphics"]["shadows"] = Setting(0, std::vector<Setting::Option>({
+	applicationSettingsS["shadows"] = Setting(0, std::vector<Setting::Option>({
 		{ "hard",0.0f },
 		{ "soft",1.0f }
 	}));
-	applicationSettingsStatic["graphics"]["water simulation"] = Setting(1, std::vector<Setting::Option>({
+	applicationSettingsS["water simulation"] = Setting(1, std::vector<Setting::Option>({
 		{ "off", 0.0f },
 		{ "on", 1.0f }
 	}));
 }
 void SettingStorage::createApplicationDefaultSound() {
-	applicationSettingsDynamic["sound"] = std::unordered_map<std::string, DynamicSetting>();
-	applicationSettingsDynamic["sound"]["global"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
-	applicationSettingsDynamic["sound"]["music"]   = DynamicSetting(1.0f, 0.0f, 1.0f);
-	applicationSettingsDynamic["sound"]["effects"] = DynamicSetting(1.0f, 0.0f, 1.0f);
-	applicationSettingsDynamic["sound"]["voices"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
+	auto& applicationSettingsD = applicationSettingsDynamic["sound"] = std::unordered_map<std::string, DynamicSetting>();
+	applicationSettingsD["global"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
+	applicationSettingsD["music"]   = DynamicSetting(1.0f, 0.0f, 1.0f);
+	applicationSettingsD["effects"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	applicationSettingsD["voices"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
 }
 void SettingStorage::createApplicationDefaultMisc() {
 	applicationSettingsStatic["misc"] = std::unordered_map<std::string, Setting>();
@@ -190,18 +192,20 @@ void SettingStorage::createGameDefaultStructure() {
 	createGameColorsDefault();
 }
 
-void SettingStorage::createGameDefaultMap() {	
-	gameSettingsDynamic["map"] = std::unordered_map<std::string, DynamicSetting>();
-	gameSettingsDynamic["map"]["sizeX"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
-	gameSettingsDynamic["map"]["sizeY"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
-	gameSettingsDynamic["map"]["tileSize"] =	DynamicSetting(7.0f, 1.0f, 30.0f);
-	gameSettingsDynamic["map"]["clutter"] = DynamicSetting(0.85f,	0.0f,	5.0f);
-	gameSettingsDynamic["map"]["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
-	gameSettingsDynamic["map"]["sprinklerTime"] = DynamicSetting(60.0f, 0.0f, 600.0f);
-	gameSettingsDynamic["map"]["sprinklerIncrement"] = DynamicSetting(10.0f, 5.0f, 300.0f);
+void SettingStorage::createGameDefaultMap() {
 
-	gameSettingsStatic["map"] = std::unordered_map<std::string, Setting>();
-	gameSettingsStatic["map"]["sprinkler"] = Setting(0, std::vector<Setting::Option>({
+
+	auto& gameSettingD = gameSettingsDynamic["map"] = std::unordered_map<std::string, DynamicSetting>();
+	gameSettingD["sizeX"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
+	gameSettingD["sizeY"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
+	gameSettingD["tileSize"] =	DynamicSetting(7.0f, 1.0f, 30.0f);
+	gameSettingD["clutter"] = DynamicSetting(0.85f,	0.0f,	5.0f);
+	gameSettingD["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
+	gameSettingD["sprinklerTime"] = DynamicSetting(60.0f, 0.0f, 600.0f);
+	gameSettingD["sprinklerIncrement"] = DynamicSetting(10.0f, 5.0f, 300.0f);
+
+	auto& gameSettingS = gameSettingsStatic["map"] = std::unordered_map<std::string, Setting>();
+	gameSettingS["sprinkler"] = Setting(0, std::vector<Setting::Option>({
 	{ "on", 0.0f },
 	{ "off",1.0f }
 		}));
@@ -210,16 +214,18 @@ void SettingStorage::createGameDefaultMap() {
 
 void SettingStorage::createGameModeDefault() {
 
-	gameSettingsStatic["gamemode"] = std::unordered_map<std::string, Setting>();
-	gameSettingsStatic["gamemode"]["types"] = Setting(0, std::vector<Setting::Option>({
+	auto& gameSettingsSGameMode = gameSettingsStatic["gamemode"] = std::unordered_map<std::string, Setting>();
+	auto& gameSettingsSTeams = gameSettingsStatic["Teams"] = std::unordered_map<std::string, Setting>();
+
+	gameSettingsSGameMode["types"] = Setting(0, std::vector<Setting::Option>({
 		{ "Deathmatch", 0.0f },
 		{ "Teamdeathmatch", 1.0f },
 	}));
-	gameSettingsStatic["Teams"]["Deathmatch"] = Setting(1, std::vector<Setting::Option>({
+	gameSettingsSTeams["Deathmatch"] = Setting(1, std::vector<Setting::Option>({
 		{ "Spectator", -1.0f },
 		{ "Alone", 0.0f },
 	}));
-	gameSettingsStatic["Teams"]["Teamdeathmatch"] = Setting(1, std::vector<Setting::Option>({
+	gameSettingsSTeams["Teamdeathmatch"] = Setting(1, std::vector<Setting::Option>({
 		{ "Spectator", -1.0f },
 		{ "Team1", 0.0f },
 		{ "Team2", 1.0f },
@@ -231,12 +237,13 @@ void SettingStorage::createGameModeDefault() {
 void SettingStorage::createGameColorsDefault() {
 	//gameSettingsDynamic["teamColor"] = std::unordered_map<std::string, DynamicSetting>()
 	//Spectator color
-	gameSettingsDynamic["Color" + std::to_string(-1)]["r"] = DynamicSetting(1.0f, 0.0f, 1.0f);
-	gameSettingsDynamic["Color" + std::to_string(-1)]["g"] = DynamicSetting(1.0f, 0.0f, 1.0f);
-	gameSettingsDynamic["Color" + std::to_string(-1)]["b"] = DynamicSetting(1.0f, 0.0f, 1.0f);
-	gameSettingsDynamic["Color" + std::to_string(-1)]["a"] = DynamicSetting(1.0f, 0.0f, 1.0f);
-	//player colors
+	auto& gameSettingsD = gameSettingsDynamic["Color" + std::to_string(-1)];
 
+	gameSettingsD["r"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	gameSettingsD["g"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	gameSettingsD["b"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	gameSettingsD["a"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	//player colors
 
 	std::vector<glm::vec3> col({
 		{183,23,33}, // red
@@ -258,10 +265,13 @@ void SettingStorage::createGameColorsDefault() {
 	for (unsigned int i = 0; i < 12; i++) {
 		float f = (i / 12.0f) * glm::two_pi<float>();
 		glm::vec4 color(abs(cos(f * 2)), 1 - abs(cos(f * 1.4)), abs(sin(f * 1.1f)), 1.0f);
-		gameSettingsDynamic["Color" + std::to_string(i)]["r"] = DynamicSetting(col[i].r / 255.0f, 0.0f, 1.0f);
-		gameSettingsDynamic["Color" + std::to_string(i)]["g"] = DynamicSetting(col[i].g / 255.0f, 0.0f, 1.0f);
-		gameSettingsDynamic["Color" + std::to_string(i)]["b"] = DynamicSetting(col[i].b / 255.0f, 0.0f, 1.0f);
-		gameSettingsDynamic["Color" + std::to_string(i)]["a"] = DynamicSetting(1, 0.0f, 1.0f);
+
+		auto& gameSettingsD = gameSettingsDynamic["Color" + std::to_string(i)];
+
+		gameSettingsD["r"] = DynamicSetting(col[i].r / 255.0f, 0.0f, 1.0f);
+		gameSettingsD["g"] = DynamicSetting(col[i].g / 255.0f, 0.0f, 1.0f);
+		gameSettingsD["b"] = DynamicSetting(col[i].b / 255.0f, 0.0f, 1.0f);
+		gameSettingsD["a"] = DynamicSetting(1, 0.0f, 1.0f);
 	}
 
 	//Spectators
