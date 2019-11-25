@@ -242,12 +242,19 @@ GameState::GameState(StateStack& stack)
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove |
 		ImGuiWindowFlags_NoNav |
-		ImGuiWindowFlags_NoBringToFrontOnFocus |
+		//ImGuiWindowFlags_NoBringToFrontOnFocus |
 		ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_AlwaysAutoResize |
 		ImGuiWindowFlags_NoSavedSettings |
 		ImGuiWindowFlags_NoBackground;
 
+	m_backgroundOnlyflags = ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoBringToFrontOnFocus;
 
 	// Keep this at the bottom
 	if (!m_isSingleplayer) {
@@ -693,6 +700,7 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 
 void GameState::onToggleKillCam(const ToggleKillCamEvent& event) {
 	m_isInKillCamMode = event.isActive;
+	m_wasKilledBy = "You were splashed by " + NWrapperSingleton::getInstance().getPlayer(event.killedBy)->name;
 	if (!m_isInKillCamMode) {
 		m_componentSystems.killCamReceiverSystem->stop();
 	}
@@ -837,20 +845,70 @@ bool GameState::renderImgui(float dt) {
 	//ImGui::End();
 	//ECS::Instance()->getSystem<AnimationSystem>()->updateHands(lPos, rPos, lRot, rRot);
 
-	int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
-	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchLeft.tga");
-	if (ImGui::Begin("TorchesLeft", nullptr, m_standaloneButtonflags)) {
-		for (int i = 0; i < nrOfTorchesLeft; i++) {
-			ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55));
-			ImGui::SameLine(0.f,0);	
+
+
+	if (m_isInKillCamMode) {
+		const unsigned int height = m_app->getWindow()->getWindowHeight() / 6;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.f, 0.f, 0.f, 0.7f));
+		if (ImGui::Begin("##KILLCAMBACKGROUNDTOP", nullptr, m_backgroundOnlyflags)) {
+			ImGui::SetWindowSize(ImVec2(m_app->getWindow()->getWindowWidth(), height));
+			ImGui::SetWindowPos(ImVec2(0, 0));
 		}
-		ImGui::SetWindowPos(ImVec2(
-			m_app->getWindow()->getWindowWidth()-ImGui::GetWindowSize().x,
-			m_app->getWindow()->getWindowHeight() - ImGui::GetWindowSize().y-110
+		ImGui::End();
+		ImGui::PopStyleColor(1);
+		ImGui::PopStyleVar(1);
+
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.f, 0.f, 0.f, 0.7f));
+		if (ImGui::Begin("##KILLCAMBACKGROUNDBOTTOM", nullptr, m_backgroundOnlyflags)) {
+
+			ImGui::SetWindowSize(ImVec2(m_app->getWindow()->getWindowWidth(), height));
+			ImGui::SetWindowPos(ImVec2(0, m_app->getWindow()->getWindowHeight() - height));
+		}
+		ImGui::End();
+		ImGui::PopStyleColor(1);
+		ImGui::PopStyleVar(1);
+
+		if (ImGui::Begin("##KILLCAMWINDOW", nullptr, m_standaloneButtonflags)) {
+			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb70"));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.f));
+			ImGui::Text("SPLASHCAM");
+			ImGui::PopStyleColor(1);
+			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, height / 2 - (ImGui::GetWindowSize().y / 2)));
+			ImGui::PopFont();
+		}
+		ImGui::End();
+
+
+		if (ImGui::Begin("##KILLCAMKILLEDBY", nullptr, m_standaloneButtonflags)) {
+			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb30"));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.f));
+			ImGui::Text(m_wasKilledBy.c_str());
+			ImGui::PopStyleColor(1);
+			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, m_app->getWindow()->getWindowHeight() - height / 2 - (ImGui::GetWindowSize().y / 2)));
+			ImGui::PopFont();
+		}
+		ImGui::End();
+	} else {
+		const int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
+		auto* imguiHandler = Application::getInstance()->getImGuiHandler();
+		Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchLeft.tga");
+		if (ImGui::Begin("TorchesLeft", nullptr, m_standaloneButtonflags)) {
+			for (int i = 0; i < nrOfTorchesLeft; i++) {
+				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55));
+				ImGui::SameLine(0.f, 0);
+			}
+			ImGui::SetWindowPos(ImVec2(
+				m_app->getWindow()->getWindowWidth() - ImGui::GetWindowSize().x,
+				m_app->getWindow()->getWindowHeight() - ImGui::GetWindowSize().y - 110
 			));
+		}
+		ImGui::End();
 	}
-	ImGui::End();
+
 
 	return false;
 }

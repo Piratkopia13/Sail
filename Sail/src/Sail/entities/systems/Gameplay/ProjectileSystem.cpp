@@ -19,7 +19,7 @@ ProjectileSystem::ProjectileSystem() {
 	registerComponent<MovementComponent>(true, true, true);
 	registerComponent<CandleComponent>(false, true, true);
 	registerComponent<NetworkReceiverComponent>(false, true, false);
-	registerComponent<LocalOwnerComponent>(false, true, false);
+	registerComponent<LocalOwnerComponent>(true, true, false); // Only do collisions for our own projectiles
 
 	float splashSize = 0.14f;
 	m_projectileSplashSize = (1.f / splashSize) / 2.f;
@@ -30,6 +30,8 @@ ProjectileSystem::~ProjectileSystem() {
 }
 
 void ProjectileSystem::update(float dt) {
+	std::vector<glm::vec3> pointsToSubmit;
+
 	for (auto& e : entities) {
 		CollisionComponent*  collisionComp = e->getComponent<CollisionComponent>();
 		ProjectileComponent* projComp      = e->getComponent<ProjectileComponent>();
@@ -40,6 +42,7 @@ void ProjectileSystem::update(float dt) {
 		for (auto& collision : projectileCollisions) {
 			collidedThisTick = true;
 			
+
 			// Check if a decal should be created
 			// TODO: Replace name with some "layer-id" check rather than doing a string check
 			if (glm::length(e->getComponent<MovementComponent>()->oldVelocity) > 0.7f
@@ -50,6 +53,8 @@ void ProjectileSystem::update(float dt) {
 
 				// Place water point at intersection position
 				Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(collision.intersectionPosition);
+
+				pointsToSubmit.push_back(collision.intersectionPosition);
 
 				projComp->timeSinceLastDecal = 0.f;
 			}
@@ -87,15 +92,29 @@ void ProjectileSystem::update(float dt) {
 			}
 		}
 
-		// The projectile owner is responsible for destroying their own projectiles
-		if (collidedThisTick && !e->isAboutToBeDestroyed() && e->hasComponent<LocalOwnerComponent>() && Utils::rnd() < DESTRUCTION_PROBABILITY) {
-			e->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::DESTROY_ENTITY);
+		if (collidedThisTick) {
+			// Tell other players to update this projectile's position and velocity
+			e->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::UPDATE_PROJECTILE_ONCE);
+
+			// The projectile owner is responsible for destroying their own projectiles
+			if (!e->isAboutToBeDestroyed() && e->hasComponent<LocalOwnerComponent>() && Utils::rnd() < DESTRUCTION_PROBABILITY) {
+				e->getComponent<NetworkSenderComponent>()->addMessageType(Netcode::MessageType::DESTROY_ENTITY);
 			
-			// This is fine since NetworkSenderSystem will run before EntityRemovalSystem
-			e->queueDestruction();
+				// This is fine since NetworkSenderSystem will run before EntityRemovalSystem
+				e->queueDestruction();
+			}
+		
 		}
 
 		projComp->timeSinceLastDecal += dt;
+	}
+
+	if (!pointsToSubmit.empty()) {
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::SUBMIT_WATER_POINTS,
+			SAIL_NEW Netcode::MessageSubmitWaterPoints{ pointsToSubmit }, 
+			false
+		);
 	}
 }
 

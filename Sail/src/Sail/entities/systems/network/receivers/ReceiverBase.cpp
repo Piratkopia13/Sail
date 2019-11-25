@@ -188,6 +188,16 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 					shootEnd(compID, lowPassFrequency);
 				}
 				break;
+				case Netcode::MessageType::UPDATE_PROJECTILE_ONCE:
+				{
+					glm::vec3 velocity;
+
+					ArchiveHelpers::loadVec3(ar, vector); // Read pos
+					ArchiveHelpers::loadVec3(ar, velocity);    // Read velocity
+
+					updateProjectile(compID, vector, velocity);
+				}
+				break;
 				case Netcode::MessageType::UPDATE_SANITY:
 				{
 					float sanity;
@@ -370,6 +380,18 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				ar(health);
 
 				setCandleHealth(compID, health);
+			}
+			break;
+			case Netcode::MessageType::SUBMIT_WATER_POINTS:
+			{
+				size_t nrOfPoints = 0;
+
+				ar(nrOfPoints);
+
+				for (size_t i = 0; i < nrOfPoints; i++) {
+					ArchiveHelpers::loadVec3(ar, vector);
+					submitWaterPoint(vector);
+				}
 			}
 			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:

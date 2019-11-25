@@ -142,7 +142,7 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 		const glm::vec3 headToProjectile = m_projectilePos - m_killerHeadPos;
 		//const glm::vec3 lookAt = m_projectilePos - headToProjectile;
 		const glm::vec3 camDir = glm::normalize(headToProjectile);
-		const glm::vec3 cameraPos = m_projectilePos - (0.7f * camDir) + glm::vec3(0.f, 0.3f, 0.f);
+		const glm::vec3 cameraPos = m_projectilePos - (0.7f * camDir) + glm::vec3(0.f, 0.1f, 0.f);
 
 		m_cam->setCameraPosition(cameraPos);
 		m_cam->setCameralookAt(m_projectilePos);
@@ -164,19 +164,21 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 // Should only be called when the killcam is active
 void KillCamReceiverSystem::processReplayData(float dt) {
 	// Add the entities to all relevant systems so that they for example will have their animations updated
-
-	const bool wasKilledByAPlayer = m_idOfKillingProjectile != 0 
-		&& m_idOfKillingProjectile != Netcode::INSANITY_COMP_ID
-		&& m_idOfKillingProjectile != Netcode::SPRINKLER_COMP_ID;
-	const Netcode::PlayerID killerID = Netcode::getComponentOwner(m_idOfKillingProjectile);
-
 	if (!m_hasStarted) {
+		// Only play kill cam if we were actually killed by a player
+		if (m_idOfKillingProjectile == Netcode::UNINITIALIZED) {
+			EventDispatcher::Instance().emit(ToggleKillCamEvent(false));
+			return;
+		}
+
+		const Netcode::PlayerID killerID = Netcode::getComponentOwner(m_idOfKillingProjectile);
+
 		for (auto e : entities) {
 			e->tryToAddToSystems = true;
 			e->addComponent<RenderInReplayComponent>();
 
 
-			if (wasKilledByAPlayer && e->hasComponent<PlayerComponent>()
+			if (e->hasComponent<PlayerComponent>()
 				&& killerID == Netcode::getComponentOwner(e->getComponent<ReplayReceiverComponent>()->m_id)) 
 			{
 				e->addComponent<KillerComponent>();
@@ -407,6 +409,15 @@ void KillCamReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKil
 // SHOULD PROABABLY REMAIN EMPTY FOR THE KILLCAM
 void KillCamReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {}
 
+void KillCamReceiverSystem::updateProjectile(const Netcode::ComponentID id, const glm::vec3& pos, const glm::vec3& vel) {
+	if (auto e = findFromNetID(id); e) {
+		e->getComponent<TransformComponent>()->setTranslation(pos);
+		e->getComponent<MovementComponent>()->velocity = vel;
+		return;
+	}
+	SAIL_LOG_WARNING("updateProjectile called but no matching entity found");
+}
+
 // If I requested the projectile it has a local owner
 void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	auto e = ECS::Instance()->createEntity("projectile");
@@ -429,6 +440,9 @@ void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	}
 }
 
+void KillCamReceiverSystem::submitWaterPoint(const glm::vec3& point) {
+}
+
 void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID killerID) {
 	//EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
 }
@@ -446,7 +460,6 @@ void KillCamReceiverSystem::playerLanded(const Netcode::ComponentID id) {
 }
 
 
-// TODO: Remove info since it's unused or are these functions not finished?
 void KillCamReceiverSystem::shootStart(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
 	//EventDispatcher::Instance().emit(StartShootingEvent(id));
@@ -528,7 +541,15 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 
 	auto onPlayerDeath = [&](const PlayerDiedEvent& e) {
 		if (Netcode::getComponentOwner(e.netIDofKilled) == m_playerID) {
-			m_idOfKillingProjectile = e.killerID;
+			const bool wasKilledByAPlayer = (
+				e.killerID != Netcode::UNINITIALIZED && 
+				e.killerID != Netcode::INSANITY_COMP_ID && 
+				e.killerID != Netcode::SPRINKLER_COMP_ID);
+
+			// KillCam will only activate if we were killed by a player
+			if (wasKilledByAPlayer) {
+				m_idOfKillingProjectile = e.killerID;
+			}
 		}
 	};
 

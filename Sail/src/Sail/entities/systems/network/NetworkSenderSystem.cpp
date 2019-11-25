@@ -343,6 +343,18 @@ void NetworkSenderSystem::writeMessageToArchive(const Netcode::MessageType& mess
 		ar(ic->sanity);
 	}
 	break;
+	case Netcode::MessageType::UPDATE_PROJECTILE_ONCE:
+	{
+		TransformComponent* tc = e->getComponent<TransformComponent>();
+		MovementComponent* mc = e->getComponent<MovementComponent>();
+		
+		ArchiveHelpers::saveVec3(ar, tc->getCurrentTransformState().m_translation);
+		ArchiveHelpers::saveVec3(ar, mc->velocity);
+
+		// Only send this message when their is a collision
+		e->getComponent<NetworkSenderComponent>()->removeMessageType(Netcode::MessageType::UPDATE_PROJECTILE_ONCE);
+	}
+	break;
 	default:
 		SAIL_LOG_ERROR("TRIED TO SEND INVALID NETWORK MESSAGE (" + std::to_string((int)messageType));
 		break;
@@ -485,6 +497,17 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		
 		ar(data->candleThatWasHit);
 		ar(data->health);
+	}
+	break;
+	case Netcode::MessageType::SUBMIT_WATER_POINTS:
+	{
+		Netcode::MessageSubmitWaterPoints* data = static_cast<Netcode::MessageSubmitWaterPoints*>(event->data);
+		
+		ar(data->points.size()); // Tell the receiver how many points they should receive
+
+		for (auto& p : data->points) {
+			ArchiveHelpers::saveVec3(ar, p); // Send all points to the receiver
+		}
 	}
 	break;
 	case Netcode::MessageType::SPAWN_PROJECTILE:
