@@ -159,7 +159,7 @@ void SettingStorage::createApplicationDefaultGraphics() {
 		{ "hard",0.0f },
 		{ "soft",1.0f }
 	}));
-	applicationSettingsStatic["graphics"]["water simulation"] = Setting(1, std::vector<Setting::Option>({
+	applicationSettingsStatic["graphics"]["watersimulation"] = Setting(1, std::vector<Setting::Option>({
 		{ "off", 0.0f },
 		{ "on", 1.0f }
 	}));

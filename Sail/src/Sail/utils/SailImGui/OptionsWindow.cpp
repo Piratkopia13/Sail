@@ -39,7 +39,7 @@ void OptionsWindow::renderWindow() {
 	ImGui::Separator();
 
 
-	static std::vector<std::string> options = { "fullscreen","bloom","shadows","fxaa","water simulation" };
+	static std::vector<std::string> options = { "fullscreen","bloom","shadows","fxaa","watersimulation" };
 	for (auto & optionName : options) {
 		sopt = &stat["graphics"][optionName];
 		selected = sopt->selected;

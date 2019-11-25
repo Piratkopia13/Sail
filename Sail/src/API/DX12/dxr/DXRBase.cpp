@@ -322,7 +322,7 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 }
 
 void DXRBase::updateWaterData() {
-	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["water simulation"].getSelected().value) {
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["watersimulation"].getSelected().value) {
 		simulateWater(Application::getInstance()->getDelta());
 	}
 
