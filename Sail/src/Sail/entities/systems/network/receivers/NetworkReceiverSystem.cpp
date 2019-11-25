@@ -159,7 +159,7 @@ void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKil
 void NetworkReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
 	if (auto e = findFromNetID(id); e) {
 		auto animation = e->getComponent<AnimationComponent>();
-		animation->setAnimation(info.index);
+		animation->setAnimation(info.index, false);
 		animation->animationTime = info.time;
 		animation->pitch = info.pitch;
 		return;
@@ -266,10 +266,10 @@ void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const 
 
 void NetworkReceiverSystem::playerJumped(const Netcode::ComponentID id) {
 	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 		return;
 	}
 	SAIL_LOG_WARNING("waterHitPLayer called but no matching entity found");
-	EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 }
 
 void NetworkReceiverSystem::playerLanded(const Netcode::ComponentID id) {

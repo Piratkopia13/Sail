@@ -157,6 +157,10 @@ if (m_usePercentage) {
 
 	renderMenu();
 
+	ImVec4 col(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+	col.w = 0.9;
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, col);
+
 	renderSingleplayer();
 	if (m_windowToRender == 1) {
 		renderLobbyCreator();
@@ -176,11 +180,12 @@ if (m_usePercentage) {
 	if (m_joiningLobby) {
 		renderJoiningLobby();
 	}
+	ImGui::PopStyleColor();
 
 	if (ImGui::Begin("##LOGOWINDOW", nullptr, m_standaloneButtonflags)) {
 		static ImVec2 z(3.7, 1.0);
-		Texture& logo = Application::getInstance()->getResourceManager().getTexture("splash_logo.tga");
-		ImGui::Image(imguiHandler->getTextureID(&logo), ImVec2(m_app->getWindow()->getWindowWidth() *0.5f, (m_app->getWindow()->getWindowWidth()*0.5f) / z.x));
+		Texture& logo = m_app->getResourceManager().getTexture("splash_logo.tga");
+		ImGui::Image(imguiHandler->getTextureID(&logo), ImVec2(m_app->getWindow()->getWindowWidth() *0.4f, (m_app->getWindow()->getWindowWidth()*0.4f) / z.x));
 		ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth()*0.5f - ImGui::GetWindowSize().x*0.5f, 0));
 	}
 	ImGui::End();

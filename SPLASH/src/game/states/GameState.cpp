@@ -291,8 +291,13 @@ bool GameState::processInput(float dt) {
 
 #ifndef DEVELOPMENT
 	//Capture mouse
-	Input::HideCursor(true);		//Shreks multiple applications on the same computer
+	if (m_app->getWindow()->isFocused()) {
+		Input::HideCursor(true);
+	} else {
+		Input::HideCursor(false);
+	}
 #endif
+
 
 	// Pause game
 	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::SHOW_IN_GAME_MENU)) {
@@ -721,8 +726,10 @@ bool GameState::update(float dt, float alpha) {
 bool GameState::fixedUpdate(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
-	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | "
+#ifdef DEVELOPMENT
+	m_app->getWindow()->setWindowTitle("S.P.L.A.S.H2O | Development | "
 		+ Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
+#endif
 
 	static float counter = 0.0f;
 	static float size = 1.0f;
@@ -907,7 +914,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
-	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
 	runSystem(dt, m_componentSystems.candleThrowingSystem);
 	runSystem(dt, m_componentSystems.candleHealthSystem);
@@ -936,8 +942,17 @@ void GameState::updatePerTickComponentSystems(float dt) {
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
 	m_componentSystems.sprintingSystem->update(dt, alpha);
+
+
+	m_componentSystems.gameInputSystem->processMouseInput(dt);
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamAnimationSystem->updatePerFrame();
+	} else {
+		m_componentSystems.animationSystem->update(dt);
+		m_componentSystems.animationSystem->updatePerFrame();
+	}
 	// Updates keyboard/mouse input and the camera
-	m_componentSystems.gameInputSystem->update(dt, alpha);
+	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 	m_componentSystems.spectateInputSystem->update(dt, alpha);
 
 	// There is an imgui debug toggle to override lights
@@ -959,11 +974,6 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 	
-	if (m_isInKillCamMode) {
-		m_componentSystems.killCamAnimationSystem->updatePerFrame();
-	} else {
-		m_componentSystems.animationSystem->updatePerFrame();
-	}
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
 
