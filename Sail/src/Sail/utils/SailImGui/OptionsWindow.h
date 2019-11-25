@@ -12,6 +12,7 @@ public:
 
 	virtual void renderWindow() override;
 	bool renderGameOptions();
+	void updateMap();
 
 private:
 	Application* m_app;

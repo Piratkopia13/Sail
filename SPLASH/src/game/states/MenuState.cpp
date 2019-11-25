@@ -504,8 +504,9 @@ void MenuState::renderServerBrowser() {
 			// Per hosted game
 
 			static float p[4] = { 0.24,0.46,0.65,0.4};
+#ifdef DEVELOPMENT
 			ImGui::SliderFloat4("asd", &p[0], 0.0f, 1.0f);
-
+#endif
 			ImGui::Columns(5, "serverbrowserColumns", false);
 			ImGui::SetColumnOffset(1,ImGui::GetWindowContentRegionWidth() * p[0]);
 			ImGui::SetColumnOffset(2,ImGui::GetWindowContentRegionWidth() * p[1]);
