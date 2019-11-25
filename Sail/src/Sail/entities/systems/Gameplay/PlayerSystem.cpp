@@ -55,7 +55,18 @@ bool PlayerSystem::onEvent(const Event& event) {
 
 		// Check if the player was the one who died
 		if (Netcode::getComponentOwner(e.netIDofKilled) == myPlayerID) {
+			AudioComponent* audioC = e.killed->getComponent<AudioComponent>();
+
 			// If my player died, I become a spectator
+
+			// Stop all currently-streaming sounds (if any exist)
+			auto& listIterator = audioC->m_currentlyStreaming.begin();
+			while (listIterator != audioC->m_currentlyStreaming.end()) {
+				audioC->streamSoundRequest_HELPERFUNC((*listIterator).first, false, 1.0f, false, false);
+			}
+			for (int i = 0; i < Audio::SoundType::COUNT; i++) {
+				audioC->m_sounds[i].isPlaying = false;
+			}
 
 			// Make this into a real spectator
 			e.killed->addComponent<SpectatorComponent>();
