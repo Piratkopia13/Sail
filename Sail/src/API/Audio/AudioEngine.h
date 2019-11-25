@@ -97,9 +97,12 @@ public:
 
 	void startDeathSound(const std::string& filename, float volume);
 	void updateDeathvolume(float volume);
+	void startInsanitySound(const std::string& filename, float volume);
+	void updateInsanityVolume(float volume);
 
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const;
+	void logDebugData();
 #endif
 
 private: 
@@ -119,12 +122,14 @@ private:
 	soundStruct m_stream[STREAMED_SOUNDS_COUNT];
 
 	soundStruct m_deathSound;
+	soundStruct m_insanitySound;
 
 	int m_currSoundIndex = 0;
 	float m_tempDistance = 0;
 	//std::atomic<int> m_currStreamIndex = 0;
 
 	void initialize();
+	void activateDebugLayer();
 
 	BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
 	bool m_isStreaming[STREAMED_SOUNDS_COUNT];
