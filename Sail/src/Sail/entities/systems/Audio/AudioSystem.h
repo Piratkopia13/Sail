@@ -39,6 +39,8 @@ private:
 	AudioEngine* m_audioEngine;
 	int m_currStreamIndex = 0;
 
+	int randomASoundIndex(int soundPoolSize, Audio::SoundInfo_General* soundGeneral);
+
 	void startPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void stopPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void updateStreamPosition(Entity* e, Camera& cam, float alpha);
@@ -46,6 +48,8 @@ private:
 
 	void updateProjectileLowPass(Audio::SoundInfo_General* general);
 
+	void dealWithDeathSound(AudioComponent* audioC, float dt);
+	void dealwithInsanitySound(AudioComponent* audioC, float dt);
 	void hotFixAmbiance(Entity* e, AudioComponent* audioC);
 };
 
