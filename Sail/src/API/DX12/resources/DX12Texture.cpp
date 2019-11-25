@@ -62,6 +62,11 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 		// Release the upload heap as soon as the texture has been uploaded to the GPU
 		if (m_textureUploadBuffer && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
 			m_textureUploadBuffer.ReleaseAndGetAddressOf();
+
+			// Generate mip maps
+			// This waits until the texture data is uploaded to the default heap since the generator reads from that source
+			DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
+			generateMips(cmdList);
 		}
 		return;
 	}
@@ -84,11 +89,7 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	// Copy the upload buffer contents to the default heap using a helper method from d3dx12.h
 	DX12Utils::UpdateSubresources(cmdList, textureDefaultBuffers[0].Get(), m_textureUploadBuffer.Get(), 0, 0, 1, &textureData);
 	//transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE); // Uncomment if generateMips is disabled
-
-	DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
-
-	generateMips(cmdList);
-
+	
 	auto type = cmdList->GetType();
 	m_queueUsedForUpload = (type == D3D12_COMMAND_LIST_TYPE_DIRECT) ? context->getDirectQueue() : context->getComputeQueue();
 	// Schedule a signal to be called directly after this command list has executed
