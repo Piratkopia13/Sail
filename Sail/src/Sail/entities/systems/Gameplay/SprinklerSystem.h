@@ -11,6 +11,7 @@ struct Sprinkler {
 	glm::vec3 pos;
 	glm::vec2 size;
 	bool active = false;
+	ParticleEmitterComponent* particleEmitter = nullptr;
 };
 
 class SprinklerSystem final : public BaseComponentSystem {

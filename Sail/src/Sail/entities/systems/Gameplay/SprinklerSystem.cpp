@@ -46,23 +46,34 @@ void SprinklerSystem::update(float dt) {
 		if (m_enableSprinklers) {
 			m_endGameTimer += dt;
 
-			for (auto& e : entities) {
-				// Randomize a water spot with a ray for each active sprinkler
-				for (int i = 0; i < m_sprinklers.size(); i++) {
-					if (m_sprinklers[i].active) {
-						Octree::RayIntersectionInfo tempInfo;
+			// Randomize a water spot with a ray for each active sprinkler
+			for (int i = 0; i < m_sprinklers.size(); i++) {
+				if (m_sprinklers[i].active) {
+					Octree::RayIntersectionInfo tempInfo;
 
-						float sprinklerXspread = (m_sprinklers[i].size.x * 0.5f) * m_map->tileSize;
-						float sprinklerZspread = (m_sprinklers[i].size.y * 0.5f) * m_map->tileSize;
+					float sprinklerXspread = (m_sprinklers[i].size.x * 0.5f) * m_map->tileSize;
+					float sprinklerZspread = (m_sprinklers[i].size.y * 0.5f) * m_map->tileSize;
 
-						glm::vec3 waterDir = glm::vec3(((2.f * Utils::rnd()) - 1.0f) *sprinklerXspread, -m_sprinklers[i].pos.y, ((2.f * Utils::rnd()) - 1.0f)*sprinklerZspread) + m_sprinklers[i].pos;
-						waterDir = glm::normalize(waterDir - m_sprinklers[i].pos);
-						m_octree->getRayIntersection(m_sprinklers[i].pos, waterDir, &tempInfo);
-						glm::vec3 hitPos = m_sprinklers[i].pos + waterDir * tempInfo.closestHit;
-						Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(hitPos);
-					}
-
+					glm::vec3 waterDir = glm::vec3(((2.f * Utils::rnd()) - 1.0f) * sprinklerXspread, -m_sprinklers[i].pos.y, ((2.f * Utils::rnd()) - 1.0f) * sprinklerZspread) + m_sprinklers[i].pos;
+					waterDir = glm::normalize(waterDir - m_sprinklers[i].pos);
+					m_octree->getRayIntersection(m_sprinklers[i].pos, waterDir, &tempInfo);
+					glm::vec3 hitPos = m_sprinklers[i].pos + waterDir * tempInfo.closestHit;
+					Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(hitPos);
 				}
+
+				// Particle effect
+				auto* emitter = m_sprinklers[i].particleEmitter;
+				if (emitter) {
+					emitter->size = 1.0f;
+					emitter->constantVelocity = { 0.0f, -0.7f, 0.0f };
+					emitter->acceleration = { 0.0f, -0.4f, 0.0f };
+					emitter->spread = { 5.22f, 1.0f, 5.22f };
+					emitter->spawnRate = 1.f / 100.f;
+					emitter->lifeTime = 2.0f;
+				}
+			}
+
+			for (auto& e : entities) {
 
 				// Locate player candle
 				CandleComponent* candle = e->getComponent<CandleComponent>();

@@ -118,7 +118,7 @@ void updateAnimation(int particleIndex) {
     
     // Hardcoded dimention of texture atlas. 
     int textureSize = 8;                                                                    // This atlas dimension is 8x4
-    int ai = (CSPhysicsBuffer[particleIndex].animationIndexCounter += inputBuffer.frameTime*24.f) % (4 * textureSize);
+    int ai = (CSPhysicsBuffer[particleIndex].animationIndexCounter += inputBuffer.frameTime*24.f) % (3 * textureSize);
 
     float offset = 1.0f / textureSize;
     float ix = ai % textureSize;
