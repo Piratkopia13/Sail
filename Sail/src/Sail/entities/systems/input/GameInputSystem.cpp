@@ -54,7 +54,6 @@ void GameInputSystem::fixedUpdate(float dt) {
 }
 
 void GameInputSystem::update(float dt, float alpha) {
-	this->processMouseInput(dt);
 	this->updateCameraPosition(alpha);
 }
 
@@ -434,8 +433,7 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		playerTrans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
 		animation->pitch = glm::radians(-m_pitch);
 
-		const glm::vec3 finalPos = playerTrans->getRenderMatrix(alpha) * glm::vec4(animation->headPositionLocalCurrent, 1.f);
-		const glm::vec3 camPos = glm::vec3(finalPos);
+		const glm::vec3 camPos = playerTrans->getMatrixWithUpdate() * glm::vec4(animation->headPositionLocalCurrent, 1.f);
 
 		m_cam->setCameraPosition(camPos);
 	}
@@ -466,14 +464,10 @@ unsigned int GameInputSystem::getByteSize() const {
 #endif
 
 void GameInputSystem::toggleCandleCarry(Entity* entity) {
-	// No need to do anything since it's to soon since last action
-	if (entity->getComponent<CandleComponent>()) {
-		if (entity->getComponent<CandleComponent>()->candleToggleTimer < CANDLE_TIMER) { return; }
-	}
-
 	for (auto torch : entity->getChildEntities()) {
 		if (torch->hasComponent<CandleComponent>()) {
 			if (torch->getComponent<CandleComponent>()->candleToggleTimer < CANDLE_TIMER) {
+				// No need to do anything since it's to soon since last action
 				return;
 			}
 		}
@@ -494,9 +488,8 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 							throwingComp->isCharging = true;
 							if (throwingComp->chargeTime >= throwingComp->chargeToThrowThreshold) {
 								// We want to throw the torch
-								throwingComp->isThrowing = true;
 								throwingComp->isCharging = false;
-								candleComp->candleToggleTimer = 0.f;
+								//candleComp->candleToggleTimer = 0.f;
 							}
 						} else {
 							// Torch isn't carried so try to pick it up
@@ -506,8 +499,7 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 					} else if (candleComp->isCarried && throwingComp->wasChargingLastFrame) {
 						// We want to throw the torch
 						throwingComp->isCharging = false;
-						throwingComp->isThrowing = true;
-						candleComp->candleToggleTimer = 0.f;
+						//candleComp->candleToggleTimer = 0.f;
 					}
 				}
 			}
@@ -531,8 +523,9 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	if (Input::IsKeyPressed(KeyBinds::MOVE_UP)) { playerMovement.upMovement += 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN)) { playerMovement.upMovement -= 1.0f; }
 
+	auto animC = e->getComponent<AnimationComponent>();
 	auto throwC = e->getComponent<ThrowingComponent>();
-	if (throwC->isThrowing || throwC->isCharging) {
+	if (animC->animationIndex == 9/*IDLE_THROW*/ || animC->animationIndex == 11/*RUNNING_THROW*/ || throwC->chargeTime > 0.f) {
 		return playerMovement;
 	}
 
