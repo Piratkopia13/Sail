@@ -66,7 +66,6 @@ void DXRUtils::PSOBuilder::addLibrary(const std::string& shaderPath, const std::
 	dxilLibraryDesc.NumExports = UINT(dxilExports.size());
 
 	append(D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &dxilLibraryDesc);
-
 }
 
 void DXRUtils::PSOBuilder::addHitGroup(LPCWSTR exportName, LPCWSTR closestHitShaderImport, LPCWSTR anyHitShaderImport, LPCWSTR intersectionShaderImport, D3D12_HIT_GROUP_TYPE type) {
@@ -160,7 +159,6 @@ ID3D12StateObject* DXRUtils::PSOBuilder::build(ID3D12Device5* device) {
 
 	return pso;
 }
-
 
 DXRUtils::ShaderTableBuilder::ShaderTableBuilder(UINT numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance)
 	: m_soProps(nullptr)

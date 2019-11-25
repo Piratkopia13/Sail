@@ -11,6 +11,7 @@ public:
 	virtual void toggleWindow();
 	virtual void showWindow(bool show);
 	void setPosition(const ImVec2& pos);
+	void setSize(const ImVec2& size);
 
 	virtual void renderWindow() = 0;
 
@@ -20,6 +21,6 @@ public:
 protected:
 	bool m_isWindowOpen;
 	ImVec2 m_position;
-
+	ImVec2 m_size;
 private:
 };

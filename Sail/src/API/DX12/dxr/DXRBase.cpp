@@ -36,6 +36,7 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	// Only one TLAS is used for the whole scene
 	m_DXR_TopBuffer = m_context->createFrameResource<AccelerationStructureBuffers>();
 	m_bottomBuffers = m_context->createFrameResource<std::unordered_map<Mesh*, InstanceList>>();
+	m_bottomBuffers_Metaballs = m_context->createFrameResource<std::unordered_map<int, InstanceList>>();
 	m_rayGenShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_missShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_hitGroupShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
@@ -52,12 +53,6 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	createRaytracingPSO();
 	createInitialShaderResources();
 
-	m_aabb_desc_resource.reserve(DX12API::NUM_SWAP_BUFFERS);
-	for (size_t i = 0; i < DX12API::NUM_SWAP_BUFFERS; i++) {
-		m_aabb_desc_resource.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(D3D12_RAYTRACING_AABB), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
-		m_aabb_desc_resource.back()->SetName(L"Metaball AABB");
-	}
-
 	m_decalsToRender = 0;
 	unsigned int initData = 0;
 	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(&initData, 1, sizeof(unsigned int));
@@ -71,6 +66,11 @@ DXRBase::~DXRBase() {
 
 	m_rtPipelineState->Release();
 	for (auto& blasList : m_bottomBuffers) {
+		for (auto& blas : blasList) {
+			blas.second.blas.release();
+		}
+	}
+	for (auto& blasList : m_bottomBuffers_Metaballs) {
 		for (auto& blas : blasList) {
 			blas.second.blas.release();
 		}
@@ -92,8 +92,10 @@ DXRBase::~DXRBase() {
 		resource->Release();
 	}
 
-	for (auto& resource : m_aabb_desc_resource) {
-		resource->Release();
+	for (auto& resource : m_aabb_desc_resources) {
+		for (auto& resource2 : resource.second) {
+			resource2->Release();
+		}
 	}
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
@@ -104,7 +106,7 @@ void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
 	m_gbufferInputTextures = inputs;
 }
 
-void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList, const std::vector<DXRBase::MetaballGroup*>& metaballGroups) {
 
 	unsigned int frameIndex = m_context->getSwapIndex();
 	unsigned int totalNumInstances = 0;
@@ -118,72 +120,83 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		it.second.instanceList.clear();
 	}
+	//Destroy Metaball BLAS and instance lists
+	for (auto& it : m_bottomBuffers_Metaballs[frameIndex]) {
+		it.second.instanceList.clear();
+		it.second.blas.release();
+	}
+	m_bottomBuffers_Metaballs[frameIndex].clear();
 
 	// Iterate all static meshes
 	for (auto& renderCommand : sceneGeometry) {
-		if (renderCommand.flags & Renderer::MESH_STATIC) {
-			Mesh* mesh = nullptr;
-			if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
-				mesh = renderCommand.model.mesh;
-			} else {
-				int i = 1;
-			}
-
-			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
-			// If mesh does not have a BLAS
-			if (searchResult == m_bottomBuffers[frameIndex].end()) {
-				if (mesh == nullptr) {
-					int i = 0;
-				}
-
-				createBLAS(renderCommand, flagFastTrace, cmdList);
-			} else {
-				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
-					SAIL_LOG_WARNING("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
-					// Destroy old blas
-					searchResult->second.blas.release();
-					m_bottomBuffers[frameIndex].erase(searchResult);
-					// Create new one
+		if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
+			if (renderCommand.flags & Renderer::MESH_STATIC) {
+				Mesh* mesh = renderCommand.model.mesh;			
+				auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
+				// If mesh does not have a BLAS
+				if (searchResult == m_bottomBuffers[frameIndex].end()) {
 					createBLAS(renderCommand, flagFastTrace, cmdList);
 				} else {
-					// Mesh already has a BLAS - add transform to instance list
-					searchResult->second.instanceList.emplace_back(PerInstance{(glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID , renderCommand.castShadows});
+					if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
+						SAIL_LOG_WARNING("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
+						// Destroy old blas
+						searchResult->second.blas.release();
+						m_bottomBuffers[frameIndex].erase(searchResult);
+						// Create new one
+						createBLAS(renderCommand, flagFastTrace, cmdList);
+					} else {
+						// Mesh already has a BLAS - add transform to instance list
+						searchResult->second.instanceList.emplace_back(PerInstance{(glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID , renderCommand.castShadows});
+					}
 				}
+				totalNumInstances++;
 			}
-
-			totalNumInstances++;
 		}
 	}
 
 	// Iterate all dynamic meshes
 	for (auto& renderCommand : sceneGeometry) {
-		if (renderCommand.flags & Renderer::MESH_DYNAMIC) {
-			Mesh* mesh = nullptr;
-			if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
-				mesh = renderCommand.model.mesh;
-			}
-
-			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
-			auto flags = flagNone;
-			if (renderCommand.flags & Renderer::MESH_HERO) {
-				flags = flagFastTrace | flagAllowUpdate;
-			} else {
-				flags = flagFastBuild | flagAllowUpdate;
-			}
-
-			// If mesh does not have a BLAS or was first built as STATIC
-			if (searchResult == m_bottomBuffers[frameIndex].end() || !searchResult->second.blas.allowUpdate) {
-				createBLAS(renderCommand, flags, cmdList);
-			} else {
-				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
-					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
+		if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
+			if (renderCommand.flags & Renderer::MESH_DYNAMIC) {
+				Mesh* mesh = renderCommand.model.mesh;
+		
+				auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
+				auto flags = flagNone;
+				if (renderCommand.flags & Renderer::MESH_HERO) {
+					flags = flagFastTrace | flagAllowUpdate;
+				} else {
+					flags = flagFastBuild | flagAllowUpdate;
 				}
-				// Add transform to instance list
-				searchResult->second.instanceList.emplace_back(PerInstance{ (glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID , renderCommand.castShadows});
-			}
 
-			totalNumInstances++;
+				// If mesh does not have a BLAS or was first built as STATIC
+				if (searchResult == m_bottomBuffers[frameIndex].end() || !searchResult->second.blas.allowUpdate) {
+					createBLAS(renderCommand, flags, cmdList);
+				} else {
+					if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
+						createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
+					}
+					// Add transform to instance list
+					searchResult->second.instanceList.emplace_back(PerInstance{ (glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID , renderCommand.castShadows});
+				}
+
+				totalNumInstances++;
+			}
 		}
+	}
+
+	// Iterate all metaball groups
+	for (auto& group : metaballGroups) {
+
+		Renderer::RenderCommand cmd;
+		cmd.transform = glm::identity<glm::mat4>();
+		cmd.transform = glm::transpose(cmd.transform);
+		cmd.type = Renderer::RenderCommandType::RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
+		cmd.castShadows = true;
+		cmd.teamColorID = 0;
+		cmd.metaball.gpuGroupIndex = group->index;
+
+		createBLAS(cmd, flagFastTrace, cmdList);
+		totalNumInstances++;
 	}
 
 	// Destroy BLASes that are no longer part of the scene
@@ -213,9 +226,9 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera* cam, LightSetup* lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const std::vector<glm::vec3>& teamColors) {
-	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
-	updateMetaballpositions(metaballs, m_next_metaball_aabb);
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors) {
+
+	updateMetaballpositions(metaballGroups);
 
 	DXRShaderCommon::SceneCBuffer newData = {};
 	if (cam) {
@@ -227,13 +240,14 @@ void DXRBase::updateSceneData(Camera* cam, LightSetup* lights, const std::vector
 		newData.cameraDirection = cam->getDirection();
 		newData.projectionToWorld = glm::inverse(cam->getViewProjection());
 	}
-	newData.nMetaballs = m_metaballsToRender;
+	newData.nMetaballGroups = metaballGroups.size();
 	newData.nDecals = m_decalsToRender;
 	newData.doHardShadows = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 0.f;;
 	newData.waterArraySize = m_waterArrSizes;
 	newData.mapSize = m_mapSize;
 	newData.mapStart = m_mapStart;
 	newData.frameCount = m_frameCount++;
+	newData.nMetaballGroups = metaballGroups.size();
 
 	int nTeams = teamColors.size();
 	for (int i = 0; i < nTeams && i < NUM_TEAM_COLORS; i++) {
@@ -325,7 +339,7 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 }
 
 void DXRBase::updateWaterData() {
-	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["water simulation"].getSelected().value) {
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["watersimulation"].getSelected().value) {
 		simulateWater(Application::getInstance()->getDelta());
 	}
 
@@ -431,42 +445,52 @@ void DXRBase::rebuildWater() {
 	m_waterZChunkSize = m_waterArrSizes.z / m_maxWaterZChunk;
 }
 
-void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb) {
-	if (m_metaballsToRender == 0) {
+void DXRBase::updateMetaballpositions(const std::vector<DXRBase::MetaballGroup*>& metaballGroups) {
+	if (metaballGroups.empty()) {
 		return;
 	}
-	void* pMappedData;
-	ID3D12Resource1* res;
 
-	//UPDATE AABB
-	res = m_aabb_desc_resource[m_context->getSwapIndex()];
+	HRESULT hr;
 
-	res->Map(0, nullptr, &pMappedData);
-	memcpy(pMappedData, &m_next_metaball_aabb, sizeof(D3D12_RAYTRACING_AABB));
-	res->Unmap(0, nullptr);
+	void* pAabbMappedData;
+	ID3D12Resource1* aabb_res;
 
-	//UPDATE METABALLS
+	void* pPosMappedData;
+	ID3D12Resource1* pos_res = m_metaballPositions_srv[m_context->getSwapIndex()];
+ 	hr = pos_res->Map(0, nullptr, &pPosMappedData);
+	DX12Utils::checkDeviceRemovalReason(m_context->getDevice(), hr);
 
-	res = m_metaballPositions_srv[m_context->getSwapIndex()];
+	int metaballIndex = 0;
+	int metaballOffsetBytes = 0;
 
- 	HRESULT hr =  res->Map(0, nullptr, &pMappedData);
-	if (FAILED(hr)) {
-		_com_error err(hr);
-		std::cout << err.ErrorMessage() << std::endl;
+	int offsetInc = sizeof(Metaball::pos);
+	int bufferMaxSize = sizeof(Metaball::pos) * MAX_NUM_METABALLS;
+	
+	for (auto group : metaballGroups) {
+		metaballOffsetBytes = group->gpuGroupStartOffset * offsetInc;
 
-		hr = m_context->getDevice()->GetDeviceRemovedReason();
-		_com_error err2(hr);
-		std::cout << err2.ErrorMessage() << std::endl;
+		if (!m_aabb_desc_resources.count(group->index)) {
+			addMetaballGroupAABB(group->index);
+		}
 
-		return;
+		//UPDATE AABB
+		aabb_res = m_aabb_desc_resources[group->index][m_context->getSwapIndex()];
+		hr = aabb_res->Map(0, nullptr, &pAabbMappedData);
+		DX12Utils::checkDeviceRemovalReason(m_context->getDevice(), hr);
+
+		memcpy(pAabbMappedData, &group->aabb, sizeof(D3D12_RAYTRACING_AABB));
+		aabb_res->Unmap(0, nullptr);
+
+		//UPDATE METABALLS
+		const std::vector<Metaball>& metaballs = group->balls;
+		size_t size = metaballs.size();
+
+		for (size_t i = 0; i < size && metaballOffsetBytes < bufferMaxSize; i++) {;
+			memcpy(static_cast<char*>(pPosMappedData) + metaballOffsetBytes, &metaballs[i].pos, offsetInc);
+			metaballOffsetBytes += offsetInc;
+		}		
 	}
-	int offset = 0;
-	int offsetInc = sizeof(metaballs[0].pos);
-	for (size_t i = 0; i < m_metaballsToRender; i++) {;
-		memcpy(static_cast<char*>(pMappedData) + offset, &metaballs[i].pos, offsetInc);
-		offset += offsetInc;
-	}
-	res->Unmap(0, nullptr);
+	pos_res->Unmap(0, nullptr);
 }
 
 void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* outputBloomTexture, DX12RenderableTexture* shadowsLastFrameInput, ID3D12GraphicsCommandList4* cmdList) {
@@ -617,23 +641,20 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 	unsigned int blasIndex = 0;
 	unsigned int instanceID = 0;
-	unsigned int instanceID_metaballs = 0;
+
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		auto& instanceList = it.second;
 		for (auto& instance : instanceList.instanceList) {
-			if (it.first == nullptr) {
-				pInstanceDesc->InstanceID = instanceID_metaballs++;	// exposed to the shader via InstanceID() - currently same for all instances of same material
-				pInstanceDesc->InstanceMask = INSTANCE_MASK_METABALLS;
-			} else {
+
 #ifdef DEVELOPMENT
-				if (blasIndex >= 1 << 10) {
-					SAIL_LOG_WARNING("BlasIndex is to high and will interfere with team color index.");
-				}
-#endif
-				pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
-				UINT shadowMask = (instance.castShadows) ? INSTANCE_MASK_CAST_SHADOWS : 0;
-				pInstanceDesc->InstanceMask = INSTANCE_MASK_DEFAULT | shadowMask;
+			if (blasIndex >= 1 << 10) {
+				SAIL_LOG_WARNING("BlasIndex is to high and will interfere with team color index.");
 			}
+#endif
+			pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
+			UINT shadowMask = (instance.castShadows) ? INSTANCE_MASK_CAST_SHADOWS : 0;
+			pInstanceDesc->InstanceMask = INSTANCE_MASK_DEFAULT | shadowMask;
+			
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
@@ -646,6 +667,26 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 		}
 		blasIndex++;
 	}
+
+	//Metaballs
+	for (auto& it : m_bottomBuffers_Metaballs[frameIndex]) {
+		auto& instanceList = it.second;
+		for (auto& instance : instanceList.instanceList) {
+			pInstanceDesc->InstanceID = it.first;								// exposed to the shader via InstanceID() - currently same for all instances of same material
+			pInstanceDesc->InstanceMask = INSTANCE_MASK_METABALLS;
+			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
+																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
+			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+
+			memcpy(pInstanceDesc->Transform, &instance.transform, sizeof(pInstanceDesc->Transform));
+
+			pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
+
+			pInstanceDesc++;
+		}
+		blasIndex++;
+	}
+
 	// Unmap
 	m_DXR_TopBuffer[frameIndex].instanceDesc->Unmap(0, nullptr);
 
@@ -704,12 +745,12 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 			geomDesc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
 			geomDesc.Triangles.IndexCount = UINT(mesh->getNumIndices());
 		}
-	} else {
+	} else if(renderCommand.type == Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL){
 		//No mesh included. Use AABB from GPU memmory (m_aabb_desc_resource) and set type to PROCEDURAL_PRIMITIVE.
 		geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
 		geomDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
 		geomDesc.AABBs.AABBCount = 1;
-		geomDesc.AABBs.AABBs.StartAddress = m_aabb_desc_resource[m_context->getSwapIndex()]->GetGPUVirtualAddress();
+		geomDesc.AABBs.AABBs.StartAddress = m_aabb_desc_resources[renderCommand.metaball.gpuGroupIndex][m_context->getSwapIndex()]->GetGPUVirtualAddress();
 		geomDesc.AABBs.AABBs.StrideInBytes = 0;
 	}
 
@@ -755,7 +796,11 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 
 	if (!performInplaceUpdate) {
 		// Insert BLAS into buttom buffer map
-		m_bottomBuffers[frameIndex].insert({ mesh, instance });
+		if (renderCommand.type == Renderer::RenderCommandType::RENDER_COMMAND_TYPE_MODEL) {
+			m_bottomBuffers[frameIndex].insert({ mesh, instance });
+		} else if (renderCommand.type == Renderer::RenderCommandType::RENDER_COMMAND_TYPE_NON_MODEL_METABALL) {
+			m_bottomBuffers_Metaballs[frameIndex].insert({ renderCommand.metaball.gpuGroupIndex, instance });
+		}
 	}
 }
 
@@ -890,9 +935,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 
 	// Make sure brdfLut texture has been initialized
 	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
-	if (!brdfLutTex.hasBeenInitialized()) {
-		brdfLutTex.initBuffers(cmdList);
-	}
+	brdfLutTex.initBuffers(cmdList);
 
 	// Make sure decal textures has been initialized
 	// Decals are currently not used, uncomment if they ever are
@@ -1051,52 +1094,57 @@ void DXRBase::updateShaderTables() {
 			m_hitGroupShaderTable[frameIndex].Resource.Reset();
 		}
 
-		DXRUtils::ShaderTableBuilder tableBuilder((UINT)m_bottomBuffers[frameIndex].size() * 2U /* * 2 for shadow rays (all NULL) */, m_rtPipelineState.Get(), 64U);
+		UINT nInstances = ((UINT)m_bottomBuffers[frameIndex].size() + (UINT)m_bottomBuffers_Metaballs[frameIndex].size()) * 2U; /* * 2 for shadow rays (all NULL) */
+		DXRUtils::ShaderTableBuilder tableBuilder(nInstances, m_rtPipelineState.Get(), 64U);
 
 		unsigned int blasIndex = 0;
+
 		for (auto& it : m_bottomBuffers[frameIndex]) {
 			auto& instanceList = it.second;
 			Mesh* mesh = it.first;
 
-			if (!mesh) {
-				tableBuilder.addShader(m_hitGroupMetaBallName);//Set the shadergroup to use
-				m_localSignatureHitGroup_metaball->doInOrder([&](const std::string& parameterName) {
-					if (parameterName == "MeshCBuffer") {
-						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB->getBuffer()->GetGPUVirtualAddress();
-						tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
+			tableBuilder.addShader(m_hitGroupTriangleName);//Set the shadergroup to use
+			m_localSignatureHitGroup_mesh->doInOrder([&](const std::string& parameterName) {
+				if (parameterName == "VertexBuffer") {
+					tableBuilder.addDescriptor(m_rtMeshHandles[frameIndex][blasIndex].vertexBufferHandle, blasIndex * 2);
+				} else if (parameterName == "IndexBuffer") {
+					D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
+					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[frameIndex][blasIndex].indexBufferHandle : nullAddr, blasIndex * 2);
+				} else if (parameterName == "MeshCBuffer") {
+					D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB->getBuffer()->GetGPUVirtualAddress();
+					tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
+				} else if (parameterName == "Textures") {
+					// Three textures
+					for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+						tableBuilder.addDescriptor(m_rtMeshHandles[frameIndex][blasIndex].textureHandles[textureNum].ptr, blasIndex * 2);
 					}
-					else if (parameterName == "MetaballPositions") {
-						D3D12_GPU_VIRTUAL_ADDRESS metaballHandle = m_metaballPositions_srv[frameIndex]->GetGPUVirtualAddress();
-						tableBuilder.addDescriptor(metaballHandle, blasIndex * 2);
-					}
-					else if (parameterName == "sys_brdfLUT") {
-						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
-					} else {
-						SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
-					}
-					});
-			} else {
-				tableBuilder.addShader(m_hitGroupTriangleName);//Set the shadergroup to use
-				m_localSignatureHitGroup_mesh->doInOrder([&](const std::string& parameterName) {
-					if (parameterName == "VertexBuffer") {
-						tableBuilder.addDescriptor(m_rtMeshHandles[frameIndex][blasIndex].vertexBufferHandle, blasIndex * 2);
-					} else if (parameterName == "IndexBuffer") {
-						D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
-						tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[frameIndex][blasIndex].indexBufferHandle : nullAddr, blasIndex * 2);
-					} else if (parameterName == "MeshCBuffer") {
-						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB->getBuffer()->GetGPUVirtualAddress();
-						tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
-					} else if (parameterName == "Textures") {
-						// Three textures
-						for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-							tableBuilder.addDescriptor(m_rtMeshHandles[frameIndex][blasIndex].textureHandles[textureNum].ptr, blasIndex * 2);
-						}
-					} else {
-						SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
-					}
+				} else if (parameterName == "sys_brdfLUT") {
+					tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
+				} else {
+					SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
+				}
 
-					});
-			}
+			});
+			
+			tableBuilder.addShader(L"NULL");
+			blasIndex++;
+		}
+
+		for (auto& it : m_bottomBuffers_Metaballs[frameIndex]) {
+			tableBuilder.addShader(m_hitGroupMetaBallName);//Set the shadergroup to use
+			m_localSignatureHitGroup_metaball->doInOrder([&](const std::string& parameterName) {
+				if (parameterName == "MeshCBuffer") {
+					D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB->getBuffer()->GetGPUVirtualAddress();
+					tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
+				} else if (parameterName == "MetaballPositions") {
+					D3D12_GPU_VIRTUAL_ADDRESS metaballHandle = m_metaballPositions_srv[frameIndex]->GetGPUVirtualAddress();
+					tableBuilder.addDescriptor(metaballHandle, blasIndex * 2);
+				} else if (parameterName == "sys_brdfLUT") {
+					tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
+				} else {
+					SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
+				}
+			});
 
 			tableBuilder.addShader(L"NULL");
 			blasIndex++;
@@ -1230,6 +1278,16 @@ void DXRBase::initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCR
 	cpuHandle->ptr += m_heapIncr * 3;
 	gpuHandle->ptr += m_heapIncr * 3;
 	m_usedDescriptors += 3;
+}
+
+void DXRBase::addMetaballGroupAABB(int index) {
+	std::vector<ID3D12Resource1*> & aabbRes = m_aabb_desc_resources[index];
+
+	aabbRes.reserve(DX12API::NUM_GPU_BUFFERS);
+	for (size_t i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
+		aabbRes.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(D3D12_RAYTRACING_AABB), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
+		aabbRes.back()->SetName(L"Metaball Group AABB");
+	}
 }
 
 void DXRBase::createEmptyLocalRootSignature() {

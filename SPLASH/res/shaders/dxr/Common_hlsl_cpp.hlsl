@@ -33,6 +33,7 @@ namespace DXRShaderCommon {
 #define NUM_TOTAL_LIGHTS NUM_POINT_LIGHTS*2
 #define NUM_TEAM_COLORS 12
 #define MAX_NUM_METABALLS 500
+#define MAX_NUM_METABALL_GROUPS 16
 #define METABALL_RADIUS 0.12f
 #define MAX_DECALS 100
 #define NUM_SHADOW_TEXTURES 14
@@ -99,6 +100,13 @@ struct SpotlightInput {
 	float angle;
 };
 
+struct MetaballGroupData {
+	uint start;
+	uint size;
+	float padding1;
+	float padding2;
+};
+
 // Properties set once for the scene
 struct SceneCBuffer {
 	float4x4 projectionToWorld;
@@ -107,7 +115,7 @@ struct SceneCBuffer {
 	float3 cameraPosition;
 	bool doHardShadows;
 	float3 cameraDirection;
-	uint nMetaballs;
+	uint nMetaballGroups;
     uint nDecals;
 	float nearZ;
 	float farZ;
@@ -115,6 +123,7 @@ struct SceneCBuffer {
     PointlightInput pointLights[NUM_POINT_LIGHTS];
     SpotlightInput spotLights[NUM_POINT_LIGHTS];
 	float4 teamColors[NUM_TEAM_COLORS];
+	MetaballGroupData metaballGroup[MAX_NUM_METABALL_GROUPS];
 
 	// Water voxel data
 	float3 mapSize;
