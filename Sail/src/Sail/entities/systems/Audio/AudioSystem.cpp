@@ -266,7 +266,7 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 	}
 
 #ifdef DEVELOPMENT
-	/* Uncomment it if you want to try to fix something audiowise */
+	/* Uncomment it if you want to try to fix something audiowise. */
 	//m_audioEngine->logDebugData();
 #endif
 }
