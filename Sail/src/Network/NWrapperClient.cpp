@@ -9,6 +9,7 @@
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDroppedEvent.h"
 #include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+#include "../../SPLASH/src/game/events/SettingsEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
 #include "../../SPLASH/src/game/events/SettingsEvent.h"
 #include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
@@ -180,6 +181,7 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 		auto& stat = m_app->getSettings().gameSettingsStatic;
 		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 		m_app->getSettings().deSerialize(std::string(&nEvent.data->Message.rawMsg[1]), stat, dynamic);
+		EventDispatcher::Instance().emit(SettingsUpdatedEvent());
 	}
 		break;
 	case ML_TEAM_REQUEST:

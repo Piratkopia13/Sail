@@ -42,6 +42,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	candle->addComponent<CullingComponent>();
 
 	auto* particleEmitterComp = candle->addComponent<ParticleEmitterComponent>();
+
 	particleEmitterComp->size = 0.1f;
 	particleEmitterComp->offset = { 0.0f, 0.44f, 0.0f };
 	particleEmitterComp->constantVelocity = { 0.0f, 0.2f, 0.0f };
@@ -49,7 +50,11 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
 	particleEmitterComp->spawnRate = 0.001f;
 	particleEmitterComp->lifeTime = 0.13f;
-	particleEmitterComp->setTexture("particles/fire.tga");
+	std::string particleTextureName = "particles/animFire.tga";
+	if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
+		Application::getInstance()->getResourceManager().loadTexture(particleTextureName);
+	}
+	particleEmitterComp->setTexture(particleTextureName);
 
 	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
 	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.08f));
@@ -467,7 +472,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory::ProjectileArguments& info) {
 	constexpr float radius = 0.03f; // the radius of the projectile's hitbox
 
-	e->addComponent<MetaballComponent>();
+	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(radius, radius, radius));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
 	e->addComponent<ProjectileComponent>(10.0f, info.hasLocalOwner); // TO DO should not be manually set to true
@@ -500,7 +505,7 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 }
 
 Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const ProjectileArguments& info) {
-	e->addComponent<MetaballComponent>();
+	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
 
