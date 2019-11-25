@@ -82,6 +82,8 @@ public:
 	const int getRoomID(int posX, int posY);
 	const RoomInfo getRoomInfo(int ID);
 
+	int *** getTiles();
+
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const override;
 #endif
