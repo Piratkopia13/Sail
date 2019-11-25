@@ -28,7 +28,7 @@ public:
 #endif
 
 public:
-	float sprintSpeedModifier = 1.6f;
+	float sprintSpeedModifier = 1.75f;
 	float sprintTimer = 0.f;
 	float downTimer = 0.f;
 	

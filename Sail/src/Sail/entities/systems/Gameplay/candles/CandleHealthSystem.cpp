@@ -159,7 +159,7 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		if (e.hitterID == Netcode::SPRINKLER_COMP_ID) {
 			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::SPRINKLER, e.hitterID);
 		} else {
-			candle->getComponent<CandleComponent>()->hitWithWater(10.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
+			candle->getComponent<CandleComponent>()->hitWithWater(5.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
 
 		}
 	};

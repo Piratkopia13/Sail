@@ -159,7 +159,7 @@ void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKil
 void NetworkReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
 	if (auto e = findFromNetID(id); e) {
 		auto animation = e->getComponent<AnimationComponent>();
-		animation->setAnimation(info.index);
+		animation->setAnimation(info.index, false);
 		animation->animationTime = info.time;
 		animation->pitch = info.pitch;
 		return;
