@@ -28,6 +28,9 @@ void CandleThrowingSystem::setOctree(Octree* octree) {
 
 void CandleThrowingSystem::update(float dt) {
 	for (auto& e : entities) {
+		if (e->hasComponent<SpectatorComponent>()) {
+			continue;
+		}
 		auto throwC = e->getComponent<ThrowingComponent>();
 
 		// TODO: To be removed once we have animations for it
