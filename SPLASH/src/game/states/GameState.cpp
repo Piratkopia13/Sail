@@ -50,6 +50,9 @@ GameState::GameState(StateStack& stack)
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 	m_gameStarted = m_isSingleplayer; //Delay gamestart untill everyOne is ready if playing multiplayer
 	
+
+
+
 	if (!m_isSingleplayer) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
 		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
@@ -58,8 +61,11 @@ GameState::GameState(StateStack& stack)
 	initConsole();
 	m_app->setCurrentCamera(&m_cam);
 
-	
-	
+	m_app->getChatWindow()->setFadeThreshold(5.0f);
+	m_app->getChatWindow()->setFadeTime(5.0f);
+	m_app->getChatWindow()->resetMessageTime();
+	m_app->getChatWindow()->setRetainFocus(false);
+
 	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 	auto& settings = m_app->getSettings();
 	std::vector<glm::vec3> m_teamColors;
@@ -258,6 +264,10 @@ GameState::~GameState() {
 	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("GameState");
 	shutDownGameState();
 	delete m_octree;
+
+	m_app->getChatWindow()->setFadeThreshold(-1.0f);
+	m_app->getChatWindow()->setFadeTime(-1.0f);
+	m_app->getChatWindow()->setRetainFocus(true);
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
@@ -805,6 +815,8 @@ bool GameState::renderImgui(float dt) {
 	if (!m_gameStarted) {
 		m_waitingForPlayersWindow.renderWindow();
 	}
+
+	m_app->getChatWindow()->renderChat(dt);
 
 	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
 	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);

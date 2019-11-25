@@ -83,6 +83,7 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	generateMips(cmdList);
 
 	m_isInitialized = true;
+
 }
 
 bool DX12Texture::hasBeenInitialized() const {
