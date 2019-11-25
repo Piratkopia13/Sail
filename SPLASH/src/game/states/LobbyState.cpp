@@ -184,9 +184,6 @@ bool LobbyState::renderImgui(float dt) {
 	// ------- player LIST ------- 
 	renderPlayerList();
 
-	// ------- CHAT LOG ------- 
-	//renderChat();
-
 	// -------- SETTINGS ----------
 	if (m_windowToRender == 1) {
 		renderGameSettings();
