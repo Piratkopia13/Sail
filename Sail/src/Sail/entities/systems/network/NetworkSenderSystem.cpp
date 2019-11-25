@@ -116,12 +116,16 @@ void NetworkSenderSystem::update() {
 			continue;
 		}
 
-		sendToOthers(nsc->m_id);                // ComponentID    
-		sendToOthers(nsc->m_entityType);        // Entity type
-		sendToOthers(nsc->m_dataTypes.size());  // NrOfMessages
+		// Create a copy of the message types that are currently in the sender component so that we can make changes to 
+		// the sender component without corrupting the packet that we're writing right now.
+		const std::vector<Netcode::MessageType> messages = nsc->m_dataTypes;
+
+		sendToOthers(nsc->m_id);         // ComponentID    
+		sendToOthers(nsc->m_entityType); // Entity type
+		sendToOthers(messages.size());   // NrOfMessages
 
 		// Per type of data
-		for (auto& messageType : nsc->m_dataTypes) {
+		for (auto& messageType : messages) {
 			sendToOthers(messageType);          // Current MessageType
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 			out << "SenderComp: " << Netcode::MessageNames[(int)(messageType) - 1] << "\n";
@@ -191,7 +195,7 @@ void NetworkSenderSystem::queueEvent(NetworkSenderEvent* event) {
 
 #ifdef DEVELOPMENT
 	// Don't send broken events to others or to yourself
-	if (event->type < Netcode::MessageType::CREATE_NETWORKED_PLAYER || event->type >= Netcode::MessageType::EMPTY) {
+	if (event->type < Netcode::MessageType::DESTROY_ENTITY || event->type >= Netcode::MessageType::EMPTY) {
 		SAIL_LOG_ERROR("Attempted to send invalid message\n");
 		return;
 	}
@@ -259,7 +263,7 @@ void NetworkSenderSystem::stop() {
 	}
 }
 
-void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar) {
+void NetworkSenderSystem::writeMessageToArchive(const Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar) {
 	// Package it depending on the type
 	// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 	switch (messageType) {
@@ -360,16 +364,6 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->isHeld);
 	}
 	break;
-	case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
-	{
-		Netcode::MessageCreatePlayer* data = static_cast<Netcode::MessageCreatePlayer*>(event->data);
-
-		ar(data->playerCompID);
-		ar(data->candleCompID);
-		ar(data->gunCompID);
-		ArchiveHelpers::saveVec3(ar, data->position);
-	}
-	break;
 	case Netcode::MessageType::ENABLE_SPRINKLERS:
 	{
 		Netcode::MessageHitBySprinkler* data = static_cast<Netcode::MessageHitBySprinkler*>(event->data);
@@ -378,7 +372,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	case Netcode::MessageType::ENDGAME_STATS:
 	{
 		GameDataTracker* dgtp = &GameDataTracker::getInstance();
-		std::map<Netcode::PlayerID, HostStatsPerPlayer> tmpPlayerMap = dgtp->getPlayerDataMap();
+		const std::map<Netcode::PlayerID, HostStatsPerPlayer> tmpPlayerMap = dgtp->getPlayerDataMap();
 		// Send player count to clients for them to loop following data
 		ar(tmpPlayerMap.size());
 
