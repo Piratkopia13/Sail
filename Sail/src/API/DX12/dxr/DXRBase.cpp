@@ -106,7 +106,7 @@ void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
 	m_gbufferInputTextures = inputs;
 }
 
-void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList, const std::vector<DXRBase::MetaballGroup*>& metaballGroups) {
+void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, ID3D12GraphicsCommandList4* cmdList) {
 
 	unsigned int frameIndex = m_context->getSwapIndex();
 	unsigned int totalNumInstances = 0;
@@ -226,7 +226,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors) {
+void DXRBase::updateSceneData(Camera* cam, LightSetup* lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors) {
 
 	updateMetaballpositions(metaballGroups);
 

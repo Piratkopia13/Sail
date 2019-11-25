@@ -257,7 +257,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	// Execute compute command list to do AS updates and ray dispatching
 	cmdListCompute->Close();
-	m_context->executeCommandLists({ cmdListCompute.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	m_context->getComputeQueue()->executeCommandLists({ cmdListCompute.Get() });
 	// Place a signal to syncronize copying the raytracing output to the backbuffer when it is available
 	fenceVal = m_context->getComputeQueue()->signal();
 
@@ -265,13 +265,13 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_context->getDirectQueue()->wait(fenceVal);
 	// Execute direct command list
 	cmdListDirectShading->Close();
-	m_context->executeCommandLists({ cmdListDirectShading.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	m_context->getDirectQueue()->executeCommandLists({ cmdListDirectShading.Get() });
 	fenceVal = m_context->getDirectQueue()->signal();
 
 	// Wait for the direct queue to finish (doing shading) before executing the post processing
 	cmdListComputePostProcess->Close();
 	m_context->getComputeQueue()->wait(fenceVal);
-	m_context->executeCommandLists({ cmdListComputePostProcess.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	m_context->getComputeQueue()->executeCommandLists({ cmdListComputePostProcess.Get() });
 	fenceVal = m_context->getComputeQueue()->signal();
 
 	// Copy post processing output to back buffer
@@ -285,7 +285,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	cmdListDirectCopy->Close();
 	// Wait for the compute queue to finish (doing post processing) befor executing resource copying
 	m_context->getDirectQueue()->wait(fenceVal);
-	m_context->executeCommandLists({ cmdListDirectCopy.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	m_context->getDirectQueue()->executeCommandLists({ cmdListDirectCopy.Get() });
 }
 
 DX12RenderableTexture* DX12RaytracingRenderer::runDenoising(ID3D12GraphicsCommandList4* cmdList) {

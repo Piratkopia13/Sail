@@ -28,7 +28,7 @@ void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatri
 	}
 }
 
-void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, const glm::mat4& modelMatrixLastFrame, RenderFlag flags, int teamColorID, bool castShadows, int group) {
+void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, const glm::mat4& modelMatrixLastFrame, RenderFlag flags, int teamColorID, bool castShadows) {
 	if (flags & RenderFlag::IS_VISIBLE_ON_SCREEN) {
 		m_rendererGbuffer->submit(mesh, modelMatrix, modelMatrixLastFrame, flags, teamColorID, castShadows);
 	}
