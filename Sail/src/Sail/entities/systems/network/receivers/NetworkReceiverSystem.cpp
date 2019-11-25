@@ -76,22 +76,6 @@ unsigned int NetworkReceiverSystem::getByteSize() const {
 }
 #endif
 
-void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
-	// Early exit if the entity already exists
-	if (findFromNetID(info.playerCompID)) {
-		return;
-	}
-
-	auto e = ECS::Instance()->createEntity("networkedEntity");
-	instantAddEntity(e.get());
-
-	SAIL_LOG("Created player with id: " + std::to_string(info.playerCompID));
-
-	// lightIndex set to 999, can probably be removed since it no longer seems to be used
-	EntityFactory::CreateOtherPlayer(e, info.playerCompID, info.candleID, info.gunID, 999, pos);
-	ECS::Instance()->addAllQueuedEntities();
-}
-
 void NetworkReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
 		e->queueDestruction();
@@ -175,7 +159,7 @@ void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKil
 void NetworkReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
 	if (auto e = findFromNetID(id); e) {
 		auto animation = e->getComponent<AnimationComponent>();
-		animation->setAnimation(info.index);
+		animation->setAnimation(info.index, false);
 		animation->animationTime = info.time;
 		animation->pitch = info.pitch;
 		return;
@@ -282,10 +266,10 @@ void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const 
 
 void NetworkReceiverSystem::playerJumped(const Netcode::ComponentID id) {
 	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 		return;
 	}
 	SAIL_LOG_WARNING("waterHitPLayer called but no matching entity found");
-	EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 }
 
 void NetworkReceiverSystem::playerLanded(const Netcode::ComponentID id) {

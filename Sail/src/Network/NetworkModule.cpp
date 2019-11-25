@@ -678,7 +678,13 @@ void Network::listen(Connection* conn) {
 		ZeroMemory(incomingPackageSize, MSG_SIZE_STR_LEN);
 
 		// Find out how large the incoming packet is
-		recv(conn->socket, incomingPackageSize, MSG_SIZE_STR_LEN, 0);
+		int b = recv(conn->socket, incomingPackageSize, MSG_SIZE_STR_LEN, 0);
+		if (b == 0 || b == SOCKET_ERROR) {
+			conn->isConnected = false;
+			nEvent.eventType = NETWORK_EVENT_TYPE::CONNECTION_CLOSED;
+			addNetworkEvent(nEvent, 0);
+			break;
+		}
 
 		// Read how many bytes to receive
 		std::istringstream is(std::string(incomingPackageSize, MSG_SIZE_STR_LEN));

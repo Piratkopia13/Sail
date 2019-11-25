@@ -9,12 +9,18 @@
 #include "states/SplashScreenState.h"
 
 Game::Game(HINSTANCE hInstance)
-	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
+	: Application(1280, 720, "S.P.L.A.S.H2O", hInstance)
 	, m_stateStack()
 	
 {
 	// Register states
-	registerStates();
+	registerStates(); 
+
+#ifdef DEVELOPMENT
+	Application::getInstance()->getWindow()->setWindowTitle("S.P.L.A.S.H2O | Development");
+#else
+	Application::getInstance()->getWindow()->setWindowTitle("S.P.L.A.S.H2O");
+#endif
 
 	// Set starting state
 	m_stateStack.pushState(States::SplashScreen);
