@@ -192,9 +192,6 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 				
 							// To make the code easier to read
-							if (soundTypeIndex == Audio::SoundType::INSANITY_SCREAM) {
-								std::cout << " ---- STARTED PLAYING INSANITY SOUND ---- \n";
-							}
 							soundGeneral->soundID = m_audioEngine->beginSound(
 								soundUnique->fileName,
 								soundGeneral->effect,
@@ -206,9 +203,6 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 						// Update the sound with the current positions if it's playing
 						if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
-							if (soundTypeIndex == Audio::SoundType::INSANITY_SCREAM) {
-								std::cout << " ---- UPDATING INSANITY SOUND ---- \n";
-							}
 							m_audioEngine->updateSoundWithCurrentPosition(
 								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
 								soundGeneral->positionalOffset, alpha
@@ -221,9 +215,6 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 							soundGeneral->durationElapsed += dt;
 						} else {
-							if (soundTypeIndex == Audio::SoundType::INSANITY_SCREAM) {
-								std::cout << " ---- STOPPED PLAYING INSANITY SOUND ---- \n";
-							}
 							soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
 							
 							soundGeneral->hasStartedPlaying = false;
@@ -275,7 +266,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 	}
 
 #ifdef DEVELOPMENT
-	m_audioEngine->logDebugData();
+	/* Uncomment it if you want to try to fix something audiowise */
+	//m_audioEngine->logDebugData();
 #endif
 }
 
@@ -373,46 +365,43 @@ void AudioSystem::dealWithDeathSound(AudioComponent* audioC, float dt) {
 		int soundPoolSize = audioData.m_soundsUnique[Audio::SoundType::DEATH].size();
 
 		if (soundPoolSize > 0) {
-			if (soundGeneral->isPlaying) {
-				if (!soundGeneral->hasStartedPlaying) {
+			if (!soundGeneral->hasStartedPlaying) {
 
-					int randomSoundIndex = randomASoundIndex(
-						soundPoolSize,
-						soundGeneral
-					);
+				int randomSoundIndex = randomASoundIndex(
+					soundPoolSize,
+					soundGeneral
+				);
 
-					Audio::SoundInfo_Unique* soundUnique = &audioData.m_soundsUnique[Audio::SoundType::DEATH].at(randomSoundIndex);
-					soundGeneral->volume = soundUnique->volume;
-					soundGeneral->hasStartedPlaying = true;
-					soundGeneral->durationElapsed = 0.0f;
-					soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
-
-					m_audioEngine->startDeathSound(
-						soundUnique->fileName,
-						soundGeneral->volume
-					);
-					soundGeneral->playOnce = true;
-				}
-
-				// Update the sound with the current positions if it's playing.
-				if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
-
-					m_audioEngine->updateDeathvolume(soundGeneral->volume);
-					soundGeneral->durationElapsed += dt;
-				}
-				else {
-					soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
-
-					soundGeneral->hasStartedPlaying = false;
-
-					soundGeneral->isPlaying = !soundGeneral->playOnce;
-				}
-			}
-			else if (soundGeneral->hasStartedPlaying) {
-				soundGeneral->hasStartedPlaying = false;
+				Audio::SoundInfo_Unique* soundUnique = &audioData.m_soundsUnique[Audio::SoundType::DEATH].at(randomSoundIndex);
+				soundGeneral->volume = soundUnique->volume;
+				soundGeneral->hasStartedPlaying = true;
 				soundGeneral->durationElapsed = 0.0f;
+				soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
+
+				m_audioEngine->startDeathSound(
+					soundUnique->fileName,
+					soundGeneral->volume
+				);
+				soundGeneral->playOnce = true;
+			}
+			// Update the sound with the current positions if it's playing.
+			if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
+
+				m_audioEngine->updateDeathvolume(soundGeneral->volume);
+				soundGeneral->durationElapsed += dt;
+			}
+			else {
+				soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
+
+				soundGeneral->hasStartedPlaying = false;
+
+				soundGeneral->isPlaying = !soundGeneral->playOnce;
 			}
 		}
+	}
+	else if (soundGeneral->hasStartedPlaying) {
+		soundGeneral->hasStartedPlaying = false;
+		soundGeneral->durationElapsed = 0.0f;
 	}
 }
 
@@ -422,46 +411,44 @@ void AudioSystem::dealwithInsanitySound(AudioComponent* audioC, float dt) {
 		int soundPoolSize = audioData.m_soundsUnique[Audio::SoundType::INSANITY_SCREAM].size();
 
 		if (soundPoolSize > 0) {
-			if (soundGeneral->isPlaying) {
-				if (!soundGeneral->hasStartedPlaying) {
+			if (!soundGeneral->hasStartedPlaying) {
 
-					int randomSoundIndex = randomASoundIndex(
-						soundPoolSize,
-						soundGeneral
-					);
+				int randomSoundIndex = randomASoundIndex(
+					soundPoolSize,
+					soundGeneral
+				);
 
-					Audio::SoundInfo_Unique* soundUnique = &audioData.m_soundsUnique[Audio::SoundType::INSANITY_SCREAM].at(randomSoundIndex);
-					soundGeneral->volume = soundUnique->volume;
-					soundGeneral->hasStartedPlaying = true;
-					soundGeneral->durationElapsed = 0.0f;
-					soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
-
-					m_audioEngine->startInsanitySound(
-						soundUnique->fileName,
-						soundGeneral->volume
-					);
-					soundGeneral->playOnce = true;
-				}
-
-				// Update the sound with the current positions if it's playing
-				if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
-
-					m_audioEngine->updateInsanityVolume(soundGeneral->volume);
-					soundGeneral->durationElapsed += dt;
-				}
-				else {
-					soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
-
-					soundGeneral->hasStartedPlaying = false;
-
-					soundGeneral->isPlaying = !soundGeneral->playOnce;
-				}
-			}
-			else if (soundGeneral->hasStartedPlaying) {
-				soundGeneral->hasStartedPlaying = false;
+				Audio::SoundInfo_Unique* soundUnique = &audioData.m_soundsUnique[Audio::SoundType::INSANITY_SCREAM].at(randomSoundIndex);
+				soundGeneral->volume = soundUnique->volume;
+				soundGeneral->hasStartedPlaying = true;
 				soundGeneral->durationElapsed = 0.0f;
+				soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
+
+				m_audioEngine->startInsanitySound(
+					soundUnique->fileName,
+					soundGeneral->volume
+				);
+				soundGeneral->playOnce = true;
+			}
+
+			// Update the sound with the current positions if it's playing
+			if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
+
+				m_audioEngine->updateInsanityVolume(soundGeneral->volume);
+				soundGeneral->durationElapsed += dt;
+			}
+			else {
+				soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
+
+				soundGeneral->hasStartedPlaying = false;
+
+				soundGeneral->isPlaying = !soundGeneral->playOnce;
 			}
 		}
+	}
+	else if (soundGeneral->hasStartedPlaying) {
+		soundGeneral->hasStartedPlaying = false;
+		soundGeneral->durationElapsed = 0.0f;
 	}
 }
 
