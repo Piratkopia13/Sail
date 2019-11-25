@@ -13,6 +13,7 @@ SettingStorage::SettingStorage(const std::string& file) {
 		assert(0);
 	}
 	createGameDefaultStructure();
+	setMap(0, -1, 0);
 }
 
 SettingStorage::~SettingStorage() {
@@ -122,6 +123,64 @@ glm::vec3 SettingStorage::getColor(const int team) {
 	}
 }
 
+void SettingStorage::setMap(const int mode, const int index, const int playerCount) {
+
+	switch (mode) {
+		//DEATHMATCH
+		case 0:
+			switch (index) {
+			case -1:	setMapValues(rand() % 30, rand() % 30, float(rand()%100)/100.0f, rand() % 300000); break;
+			case 0:		setMapValues(6,		6,		0.85f,		12397);		break;
+			case 1:		setMapValues(10,	10,		0.85f,		34590);		break;
+			case 2:		setMapValues(7,		7,		0.85f,		345912);	break;
+			case 3:		setMapValues(12,	12,		0.85f,		20);		break;
+			case 4:		setMapValues(5,		12,		0.85f,		234923);	break;
+			case 5:		setMapValues(3,		6,		0.85f,		100);		break;
+			case 6:		setMapValues(6,		10,		0.85f,		300);		break;
+			case 7:		setMapValues(7,		8,		0.85f,		123897);	break;
+			case 8:		setMapValues(12,	9,		0.85f,		123612);	break;
+			case 9:		setMapValues(2,		2,		0.85f,		500);		break;
+			case 10:	setMapValues(6,		6,		0.85f,		1200);		break;
+			case 11:	setMapValues(4,		4,		0.85f,		2);			break;
+			default: break;
+				
+			}
+		break;
+		case 1:
+			//TEAMDEATHMATCH
+			switch (index) {
+			case -1:	setMapValues(int(Utils::fastrand() * 30), int(Utils::fastrand() * 30), Utils::fastrand(), int(Utils::fastrand() * 300000)); break;
+			case 0:		setMapValues(6, 6, 0.85f, 12397);		break;
+			case 1:		setMapValues(10, 10, 0.85f, 34590);		break;
+			case 2:		setMapValues(7, 7, 0.85f, 345912);	break;
+			case 3:		setMapValues(12, 12, 0.85f, 20);		break;
+			case 4:		setMapValues(5, 12, 0.85f, 234923);	break;
+			case 5:		setMapValues(3, 6, 0.85f, 100);		break;
+			case 6:		setMapValues(6, 10, 0.85f, 300);		break;
+			case 7:		setMapValues(7, 8, 0.85f, 123897);	break;
+			case 8:		setMapValues(12, 9, 0.85f, 123612);	break;
+			case 9:		setMapValues(2, 2, 0.85f, 500);		break;
+			case 10:	setMapValues(6, 6, 0.85f, 1200);		break;
+			case 11:	setMapValues(4, 4, 0.85f, 2);			break;
+			default: break;
+				
+			}
+
+			
+		break;
+		default: break;
+		
+	}
+
+
+
+
+
+
+
+
+}
+
 SettingStorage::WantedType SettingStorage::matchType(const std::string& value) {
 	if (Reg::Number.match(value.c_str()) == value.size()) {
 		return WantedType::INT;
@@ -195,16 +254,61 @@ void SettingStorage::createGameDefaultMap() {
 	gameSettingsDynamic["map"]["sizeX"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
 	gameSettingsDynamic["map"]["sizeY"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
 	gameSettingsDynamic["map"]["tileSize"] =	DynamicSetting(7.0f, 1.0f, 30.0f);
-	gameSettingsDynamic["map"]["clutter"] = DynamicSetting(0.85f,	0.0f,	5.0f);
+	gameSettingsDynamic["map"]["clutter"] = DynamicSetting(0.85f,	0.0f,	1.0f);
 	gameSettingsDynamic["map"]["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
 	gameSettingsDynamic["map"]["sprinklerTime"] = DynamicSetting(60.0f, 0.0f, 600.0f);
 	gameSettingsDynamic["map"]["sprinklerIncrement"] = DynamicSetting(10.0f, 5.0f, 300.0f);
 
 	gameSettingsStatic["map"] = std::unordered_map<std::string, Setting>();
 	gameSettingsStatic["map"]["sprinkler"] = Setting(0, std::vector<Setting::Option>({
-	{ "on", 0.0f },
-	{ "off",1.0f }
-		}));
+		{ "on", 0.0f },
+		{ "off",1.0f }
+	}));
+
+
+
+
+	defaultMaps["Deathmatch"] = Setting(0, std::vector<Setting::Option>({
+		{"Random",		-1},
+		{"Berlin",		0},
+		{"Hamburg",		1},
+		{"Stuffgart",	2},
+		{"Munich",		3},
+		{"Nurburg",		4}, // Fred
+		{"Cologne",		5},
+		{"Frankfurt",	6},
+		{"Bremen",		7},
+		{"",			8},
+		{"",			9},
+		{"Wasserburg",	10}, // Alex - Hanslin/Hansburg/
+		{"Lubeck",		11}, // Fred - /
+	}));
+
+	defaultMaps["Teamdeathmatch"] = Setting(0, std::vector<Setting::Option>({
+		{"Random",		-1},
+		{"x",			0},
+		{"x",			1},
+		{"x",			2},
+		{"x",			3},
+		{"x",			4}, 
+		{"x",			5},
+		{"x",			6},
+		{"x",			7},
+		{"x",			8},
+		{"x",			9},
+		{"x",			10},
+		{"x",			11},
+	}));
+
+
+
+
+
+
+
+
+
+
 	
 }
 
@@ -286,6 +390,15 @@ void SettingStorage::createGameColorsDefault() {
 		}));
 	}
 }
+
+void SettingStorage::setMapValues(const int x, const int y, const float clutter, const int seed) {
+	gameSettingsDynamic["map"]["sizeX"].setValue(x);
+	gameSettingsDynamic["map"]["sizeY"].setValue(y);
+	gameSettingsDynamic["map"]["clutter"].setValue(clutter);
+	gameSettingsDynamic["map"]["seed"].setValue(seed);
+}
+
+
 
 #pragma endregion
 

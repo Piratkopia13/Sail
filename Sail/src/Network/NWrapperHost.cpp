@@ -76,6 +76,8 @@ const std::map<TCP_CONNECTION_ID, unsigned char>& NWrapperHost::getConnectionMap
 	return m_connectionsMap;
 }
 
+
+#endif // DEVELOPMENT
 const std::string& NWrapperHost::getServerDescription() {
 	return m_serverDescription;
 }
@@ -83,8 +85,6 @@ const std::string& NWrapperHost::getServerDescription() {
 const std::string& NWrapperHost::getLobbyName() {
 	return m_lobbyName;
 }
-
-#endif // DEVELOPMENT
 
 void NWrapperHost::playerJoined(TCP_CONNECTION_ID tcp_id) {
 	// Generate an ID for the client that joined and send that information.

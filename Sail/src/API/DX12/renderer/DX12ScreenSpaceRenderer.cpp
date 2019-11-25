@@ -44,7 +44,7 @@ void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, 
 			continue;
 		}
 		auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(0));
-		if (tex && !tex->hasBeenInitialized()) {
+		if (tex) {
 			tex->initBuffers(cmdList.Get());
 		}
 	}
@@ -72,7 +72,7 @@ void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, 
 	// Close command list
 	cmdList->Close();
 
-	m_context->executeCommandLists({m_command.list.Get()});
+	m_context->getDirectQueue()->executeCommandLists({m_command.list.Get()});
 }
 
 bool DX12ScreenSpaceRenderer::onEvent(const Event& event) {
