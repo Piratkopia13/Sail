@@ -103,15 +103,11 @@ bool MenuState::render(float dt, float alpha) {
 bool MenuState::renderImgui(float dt) {
 
 	// Showcasing imgui texture rendering - remove when everyone who needs to know how this works knows how this works.
-#ifdef DEVELOPMENT
 	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-	Application::getInstance()->getResourceManager().loadTexture("Crosshair.tga");
-	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Crosshair.tga");
-
-	ImGui::Begin("ImageTest");
-	ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(100, 100));
-	ImGui::End();
+#ifdef DEVELOPMENT
 #endif
+
+
 
 	
 	//Keep
@@ -181,7 +177,13 @@ if (m_usePercentage) {
 		renderJoiningLobby();
 	}
 
-
+	if (ImGui::Begin("##LOGOWINDOW", nullptr, m_standaloneButtonflags)) {
+		static ImVec2 z(3.7, 1.0);
+		Texture& logo = Application::getInstance()->getResourceManager().getTexture("splash_logo.tga");
+		ImGui::Image(imguiHandler->getTextureID(&logo), ImVec2(m_app->getWindow()->getWindowWidth() *0.5f, (m_app->getWindow()->getWindowWidth()*0.5f) / z.x));
+		ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth()*0.5f - ImGui::GetWindowSize().x*0.5f, 0));
+	}
+	ImGui::End();
 
 	ImGui::PopFont();
 
