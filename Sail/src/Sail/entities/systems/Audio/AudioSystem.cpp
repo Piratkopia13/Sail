@@ -221,7 +221,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 							soundGeneral->isPlaying = !soundGeneral->playOnce;
 						}
-					} else if (soundGeneral->hasStartedPlaying) {
+					} 
+					else if (soundGeneral->hasStartedPlaying) {
 						
 						soundGeneral->hasStartedPlaying = false;
 						soundGeneral->durationElapsed = 0.0f;
@@ -577,6 +578,11 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onStopShooting = [=](const StopShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
+			// Force stop the loop sound since it continues playing when it should not.
+			Audio::SoundInfo_General soundGeneralLoop = player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP];
+			m_audioEngine->stopSpecificSound(soundGeneralLoop.soundID);
+			Audio::SoundInfo_General soundGeneralStart = player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START];
+			m_audioEngine->stopSpecificSound(soundGeneralStart.soundID);
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = false;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].isPlaying = true;
