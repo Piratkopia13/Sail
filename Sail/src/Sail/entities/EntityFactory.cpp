@@ -42,14 +42,14 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	candle->addComponent<CullingComponent>();
 
 	auto* particleEmitterComp = candle->addComponent<ParticleEmitterComponent>();
-	particleEmitterComp->size = 0.1f;
-	particleEmitterComp->offset = { 0.0f, 0.44f, 0.0f };
-	particleEmitterComp->constantVelocity = { 0.0f, 0.2f, 0.0f };
-	particleEmitterComp->acceleration = { 0.0f, 1.0f, 0.0f };
-	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
-	particleEmitterComp->spawnRate = 0.001f;
-	particleEmitterComp->lifeTime = 0.13f;
-	particleEmitterComp->setTexture("particles/fire.tga");
+	particleEmitterComp->size = 0.09f;
+	particleEmitterComp->offset = { 0.0f, 0.41f, 0.0f };
+	particleEmitterComp->constantVelocity = { 0.0f, 0.7f, 0.0f };
+	particleEmitterComp->acceleration = { 0.0f, 0.4f, 0.0f };
+	particleEmitterComp->spread = { 0.22f, 0.5f, 0.22f };
+	particleEmitterComp->spawnRate = 0.0001f;
+	particleEmitterComp->lifeTime = 0.15f;
+	particleEmitterComp->setTexture("particles/animFire.tga");
 
 	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
 	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.08f));
