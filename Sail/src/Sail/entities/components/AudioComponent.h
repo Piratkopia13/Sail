@@ -34,6 +34,23 @@ public:
 		return size;
 	}
 	void imguiRender(Entity** selected) {
+		ImGui::Text("Currently Playing Sounds");
+		ImGui::Indent(10.0f);
+		int index = 0;
+		for (const auto& sound : m_sounds) {
+			if (sound.isPlaying) {
+				Audio::SoundType type = static_cast<Audio::SoundType>(index);
+				ImGui::Text(std::to_string(type).c_str());
+			}
+			index++;
+		}
+		ImGui::Unindent(10.0f);
+		ImGui::Text("StreamRequests");
+		ImGui::Indent(10.0f);
+		for (const auto& sound : m_streamingRequests) {
+			ImGui::Text(std::string(sound.first + "(" + std::to_string(sound.second.streamIndex) + ":" + std::to_string(sound.second.isPositionalAudio) + ")").c_str());
+		}
+		ImGui::Unindent(10.0f);
 		ImGui::Text("Streams");
 		ImGui::Indent(10.0f);
 		for (const auto& sound : m_currentlyStreaming) {
