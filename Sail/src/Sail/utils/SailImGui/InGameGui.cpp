@@ -17,8 +17,9 @@ InGameGui::~InGameGui() {
 }
 
 void InGameGui::renderWindow() {
-	float screenWidth = Application::getInstance()->getWindow()->getWindowWidth();
-	float screenHeight = Application::getInstance()->getWindow()->getWindowHeight();
+	Application* app=Application::getInstance();
+	float screenWidth = app->getWindow()->getWindowWidth();
+	float screenHeight = app->getWindow()->getWindowHeight();
 	float progresbarLenght = 300;
 	float progresbarHeight = 40;
 	float outerPadding = 50;
@@ -80,9 +81,9 @@ void InGameGui::renderWindow() {
 		}
 		ImGui::End();
 		ImGui::Begin("TorchThrowButton", NULL, flags);
+		auto* imguiHandler = app->getImGuiHandler();
 		if (c3) {
-			auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-			Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchThrow2.tga");
+			Texture& testTexture = app->getResourceManager().getTexture("Icons/TorchThrow2.tga");
 
 			if (  c3->isLit && c3->isCarried && c3->candleToggleTimer > 2.f) {
 				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55),ImVec2(0,0),ImVec2(1,1),ImVec4(1,1,1,1));
@@ -94,8 +95,7 @@ void InGameGui::renderWindow() {
 			ImGui::End();
 		}
 		int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
-		auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-		Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchLeft.tga");
+		Texture& testTexture = app->getResourceManager().getTexture("Icons/TorchLeft.tga");
 		if (ImGui::Begin("TorchesLeft", nullptr, flags)) {
 			for (int i = 0; i < nrOfTorchesLeft; i++) {
 				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55));
@@ -112,9 +112,8 @@ void InGameGui::renderWindow() {
 
 	if (m_player) {
 		int nrOfPlayersLeft = GameDataTracker::getInstance().getPlayersLeft();
-		auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-		Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/PlayersLeft.tga");
-		GameDataTracker::getInstance().setPlayersLeft(nrOfPlayersLeft);
+		auto* imguiHandler = app->getImGuiHandler();
+		Texture& testTexture = app->getResourceManager().getTexture("Icons/PlayersLeft.tga");
 		if (ImGui::Begin("PlayersLeftIcon", nullptr, flags)) {
 			ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(32, 32));
 			ImGui::SetWindowPos(ImVec2(
