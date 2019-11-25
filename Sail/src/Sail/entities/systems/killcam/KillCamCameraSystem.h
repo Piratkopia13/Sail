@@ -30,5 +30,4 @@ private:
 
 private:
 	CameraController* m_cam = nullptr;
-
 };

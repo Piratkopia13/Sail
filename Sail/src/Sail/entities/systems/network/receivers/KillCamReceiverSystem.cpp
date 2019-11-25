@@ -48,11 +48,14 @@ void KillCamReceiverSystem::stop() {
 		data = std::queue<std::string>();
 	}
 
+	m_slowMotionState = SlowMotionSetting::DISABLE;
 	m_currentWriteInd = 0;
 	m_currentReadInd  = 1;
 	m_hasStarted      = false;
+	m_idOfKiller      = 0;
 	m_idOfKillingProjectile = 0;
-	m_idOfKiller = 0;
+	m_killerPlayer = nullptr;
+	m_killerProjectile = nullptr;
 }
 
 void KillCamReceiverSystem::init(Netcode::PlayerID player) {
@@ -87,6 +90,35 @@ void KillCamReceiverSystem::update(float dt) {
 	}
 }
 
+void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
+	// only update the camera's position if a player killed us
+	//if (m_idOfKillingProjectile != Netcode::N)
+
+
+	auto interpolate = [](float prev, float current, float alpha) {
+		return (alpha * current) + ((1.0f - alpha) * prev);
+	};
+
+	for (auto e : entities) {
+		AnimationComponent* animation = e->getComponent<AnimationComponent>();
+		//BoundingBoxComponent* playerBB  = e->getComponent<BoundingBoxComponent>();
+		TransformComponent* transform = e->getComponent<TransformComponent>();
+
+		const glm::vec3 finalPos = transform->getRenderMatrix(alpha) * glm::vec4(animation->headPositionLocalCurrent, 1.f);
+		const glm::vec3 camPos = glm::vec3(finalPos);
+
+		m_cam->setCameraPosition(camPos);
+
+		const glm::quat rot = glm::angleAxis(-interpolate(animation->prevPitch, animation->pitch, alpha), glm::vec3(1, 0, 0));
+		const glm::quat rotated = glm::normalize(rot * transform->getInterpolatedRotation(alpha));
+
+		const glm::vec3 forwards = rotated * glm::vec3(0.f, 0.f, 1.f);
+
+		m_cam->setCameraDirection(forwards);
+
+	}
+}
+
 // Should only be called when the killcam is active
 void KillCamReceiverSystem::processReplayData(float dt) {
 	// Add the entities to all relevant systems so that they for example will have their animations updated
@@ -106,6 +138,7 @@ void KillCamReceiverSystem::processReplayData(float dt) {
 				&& killerID == Netcode::getComponentOwner(e->getComponent<ReplayReceiverComponent>()->m_id)) 
 			{
 				e->addComponent<KillerComponent>();
+				m_killerPlayer = e;
 
 				SAIL_LOG("I was killed by: " + NWrapperSingleton::getInstance().getPlayer(killerID)->name);
 			}
@@ -352,6 +385,12 @@ void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	args.lifetime *= SLOW_MO_MULTIPLIER;
 
 	EntityFactory::CreateReplayProjectile(e, args);
+
+	// Start the slow motion when the killing projectile spawns
+	if (info.projectileID == m_idOfKillingProjectile) {
+		m_slowMotionState = SlowMotionSetting::ENABLE;
+		m_killerProjectile = e.get();
+	}
 }
 
 void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID killerID) {

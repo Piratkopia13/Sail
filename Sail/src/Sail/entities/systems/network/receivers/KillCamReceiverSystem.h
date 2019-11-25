@@ -17,7 +17,7 @@ class KillCamReceiverSystem : public ReceiverBase, public EventReceiver {
 public:
 	// Packets from the past five seconds are saved so that they can be replayed in the killcam.
 	static constexpr size_t REPLAY_BUFFER_SIZE = TICKRATE * 5;
-	static constexpr size_t SLOW_MO_MULTIPLIER = 4;
+	static constexpr size_t SLOW_MO_MULTIPLIER = 10;
 
 public:
 	KillCamReceiverSystem();
@@ -26,6 +26,7 @@ public:
 	void init(Netcode::PlayerID player);
 	void handleIncomingData(const std::string& data) override;
 	void update (float dt) override;
+	void updatePerFrame(float dt, float alpha);
 	void stop() override;
 
 	void prepareUpdate();
@@ -112,12 +113,15 @@ private:
 	size_t m_currentReadInd  = 1;
 	bool   m_hasStarted      = false;
 
-	SlowMotionSetting m_slowMotionState = SlowMotionSetting::ENABLE;
+	SlowMotionSetting m_slowMotionState = SlowMotionSetting::DISABLE;
 	size_t m_killCamTickCounter = 0; // Counts ticks in the range [ 0, SLOW_MO_MULTIPLIER )
 
 
 	Netcode::ComponentID m_idOfKillingProjectile = 0;
 	Netcode::ComponentID m_idOfKiller = 0;
+
+	Entity* m_killerPlayer = nullptr;
+	Entity* m_killerProjectile = nullptr;
 
 private:
 	// Helper functions
