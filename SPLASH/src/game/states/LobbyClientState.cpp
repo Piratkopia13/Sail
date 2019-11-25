@@ -34,20 +34,6 @@ bool LobbyClientState::onEvent(const Event& event) {
 	return true;
 }
 
-bool LobbyClientState::onMyTextInput(const ChatSent& event) {
-	// Add input to current message, If 'enter', send message to host, do not input to chat.
-	Message temp{ NWrapperSingleton::getInstance().getMyPlayer().id, m_message };
-	m_network->sendChatMsg(m_message);
-	
-	return true;
-}
-
-bool LobbyClientState::onRecievedText(const NetworkChatEvent& event) {
-	// Only add the received message to the chat
-	this->addMessageToChat(event.chatMessage);
-	return true;
-}
-
 bool LobbyClientState::onDropped(const NetworkDroppedEvent& event) {
 	// Queue changes to statestack
 	this->requestStackPop();

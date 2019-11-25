@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Sail/events/Event.h"
+#include "Network/NWrapper.h"
 
 struct NetworkChatEvent : public Event{
 	NetworkChatEvent(const Message& _chatMessage)
