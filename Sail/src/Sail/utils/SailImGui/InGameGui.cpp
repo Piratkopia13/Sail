@@ -110,6 +110,21 @@ void InGameGui::renderWindow() {
 
 	ImGui::End();
 
+	int nrOfPlayersLeft = GameDataTracker::getInstance().getPlayersLeft();
+	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
+	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchLeft.tga");
+	if (ImGui::Begin("TorchesLeft", nullptr, flags)) {
+		for (int i = 0; i < nrOfPlayersLeft; i++) {
+			ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55));
+			ImGui::SameLine(0.f, 0);
+		}
+		ImGui::SetWindowPos(ImVec2(
+			100,100
+		));
+	}
+	ImGui::End();
+
+
 	if (m_crosshairEntity) {
 		if (!m_crosshairEntity->getComponent<CrosshairComponent>()->sprinting) {
 			renderCrosshair(screenWidth, screenHeight);
