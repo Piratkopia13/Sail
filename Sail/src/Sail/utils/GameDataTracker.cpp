@@ -251,8 +251,6 @@ void GameDataTracker::renderPlacement() {
 	ImGui::EndChild();
 }
 
-
-
 void GameDataTracker::renderPersonalStats() {
 
 

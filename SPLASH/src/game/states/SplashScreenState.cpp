@@ -211,6 +211,7 @@ bool SplashScreenState::loadTextures(Application* app) {
 
 	rm->loadTexture("Icons/TorchLeft.tga");
 	rm->loadTexture("Icons/TorchThrow2.tga");
+	rm->loadTexture("Icons/PlayersLeft.tga");
 
 	return true;
 }

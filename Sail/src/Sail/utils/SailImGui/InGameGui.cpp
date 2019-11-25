@@ -110,20 +110,28 @@ void InGameGui::renderWindow() {
 
 	ImGui::End();
 
-	int nrOfPlayersLeft = GameDataTracker::getInstance().getPlayersLeft();
-	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchLeft.tga");
-	if (ImGui::Begin("TorchesLeft", nullptr, flags)) {
-		for (int i = 0; i < nrOfPlayersLeft; i++) {
-			ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55));
-			ImGui::SameLine(0.f, 0);
+	if (m_player) {
+		int nrOfPlayersLeft = GameDataTracker::getInstance().getPlayersLeft();
+		auto* imguiHandler = Application::getInstance()->getImGuiHandler();
+		Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/PlayersLeft.tga");
+		GameDataTracker::getInstance().setPlayersLeft(nrOfPlayersLeft);
+		if (ImGui::Begin("PlayersLeftIcon", nullptr, flags)) {
+			ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(32, 32));
+			ImGui::SetWindowPos(ImVec2(
+				1, 8
+			));
 		}
-		ImGui::SetWindowPos(ImVec2(
-			100,100
-		));
+		ImGui::End();
+		if (ImGui::Begin("PlayersLeftNumber", nullptr, flags)) {
+			std::string progress =std::to_string(nrOfPlayersLeft);
+			ImGui::Text(progress.c_str());
+			ImGui::SetWindowFontScale(2.5f);
+			ImGui::SetWindowPos(ImVec2(
+				40, 0
+			));
+		}
+		ImGui::End();
 	}
-	ImGui::End();
-
 
 	if (m_crosshairEntity) {
 		if (!m_crosshairEntity->getComponent<CrosshairComponent>()->sprinting) {
