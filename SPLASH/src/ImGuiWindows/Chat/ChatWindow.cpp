@@ -19,7 +19,7 @@ ChatWindow::ChatWindow(bool showWindow) :
 	m_backgroundOpacityMul(0.4f),
 	m_scrollToBottom(false),
 	m_messageLimit(30),
-	m_messageSizeLimit(100),
+	m_messageSizeLimit(150),
 	m_retainFocus(true),
 	m_removeFocus(false)
 {
@@ -177,7 +177,7 @@ void ChatWindow::renderChat(float dt) {
 		static bool justSent = false;
 		static bool releasedEnter = true;
 		justSent = false;
-		static char buf[102] = "";
+		static char buf[152] = "";
 		strncpy_s(buf, m_message.c_str(), m_message.size());
 
 		if (ImGui::IsKeyReleased(SAIL_KEY_RETURN)) {
