@@ -45,7 +45,7 @@ public:
 	}
 	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
-		if (ImGui::DragFloat("##aspeeed", &projectileSpeed, 0.1f)) {
+		if (ImGui::DragFloat("##aspeeed", &baseProjectileSpeed, 0.1f)) {
 		}ImGui::NextColumn();
 		ImGui::Text("Speed"); 
 		ImGui::Columns(1);
