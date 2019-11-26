@@ -632,7 +632,7 @@ HRESULT AudioEngine::initXAudio2() {
 	UINT32 flags = XAUDIO2_1024_QUANTUM;
 
 #ifdef DEVELOPMENT
-	flags |= XAUDIO2_DEBUG_ENGINE;
+	//flags |= XAUDIO2_DEBUG_ENGINE;
 #endif
 
 	HRESULT hr = XAudio2Create(&m_xAudio2, flags);
@@ -653,7 +653,7 @@ HRESULT AudioEngine::initXAudio2() {
 
 #if DEVELOPMENT
 	// Activate debug layer if we're in development
-	activateDebugLayer();
+	//activateDebugLayer();
 #endif
 
 	return hr;
