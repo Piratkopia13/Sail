@@ -505,10 +505,12 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	{
 		Netcode::MessageSubmitWaterPoints* data = static_cast<Netcode::MessageSubmitWaterPoints*>(event->data);
 		
-		ar(data->points.size()); // Tell the receiver how many points they should receive
+		size_t nrOfPoints = data->points.size();
 
-		for (auto& p : data->points) {
-			ArchiveHelpers::saveVec3(ar, p); // Send all points to the receiver
+		ar(nrOfPoints); // Tell the receiver how many points they should receive
+
+		for (size_t i = 0; i < nrOfPoints; i++) {
+			ArchiveHelpers::saveVec3(ar, data->points[i]); // Send all points to the receiver
 		}
 	}
 	break;
