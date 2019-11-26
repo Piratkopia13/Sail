@@ -25,7 +25,7 @@ EndGameState::EndGameState(StateStack& stack) :
 
 #ifdef DEVELOPMENT
 	//KEEP FOR DEBUGGING
-	GameDataTracker::getInstance().init();
+	//GameDataTracker::getInstance().init();
 	//GameDataTracker::getInstance().addDebugData();
 #endif
 	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
