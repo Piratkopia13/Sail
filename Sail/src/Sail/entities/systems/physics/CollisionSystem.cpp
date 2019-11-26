@@ -467,7 +467,7 @@ void CollisionSystem::rayCastRagdollUpdate(Entity* e, float& dt) {
 
 	const float velocityAmp = glm::length(movement->velocity) * dt;
 
-	float closestHit = INFINITY;
+	float closestHit = 9999999.0f;
 
 	std::vector<Octree::CollisionInfo> collisions;
 
