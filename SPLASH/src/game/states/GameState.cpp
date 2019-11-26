@@ -66,7 +66,7 @@ GameState::GameState(StateStack& stack)
 	m_app->getChatWindow()->resetMessageTime();
 	m_app->getChatWindow()->setRetainFocus(false);
 	m_app->getChatWindow()->removeFocus();
-	m_app->getChatWindow()->setBackgroundOpacity(0.1f);
+	m_app->getChatWindow()->setBackgroundOpacity(0.05f);
 
 	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 	auto& settings = m_app->getSettings();

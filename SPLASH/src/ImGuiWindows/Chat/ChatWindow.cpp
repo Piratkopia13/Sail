@@ -120,6 +120,9 @@ void ChatWindow::renderChat(float dt) {
 	bgCol.w*= m_backgroundOpacityMul;
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, bgCol);
 
+
+
+
 	if (ImGui::Begin("##CHATWINDOW", nullptr, chatFlags)) {
 		ImGui::PushFont(m_imguiHandler->getFont("Beb20"));
 #ifdef DEVELOPMENT
@@ -136,6 +139,11 @@ void ChatWindow::renderChat(float dt) {
 		}
 #endif
 		if (ImGui::BeginChild("##CHATTEXT", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
+			if (alpha <= 0.02f) {
+				ImVec4 txtCol(ImGui::GetStyleColorVec4(ImGuiCol_Text));
+				txtCol.w = 0.0f;
+				ImGui::PushStyleColor(ImGuiCol_Text, txtCol);
+			}
 			for (auto currentMessage : m_messages) {
 				//System or player which has left
 				if (currentMessage.id == 255 || currentMessage.id == 254) {
@@ -169,6 +177,9 @@ void ChatWindow::renderChat(float dt) {
 			if (m_scrollToBottom) {
 				ImGui::SetScrollHereY(1.0f);
 				m_scrollToBottom = false;
+			}
+			if (alpha <= 0.02f) {
+				ImGui::PopStyleColor();
 			}
 		}
 		ImGui::EndChild();
