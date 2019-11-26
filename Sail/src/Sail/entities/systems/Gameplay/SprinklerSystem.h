@@ -5,14 +5,13 @@
 #include "Sail/utils/Storage/SettingStorage.h"
 
 class Octree;
-class ParticleEmitterComponent;
+class Entity;
 
 struct Sprinkler {
 	int roomID;
 	glm::vec3 pos;
 	glm::vec2 size;
 	bool active = false;
-	ParticleEmitterComponent* particleEmitter = nullptr;
 };
 
 class SprinklerSystem final : public BaseComponentSystem {
@@ -50,5 +49,5 @@ private:
 	std::vector<int> m_roomsToBeActivated;
 	std::vector<Sprinkler> m_sprinklers;
 
-	void addSprinkler(int x, int y);
+	void addSprinkler(int x, int y, Entity* ownerEntity);
 };

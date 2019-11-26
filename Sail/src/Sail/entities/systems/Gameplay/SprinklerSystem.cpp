@@ -60,17 +60,6 @@ void SprinklerSystem::update(float dt) {
 					glm::vec3 hitPos = m_sprinklers[i].pos + waterDir * tempInfo.closestHit;
 					Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(hitPos);
 				}
-
-				//// Particle effect
-				//auto* emitter = m_sprinklers[i].particleEmitter;
-				//if (emitter) {
-				//	emitter->size = 1.0f;
-				//	emitter->constantVelocity = { 0.0f, -0.7f, 0.0f };
-				//	emitter->acceleration = { 0.0f, -0.4f, 0.0f };
-				//	emitter->spread = { 5.22f, 1.0f, 5.22f };
-				//	emitter->spawnRate = 1.f / 100.f;
-				//	emitter->lifeTime = 2.0f;
-				//}
 			}
 
 			for (auto& e : entities) {
@@ -126,25 +115,25 @@ void SprinklerSystem::update(float dt) {
 				switch (m_mapSide) {
 				case 1:
 					for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
-						addSprinkler(x, m_yMinIncrement);
+						addSprinkler(x, m_yMinIncrement, nullptr);
 					}
 					m_yMinIncrement++;
 					break;
 				case 2:
 					for (int x = 0 + m_xMinIncrement; x < m_map->xsize - m_xMaxIncrement; x++) {
-						addSprinkler(x, m_map->ysize - 1 - m_yMaxIncrement);
+						addSprinkler(x, m_map->ysize - 1 - m_yMaxIncrement, nullptr);
 					}
 					m_yMaxIncrement++;
 					break;
 				case 3:
 					for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
-						addSprinkler(m_xMinIncrement, y);
+						addSprinkler(m_xMinIncrement, y, nullptr);
 					}
 					m_xMinIncrement++;
 					break;
 				case 4:
 					for (int y = 0 + m_yMinIncrement; y < m_map->ysize - m_yMaxIncrement; y++) {
-						addSprinkler(m_map->xsize - 1 - m_xMaxIncrement, y);
+						addSprinkler(m_map->xsize - 1 - m_xMaxIncrement, y, nullptr);
 					}
 					m_xMaxIncrement++;
 					break;
@@ -185,7 +174,7 @@ const std::vector<int>& SprinklerSystem::getActiveRooms() const
 	return m_activeRooms;
 }
 
-void SprinklerSystem::addSprinkler(int x, int y) {
+void SprinklerSystem::addSprinkler(int x, int y, Entity* ownerEntity) {
 	int room = m_map->getRoomID(x, y);
 	if (room != 0) {
 		std::vector<int>::iterator itRooms = std::find(m_activeRooms.begin(), m_activeRooms.end(), room);
@@ -194,13 +183,11 @@ void SprinklerSystem::addSprinkler(int x, int y) {
 			m_roomsToBeActivated.push_back(room);
 			
 			// Save sprinkler worldPos, room size, and room ID
-			Sprinkler sprinkler;
+			Sprinkler& sprinkler = m_sprinklers.emplace_back();
 			sprinkler.roomID = room;
 			sprinkler.pos = m_map->getRoomInfo(room).center;
 			sprinkler.pos.y = (m_map->tileSize * m_map->tileHeight) - 0.2f;
 			sprinkler.size = m_map->getRoomInfo(room).size;
-			
-			m_sprinklers.push_back(sprinkler);
 		}
 	}
 }
