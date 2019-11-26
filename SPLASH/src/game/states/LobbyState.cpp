@@ -50,6 +50,7 @@ LobbyState::LobbyState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+	EventDispatcher::Instance().subscribe(Event::Type::SETTINGS_UPDATED, this);
 
 	m_ready = false;
 
@@ -107,6 +108,7 @@ LobbyState::~LobbyState() {
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::SETTINGS_UPDATED, this);
 }
 
 bool LobbyState::processInput(float dt) {
@@ -127,6 +129,10 @@ bool LobbyState::update(float dt, float alpha) {
 		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 		m_network->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
 		m_settingsChanged = false;
+		std::string gamemode = m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().name;
+		std::string map = m_settings->defaultMaps[gamemode].getSelected().name;
+		NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
+		wrapper->setLobbyName(wrapper->getLobbyName().substr(0, wrapper->getLobbyName().find_first_of(";")) + ";" + gamemode + ";" + map);
 		m_timeSinceLastUpdate = 0.0f;
 	}
 	m_timeSinceLastUpdate += dt;
@@ -145,7 +151,7 @@ bool LobbyState::renderImgui(float dt) {
 
 	//Keep all this
 	//ImGui::ShowDemoWindow();
-	static std::string font = "Beb30";
+	static std::string font = "Beb27";
 	//ImGui::PushFont(m_imGuiHandler->getFont(font));
 	//
 	//if (ImGui::Begin("IMGUISETTINGS")) {
@@ -223,6 +229,7 @@ bool LobbyState::onEvent(const Event& event) {
 	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE:	onPlayerTeamRequest((const NetworkPlayerRequestedTeamChange&)event); break;
 	case Event::Type::NETWORK_PLAYER_CHANGED_TEAM:	onPlayerTeamChanged((const NetworkPlayerChangedTeam&)event); break;
+	case Event::Type::SETTINGS_UPDATED:	onSettingsChanged(); break;
 
 	default:
 		break;
@@ -268,6 +275,15 @@ bool LobbyState::onPlayerTeamRequest(const NetworkPlayerRequestedTeamChange& eve
 
 bool LobbyState::onPlayerTeamChanged(const NetworkPlayerChangedTeam& event) {	
 	
+	return true;
+}
+
+bool LobbyState::onSettingsChanged() {
+
+	if (!NWrapperSingleton::getInstance().isHost()) {
+		m_optionsWindow.updateMap();
+	}
+
 	return true;
 }
 
