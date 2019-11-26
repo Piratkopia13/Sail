@@ -277,6 +277,8 @@ GameState::GameState(StateStack& stack)
 }
 
 GameState::~GameState() {
+	Application::getInstance()->getAPI<DX12API>()->waitForGPU();
+
 	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("GameState");
 	shutDownGameState();
 	delete m_octree;
