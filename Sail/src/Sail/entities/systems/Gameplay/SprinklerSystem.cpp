@@ -61,16 +61,16 @@ void SprinklerSystem::update(float dt) {
 					Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(hitPos);
 				}
 
-				// Particle effect
-				auto* emitter = m_sprinklers[i].particleEmitter;
-				if (emitter) {
-					emitter->size = 1.0f;
-					emitter->constantVelocity = { 0.0f, -0.7f, 0.0f };
-					emitter->acceleration = { 0.0f, -0.4f, 0.0f };
-					emitter->spread = { 5.22f, 1.0f, 5.22f };
-					emitter->spawnRate = 1.f / 100.f;
-					emitter->lifeTime = 2.0f;
-				}
+				//// Particle effect
+				//auto* emitter = m_sprinklers[i].particleEmitter;
+				//if (emitter) {
+				//	emitter->size = 1.0f;
+				//	emitter->constantVelocity = { 0.0f, -0.7f, 0.0f };
+				//	emitter->acceleration = { 0.0f, -0.4f, 0.0f };
+				//	emitter->spread = { 5.22f, 1.0f, 5.22f };
+				//	emitter->spawnRate = 1.f / 100.f;
+				//	emitter->lifeTime = 2.0f;
+				//}
 			}
 
 			for (auto& e : entities) {

@@ -5,6 +5,7 @@
 #include "Sail/utils/Storage/SettingStorage.h"
 
 class Octree;
+class ParticleEmitterComponent;
 
 struct Sprinkler {
 	int roomID;
