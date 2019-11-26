@@ -96,9 +96,6 @@ void LevelSystem::generateMap() {
 
 	//creates tilemap for the level
 	matchRoom();
-
-	//fills rooms with stuff
-	generateClutter();
 	
 	// Find spawn points
 	addSpawnPoints();
@@ -116,6 +113,9 @@ void LevelSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) 
 			}
 		}
 	}
+
+	//fills rooms with stuff
+	generateClutter();
 }
 
 void LevelSystem::destroyWorld() {
@@ -1417,6 +1417,11 @@ const RoomInfo LevelSystem::getRoomInfo(int ID) {
 
 	return info;
 }
+
+int *** LevelSystem::getTiles() {
+	return tileArr;
+}
+
 
 #ifdef DEVELOPMENT
 unsigned int LevelSystem::getByteSize() const {

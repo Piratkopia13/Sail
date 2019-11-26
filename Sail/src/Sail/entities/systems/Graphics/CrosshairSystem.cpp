@@ -36,10 +36,10 @@ void CrosshairSystem::applySettings(CrosshairComponent* c) {
 	c->thickness = crosshairSetting["Thickness"].value;
 	c->centerPadding = crosshairSetting["CenterPadding"].value;
 	c->size = crosshairSetting["Size"].value;
-	c->color.x = crosshairSetting["Color R"].value;
-	c->color.y = crosshairSetting["Color G"].value;
-	c->color.z = crosshairSetting["Color B"].value;
-	c->color.w = crosshairSetting["Color A"].value;
+	c->color.x = crosshairSetting["ColorR"].value;
+	c->color.y = crosshairSetting["ColorG"].value;
+	c->color.z = crosshairSetting["ColorB"].value;
+	c->color.w = crosshairSetting["ColorA"].value;
 }
 
 void CrosshairSystem::alterCrosshair(Entity* e, float dt) {
