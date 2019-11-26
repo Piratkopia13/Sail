@@ -47,7 +47,7 @@ void CandlePlacementSystem::update(float dt) {
 
 		e->getComponent<LightComponent>()->currentPos = flamePos;
 
-		if (!candle->isCarried && e->getParent()->hasComponent<NetworkReceiverComponent>()) {
+		if (!candle->isCarried && e->getParent() && e->getParent()->hasComponent<NetworkReceiverComponent>()) {
 			EventDispatcher::Instance().emit(TorchNotHeldEvent(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id));
 		}
 	}
