@@ -57,7 +57,7 @@ bool CandleReignitionSystem::onEvent(const Event& event) {
 
 		// Find the candle with the correct ID
 		for (auto candleEntity : entities) {
-			if (candleEntity->getComponent<NetworkReceiverComponent>()->m_id == e.netCompID) {
+			if (auto nrc = candleEntity->getComponent<NetworkReceiverComponent>(); nrc && nrc->m_id == e.netCompID) {
 				candle = candleEntity;
 				break;
 			}
