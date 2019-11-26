@@ -37,7 +37,12 @@ void CandleHealthSystem::update(float dt) {
 
 		// Scale fire particles with health
 		auto particles = e->getComponent<ParticleEmitterComponent>();
-		particles->spawnRate = 0.01f * glm::max(0.f, (MAX_HEALTH / candle->health));
+		if (candle->health <= 0.f) {
+			particles->spawnRate = 1000000.0f;
+		}
+		else {
+			particles->spawnRate = 0.01f * (MAX_HEALTH / glm::max(candle->health, 1.f));
+		}
 
 #pragma region HOST_ONLY_STUFF
 		if (isHost && candle->isLit) {
@@ -197,6 +202,23 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 
 const int CandleHealthSystem::getMaxNumberOfRespawns() {
 	return m_maxNumRespawns;
+}
+
+//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+int CandleHealthSystem::getNumLivingEntites() {
+	int i = 0;
+	//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+	for (auto& e : entities) {
+		//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+		TransformComponent* tc = e->getComponent<TransformComponent>();
+		//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+		if (e->getComponent<CandleComponent>()->isAlive && tc && tc->getRenderMatrix()[3].y > -1) {
+			//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+			i++;
+		}
+	}
+	//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+	return i;
 }
 
 #ifdef DEVELOPMENT

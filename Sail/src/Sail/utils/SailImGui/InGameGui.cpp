@@ -9,6 +9,7 @@
 #include "Sail/entities/components/CrosshairComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
 #include "Sail/entities/components/SpectatorComponent.h"
+#include "Sail/entities/systems/Gameplay/candles/CandleHealthSystem.h"
 
 InGameGui::InGameGui(bool showWindow) {
 }
@@ -111,7 +112,9 @@ void InGameGui::renderWindow() {
 	ImGui::End();
 
 	if (m_player) {
-		int nrOfPlayersLeft = GameDataTracker::getInstance().getPlayersLeft();
+		//int nrOfPlayersLeft = GameDataTracker::getInstance().getPlayersLeft();
+		int nrOfPlayersLeft = ECS::Instance()->getSystem<CandleHealthSystem>()->getNumLivingEntites();
+
 		auto* imguiHandler = app->getImGuiHandler();
 		Texture& testTexture = app->getResourceManager().getTexture("Icons/PlayersLeft.tga");
 		if (ImGui::Begin("PlayersLeftIcon", nullptr, flags)) {
