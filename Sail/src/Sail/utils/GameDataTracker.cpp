@@ -69,8 +69,11 @@ void GameDataTracker::logWeaponFired() {
 	}
 }
 
-void GameDataTracker::logEnemyKilled(Netcode::PlayerID killer, Netcode::PlayerID victim) {
+void GameDataTracker::logEnemyKilled(Netcode::PlayerID killer) {
 	m_hostPlayerTracker[killer].nKills += 1;
+}
+
+void GameDataTracker::logDeath(Netcode::PlayerID victim) {
 	m_hostPlayerTracker[victim].nDeaths += 1;
 }
 

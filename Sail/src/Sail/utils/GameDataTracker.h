@@ -42,7 +42,8 @@ public:
 
 	// Implemented in...
 	void logWeaponFired();						// ...ehfy::update()
-	void logEnemyKilled(Netcode::PlayerID killer, Netcode::PlayerID victim);// CandleSystem::update
+	void logEnemyKilled(Netcode::PlayerID killer);// CandleSystem::update
+	void logDeath(Netcode::PlayerID victim);
 	void logDamageDone(Netcode::PlayerID playerID, const int dmg);
 	void logDamageTaken(Netcode::PlayerID playerID, const int dmg);
 	void logJump();								// ...GameInputSystem::update()

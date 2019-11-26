@@ -89,6 +89,13 @@ void CandleHealthSystem::update(float dt) {
 						true
 					);
 
+					if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candle->wasHitByPlayerID != candle->playerEntityID) {
+						GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+
+					}
+					GameDataTracker::getInstance().logDeath(e->getComponent<NetworkReceiverComponent>()->m_id >> 18);
+
+
 					// Save the placement for the player who lost
 					GameDataTracker::getInstance().logPlacement(
 						Netcode::getComponentOwner(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id)
@@ -182,10 +189,12 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 				}
 
 				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candleC->wasHitByPlayerID != candleC->playerEntityID) {
-					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID, torchE->getComponent<NetworkReceiverComponent>()->m_id>>18);
+					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
+
 				} else if (candleC->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
 					torchE->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
 				}
+				GameDataTracker::getInstance().logDeath(torchE->getComponent<NetworkReceiverComponent>()->m_id >> 18);
 			}
 		}
 	};
