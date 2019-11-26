@@ -50,6 +50,9 @@ GameState::GameState(StateStack& stack)
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 	m_gameStarted = m_isSingleplayer; //Delay gamestart untill everyOne is ready if playing multiplayer
 	
+
+
+
 	if (!m_isSingleplayer) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
 		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
@@ -58,8 +61,11 @@ GameState::GameState(StateStack& stack)
 	initConsole();
 	m_app->setCurrentCamera(&m_cam);
 
-	
-	
+	m_app->getChatWindow()->setFadeThreshold(5.0f);
+	m_app->getChatWindow()->setFadeTime(5.0f);
+	m_app->getChatWindow()->resetMessageTime();
+	m_app->getChatWindow()->setRetainFocus(false);
+
 	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 	auto& settings = m_app->getSettings();
 	std::vector<glm::vec3> m_teamColors;
@@ -259,6 +265,10 @@ GameState::~GameState() {
 	shutDownGameState();
 	delete m_octree;
 
+	m_app->getChatWindow()->setFadeThreshold(-1.0f);
+	m_app->getChatWindow()->setFadeTime(-1.0f);
+	m_app->getChatWindow()->setRetainFocus(true);
+
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
@@ -291,8 +301,13 @@ bool GameState::processInput(float dt) {
 
 #ifndef DEVELOPMENT
 	//Capture mouse
-	Input::HideCursor(true);		//Shreks multiple applications on the same computer
+	if (m_app->getWindow()->isFocused()) {
+		Input::HideCursor(true);
+	} else {
+		Input::HideCursor(false);
+	}
 #endif
+
 
 	// Pause game
 	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::SHOW_IN_GAME_MENU)) {
@@ -801,6 +816,8 @@ bool GameState::renderImgui(float dt) {
 		m_waitingForPlayersWindow.renderWindow();
 	}
 
+	m_app->getChatWindow()->renderChat(dt);
+
 	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
 	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);
 	//static glm::vec3 rPos(-0.555f, 1.052f, 0.107f);
@@ -826,21 +843,6 @@ bool GameState::renderImgui(float dt) {
 	//}
 	//ImGui::End();
 	//ECS::Instance()->getSystem<AnimationSystem>()->updateHands(lPos, rPos, lRot, rRot);
-
-	int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
-	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-	Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchLeft.tga");
-	if (ImGui::Begin("TorchesLeft", nullptr, m_standaloneButtonflags)) {
-		for (int i = 0; i < nrOfTorchesLeft; i++) {
-			ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55));
-			ImGui::SameLine(0.f,0);	
-		}
-		ImGui::SetWindowPos(ImVec2(
-			m_app->getWindow()->getWindowWidth()-ImGui::GetWindowSize().x,
-			m_app->getWindow()->getWindowHeight() - ImGui::GetWindowSize().y-110
-			));
-	}
-	ImGui::End();
 
 	return false;
 }
@@ -1327,6 +1329,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	// Create the level generator system and put it into the datatype.
 	SettingStorage& settings = m_app->getSettings();
+	m_componentSystems.levelSystem->destroyWorld();
 
 	m_componentSystems.levelSystem->seed = settings.gameSettingsDynamic["map"]["seed"].value;
 	m_componentSystems.levelSystem->clutterModifier = settings.gameSettingsDynamic["map"]["clutter"].value * 100;

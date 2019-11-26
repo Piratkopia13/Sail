@@ -184,7 +184,9 @@ void rayGen() {
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
-	payload.color = float4(0.01f, 0.01f, 0.01f, 1.0f);
+	//===Change Background color here===
+	float t = 0.0; //Black
+	payload.color = float4(t,t,t,1);
 	payload.closestTvalue = 1000;
 }
 
@@ -418,39 +420,63 @@ float CalculateMetaballPotential(in float3 position, in float3 ballpos, in float
 }
 
 // Calculate field potential from all active metaballs.
-float CalculateMetaballsPotential(in uint index, in float3 position) {
+float CalculateMetaballsPotential(in uint index, in float3 position, in uint start, in uint end) {
 	//return 1;
 	float sumFieldPotential = 0;
-	uint nballs = CB_SceneData.nMetaballs;
 
-	int mid = index;
-	int nWeights = 30;
+	uint mid = index;
+	uint nWeights = 10;
 
-	int start = mid - nWeights;
-	int end = mid + nWeights;
+	uint start2 = mid - nWeights;
+	uint end2 = mid + nWeights;
 
-	if (start < 0)
-		start = 0;
-	if (end > nballs) 
-		end = nballs;
+	if (start2 < start || start2 > mid)//TODO:: GROUP START
+		start2 = start;
 
-	for (int i = start; i < end - 1; i++) {
+	if (end2 > end)
+		end2 = end;
+
+	for (int i = start2; i < end2; i++) {
 		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], METABALL_RADIUS);
 	}
 
 	return sumFieldPotential;
 }
 
+bool isInsideIsoSurface(in uint index, in float3 position, in uint start, in uint end, in float t) {
+	float sumFieldPotential = 0;
+	uint mid = index;
+	uint nWeights = 10;
+
+	uint start2 = mid - nWeights;
+	uint end2 = mid + nWeights;
+
+	if (start2 < start || start2 > mid)
+		start2 = start;
+
+	if (end2 > end)
+		end2 = end;
+
+	for (int i = start2; i < end2; i++) {
+		sumFieldPotential += CalculateMetaballPotential(position, metaballs[i], METABALL_RADIUS);
+		if (sumFieldPotential > t) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 // Calculate a normal via central differences.
-float3 CalculateMetaballsNormal(in uint index, in float3 position) {
+float3 CalculateMetaballsNormal(in uint index, in float3 position, in uint start, in uint end) {
 	float e = 0.5773 * 0.00001;
 	return normalize(float3(
-		CalculateMetaballsPotential(index, position + float3(-e, 0, 0)) -
-		CalculateMetaballsPotential(index, position + float3(e, 0, 0)),
-		CalculateMetaballsPotential(index, position + float3(0, -e, 0)) -
-		CalculateMetaballsPotential(index, position + float3(0, e, 0)),
-		CalculateMetaballsPotential(index, position + float3(0, 0, -e)) -
-		CalculateMetaballsPotential(index, position + float3(0, 0, e))));
+		CalculateMetaballsPotential(index, position + float3(-e, 0, 0), start, end) -
+		CalculateMetaballsPotential(index, position + float3(e, 0, 0), start, end),
+		CalculateMetaballsPotential(index, position + float3(0, -e, 0), start, end) -
+		CalculateMetaballsPotential(index, position + float3(0, e, 0), start, end),
+		CalculateMetaballsPotential(index, position + float3(0, 0, -e), start, end) -
+		CalculateMetaballsPotential(index, position + float3(0, 0, e), start, end)));
 }
 
 struct Ballhit {
@@ -459,7 +485,7 @@ struct Ballhit {
 	int index;
 };
 
-bool Step(in Ballhit hit, in RayDesc rayWorld){
+bool Step(in Ballhit hit, in RayDesc rayWorld, in uint start, in uint end){
 		
 	float tmin = hit.tmin, tmax = hit.tmax;
 	unsigned int MAX_LARGE_STEPS = 32;//If these steps dont hit any metaball no hit is reported.
@@ -472,7 +498,7 @@ bool Step(in Ballhit hit, in RayDesc rayWorld){
 
 	float3 currPos = rayWorld.Origin + t * rayWorld.Direction;
 	while (iStep++ < MAX_LARGE_STEPS) {
-		float sumFieldPotential = CalculateMetaballsPotential(hit.index, currPos); // Sum of all metaball field potentials.
+		float sumFieldPotential = CalculateMetaballsPotential(hit.index, currPos, start, end); // Sum of all metaball field potentials.
 
 		const float Threshold = 0.90f;
 
@@ -483,7 +509,7 @@ bool Step(in Ballhit hit, in RayDesc rayWorld){
 			for (int i = 0; i < MAX_SMALL_STEPS; i++) {
 				t += restep_step * restep_step_dir;
 				currPos = rayWorld.Origin + t * rayWorld.Direction;
-				float sumFieldPotential_recomp = CalculateMetaballsPotential(hit.index, currPos); // Sum of all metaball field potentials.
+				float sumFieldPotential_recomp = CalculateMetaballsPotential(hit.index, currPos, start, end); // Sum of all metaball field potentials.
 				if (sumFieldPotential_recomp >= Threshold) {
 					restep_step *= 0.5;
 					restep_step_dir = -1;
@@ -493,7 +519,7 @@ bool Step(in Ballhit hit, in RayDesc rayWorld){
 				}
 			}
 
-			attr.normal = float4(CalculateMetaballsNormal(hit.index, currPos), 0);
+			attr.normal = float4(CalculateMetaballsNormal(hit.index, currPos, start, end), 0);
 			ReportHit(t, 0, attr);
 			return true;
 		}
@@ -503,6 +529,11 @@ bool Step(in Ballhit hit, in RayDesc rayWorld){
 	}
 
 	return false;
+}
+
+float3 ProjectToRay(in float3 p, in RayDesc ray) {
+	float3 l = p - ray.Origin;
+	return (dot(l, ray.Direction)) * ray.Direction + ray.Origin;
 }
 
 [shader("intersection")]
@@ -518,39 +549,25 @@ void IntersectionShader() {
 	float4 dummy;
 	float min;
 	float max;
-	uint nballs = CB_SceneData.nMetaballs;
+	uint groupIndex = InstanceID();
+	uint groupStart = CB_SceneData.metaballGroup[groupIndex].start;
+	uint nballs = CB_SceneData.metaballGroup[groupIndex].size;
+	uint groupEnd = groupStart + nballs;
 
-	const uint MAX_HITS = 2;
-	Ballhit hits[MAX_HITS];
-	int nHits = 0;
-
-	for (uint i = 0; i < nballs; i++) {
+	////////////////////////////////////////////////////////////////////////////////////////
+	ProceduralPrimitiveAttributes attr;
+	for (uint i = groupStart; i < groupEnd; i++) {
 		if (intersectSphere(rayWorld, metaballs[i], METABALL_RADIUS, min, max, dummy)) {
-			hits[nHits].tmin = min;
-			hits[nHits].tmax = max + 1;
-			hits[nHits].index = i;
-			nHits++;
-			break;
+			
+			float3 projection = ProjectToRay(metaballs[i], rayWorld);		
+			if (isInsideIsoSurface(i, projection, groupStart, groupEnd, 0.9f)) {
+				//Report hit here.
+				//This is only close to the metaball and not at the edge of it which will result in both wrong normal and hit position.
+				//It might however be good enught for small and fast moving metaballs
+				attr.normal = float4(CalculateMetaballsNormal(i, projection, groupStart, groupEnd), 0);
+				ReportHit(length(projection - rayWorld.Origin), 0, attr);
+			}
 		}
 	}
-
-	for (uint i = 0; i < nballs && nHits < MAX_HITS; i++) {
-		uint i2 = nballs - i - 1;
-		if (intersectSphere(rayWorld, metaballs[i2], METABALL_RADIUS, min, max, dummy)) {
-			hits[nHits].tmin = min;
-			hits[nHits].tmax = max + 1;
-			hits[nHits].index = i2;
-			nHits++;
-			break;
-		}
-	}
-
-	if (nHits == 0)
-		return;
-
-	for (int curHit = 0; curHit < nHits; curHit++) {
-		if (Step(hits[curHit], rayWorld)) {
-			return;
-		}
-	}
+	////////////////////////////////////////////////////////////////////////////////////////
 }

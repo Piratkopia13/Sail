@@ -98,9 +98,7 @@ void DX12ImGuiHandler::end() {
 
 	// Transition all used textures to pixel shader resource
 	for (auto* texture : m_texturesUsedThisFrame) {
-		if (!texture->hasBeenInitialized()) {
-			texture->initBuffers(cmdList.Get());
-		}
+		texture->initBuffers(cmdList.Get());
 		texture->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
 	m_texturesUsedThisFrame.clear();
@@ -119,7 +117,7 @@ void DX12ImGuiHandler::end() {
 	m_context->prepareToPresent(cmdList.Get());
 	// Execute command list
 	cmdList->Close();
-	m_context->executeCommandLists({ cmdList.Get() });
+	m_context->getDirectQueue()->executeCommandLists({ cmdList.Get() });
 
 	// Update and Render additional Platform Windows
 	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
