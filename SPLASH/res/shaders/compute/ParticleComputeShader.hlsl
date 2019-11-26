@@ -1,6 +1,6 @@
 struct Particle{
 	float3 position;
-	float padding0;
+    float padding0;
 	float3 velocity;
 	float padding1;
 	float3 acceleration;
@@ -38,13 +38,14 @@ struct ParticlePhysics {
 	float3 acceleration;
 	float3 position;
 	float size;
+    float animationIndexCounter;
 };
 
 RWStructuredBuffer<ParticlePhysics> CSPhysicsBuffer: register(u11) : SAIL_IGNORE;
 
 void createParticle(float3 v0, float3 v1, float3 v2, float3 v3, int particleIndex) {
 	int v0Index = particleIndex * 6;
-	
+    CSPhysicsBuffer[particleIndex].animationIndexCounter = 0;
 	// Triangle 1
 	CSOutputBuffer[v0Index].position = v0;
 	CSOutputBuffer[v0Index].texCoords = float2(0.f, 0.f);
@@ -53,32 +54,32 @@ void createParticle(float3 v0, float3 v1, float3 v2, float3 v3, int particleInde
 	CSOutputBuffer[v0Index].bitangent = 0.f;
 	
 	CSOutputBuffer[v0Index + 1].position = v1;
-	CSOutputBuffer[v0Index + 1].texCoords = float2(0.f, 1.f);
+    CSOutputBuffer[v0Index + 1].texCoords = float2(0.f, 0.f);
 	CSOutputBuffer[v0Index + 1].normal = 0.f;
 	CSOutputBuffer[v0Index + 1].tangent = 0.f;
 	CSOutputBuffer[v0Index + 1].bitangent = 0.f;
 	
 	CSOutputBuffer[v0Index + 2].position = v2;
-	CSOutputBuffer[v0Index + 2].texCoords = float2(1.f, 0.f);
+    CSOutputBuffer[v0Index + 2].texCoords = float2(0.f, 0.f);
 	CSOutputBuffer[v0Index + 2].normal = 0.f;
 	CSOutputBuffer[v0Index + 2].tangent = 0.f;
 	CSOutputBuffer[v0Index + 2].bitangent = 0.f;
 	
 	// Triangle 2
 	CSOutputBuffer[v0Index + 3].position = v2;
-	CSOutputBuffer[v0Index + 3].texCoords = float2(1.f, 0.f);
+    CSOutputBuffer[v0Index + 3].texCoords = float2(0.f, 0.f);
 	CSOutputBuffer[v0Index + 3].normal = 0.f;
 	CSOutputBuffer[v0Index + 3].tangent = 0.f;
 	CSOutputBuffer[v0Index + 3].bitangent = 0.f;
 	
 	CSOutputBuffer[v0Index + 4].position = v1;
-	CSOutputBuffer[v0Index + 4].texCoords = float2(0.f, 1.f);
+    CSOutputBuffer[v0Index + 4].texCoords = float2(0.f, 0.f);
 	CSOutputBuffer[v0Index + 4].normal = 0.f;
 	CSOutputBuffer[v0Index + 4].tangent = 0.f;
 	CSOutputBuffer[v0Index + 4].bitangent = 0.f;
 	
 	CSOutputBuffer[v0Index + 5].position = v3;
-	CSOutputBuffer[v0Index + 5].texCoords = float2(1.f, 1.f);
+    CSOutputBuffer[v0Index + 5].texCoords = float2(0.f, 0.f);
 	CSOutputBuffer[v0Index + 5].normal = 0.f;
 	CSOutputBuffer[v0Index + 5].tangent = 0.f;
 	CSOutputBuffer[v0Index + 5].bitangent = 0.f;
@@ -110,6 +111,29 @@ void updatePhysics(int particleIndex, float dt) {
 	CSPhysicsBuffer[particleIndex].position += (oldVelocity + CSPhysicsBuffer[particleIndex].velocity) * 0.5 * dt;
 	
 	updateVertices(particleIndex);
+}
+
+void updateAnimation(int particleIndex) {
+    int v0Index = particleIndex * 6;
+    
+    // Hardcoded dimention of texture atlas. 
+    int textureSize = 8;                                                                    // This atlas dimension is 8x4
+    int ai = (CSPhysicsBuffer[particleIndex].animationIndexCounter += inputBuffer.frameTime*24.f) % (4 * textureSize);
+
+    float offset = 1.0f / textureSize;
+    float ix = ai % textureSize;
+    float iy = (int)(ai / textureSize);
+
+    // Triangle 1
+    CSOutputBuffer[v0Index].texCoords = float2(ix * offset + offset, iy * offset);
+    CSOutputBuffer[v0Index + 1].texCoords = float2(ix * offset + offset, iy * offset + offset);
+    CSOutputBuffer[v0Index + 2].texCoords = float2(ix * offset, iy * offset);
+	
+	// Triangle 2
+    CSOutputBuffer[v0Index + 3].texCoords = float2(ix * offset, iy * offset);
+    CSOutputBuffer[v0Index + 4].texCoords = float2(ix * offset + offset, iy * offset + offset);
+    CSOutputBuffer[v0Index + 5].texCoords = float2(ix * offset, iy * offset + offset);
+
 }
 
 void removeParticle(uint particleToRemoveIndex) {
@@ -199,5 +223,6 @@ void CSMain(ComputeShaderInput IN) {
 	// Physics for all prevous particles
 	for (i = thisThread; i < inputBuffer.numPrevParticles - inputBuffer.numToRemove; i += stride) {
 		updatePhysics(i, inputBuffer.frameTime);
-	}
+        updateAnimation(i);
+    }
 }

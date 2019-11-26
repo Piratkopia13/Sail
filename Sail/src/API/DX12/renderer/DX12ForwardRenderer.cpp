@@ -79,7 +79,7 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		commandlists[i] = m_command[i].list.Get();
 	}
-	m_context->executeCommandLists(commandlists, nThreadsToUse);
+	m_context->getDirectQueue()->executeCommandLists(commandlists, nThreadsToUse);
 #else
 	recordCommands(0, frameIndex, 0, count, count, 1);
 	m_context->executeCommandLists({ m_command[0].list.Get() });
@@ -124,7 +124,7 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 				}
 
 				auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
-				if (tex && !tex->hasBeenInitialized()) {
+				if (tex) {
 					tex->initBuffers(cmdList.Get());
 				}
 			}

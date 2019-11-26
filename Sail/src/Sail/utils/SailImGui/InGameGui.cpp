@@ -2,11 +2,13 @@
 #include "InGameGui.h"
 #include "Sail/Application.h"
 #include "Sail/utils/SailImGui/CustomImGuiComponents/CustomImGuiComponents.h"
+#include "Sail/utils/GameDataTracker.h"
 
 #include "Sail/entities/components/SanityComponent.h"
 #include "Sail/entities/components/SprintingComponent.h"
 #include "Sail/entities/components/CrosshairComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
+#include "Sail/entities/components/SpectatorComponent.h"
 
 InGameGui::InGameGui(bool showWindow) {
 }
@@ -15,8 +17,9 @@ InGameGui::~InGameGui() {
 }
 
 void InGameGui::renderWindow() {
-	float screenWidth = Application::getInstance()->getWindow()->getWindowWidth();
-	float screenHeight = Application::getInstance()->getWindow()->getWindowHeight();
+	Application* app=Application::getInstance();
+	float screenWidth = app->getWindow()->getWindowWidth();
+	float screenHeight = app->getWindow()->getWindowHeight();
 	float progresbarLenght = 300;
 	float progresbarHeight = 40;
 	float outerPadding = 50;
@@ -42,7 +45,7 @@ void InGameGui::renderWindow() {
 	flags |= ImGuiWindowFlags_NoBackground;
 	ImGui::Begin("GUI", NULL, flags);
 
-	if (m_player) {
+	if (m_player && !m_player->hasComponent<SpectatorComponent>()) {
 
 		SanityComponent* c1 = m_player->getComponent<SanityComponent>();
 		SprintingComponent* c2 = m_player->getComponent<SprintingComponent>();
@@ -68,7 +71,8 @@ void InGameGui::renderWindow() {
 				val = (c2->downTimer / MAX_SPRINT_DOWN_TIME);
 				val_inv = 1 - val;
 				color = ImVec4(0.5, 0.5, 0.5, 1);
-			} else {
+			}
+			else {
 				val = 1 - (c2->sprintTimer / MAX_SPRINT_TIME);
 				val_inv = 1 - val;
 				color = ImVec4(1 - val_inv * 0.3, 0.6 - val_inv * 0.6, 0, 1);
@@ -77,9 +81,9 @@ void InGameGui::renderWindow() {
 		}
 		ImGui::End();
 		ImGui::Begin("TorchThrowButton", NULL, flags);
+		auto* imguiHandler = app->getImGuiHandler();
 		if (c3) {
-			auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-			Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Icons/TorchThrow2.tga");
+			Texture& testTexture = app->getResourceManager().getTexture("Icons/TorchThrow2.tga");
 
 			if (  c3->isLit && c3->isCarried && c3->candleToggleTimer > 2.f) {
 				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55),ImVec2(0,0),ImVec2(1,1),ImVec4(1,1,1,1));
@@ -87,11 +91,46 @@ void InGameGui::renderWindow() {
 			else {
 				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.3f, 0.3f, 0.3f, 1));
 			}
-			ImGui::SetWindowPos(ImVec2(screenWidth - ImGui::GetWindowSize().x-300, screenHeight - ImGui::GetWindowSize().y-50));
+			ImGui::SetWindowPos(ImVec2(screenWidth - ImGui::GetWindowSize().x - 300, screenHeight - ImGui::GetWindowSize().y - 50));
+			ImGui::End();
+		}
+		int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
+		Texture& testTexture = app->getResourceManager().getTexture("Icons/TorchLeft.tga");
+		if (ImGui::Begin("TorchesLeft", nullptr, flags)) {
+			for (int i = 0; i < nrOfTorchesLeft; i++) {
+				ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55));
+				ImGui::SameLine(0.f, 0);
+			}
+			ImGui::SetWindowPos(ImVec2(
+				screenWidth - ImGui::GetWindowSize().x,
+				screenHeight - ImGui::GetWindowSize().y - 110
+			));
 		}
 	}
 
 	ImGui::End();
+
+	if (m_player) {
+		int nrOfPlayersLeft = GameDataTracker::getInstance().getPlayersLeft();
+		auto* imguiHandler = app->getImGuiHandler();
+		Texture& testTexture = app->getResourceManager().getTexture("Icons/PlayersLeft.tga");
+		if (ImGui::Begin("PlayersLeftIcon", nullptr, flags)) {
+			ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(32, 32));
+			ImGui::SetWindowPos(ImVec2(
+				1, 8
+			));
+		}
+		ImGui::End();
+		if (ImGui::Begin("PlayersLeftNumber", nullptr, flags)) {
+			std::string progress =std::to_string(nrOfPlayersLeft);
+			ImGui::Text(progress.c_str());
+			ImGui::SetWindowFontScale(2.5f);
+			ImGui::SetWindowPos(ImVec2(
+				40, 0
+			));
+		}
+		ImGui::End();
+	}
 
 	if (m_crosshairEntity) {
 		if (!m_crosshairEntity->getComponent<CrosshairComponent>()->sprinting) {

@@ -17,9 +17,9 @@ public:
 
 #ifdef DEVELOPMENT
 	const std::map<TCP_CONNECTION_ID, unsigned char>& getConnectionMap();
+#endif // DEVELOPMENT
 	const std::string& getServerDescription();
 	const std::string& getLobbyName();
-#endif // DEVELOPMENT
 
 
 private:

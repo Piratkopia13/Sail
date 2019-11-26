@@ -26,6 +26,7 @@ public:
 	void clean();
 	void stop() override;
 	void updateCameraPosition(float alpha);
+	void processMouseInput(const float& dt);
 	CameraController* getCamera() const;
 
 #ifdef DEVELOPMENT
@@ -37,7 +38,6 @@ public:
 
 private:
 	void processKeyboardInput(const float& dt);
-	void processMouseInput(const float& dt);
 
 	// For both carrying and throwing
 	void toggleCandleCarry(Entity* entity);

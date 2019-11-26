@@ -178,7 +178,7 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 					ar(lowPassFrequency);
 
 
-					shootStart(compID, lowPassFrequency);
+					shootLoop(compID, lowPassFrequency);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_END:
@@ -229,18 +229,6 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				ar(isCarried);
 
 				setCandleState(compID, isCarried);
-			}
-			break;
-			case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
-			{
-				PlayerComponentInfo info;
-
-				ar(info.playerCompID); // Read what Netcode::ComponentID the player entity should have
-				ar(info.candleID);     // Read what Netcode::ComponentID the candle entity should have
-				ar(info.gunID);        // Read what Netcode::ComponentID the gun entity should have
-				ArchiveHelpers::loadVec3(ar, vector); // Read the player's position
-
-				createPlayer(info, vector);
 			}
 			break;
 			case Netcode::MessageType::ENABLE_SPRINKLERS:

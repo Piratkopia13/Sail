@@ -29,6 +29,7 @@ void CandleHealthSystem::update(float dt) {
 
 	// The number of living candles, representing living players
 	size_t livingCandles = entities.size();
+	GameDataTracker::getInstance().setPlayersLeft(livingCandles);
 
 	for (auto e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
@@ -159,7 +160,7 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		if (e.hitterID == Netcode::SPRINKLER_COMP_ID) {
 			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::SPRINKLER, e.hitterID);
 		} else {
-			candle->getComponent<CandleComponent>()->hitWithWater(10.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
+			candle->getComponent<CandleComponent>()->hitWithWater(5.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
 
 		}
 	};

@@ -32,7 +32,6 @@ void CandlePlacementSystem::update(float dt) {
 			continue;
 		}
 
-
 		auto candle = e->getComponent<CandleComponent>();
 		if (candle->isCarried != candle->wasCarriedLastUpdate) {
 			toggleCandlePlacement(e);
@@ -60,6 +59,12 @@ void CandlePlacementSystem::toggleCandlePlacement(Entity* e) {
 			candleTransComp->setParent(parentTransComp);
 			e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = e;
 			e->removeComponent<CollisionComponent>();
+			if (e->hasComponent<MovementComponent>()) {
+				auto moveC = e->getComponent<MovementComponent>();
+				moveC->constantAcceleration = glm::vec3(0.f);
+				moveC->velocity = glm::vec3(0.f);
+				moveC->oldVelocity = glm::vec3(0.f);
+			}
 			candleTransComp->setCenter(glm::vec3(0.0f));
 		} else {
 			candleComp->isCarried = false;
@@ -129,6 +134,14 @@ bool CandlePlacementSystem::onEvent(const Event& event) {
 			candleTransComp->setParent(player->getComponent<TransformComponent>());
 
 			player->getComponent<AnimationComponent>()->rightHandEntity = candle;
+			if (candle->hasComponent<MovementComponent>()) {
+				if (candle->hasComponent<MovementComponent>()) {
+					auto moveC = candle->getComponent<MovementComponent>();
+					moveC->constantAcceleration = glm::vec3(0.f);
+					moveC->velocity = glm::vec3(0.f);
+					moveC->oldVelocity = glm::vec3(0.f);
+				}
+			}
 		} else {
 			candleTransComp->removeParent();
 			player->getComponent<AnimationComponent>()->rightHandEntity = nullptr;
