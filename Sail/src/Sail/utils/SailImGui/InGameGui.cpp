@@ -122,12 +122,14 @@ void InGameGui::renderWindow() {
 		}
 		ImGui::End();
 		if (ImGui::Begin("PlayersLeftNumber", nullptr, flags)) {
+			ImGui::PushFont(imguiHandler->getFont("Beb50"));
 			std::string progress =std::to_string(nrOfPlayersLeft);
 			ImGui::Text(progress.c_str());
-			ImGui::SetWindowFontScale(2.5f);
 			ImGui::SetWindowPos(ImVec2(
-				40, 0
+				40, 1
 			));
+			ImGui::PopFont();
+
 		}
 		ImGui::End();
 	}
