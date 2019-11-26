@@ -269,7 +269,7 @@ void KillCamReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 	if (auto candle = findFromNetID(candleID); candle) {
 
 		auto candleComp = candle->getComponent<CandleComponent>();
-		if (!candleComp->isLit) {
+		if (candleComp && !candleComp->isLit) {
 			candleComp->health = MAX_HEALTH;
 			candleComp->respawns++;
 			candleComp->downTime = 0.f;
@@ -303,10 +303,12 @@ void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKil
 void KillCamReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
 	if (auto e = findFromNetID(id); e) {
 		auto animation = e->getComponent<AnimationComponent>();
-		animation->setAnimation(info.index);
-		animation->animationTime = info.time;
-		animation->prevPitch = animation->pitch;
-		animation->pitch = info.pitch;
+		if (animation) {
+			animation->setAnimation(info.index);
+			animation->animationTime = info.time;
+			animation->prevPitch = animation->pitch;
+			animation->pitch = info.pitch;
+		}
 		return;
 	}
 	SAIL_LOG_WARNING("setAnimation called but no matching entity found");
@@ -316,23 +318,27 @@ void KillCamReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId,
 	for (auto& e : entities) {
 		if (e->getComponent<ReplayReceiverComponent>()->m_id == candleId) {
 			auto candle = e->getComponent<CandleComponent>();
-			candle->health = health;
-			// Scale fire particles with health
 			auto particles = e->getComponent<ParticleEmitterComponent>();
-			particles->spawnRate = 0.01f * (MAX_HEALTH / candle->health);
-
-			if (candle->wasJustExtinguished) {
-				candle->health = 0.0f;
-				candle->isLit = false;
-				candle->wasJustExtinguished = false; // reset for the next tick
-			}
-
-			// COLOR/INTENSITY
-			float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
-
 			LightComponent* lc = e->getComponent<LightComponent>();
 
-			lc->getPointLight().setColor(tempHealthRatio * lc->defaultColor);
+			if (candle && particles && lc) {
+
+				candle->health = health;
+				// Scale fire particles with health
+				particles->spawnRate = 0.01f * (MAX_HEALTH / candle->health);
+
+				if (candle->wasJustExtinguished) {
+					candle->health = 0.0f;
+					candle->isLit = false;
+					candle->wasJustExtinguished = false; // reset for the next tick
+				}
+
+				// COLOR/INTENSITY
+				float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
+
+
+				lc->getPointLight().setColor(tempHealthRatio * lc->defaultColor);
+			}
 			return;
 		}
 	}
