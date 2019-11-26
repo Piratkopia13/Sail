@@ -139,7 +139,8 @@ void CandleThrowingSystem::update(float dt) {
 					auto rotationAxis = glm::normalize(glm::cross(throwC->direction, glm::vec3(0.f, 1.f, 0.f)));
 					moveC->rotation = rotationAxis * -6.14f * 2.0f;
 					auto* collComp = torchE->addComponent<CollisionComponent>(true);
-					collComp->bounciness = 0.0f;
+					collComp->bounciness = 0.2f;
+					collComp->drag = 50.0f;
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 
 					// Send stop throw event
