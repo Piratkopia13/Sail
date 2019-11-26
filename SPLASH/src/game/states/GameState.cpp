@@ -717,7 +717,7 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 
 void GameState::onToggleKillCam(const ToggleKillCamEvent& event) {
 	m_isInKillCamMode = event.isActive;
-	m_wasKilledBy = "You were splashed by " + NWrapperSingleton::getInstance().getPlayer(event.killedBy)->name;
+	m_wasKilledBy = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(event.killedBy)->name;
 	if (!m_isInKillCamMode) {
 		m_componentSystems.killCamReceiverSystem->stop();
 	}
