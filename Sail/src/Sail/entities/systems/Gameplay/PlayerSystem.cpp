@@ -84,12 +84,13 @@ bool PlayerSystem::onEvent(const Event& event) {
 
 			// TODO: we should probably have a short delay and a death animation or something before 
 			// the killcam starts
-			const bool wasKilledByAPlayer = (
+			const bool wasKilledByAnotherPlayer = (
 				e.killerID != Netcode::UNINITIALIZED &&
 				e.killerID != Netcode::INSANITY_COMP_ID &&
-				e.killerID != Netcode::SPRINKLER_COMP_ID);
+				e.killerID != Netcode::SPRINKLER_COMP_ID &&
+				Netcode::getComponentOwner(e.killerID) != myPlayerID);
 
-			if (wasKilledByAPlayer) {
+			if (wasKilledByAnotherPlayer) {
 				EventDispatcher::Instance().emit(ToggleKillCamEvent(true, Netcode::getComponentOwner(e.killerID)));
 			}
 		} else {

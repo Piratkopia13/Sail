@@ -223,9 +223,9 @@ unsigned int KillCamReceiverSystem::getByteSize() const {
 
 void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
-		for (auto& c : e->getChildEntities()) {
-			c->queueDestruction();
-		}
+		//for (auto& c : e->getChildEntities()) {
+		//	c->queueDestruction();
+		//}
 		
 		e->queueDestruction();
 		
@@ -455,9 +455,9 @@ void KillCamReceiverSystem::submitWaterPoint(const glm::vec3& point) {
 // kill player when water hits it
 void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID killerID) {
 	//EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
-	if (killerID == m_idOfKillingProjectile && Netcode::getComponentOwner(id) == m_playerID) {
-		destroyEntity(id);
-	}
+	//if (killerID == m_idOfKillingProjectile && Netcode::getComponentOwner(id) == m_playerID) {
+	//	destroyEntity(id);
+	//}
 }
 
 
@@ -554,13 +554,14 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 
 	auto onPlayerDeath = [&](const PlayerDiedEvent& e) {
 		if (Netcode::getComponentOwner(e.netIDofKilled) == m_playerID) {
-			const bool wasKilledByAPlayer = (
+			const bool wasKilledByAnotherPlayer = (
 				e.killerID != Netcode::UNINITIALIZED && 
 				e.killerID != Netcode::INSANITY_COMP_ID && 
-				e.killerID != Netcode::SPRINKLER_COMP_ID);
+				e.killerID != Netcode::SPRINKLER_COMP_ID &&
+				Netcode::getComponentOwner(e.killerID) != m_playerID);
 
 			// KillCam will only activate if we were killed by a player
-			if (wasKilledByAPlayer) {
+			if (wasKilledByAnotherPlayer) {
 				m_idOfKillingProjectile = e.killerID;
 			}
 		}
