@@ -212,8 +212,8 @@ void NetworkReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement) {
-	GameDataTracker::getInstance().setStatsForPlayer(player, nrOfKills, placement);
+void NetworkReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken) {
+	GameDataTracker::getInstance().setStatsForPlayer(player, nrOfKills, placement, nDeaths, damage, damageTaken);
 }
 
 void NetworkReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {

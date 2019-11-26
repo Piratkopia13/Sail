@@ -70,11 +70,12 @@ void CandleHealthSystem::update(float dt) {
 						},
 						true
 					);
+
 					// If the player has no more respawns kill them
 				} else {
 
 					if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candle->wasHitByPlayerID != candle->playerEntityID) {
-						GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+						
 					}
 
 					livingCandles--;
@@ -161,7 +162,9 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::SPRINKLER, e.hitterID);
 		} else {
 			candle->getComponent<CandleComponent>()->hitWithWater(7.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
-
+			
+			GameDataTracker::getInstance().logDamageDone(e.hitterID, 7);
+			GameDataTracker::getInstance().logDamageTaken(candle->getComponent<NetworkReceiverComponent>()->m_id, 7);
 		}
 	};
 
@@ -178,7 +181,7 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 				}
 
 				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candleC->wasHitByPlayerID != candleC->playerEntityID) {
-					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
+					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID, torchE->getComponent<NetworkReceiverComponent>()->m_id);
 				} else if (candleC->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
 					torchE->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
 				}

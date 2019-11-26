@@ -418,7 +418,7 @@ void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 }
 
 // SHOULD REMAIN EMPTY FOR THE KILLCAM
-void KillCamReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement) {}
+void KillCamReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken) {}
 
 // SHOULD PROABABLY REMAIN EMPTY FOR THE KILLCAM
 void KillCamReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {}

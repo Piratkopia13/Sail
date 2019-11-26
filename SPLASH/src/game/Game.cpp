@@ -23,10 +23,10 @@ Game::Game(HINSTANCE hInstance)
 #endif
 
 	// Set starting state
-	//m_stateStack.pushState(States::SplashScreen);
-	//m_stateStack.pushState(States::MainMenu);
+	m_stateStack.pushState(States::SplashScreen);
+	m_stateStack.pushState(States::MainMenu);
 	//KEEP for debugging
-	m_stateStack.pushState(States::EndGame);
+	//m_stateStack.pushState(States::EndGame);
 }
 
 Game::~Game() {

@@ -42,7 +42,9 @@ public:
 
 	// Implemented in...
 	void logWeaponFired();						// ...ehfy::update()
-	void logEnemyKilled(Netcode::PlayerID playerID);// CandleSystem::update
+	void logEnemyKilled(Netcode::PlayerID killer, Netcode::PlayerID victim);// CandleSystem::update
+	void logDamageDone(Netcode::PlayerID playerID, const int dmg);
+	void logDamageTaken(Netcode::PlayerID playerID, const int dmg);
 	void logJump();								// ...GameInputSystem::update()
 	void logDistanceWalked(glm::vec3 vector);	// ...PhysicsSystem::update()
 	void logPlacement(Netcode::PlayerID playerID);// CandleSystem::update
@@ -60,7 +62,7 @@ public:
 	const std::map<Netcode::PlayerID, HostStatsPerPlayer> getPlayerDataMap(); // NetworkSenderSystem
 
 	// Used in end game when recieving player data stats
-	void setStatsForPlayer(Netcode::PlayerID id, int nKills, int placement); // NetworkRecieverSystem::Update()
+	void setStatsForPlayer(Netcode::PlayerID id, int nKills, int placement, int nDeaths, int damage, int damageTaken); // NetworkRecieverSystem::Update()
 	void setStatsForOtherData(Netcode::PlayerID bfID, int bf,
 		Netcode::PlayerID dwID, float dw, Netcode::PlayerID jmID, int jm);
 	// nr of player from the start of the match
