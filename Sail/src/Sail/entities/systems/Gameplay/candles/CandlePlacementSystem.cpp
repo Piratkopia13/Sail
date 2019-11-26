@@ -60,6 +60,7 @@ void CandlePlacementSystem::toggleCandlePlacement(Entity* e) {
 			candleTransComp->setParent(parentTransComp);
 			e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = e;
 			e->removeComponent<CollisionComponent>();
+			candleTransComp->setCenter(glm::vec3(0.0f));
 		} else {
 			candleComp->isCarried = false;
 		}

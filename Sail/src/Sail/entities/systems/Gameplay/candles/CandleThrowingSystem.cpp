@@ -18,6 +18,7 @@ CandleThrowingSystem::CandleThrowingSystem() {
 	registerComponent<AnimationComponent>(false, true, true);
 	registerComponent<CollisionComponent>(false, true, true);
 	registerComponent<CandleComponent>(false, true, true);
+	registerComponent<RagdollComponent>(false, true, false);
 }
 
 CandleThrowingSystem::~CandleThrowingSystem() {}
@@ -131,6 +132,10 @@ void CandleThrowingSystem::update(float dt) {
 
 					// Set initial throw position
 					transC->setTranslation(throwPos);
+
+					if (e->hasComponent<RagdollComponent>()) {
+						transC->setCenter(e->getComponent<RagdollComponent>()->localCenterOfMass);
+					}
 
 					// Throw the torch
 					moveC->velocity = throwC->direction * throwC->throwingTimer * throwC->throwChargeMultiplier + e->getComponent<MovementComponent>()->velocity;

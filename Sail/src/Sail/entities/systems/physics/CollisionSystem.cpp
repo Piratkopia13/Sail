@@ -311,12 +311,6 @@ const bool CollisionSystem::handleRagdollCollisions(Entity* e, std::vector<Octre
 				totalRotation += rotationVec * glm::pow(angle, 0.6f) * 2.5f;
 			}
 		}
-		else if (glm::length2(movementDiffs[i]) > 0.001f) { //Center of mass collision
-			totalMovementDiff = movementDiffs[i];
-			totalRotation = { 0.f, 0.f, 0.f };
-			movCounter = 1;
-			break;
-		}
 	}
 
 	movementComp->velocity += totalMovementDiff / glm::max((float)movCounter, 1.0f);
