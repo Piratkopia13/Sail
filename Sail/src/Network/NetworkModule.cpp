@@ -203,6 +203,10 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 		SAIL_LOG("Packet size: " + std::to_string(size));
 	}
 
+	if (size > 10000) {
+		abort();
+	}
+
 
 	if (receiverID == -1 && m_initializedStatus == INITIALIZED_STATUS::IS_SERVER) {
 		int success = 0;
@@ -215,22 +219,33 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 		return true;
 	}
 
-	// serialize the packet size and place that information at the beginning of the packet
-	std::ostringstream os(std::ios::binary);
-	{
-		cereal::PortableBinaryOutputArchive ar(os);
-		ar(size);
-	}
-	std::string msgSizeString = os.str();
 
-	size_t packetSize = MSG_SIZE_STR_LEN + size;
+	char t[2] = { static_cast<char>(size), static_cast<char>(size >> 8) };
+	size_t packetSize = 2 + size;
 	char* msg = SAIL_NEW char[packetSize]();
 
 	// The message starts with a size_t stating how large the message is
-	memcpy(&msg[0], msgSizeString.c_str(), MSG_SIZE_STR_LEN);
+	memcpy(&msg[0], t, 2);
 
 	// The rest of msg is the actual message
-	memcpy(&msg[MSG_SIZE_STR_LEN], message, size);
+	memcpy(&msg[2], message, size);
+
+	//// serialize the packet size and place that information at the beginning of the packet
+	//std::ostringstream os(std::ios::binary);
+	//{
+	//	cereal::PortableBinaryOutputArchive ar(os);
+	//	ar(size);
+	//}
+	//std::string msgSizeString = os.str();
+
+	//size_t packetSize = MSG_SIZE_STR_LEN + size;
+	//char* msg = SAIL_NEW char[packetSize]();
+
+	//// The message starts with a size_t stating how large the message is
+	//memcpy(&msg[0], msgSizeString.c_str(), MSG_SIZE_STR_LEN);
+
+	//// The rest of msg is the actual message
+	//memcpy(&msg[MSG_SIZE_STR_LEN], message, size);
 
 	Connection* conn = nullptr;
 	{
@@ -268,21 +283,29 @@ bool Network::send(const char* message, size_t size, Connection* conn) {
 	}
 
 	// serialize the packet size and place that information at the beginning of the packet
-	std::ostringstream os(std::ios::binary);
-	{
-		cereal::PortableBinaryOutputArchive ar(os);
-		ar(size);
-	}
-	std::string msgSizeString = os.str();
+	//std::ostringstream os(std::ios::binary);
+	//{
+	//	cereal::PortableBinaryOutputArchive ar(os);
+	//	ar(size);
+	//}
+	//std::string msgSizeString = os.str();
 
-	size_t packetSize = MSG_SIZE_STR_LEN + size;
+	if (size > 10000) {
+		abort();
+	}
+
+
+	char t[2] = { static_cast<char>(size), static_cast<char>(size >> 8) };
+	size_t packetSize = 2 + size;
 	char* msg = SAIL_NEW char[packetSize]();
 
 	// The message starts with a size_t stating how large the message is
-	memcpy(&msg[0], msgSizeString.c_str(), MSG_SIZE_STR_LEN);
+	//memcpy(&msg[0], msgSizeString.c_str(), MSG_SIZE_STR_LEN);
+	memcpy(&msg[0], t, 2);
 
 	// The rest of msg is the actual message
-	memcpy(&msg[MSG_SIZE_STR_LEN], message, size);
+	//memcpy(&msg[MSG_SIZE_STR_LEN], message, size);
+	memcpy(&msg[2], message, size);
 
 	if (::send(conn->socket, msg, packetSize, 0) == SOCKET_ERROR) {
 		delete[] msg;
@@ -671,14 +694,17 @@ void Network::listen(Connection* conn) {
 	addNetworkEvent(nEvent, 0);
 
 	//bool connectionIsClosed = false;
-	char incomingPackageSize[MSG_SIZE_STR_LEN];
+	//char incomingPackageSize[MSG_SIZE_STR_LEN];
+	char incomingPackageSize[2];
 	size_t bytesToReceive = 0;
 
 	while (conn->isConnected && !m_shutdown) {
-		ZeroMemory(incomingPackageSize, MSG_SIZE_STR_LEN);
+		//ZeroMemory(incomingPackageSize, MSG_SIZE_STR_LEN);
+		ZeroMemory(incomingPackageSize, 2);
 
 		// Find out how large the incoming packet is
-		int b = recv(conn->socket, incomingPackageSize, MSG_SIZE_STR_LEN, 0);
+		//int b = recv(conn->socket, incomingPackageSize, MSG_SIZE_STR_LEN, 0);
+		int b = recv(conn->socket, incomingPackageSize, 2, 0);
 		if (b == 0 || b == SOCKET_ERROR) {
 			conn->isConnected = false;
 			nEvent.eventType = NETWORK_EVENT_TYPE::CONNECTION_CLOSED;
@@ -687,11 +713,14 @@ void Network::listen(Connection* conn) {
 		}
 
 		// Read how many bytes to receive
-		std::istringstream is(std::string(incomingPackageSize, MSG_SIZE_STR_LEN));
-		{
-			cereal::PortableBinaryInputArchive ar(is);
-			ar(bytesToReceive);
-		}
+		//std::istringstream is(std::string(incomingPackageSize, MSG_SIZE_STR_LEN));
+		//{
+		//	cereal::PortableBinaryInputArchive ar(is);
+		//	ar(bytesToReceive);
+		//}
+
+		bytesToReceive = static_cast<size_t>(incomingPackageSize[0]) | (static_cast<size_t>(incomingPackageSize[1]) << 8);
+
 
 		// Get the incoming packet and place it in a char array
 		char* msg = SAIL_NEW char[bytesToReceive]();
