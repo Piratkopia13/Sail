@@ -7,10 +7,10 @@ GunComponent::GunComponent() {
 	 m_projectileSpawnCooldown = 0.015f;
 	 m_gunOverloadCooldown = .00f;
 
-	 baseProjectileSpeed = 20.0f;
+	 baseProjectileSpeed = 24.0f;
 	 projectileSpeed = baseProjectileSpeed;
 	 finalProjectileSpeed = 5.0f;
-	 projectileSpeedRange = finalProjectileSpeed - projectileSpeed;
+	 projectileSpeedRange = finalProjectileSpeed - baseProjectileSpeed;
 
 	 gunOverloadvalue = 0.f;
 	 gunOverloadThreshold = 3.0f;	// How many seconds of continual firing until complete fall-off
