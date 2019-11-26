@@ -672,7 +672,7 @@ void Network::listen(Connection* conn) {
 
 	//bool connectionIsClosed = false;
 	char incomingPackageSize[MSG_SIZE_STR_LEN];
-	int bytesToReceive = 0;
+	size_t bytesToReceive = 0;
 
 	while (conn->isConnected && !m_shutdown) {
 		ZeroMemory(incomingPackageSize, MSG_SIZE_STR_LEN);
