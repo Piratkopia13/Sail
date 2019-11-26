@@ -148,8 +148,6 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 				}
 			);
 		}
-
-
 	}
 }
 
