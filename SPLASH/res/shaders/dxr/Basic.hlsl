@@ -278,11 +278,11 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	payload.closestTvalue = RayTCurrent();
 
 	float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(attribs.normal.xyz, 0.f)));
-	float refractIndex = 1.333f;
+	float refractIndex = 1.1f;
 	RayPayload reflect_payload = payload;
 	RayPayload refract_payload = payload;
 	float3 reflectVector = reflect(WorldRayDirection(), attribs.normal.xyz);
-	float3 refractVector = refract(WorldRayDirection(), attribs.normal.xyz, refractIndex); //Refract index of water is 1.333, so thats what we will use.
+	float3 refractVector = refract(WorldRayDirection(), attribs.normal.xyz, refractIndex); //Refract index of water is 1.333, so thats what we will use. nope :)
 
 	RayDesc reflectRaydesc = Utils::getRayDesc(reflectVector);
 	RayDesc reftractRaydesc = Utils::getRayDesc(refractVector);
@@ -299,17 +299,18 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 	}
 
 	float4 reflect_color = reflect_payload.color;
-	reflect_color.b += 0.05f;
+	reflect_color.b += 0.01f;
 	reflect_color =  saturate(reflect_color);
 
 	float4 refract_color = refract_payload.color;
-	refract_color.b += 0.05f;
+	refract_color.b += 0.01f;
 	refract_color = saturate(refract_color);
 
 	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
 	float refconst = pow(abs(dot(normalize(hitToCam), normalInWorldSpace)), 2);
 
-	float4 finaldiffusecolor = saturate((refract_color * refconst + reflect_color * (1- refconst)));
+	// float4 finaldiffusecolor = saturate((refract_color * refconst + reflect_color * (1- refconst)));
+	float4 finaldiffusecolor = refract_color * 0.8f + reflect_color * 0.2f;
 	finaldiffusecolor.a = 1;
 	
 	/////////////////////////
