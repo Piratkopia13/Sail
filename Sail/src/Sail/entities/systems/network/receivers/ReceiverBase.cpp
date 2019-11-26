@@ -388,7 +388,7 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 
 				ar(nrOfPoints);
 
-				for (size_t i = 0; i < nrOfPoints; i++) {
+				for (size_t nPoint = 0; nPoint < nrOfPoints; nPoint++) {
 					ArchiveHelpers::loadVec3(ar, vector);
 					submitWaterPoint(vector);
 				}
