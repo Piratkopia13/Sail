@@ -42,7 +42,6 @@ void ProjectileSystem::update(float dt) {
 		for (auto& collision : projectileCollisions) {
 			collidedThisTick = true;
 			
-
 			// Check if a decal should be created
 			// TODO: Replace name with some "layer-id" check rather than doing a string check
 			if (glm::length(e->getComponent<MovementComponent>()->oldVelocity) > 0.7f

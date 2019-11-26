@@ -122,8 +122,6 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 		return;
 	}
 
-	static bool TEST = true;
-
 	AnimationComponent* animation = m_killerPlayer->getComponent<AnimationComponent>();
 	TransformComponent* transform = m_killerPlayer->getComponent<TransformComponent>();
 
@@ -138,23 +136,12 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 			m_projectilePos = m_killerProjectile->getComponent<TransformComponent>()->getInterpolatedTranslation(alpha);
 		}
 
-
-		if (TEST) {
-			SAIL_LOG("H: x: " + std::to_string(m_killerHeadPos.x) + "\ty: " + std::to_string(m_killerHeadPos.y) + "\tz: " + std::to_string(m_killerHeadPos.z));
-			SAIL_LOG("P: x: " + std::to_string(m_projectilePos.x) + "\ty: " + std::to_string(m_projectilePos.y) + "\tz: " + std::to_string(m_projectilePos.z));
-			SAIL_LOG("D: " + std::to_string(glm::distance(m_killerHeadPos, m_projectilePos)));
-
-			TEST = false;
-		}
-
 		const glm::vec3 headToProjectile = m_projectilePos - m_killerHeadPos;
-		//const glm::vec3 lookAt = m_projectilePos - headToProjectile;
 		const glm::vec3 camDir = glm::normalize(headToProjectile);
-		const glm::vec3 cameraPos = m_projectilePos - (0.7f * camDir) + glm::vec3(0.f, 0.1f, 0.f);
+		const glm::vec3 cameraPos = m_projectilePos - (0.7f * camDir) + glm::vec3(0.f, 0.3f, 0.f);
 
 		m_cam->setCameraPosition(cameraPos);
 		m_cam->setCameralookAt(m_projectilePos);
-		//m_cam->setCameraDirection(camDir);
 	} else {
 		// Show the killer's perspective
 		m_cam->setCameraPosition(m_killerHeadPos);
@@ -166,7 +153,6 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 
 		m_cam->setCameraDirection(forwards);
 	}
-
 }
 
 // Should only be called when the killcam is active
@@ -229,6 +215,7 @@ unsigned int KillCamReceiverSystem::getByteSize() const {
 		if (queueSize) {
 			size += queueSize * queue.front().capacity() * sizeof(unsigned char);	// approximate string character length
 		}
+		size += (m_notHoldingTorches[i].size() * sizeof(unsigned int));
 	}
 	return size;
 }

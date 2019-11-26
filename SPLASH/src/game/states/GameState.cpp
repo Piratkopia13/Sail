@@ -585,14 +585,11 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.killCamReceiverSystem->init(playerID, &m_cam);
 	
 	m_componentSystems.killCamAnimationSystem             = ECS::Instance()->createSystem<AnimationSystem<RenderInReplayComponent>>();
-	m_componentSystems.killCamCameraSystem                = ECS::Instance()->createSystem<KillCamCameraSystem>();
 	m_componentSystems.killCamLightSystem                 = ECS::Instance()->createSystem<LightSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMetaballSubmitSystem        = ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamModelSubmitSystem           = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementSystem              = ECS::Instance()->createSystem<MovementSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<RenderInReplayComponent>>();
-
-	m_componentSystems.killCamCameraSystem->initialize(&m_cam);
 }
 
 void GameState::initConsole() {

@@ -61,8 +61,6 @@ bool PlayerSystem::onEvent(const Event& event) {
 
 		// Check if the player was the one who died
 		if (Netcode::getComponentOwner(e.netIDofKilled) == myPlayerID) {
-			GameDataTracker::getInstance().reduceTorchesLeft();
-
 			// If my player died, I become a spectator
 			e.killed->addComponent<SpectatorComponent>();
 			e.killed->addComponent<RenderInActiveGameComponent>();
@@ -79,6 +77,8 @@ bool PlayerSystem::onEvent(const Event& event) {
 			const auto& rots = Utils::getRotations(dir);
 			transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));
 
+
+			GameDataTracker::getInstance().reduceTorchesLeft();
 
 			// TODO: we should probably have a short delay and a death animation or something before 
 			// the killcam starts

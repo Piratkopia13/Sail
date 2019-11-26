@@ -17,7 +17,6 @@ public:
 
 private:
 	// TODO: Replace using game settings when that is implemented
-	//int m_maxNumRespawns = 2;
-	int m_maxNumRespawns = 0; // TODO: CHANGE BACK TO 2
+	int m_maxNumRespawns = 2;
 
 };

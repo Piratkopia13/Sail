@@ -124,21 +124,16 @@ private:
 	SlowMotionSetting m_slowMotionState = SlowMotionSetting::DISABLE;
 	size_t m_killCamTickCounter = 0; // Counts ticks in the range [ 0, SLOW_MO_MULTIPLIER )
 
-
 	Netcode::ComponentID m_idOfKillingProjectile = Netcode::UNINITIALIZED;
 	Netcode::ComponentID m_idOfKiller = Netcode::UNINITIALIZED;
 
-	Entity* m_killerPlayer = nullptr;
+	Entity* m_killerPlayer     = nullptr;
 	Entity* m_killerProjectile = nullptr;
-	bool m_trackingProjectile = false;
+	bool m_trackingProjectile  = false;
 
-	CameraController* m_cam = nullptr; //TODO: initialize
+	CameraController* m_cam = nullptr;
 
 	glm::vec3 m_projectilePos = { 0,0,0 };
 	glm::vec3 m_killerHeadPos = { 0,0,0 };
-
-private:
-	// Helper functions
-	
 
 };
