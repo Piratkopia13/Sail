@@ -140,6 +140,32 @@ const unsigned int Animation::getFrameAtTime(float time, const FindType type) {
 		return closestFrame;
 		break;
 	}
+
+	/*if (closestFrame != m_numFrames) {
+		switch (type) {
+		case BEHIND:
+			if (closestFrame == 0) {
+				return m_maxFrame;
+			} else {
+				return closestFrame - 1;
+			}
+			break;
+		case INFRONT:
+			if (closestFrame == m_maxFrame) {
+				return 0;
+			} else {
+				return closestFrame + 1;
+			}
+			break;
+		default:
+			return closestFrame;
+			break;
+		}
+	} else {
+		// Couldn't find a frame for some reason?
+		SAIL_LOG_WARNING("Animation::getFrameAtTime: Couldn't find a proper frame.");
+		return 0;
+	}*/
 }
 
 void Animation::addFrame(const unsigned int frame, const float time, Animation::Frame* data) {
