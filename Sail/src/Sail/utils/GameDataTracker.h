@@ -70,8 +70,11 @@ public:
 	// Implemented in...
 	void renderImgui();							// ...EndState::renderImGui()
 	
-	int getTorchesLeft();
+	const int getTorchesLeft();
 	void reduceTorchesLeft();
+
+	const int getPlayersLeft();
+	void setPlayersLeft(int playersLeft);
 
 	void renderPlacement();
 	void renderPersonalStats();
@@ -99,6 +102,7 @@ private:
 	std::vector<std::string> m_killFeed;
 
 	int m_torchesLeft = 3;
+	int m_playersLeft = 0;
 	// -+-+-+-+-+- Singleton requirements below -+-+-+-+-+-
 public:
 	GameDataTracker(GameDataTracker const&) = delete;
