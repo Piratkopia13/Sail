@@ -22,7 +22,7 @@ AnimationComponent::AnimationComponent(AnimationStack* animationStack) :
 	currentTransition(nullptr),
 	m_stack(animationStack)
 {
-	currentTransition = new Transition(nullptr, 0.1f, false);
+	currentTransition = SAIL_NEW Transition(nullptr, 0.1f, false);
 	transformSize = m_stack->getAnimation(0)->getAnimationTransformSize(unsigned int(0));
 	transforms = SAIL_NEW glm::mat4[transformSize];
 }
@@ -36,6 +36,7 @@ AnimationComponent::~AnimationComponent() {
 	Memory::SafeDeleteArr(data.tangents);
 	Memory::SafeDeleteArr(data.texCoords);
 	Memory::SafeDeleteArr(transforms);
+	Memory::SafeDelete(currentTransition);
 }
 
 void AnimationComponent::setAnimation(const unsigned int index, const bool allowTransitionWait) {
