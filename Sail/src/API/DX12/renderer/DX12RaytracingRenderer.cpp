@@ -191,7 +191,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	// Execute compute command list
 	cmdListCompute->Close();
-	m_context->executeCommandLists({ cmdListCompute.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	m_context->getComputeQueue()->executeCommandLists({ cmdListCompute.Get() });
 	// Place a signal to syncronize copying the raytracing output to the backbuffer when it is available
 	fenceVal = m_context->getComputeQueue()->signal();
 
@@ -207,7 +207,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_context->getDirectQueue()->wait(fenceVal);
 	// Execute direct command list
 	cmdListDirect->Close();
-	m_context->executeCommandLists({ cmdListDirect.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	m_context->getDirectQueue()->executeCommandLists({ cmdListDirect.Get() });
 }
 
 void DX12RaytracingRenderer::begin(Camera* camera) {

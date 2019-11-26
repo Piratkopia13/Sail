@@ -185,7 +185,7 @@ void rayGen() {
 [shader("miss")]
 void miss(inout RayPayload payload) {
 	//===Change Background color here===
-	float t = 0.0001; //Black
+	float t = 0.0; //Black
 	payload.color = float4(t,t,t,1);
 	payload.closestTvalue = 1000;
 }

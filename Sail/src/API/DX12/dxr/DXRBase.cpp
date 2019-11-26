@@ -341,7 +341,7 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 }
 
 void DXRBase::updateWaterData() {
-	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["water simulation"].getSelected().value) {
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["watersimulation"].getSelected().value) {
 		simulateWater(Application::getInstance()->getDelta());
 	}
 
@@ -911,9 +911,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 
 	// Make sure brdfLut texture has been initialized
 	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
-	if (!brdfLutTex.hasBeenInitialized()) {
-		brdfLutTex.initBuffers(cmdList);
-	}
+	brdfLutTex.initBuffers(cmdList);
 
 	// Make sure decal textures has been initialized
 	{
