@@ -104,8 +104,7 @@ bool MenuState::renderImgui(float dt) {
 
 	// Showcasing imgui texture rendering - remove when everyone who needs to know how this works knows how this works.
 	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-#ifdef DEVELOPMENT
-#endif
+
 
 
 
