@@ -1758,6 +1758,7 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		particleEmitterComp->spread = { 5.22f, 1.0f, 5.22f };
 		particleEmitterComp->spawnRate = 1.f / 100.f;
 		particleEmitterComp->lifeTime = 2.0f;
+		particleEmitterComp->atlasSize = glm::uvec2(8U, 3U);
 		std::string particleTextureName = "particles/animSmoke.tga";
 		if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
 			Application::getInstance()->getResourceManager().loadTexture(particleTextureName);

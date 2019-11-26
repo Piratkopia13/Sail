@@ -26,9 +26,11 @@ public:
 	glm::vec3 constantVelocity;
 	glm::vec3 velocity;
 	glm::vec3 acceleration;
+	glm::uvec2 atlasSize;
 	float lifeTime;
 	float spawnRate;
 	float spawnTimer;
+
 
 #ifdef DEVELOPMENT
 	const unsigned int getByteSize() const override {
@@ -121,6 +123,7 @@ private:
 		unsigned int maxOutputVertices;
 		float frameTime;
 		float size;
+		glm::uvec2 atlasSize;
 	};
 
 	ComputeInput m_inputData;

@@ -17,6 +17,7 @@ struct ParticleInput{
 	uint maxOutputVertices;
 	float frameTime;
 	float particleSize;
+	uint2 atlasSize; // How many sprites in each dimension the texture atlas contains, set to 1x1 for no animation
 };
 
 cbuffer CSInputBuffer : register(b0) {
@@ -117,12 +118,12 @@ void updateAnimation(int particleIndex) {
     int v0Index = particleIndex * 6;
     
     // Hardcoded dimention of texture atlas. 
-    int textureSize = 8;                                                                    // This atlas dimension is 8x4
-    int ai = (CSPhysicsBuffer[particleIndex].animationIndexCounter += inputBuffer.frameTime*24.f) % (3 * textureSize);
+    int atlasSizeX = inputBuffer.atlasSize.x;
+    int ai = (CSPhysicsBuffer[particleIndex].animationIndexCounter += inputBuffer.frameTime*24.f) % (inputBuffer.atlasSize.y * atlasSizeX);
 
-    float offset = 1.0f / textureSize;
-    float ix = ai % textureSize;
-    float iy = (int)(ai / textureSize);
+    float offset = 1.0f / atlasSizeX;
+    float ix = ai % atlasSizeX;
+    float iy = (int)(ai / atlasSizeX);
 
     // Triangle 1
     CSOutputBuffer[v0Index].texCoords = float2(ix * offset + offset, iy * offset);

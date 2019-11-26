@@ -41,7 +41,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	candle->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	candle->addComponent<CullingComponent>();
 
-	/*auto* particleEmitterComp = candle->addComponent<ParticleEmitterComponent>();
+	auto* particleEmitterComp = candle->addComponent<ParticleEmitterComponent>();
 
 	particleEmitterComp->size = 0.1f;
 	particleEmitterComp->offset = { 0.0f, 0.44f, 0.0f };
@@ -50,11 +50,12 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
 	particleEmitterComp->spawnRate = 0.001f;
 	particleEmitterComp->lifeTime = 0.13f;
+	particleEmitterComp->atlasSize = glm::uvec2(8U, 4U);
 	std::string particleTextureName = "particles/animFire.tga";
 	if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
 		Application::getInstance()->getResourceManager().loadTexture(particleTextureName);
 	}
-	particleEmitterComp->setTexture(particleTextureName);*/
+	particleEmitterComp->setTexture(particleTextureName);
 
 	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
 	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.08f));
