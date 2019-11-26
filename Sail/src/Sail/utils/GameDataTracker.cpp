@@ -44,6 +44,7 @@ void GameDataTracker::resetData() {
 	m_hostPlayerTracker.clear();
 
 	m_torchesLeft = 3;
+	m_playersLeft = 0;
 	m_nPlayersCurrentSession = 0;
 	for (auto player : m_network->getPlayers()) {
 
@@ -250,8 +251,6 @@ void GameDataTracker::renderPlacement() {
 	ImGui::EndChild();
 }
 
-
-
 void GameDataTracker::renderPersonalStats() {
 
 
@@ -298,12 +297,19 @@ void GameDataTracker::addDebugData() {
 }
 #endif
 
-int GameDataTracker::getTorchesLeft() {
+const int GameDataTracker::getTorchesLeft() {
 	return m_torchesLeft;
 }
 
 void GameDataTracker::reduceTorchesLeft() {
 	m_torchesLeft--;
+}
+
+const int GameDataTracker::getPlayersLeft() {
+	return m_playersLeft;
+}
+void GameDataTracker::setPlayersLeft(int playersLeft) {
+	m_playersLeft = playersLeft;
 }
 
 bool GameDataTracker::onEvent(const Event& e) {
