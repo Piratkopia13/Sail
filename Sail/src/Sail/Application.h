@@ -14,7 +14,7 @@
 #include "resources/loaders/AssimpLoader.h"
 #include "MemoryManager/MemoryManager/src/MemoryManager.h"
 #include "RendererWrapper.h"
-
+#include "Sail/../../SPLASH/src/ImGuiWindows/Chat/ChatWindow.h"
 #include <ctpl/ctpl_stl.h>
 
 #include <future>
@@ -86,6 +86,7 @@ public:
 	ResourceManager& getResourceManager();
 	ConsoleCommands& getConsole();
 	SettingStorage& getSettings();
+	ChatWindow* getChatWindow();
 	Camera* getCurrentCamera() const;
 
 	MemoryManager& getMemoryManager();
@@ -109,6 +110,7 @@ private:
 	MemoryManager m_memoryManager;
 	StateStorage m_stateStorage;
 	SettingStorage m_settingStorage;
+	std::unique_ptr<ChatWindow> m_chatWindow;
 	Camera* m_cameraRef;
 
 	// Timer
