@@ -514,12 +514,12 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	break;
 	case Netcode::MessageType::SPAWN_PROJECTILE:
 	{
-		Netcode::MessageSpawnProjectile* data = static_cast<Netcode::MessageSpawnProjectile*>(event->data);
+		//Netcode::MessageSpawnProjectile* data = static_cast<Netcode::MessageSpawnProjectile*>(event->data);
 
-		ArchiveHelpers::saveVec3(ar, data->translation);
-		ArchiveHelpers::saveVec3(ar, data->velocity);
-		ar(data->projectileComponentID);
-		ar(data->ownerPlayerComponentID);
+		//ArchiveHelpers::saveVec3(ar, data->translation);
+		//ArchiveHelpers::saveVec3(ar, data->velocity);
+		//ar(data->projectileComponentID);
+		//ar(data->ownerPlayerComponentID);
 	}
 	break;
 	case Netcode::MessageType::START_THROWING:

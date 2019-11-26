@@ -396,14 +396,14 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:
 			{
-				ProjectileInfo info;
+				//ProjectileInfo info;
 
-				ArchiveHelpers::loadVec3(ar, info.position);
-				ArchiveHelpers::loadVec3(ar, info.velocity);
-				ar(info.projectileID);
-				ar(info.ownerID);
+				//ArchiveHelpers::loadVec3(ar, info.position);
+				//ArchiveHelpers::loadVec3(ar, info.velocity);
+				//ar(info.projectileID);
+				//ar(info.ownerID);
 
-				spawnProjectile(info);
+				//spawnProjectile(info);
 			}
 			break;
 			case Netcode::MessageType::START_THROWING:

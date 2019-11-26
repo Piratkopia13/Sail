@@ -721,6 +721,10 @@ void Network::listen(Connection* conn) {
 
 		bytesToReceive = static_cast<size_t>(incomingPackageSize[0]) | (static_cast<size_t>(incomingPackageSize[1]) << 8);
 
+		if (bytesToReceive>10000) {
+			SAIL_LOG("INVALID SIZE");
+		}
+
 
 		// Get the incoming packet and place it in a char array
 		char* msg = SAIL_NEW char[bytesToReceive]();
