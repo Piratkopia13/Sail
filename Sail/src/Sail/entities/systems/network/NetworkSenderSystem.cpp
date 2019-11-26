@@ -503,13 +503,13 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	break;
 	case Netcode::MessageType::SUBMIT_WATER_POINTS:
 	{
-		//Netcode::MessageSubmitWaterPoints* data = static_cast<Netcode::MessageSubmitWaterPoints*>(event->data);
-		//
-		//ar(data->points.size()); // Tell the receiver how many points they should receive
+		Netcode::MessageSubmitWaterPoints* data = static_cast<Netcode::MessageSubmitWaterPoints*>(event->data);
+		
+		ar(data->points.size()); // Tell the receiver how many points they should receive
 
-		//for (auto& p : data->points) {
-		//	ArchiveHelpers::saveVec3(ar, p); // Send all points to the receiver
-		//}
+		for (auto& p : data->points) {
+			ArchiveHelpers::saveVec3(ar, p); // Send all points to the receiver
+		}
 	}
 	break;
 	case Netcode::MessageType::SPAWN_PROJECTILE:

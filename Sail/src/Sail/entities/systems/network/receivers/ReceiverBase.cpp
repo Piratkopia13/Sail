@@ -384,14 +384,14 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 			break;
 			case Netcode::MessageType::SUBMIT_WATER_POINTS:
 			{
-				//size_t nrOfPoints = 0;
+				size_t nrOfPoints = 0;
 
-				//ar(nrOfPoints);
+				ar(nrOfPoints);
 
-				//for (size_t i = 0; i < nrOfPoints; i++) {
-				//	ArchiveHelpers::loadVec3(ar, vector);
-				//	submitWaterPoint(vector);
-				//}
+				for (size_t i = 0; i < nrOfPoints; i++) {
+					ArchiveHelpers::loadVec3(ar, vector);
+					submitWaterPoint(vector);
+				}
 			}
 			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:
