@@ -308,7 +308,7 @@ const bool CollisionSystem::handleRagdollCollisions(Entity* e, std::vector<Octre
 				movementVec = movementVec * glm::dot(movementDiffs[i], movementVec);
 
 				float angle = glm::atan(glm::length(movementVec), glm::length(offsetVector));
-				totalRotation += rotationVec * angle * angle * 0.5f;
+				totalRotation += rotationVec * glm::pow(angle, 0.33f);
 			}
 		}
 		else if (glm::length2(movementDiffs[i]) > 0.001f) { //Center of mass collision
