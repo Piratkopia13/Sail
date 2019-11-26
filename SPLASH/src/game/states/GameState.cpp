@@ -248,12 +248,12 @@ GameState::GameState(StateStack& stack)
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove |
 		ImGuiWindowFlags_NoNav |
-		//ImGuiWindowFlags_NoBringToFrontOnFocus |
 		ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_AlwaysAutoResize |
 		ImGuiWindowFlags_NoSavedSettings |
 		ImGuiWindowFlags_NoBackground;
 
+	// Used for the killcam overlay
 	m_backgroundOnlyflags = ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove |
@@ -965,7 +965,6 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
 	m_componentSystems.killCamMovementSystem->update(dt);
 	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
-	//m_componentSystems.killCamAnimationSystem->update(dt);
 }
 
 // HERE BE DRAGONS
@@ -1060,13 +1059,12 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 	
-	if (m_isInKillCamMode) {
-		//m_componentSystems.killCamAnimationSystem->updatePerFrame();
-		//m_componentSystems.killCamCameraSystem->update(dt, killCamAlpha);
-		m_componentSystems.killCamReceiverSystem->updatePerFrame(dt, killCamAlpha);
-	}
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
+
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamReceiverSystem->updatePerFrame(dt, killCamAlpha);
+	}
 
 	// Will probably need to be called last
 	m_componentSystems.entityAdderSystem->update();

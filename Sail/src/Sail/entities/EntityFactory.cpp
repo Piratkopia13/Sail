@@ -125,9 +125,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<ThrowingComponent>();
 	myPlayer->addComponent<RenderInActiveGameComponent>();
 
-	// TODO: REMOVE
-	myPlayer->addComponent<KillerComponent>();
-
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
 	// Define the position for the camera
@@ -237,7 +234,6 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 	replayPlayer->addComponent<ReplayReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 
 	// Remove components that shouldn't be used by entities in the killcam
-	//replayPlayer->removeComponent<PlayerComponent>();
 	replayPlayer->removeComponent<CollidableComponent>();
 	replayPlayer->removeComponent<SpeedLimitComponent>();
 	replayPlayer->removeComponent<SanityComponent>();
@@ -470,7 +466,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 }
 
 Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory::ProjectileArguments& info) {
-	constexpr float radius = 0.03f; // the radius of the projectile's hitbox
+	constexpr float radius = 0.05f; // the radius of the projectile's hitbox (in meters)
 
 	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(radius, radius, radius));

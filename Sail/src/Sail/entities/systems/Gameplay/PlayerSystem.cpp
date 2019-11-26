@@ -24,7 +24,7 @@ PlayerSystem::~PlayerSystem() {
 bool PlayerSystem::onEvent(const Event& event) {
 
 	auto onPlayerDied = [](const PlayerDiedEvent& e) {
-		constexpr float LIFETIME_AFTER_DEATH = 1.f; // Dead entities are removed after 10 seconds
+		constexpr float LIFETIME_AFTER_DEATH = 1.f; // Dead entities are removed after 1 seconds
 
 		const auto& myPlayerID = NWrapperSingleton::getInstance().getMyPlayerID();
 
