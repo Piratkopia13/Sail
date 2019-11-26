@@ -220,7 +220,7 @@ bool Network::send(const char* message, size_t size, TCP_CONNECTION_ID receiverI
 	}
 
 
-	char t[2] = { static_cast<char>(size), static_cast<char>(size >> 8) };
+	char t[2] = { reinterpret_cast<char>(size), reinterpret_cast<char>(size >> 8) };
 	size_t packetSize = 2 + size;
 	char* msg = SAIL_NEW char[packetSize]();
 
@@ -295,7 +295,7 @@ bool Network::send(const char* message, size_t size, Connection* conn) {
 	}
 
 
-	char t[2] = { static_cast<char>(size), static_cast<char>(size >> 8) };
+	char t[2] = { reinterpret_cast<char>(size), reinterpret_cast<char>(size >> 8) };
 	size_t packetSize = 2 + size;
 	char* msg = SAIL_NEW char[packetSize]();
 
@@ -719,7 +719,10 @@ void Network::listen(Connection* conn) {
 		//	ar(bytesToReceive);
 		//}
 
-		bytesToReceive = static_cast<size_t>(incomingPackageSize[0]) | (static_cast<size_t>(incomingPackageSize[1]) << 8);
+		bytesToReceive = reinterpret_cast<size_t>(incomingPackageSize[0]);
+		size_t test = 0;
+		test = (reinterpret_cast<size_t>(incomingPackageSize[1]) << 8);
+		bytesToReceive |= test;
 
 		if (bytesToReceive>10000) {
 			SAIL_LOG("INVALID SIZE");
