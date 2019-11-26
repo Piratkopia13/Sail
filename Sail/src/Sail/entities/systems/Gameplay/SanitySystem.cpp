@@ -52,8 +52,9 @@ void SanitySystem::update(float dt) {
 			float dist;
 			if (candleComp->isCarried && candleComp->isLit) {
 				dist = -12;
-			} else {
-				dist = glm::distance(playerTransformComp->getTranslation(), candleTransformComp->getTranslation());
+			}
+			else {
+				dist = glm::min(glm::distance(playerTransformComp->getTranslation(), candleTransformComp->getTranslation()), 25.f);
 			}
 
 			sanityComp->sanity -= (dist - 1) * dt * 0.5f;
