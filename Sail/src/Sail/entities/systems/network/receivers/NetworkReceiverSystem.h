@@ -43,7 +43,7 @@ protected:
 	void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                       override;
 	void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                       override;
 	void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                       override;
-	void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement)                    override;
+	void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken)                    override;
 	void updateSanity    (const Netcode::ComponentID id, const float sanity)                         override;
 	void updateProjectile(const Netcode::ComponentID id, const glm::vec3& pos, const glm::vec3& vel) override;
 	void spawnProjectile (const ProjectileInfo& info)                                                override;

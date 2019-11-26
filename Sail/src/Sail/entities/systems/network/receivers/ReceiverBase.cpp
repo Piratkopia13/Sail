@@ -252,18 +252,24 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				GameDataForOthersInfo info;
 				size_t nrOfPlayers;
 				Netcode::PlayerID pID;
-				int nKills;
-				int placement;
+				int placement = 0;
+				int nKills = -1;
+				int nDeaths = -1;
+				int damage = -1;
+				int damageTaken = -1;
 
 				ar(nrOfPlayers);
 
 				// Get all per player data from the Host
 				for (int k = 0; k < nrOfPlayers; k++) {
 					ar(pID);
-					ar(nKills);
 					ar(placement);
+					ar(nKills);
+					ar(nDeaths);
+					ar(damage);
+					ar(damageTaken);
 
-					setPlayerStats(pID, nKills, placement);
+					setPlayerStats(pID, nKills, placement, nDeaths, damage, damageTaken);
 				}
 
 				// Get all specific data from the Host

@@ -79,7 +79,7 @@ protected: // Functions
 	virtual void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                       = 0;
 	virtual void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                       = 0;
 	virtual void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                       = 0;
-	virtual void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement)                    = 0;
+	virtual void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken)                    = 0;
 	virtual void updateProjectile(const Netcode::ComponentID id, const glm::vec3& pos, const glm::vec3& vel) = 0;
 	virtual void updateSanity    (const Netcode::ComponentID id, const float sanity)                         = 0;
 	virtual void spawnProjectile (const ProjectileInfo& info)                                                = 0;

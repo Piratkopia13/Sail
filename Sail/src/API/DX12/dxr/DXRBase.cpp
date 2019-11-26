@@ -481,10 +481,11 @@ void DXRBase::updateMetaballpositions(const std::vector<DXRBase::MetaballGroup*>
 		DX12Utils::checkDeviceRemovalReason(m_context->getDevice(), hr);
 
 		memcpy(pAabbMappedData, &group->aabb, sizeof(D3D12_RAYTRACING_AABB));
-		aabb_res->Unmap(0, nullptr);
-
+		aabb_res->Unmap(0, nullptr); 
+		 
 		//UPDATE METABALLS
 		const std::vector<Metaball>& metaballs = group->balls;
+		
 		size_t size = metaballs.size();
 
 		for (size_t i = 0; i < size && metaballOffsetBytes < bufferMaxSize; i++) {;

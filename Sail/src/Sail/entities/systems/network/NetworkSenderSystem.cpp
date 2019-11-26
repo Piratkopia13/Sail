@@ -391,8 +391,11 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		// Send all per player data. Match this on the reciever end
 		for (auto player = tmpPlayerMap.begin(); player != tmpPlayerMap.end(); ++player) {
 			ar(player->first);
-			ar(player->second.nKills);
 			ar(player->second.placement);
+			ar(player->second.nKills);
+			ar(player->second.nDeaths);
+			ar(player->second.damage);
+			ar(player->second.damageTaken);
 		}
 
 		// Send all specific data. The host has processed data from all clients and will 

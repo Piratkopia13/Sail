@@ -75,11 +75,12 @@ void CandleHealthSystem::update(float dt) {
 						},
 						true
 					);
+
 					// If the player has no more respawns kill them
 				} else {
 
 					if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candle->wasHitByPlayerID != candle->playerEntityID) {
-						GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+						
 					}
 
 					livingCandles--;
@@ -92,6 +93,13 @@ void CandleHealthSystem::update(float dt) {
 						},
 						true
 					);
+
+					if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candle->wasHitByPlayerID != candle->playerEntityID) {
+						GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+
+					}
+					GameDataTracker::getInstance().logDeath(e->getComponent<NetworkReceiverComponent>()->m_id >> 18);
+
 
 					// Save the placement for the player who lost
 					GameDataTracker::getInstance().logPlacement(
@@ -165,8 +173,11 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		if (e.hitterID == Netcode::SPRINKLER_COMP_ID) {
 			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::SPRINKLER, e.hitterID);
 		} else {
-			candle->getComponent<CandleComponent>()->hitWithWater(7.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
-
+			int dmg = candle->getComponent<CandleComponent>()->hitWithWater(7.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
+			if (dmg > 0) {
+				GameDataTracker::getInstance().logDamageDone(e.hitterID>>18, dmg);
+				GameDataTracker::getInstance().logDamageTaken(candle->getComponent<NetworkReceiverComponent>()->m_id>>18, dmg);
+			}
 		}
 	};
 
@@ -184,9 +195,11 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 
 				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candleC->wasHitByPlayerID != candleC->playerEntityID) {
 					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
+
 				} else if (candleC->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
 					torchE->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
 				}
+				GameDataTracker::getInstance().logDeath(torchE->getComponent<NetworkReceiverComponent>()->m_id >> 18);
 			}
 		}
 	};
