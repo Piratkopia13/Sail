@@ -466,7 +466,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 }
 
 Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory::ProjectileArguments& info) {
-	constexpr float radius = 0.05f; // the radius of the projectile's hitbox (in meters)
+	constexpr float radius = 0.03f; // the radius of the projectile's hitbox (in meters)
 
 	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(radius, radius, radius));

@@ -33,6 +33,8 @@ bool PlayerSystem::onEvent(const Event& event) {
 		const ComponentTypeBitID componentsToKeep = (
 			TransformComponent::getBID()
 			| AudioComponent::getBID()
+			| ParticleEmitterComponent::getBID()
+
 			);
 
 
