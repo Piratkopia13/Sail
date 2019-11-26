@@ -76,8 +76,10 @@ public:
 	void startSpecificSound(int index, float volume = 1.0f);
 	void stopSpecificSound(int index);
 	void stopSpecificStream(int index);
+	void pause_unpause_AllStreams(bool pauseTRUE_unpauseFALSE);
 	void stopAllStreams();
 	void stopAllSounds();
+	void pauseAllSounds();
 
 	float getSoundVolume(int index);
 	float getStreamVolume(int index);
@@ -118,6 +120,7 @@ private:
 	// Represents each loaded sound in the form of an 'object'
 	soundStruct m_sound[SOUND_COUNT];
 	soundStruct m_stream[STREAMED_SOUNDS_COUNT];
+
 	soundStruct m_deathSound;
 	soundStruct m_insanitySound;
 
@@ -130,6 +133,7 @@ private:
 
 	BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
 	bool m_isStreaming[STREAMED_SOUNDS_COUNT];
+	bool m_isStreamPaused[STREAMED_SOUNDS_COUNT];
 	bool m_isFinished[STREAMED_SOUNDS_COUNT];
 	OVERLAPPED m_overlapped[STREAMED_SOUNDS_COUNT];
 
