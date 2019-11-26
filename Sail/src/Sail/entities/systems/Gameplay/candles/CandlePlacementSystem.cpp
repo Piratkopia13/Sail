@@ -41,7 +41,7 @@ void CandlePlacementSystem::update(float dt) {
 		}
 
 		candle->wasCarriedLastUpdate = candle->isCarried;
-		static const float candleHeight = 0.44f;
+		static const float candleHeight = 0.37f;
 		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrixWithUpdate() * glm::vec4(0, candleHeight, 0, 1);
 
 		e->getComponent<LightComponent>()->currentPos = flamePos;
@@ -65,6 +65,7 @@ void CandlePlacementSystem::toggleCandlePlacement(Entity* e) {
 				moveC->velocity = glm::vec3(0.f);
 				moveC->oldVelocity = glm::vec3(0.f);
 			}
+			candleTransComp->setCenter(glm::vec3(0.0f));
 		} else {
 			candleComp->isCarried = false;
 		}
