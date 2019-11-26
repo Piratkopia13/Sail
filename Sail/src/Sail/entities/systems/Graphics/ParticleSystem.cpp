@@ -141,6 +141,7 @@ void ParticleSystem::initEmitter(Entity* owner, ParticleEmitterComponent* compon
 }
 
 void ParticleSystem::stop() {
+	//Clean each after game
 	for (auto& it : m_emitters) {
 		auto& emitter = it.second;
 		delete[] emitter.physicsBufferDefaultHeap;
