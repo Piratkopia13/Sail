@@ -722,7 +722,8 @@ void Network::listen(Connection* conn) {
 
 		bytesToReceive = reinterpret_cast<size_t&>(incomingPackageSize[0]);
 		size_t test = 0;
-		test = (reinterpret_cast<size_t&>(incomingPackageSize[1]) << 8);
+		test = (reinterpret_cast<size_t&>(incomingPackageSize[1]);
+		test <<= 8;
 		bytesToReceive |= test;
 
 		if (bytesToReceive>10000) {
