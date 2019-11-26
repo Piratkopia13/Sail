@@ -178,7 +178,7 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 					ar(lowPassFrequency);
 
 
-					shootStart(compID, lowPassFrequency);
+					shootLoop(compID, lowPassFrequency);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_END:
