@@ -14,6 +14,8 @@
 #include "../DX12Utils.h"
 #include "Sail/entities/systems/Graphics/AnimationSystem.h"
 #include "Sail/entities/systems/Graphics/ParticleSystem.h"
+#include "Sail/entities/components/RenderInActiveGameComponent.h"
+#include "Sail/entities/components/RenderInReplayComponent.h"
 #include "Sail/entities/ECS.h"
 #include "../DX12VertexBuffer.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
@@ -53,7 +55,8 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 	auto frameIndex = m_context->getFrameIndex();
 	int count = static_cast<int>(commandQueue.size());
 
-	auto* animationSystem = ECS::Instance()->getSystem<AnimationSystem>();
+	auto* animationSystem = ECS::Instance()->getSystem<AnimationSystem<RenderInActiveGameComponent>>();
+	auto* killCamAnimationSystem = ECS::Instance()->getSystem<AnimationSystem<RenderInReplayComponent>>();
 	auto* particleSystem = ECS::Instance()->getSystem<ParticleSystem>();
 	if (animationSystem || particleSystem) {
 		m_computeCommand.allocators[frameIndex]->Reset();
@@ -63,13 +66,17 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 			// Run animation updates on the gpu first
 			animationSystem->updateMeshGPU(m_computeCommand.list.Get());
 		}
+		if (killCamAnimationSystem) {
+			// Run animation updates on the gpu first
+			killCamAnimationSystem->updateMeshGPU(m_computeCommand.list.Get());
+		}
 		if (particleSystem) {
 			// Update particles on compute shader
 			particleSystem->updateOnGPU(m_computeCommand.list.Get(), camera->getPosition());
 		}
 
 		m_computeCommand.list->Close();
-		m_context->executeCommandLists({ m_computeCommand.list.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+		m_context->getComputeQueue()->executeCommandLists({ m_computeCommand.list.Get() });
 		// Force direct queue to wait until the compute queue has finished animations
 		m_context->getDirectQueue()->wait(m_context->getComputeQueue()->signal());
 	}
@@ -111,7 +118,7 @@ void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		commandlists[i] = m_command[i].list.Get();
 	}
-	m_context->executeCommandLists(commandlists, nThreadsToUse);
+	m_context->getDirectQueue()->executeCommandLists(commandlists, nThreadsToUse);
 #else
 	recordCommands(0, frameIndex, 0, count, count, 1);
 	m_context->executeCommandLists({ m_command[0].list.Get() });
@@ -159,7 +166,7 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 			vbuffer.init(cmdList.Get());
 			for (int i = 0; i < 3; i++) {
 				auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
-				if (tex && !tex->hasBeenInitialized()) {
+				if (tex) {
 					tex->initBuffers(cmdList.Get());
 				}
 			}

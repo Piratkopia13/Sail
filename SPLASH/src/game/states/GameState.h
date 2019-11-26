@@ -40,9 +40,8 @@ private:
 	bool onPlayerDisconnect(const NetworkDisconnectEvent& event);
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
 	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
-
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
-	
+
 	void shutDownGameState();
 
 	// Where to updates the component systems. Responsibility can be moved to other places
@@ -83,6 +82,7 @@ private:
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
 	InGameGui m_inGameGui;
+	ImGuiWindowFlags m_standaloneButtonflags;
 	NetworkInfoWindow m_networkInfoImGuiWindow;
 
 	size_t m_currLightIndex;

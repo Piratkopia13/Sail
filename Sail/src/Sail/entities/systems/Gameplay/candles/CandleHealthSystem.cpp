@@ -159,7 +159,7 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		if (e.hitterID == Netcode::SPRINKLER_COMP_ID) {
 			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::SPRINKLER, e.hitterID);
 		} else {
-			candle->getComponent<CandleComponent>()->hitWithWater(10.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
+			candle->getComponent<CandleComponent>()->hitWithWater(5.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
 
 		}
 	};
@@ -171,6 +171,10 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 				candleC->health = 0.0f;
 				candleC->isLit = false;
 				candleC->wasJustExtinguished = false; // reset for the next tick
+
+				if (torchE->hasComponent<LocalOwnerComponent>()) {
+					GameDataTracker::getInstance().reduceTorchesLeft();
+				}
 
 				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candleC->wasHitByPlayerID != candleC->playerEntityID) {
 					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
@@ -188,6 +192,10 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 	}
 
 	return true;
+}
+
+const int CandleHealthSystem::getMaxNumberOfRespawns() {
+	return m_maxNumRespawns;
 }
 
 #ifdef DEVELOPMENT

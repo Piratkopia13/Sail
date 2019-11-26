@@ -76,22 +76,6 @@ unsigned int NetworkReceiverSystem::getByteSize() const {
 }
 #endif
 
-void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
-	// Early exit if the entity already exists
-	if (findFromNetID(info.playerCompID)) {
-		return;
-	}
-
-	auto e = ECS::Instance()->createEntity("networkedEntity");
-	instantAddEntity(e.get());
-
-	SAIL_LOG("Created player with id: " + std::to_string(info.playerCompID));
-
-	// lightIndex set to 999, can probably be removed since it no longer seems to be used
-	EntityFactory::CreateOtherPlayer(e, info.playerCompID, info.candleID, info.gunID, 999, pos);
-	ECS::Instance()->addAllQueuedEntities();
-}
-
 void NetworkReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
 		e->queueDestruction();
@@ -129,11 +113,19 @@ void NetworkReceiverSystem::extinguishCandle(const Netcode::ComponentID candleId
 }
 
 void NetworkReceiverSystem::hitBySprinkler(const Netcode::ComponentID candleOwnerID) {
-	waterHitPlayer(candleOwnerID, Netcode::SPRINKLER_COMP_ID);
+	if (auto e = findFromNetID(candleOwnerID); e) {
+		waterHitPlayer(candleOwnerID, Netcode::SPRINKLER_COMP_ID);
+		return;
+	}
+	SAIL_LOG_WARNING("hitBySprinkler called but no matching entity found");
 }
 
 void NetworkReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
-	EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
+	if (auto e = findFromNetID(candleID); e) {
+		EventDispatcher::Instance().emit(IgniteCandleEvent(candleID));
+		return;
+	}
+	SAIL_LOG_WARNING("igniteCandle called but no matching entity found");
 }
 
 void NetworkReceiverSystem::matchEnded() {
@@ -167,7 +159,7 @@ void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKil
 void NetworkReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
 	if (auto e = findFromNetID(id); e) {
 		auto animation = e->getComponent<AnimationComponent>();
-		animation->setAnimation(info.index);
+		animation->setAnimation(info.index, false);
 		animation->animationTime = info.time;
 		animation->pitch = info.pitch;
 		return;
@@ -188,7 +180,11 @@ void NetworkReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId,
 // The player who puts down their candle does this in CandleSystem and tests collisions
 // The candle will be moved for everyone else in here
 void NetworkReceiverSystem::setCandleState(const Netcode::ComponentID id, const bool isHeld) {
-	EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(HoldingCandleToggleEvent(id, isHeld));
+		return;
+	}
+	SAIL_LOG_WARNING("setCandleState called but no matching entity found");
 }
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
@@ -221,7 +217,11 @@ void NetworkReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKil
 }
 
 void NetworkReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {
-	EventDispatcher::Instance().emit(UpdateSanityEvent(id, sanity));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(UpdateSanityEvent(id, sanity));
+		return;
+	}
+	SAIL_LOG_WARNING("updateSanity called but no matching entity found");
 }
 
 // If I requested the projectile it has a local owner
@@ -232,11 +232,11 @@ void NetworkReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	instantAddEntity(e.get());
 
 	EntityFactory::ProjectileArguments args{};
-	args.pos           = info.position;
-	args.velocity      = info.velocity;
-	args.hasLocalOwner = wasRequestedByMe;
-	args.ownersNetId   = info.ownerID;
-	args.netCompId     = info.projectileID;
+	args.pos            = info.position;
+	args.velocity       = info.velocity;
+	args.hasLocalOwner  = wasRequestedByMe;
+	args.ownersNetId    = info.ownerID;
+	args.netCompId      = info.projectileID;
 
 #ifdef _PERFORMANCE_TEST
 	if (!wasRequestedByMe) {
@@ -250,9 +250,14 @@ void NetworkReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	EntityFactory::CreateProjectile(e, args);
 }
 
-void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID projectileID) {
-	EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, projectileID));
 
+// TODO only emit events if the entities still exist
+void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID projectileID) {
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, projectileID));
+		return;
+	}
+	SAIL_LOG_WARNING("waterHitPLayer called but no matching entity found");
 }
 
 
@@ -260,55 +265,103 @@ void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const 
 // AUDIO
 
 void NetworkReceiverSystem::playerJumped(const Netcode::ComponentID id) {
-	EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
+		return;
+	}
+	SAIL_LOG_WARNING("waterHitPLayer called but no matching entity found");
 }
 
 void NetworkReceiverSystem::playerLanded(const Netcode::ComponentID id) {
-	EventDispatcher::Instance().emit(PlayerLandedEvent(id));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(PlayerLandedEvent(id));
+		return;
+	}
+	SAIL_LOG_WARNING("playerLanded called but no matching entity found");
 }
 
 
-// TODO: Remove info since it's unused or are these functions not finished?
 void NetworkReceiverSystem::shootStart(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
-	EventDispatcher::Instance().emit(StartShootingEvent(id, frequency));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(StartShootingEvent(id, frequency));
+		return;
+	}
+	SAIL_LOG_WARNING("shootStart called but no matching entity found");
 }
 
 void NetworkReceiverSystem::shootLoop(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
-	EventDispatcher::Instance().emit(LoopShootingEvent(id, frequency));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(LoopShootingEvent(id, frequency));
+		return;
+	}
+	SAIL_LOG_WARNING("shootLoop called but no matching entity found");
 }
 
 void NetworkReceiverSystem::shootEnd(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
-	EventDispatcher::Instance().emit(StopShootingEvent(id, frequency));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(StopShootingEvent(id, frequency));
+		return;
+	}
+	SAIL_LOG_WARNING("shootEnd called but no matching entity found");
 }
 
 void NetworkReceiverSystem::runningMetalStart(const Netcode::ComponentID id) {
-	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_METAL));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_METAL));
+		return;
+	}
+	SAIL_LOG_WARNING("runningMetalStart called but no matching entity found");
 }
 
 void NetworkReceiverSystem::runningTileStart(const Netcode::ComponentID id) {
-	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
+		return;
+	}
+	SAIL_LOG_WARNING("runningTileStart called but no matching entity found");
 }
+
 void NetworkReceiverSystem::runningWaterMetalStart(Netcode::ComponentID id) {
-	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_WATER_METAL));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_WATER_METAL));
+		return;
+	}
+	SAIL_LOG_WARNING("runningWaterMetalStart called but no matching entity found");
 }
 
 void NetworkReceiverSystem::runningWaterTileStart(Netcode::ComponentID id) {
-	EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_WATER_TILE));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_WATER_TILE));
+		return;
+	}
+	SAIL_LOG_WARNING("runningWaterTileStart called but no matching entity found");
 }
 
 void NetworkReceiverSystem::runningStopSound(const Netcode::ComponentID id) {
-	EventDispatcher::Instance().emit(StopWalkingEvent(id));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(StopWalkingEvent(id));
+		return;
+	}
+	SAIL_LOG_WARNING("runningStopSound called but no matching entity found");
 }
 
 void NetworkReceiverSystem::throwingStartSound(const Netcode::ComponentID id) {
-	EventDispatcher::Instance().emit(StartThrowingEvent(id));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(StartThrowingEvent(id));
+		return;
+	}
+	SAIL_LOG_WARNING("throwingStartSound called but no matching entity found");
 }
 
 void NetworkReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {
-	EventDispatcher::Instance().emit(StopThrowingEvent(id));
+	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(StopThrowingEvent(id));
+		return;
+	}
+	SAIL_LOG_WARNING("throwingEndSound called but no matching entity found");
 }
 
 // NOT FROM SERIALIZED MESSAGES

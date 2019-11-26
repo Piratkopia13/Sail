@@ -55,7 +55,7 @@ protected:
 	struct GameDataForOthersInfo {
 		int bulletsFired;
 		Netcode::PlayerID bulletsFiredID;
-		int distanceWalked;
+		float distanceWalked;
 		Netcode::PlayerID distanceWalkedID;
 		int jumpsMade;
 		Netcode::PlayerID jumpsMadeID;
@@ -65,8 +65,6 @@ protected:
 protected: // Functions
 	void initBase(Netcode::PlayerID playerID);
 
-
-	virtual void createPlayer    (const PlayerComponentInfo& info, const glm::vec3& pos)                  = 0;
 	virtual void destroyEntity   (const Netcode::ComponentID entityID)                                    = 0;
 	virtual void enableSprinklers()                                                                       = 0;
 	virtual void endMatch        (const GameDataForOthersInfo& info)                                      = 0;
