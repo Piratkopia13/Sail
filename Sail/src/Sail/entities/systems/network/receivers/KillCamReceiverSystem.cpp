@@ -223,6 +223,10 @@ unsigned int KillCamReceiverSystem::getByteSize() const {
 
 void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
+		for (auto& c : e->getChildEntities()) {
+			c->queueDestruction();
+		}
+		
 		e->queueDestruction();
 		
 		if (entityID == m_idOfKillingProjectile) {
@@ -447,8 +451,13 @@ void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 void KillCamReceiverSystem::submitWaterPoint(const glm::vec3& point) {
 }
 
+
+// kill player when water hits it
 void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID killerID) {
 	//EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
+	if (killerID == m_idOfKillingProjectile && Netcode::getComponentOwner(id) == m_playerID) {
+		destroyEntity(id);
+	}
 }
 
 
