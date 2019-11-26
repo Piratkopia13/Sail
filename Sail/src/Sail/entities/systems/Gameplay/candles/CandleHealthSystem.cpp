@@ -160,7 +160,7 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		if (e.hitterID == Netcode::SPRINKLER_COMP_ID) {
 			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::SPRINKLER, e.hitterID);
 		} else {
-			candle->getComponent<CandleComponent>()->hitWithWater(5.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
+			candle->getComponent<CandleComponent>()->hitWithWater(7.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
 
 		}
 	};
@@ -181,12 +181,6 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
 				} else if (candleC->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
 					torchE->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
-				}
-
-				// Play the re-ignition sound if the player has any candles left
-				if (candleC->respawns < m_maxNumRespawns) {
-					auto playerEntity = torchE->getParent();
-					playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
 				}
 			}
 		}

@@ -126,7 +126,7 @@ glm::vec3 SettingStorage::getColor(const int team) {
 }
 
 void SettingStorage::setMap(const int mode, const int index, const int playerCount) {
-
+	srand(time(0));
 	switch (mode) {
 		//DEATHMATCH
 		case 0:
