@@ -649,7 +649,7 @@ bool AudioSystem::onEvent(const Event& event) {
 			for (auto& sound : ac->m_sounds) {
 				sound.isPlaying = false;
 			}
-
+			// Stop all streams EXCEPT for 'lab ambiance'
 			auto& iterator = ac->m_currentlyStreaming.begin();
 			while (iterator != ac->m_currentlyStreaming.end()) {
 				if ((*iterator).first != "res/sounds/ambient/ambiance_lab.xwb") {
@@ -658,7 +658,6 @@ bool AudioSystem::onEvent(const Event& event) {
 				iterator++;
 			}
 		}
-		//m_audioEngine->stopAllStreams();
 		onPlayerDied((const PlayerDiedEvent&)event); 
 		break;
 	case Event::Type::PLAYER_JUMPED: onPlayerJumped((const PlayerJumpedEvent&)event); break;
