@@ -221,7 +221,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 
 							soundGeneral->isPlaying = !soundGeneral->playOnce;
 						}
-					} else if (soundGeneral->hasStartedPlaying) {
+					} 
+					else if (soundGeneral->hasStartedPlaying) {
 						
 						soundGeneral->hasStartedPlaying = false;
 						soundGeneral->durationElapsed = 0.0f;
@@ -565,9 +566,12 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onStartShooting = [=](const StartShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].playOnce = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].frequency = e.lowPassFrequency;
+			Audio::SoundInfo_General* soundGeneralStart = &player->getComponent<AudioComponent>()->m_sounds[
+				Audio::SoundType::SHOOT_START
+			];
+			soundGeneralStart->playOnce = true;
+			soundGeneralStart->isPlaying = true;
+			soundGeneralStart->frequency = e.lowPassFrequency;
 		} else {
 			SAIL_LOG_WARNING("AudioSystem : started shooting but no matching entity found");
 		}
@@ -575,10 +579,13 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onLoopShooting = [=](const LoopShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
+			Audio::SoundInfo_General* soundGeneralLoop = &player->getComponent<AudioComponent>()->m_sounds[
+				Audio::SoundType::SHOOT_LOOP
+			];
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].frequency = e.lowPassFrequency;
+			soundGeneralLoop->isPlaying = true;
+			soundGeneralLoop->playOnce = true;
+			soundGeneralLoop->frequency = e.lowPassFrequency;
 		}
 		else {
 			SAIL_LOG_WARNING("AudioSystem : looped shooting but no matching entity found");
@@ -587,10 +594,22 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onStopShooting = [=](const StopShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = false;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].isPlaying = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].frequency = e.lowPassFrequency;
+			// Force stop the loop sound since it continues playing when it should not.
+			Audio::SoundInfo_General* soundGeneralLoop = &player->getComponent<AudioComponent>()->m_sounds[
+				Audio::SoundType::SHOOT_LOOP
+			];
+			m_audioEngine->stopSpecificSound(soundGeneralLoop->soundID);
+			Audio::SoundInfo_General* soundGeneralStart = &player->getComponent<AudioComponent>()->m_sounds[
+				Audio::SoundType::SHOOT_START
+			];
+			m_audioEngine->stopSpecificSound(soundGeneralStart->soundID);
+			Audio::SoundInfo_General* soundGeneralEnd = &player->getComponent<AudioComponent>()->m_sounds[
+				Audio::SoundType::SHOOT_END
+			];
+			soundGeneralEnd->isPlaying = false;
+			soundGeneralEnd->playOnce = true;
+			soundGeneralEnd->isPlaying = true;
+			soundGeneralEnd->frequency = e.lowPassFrequency;
 		} else {
 			SAIL_LOG_WARNING("AudioSystem : stopped shooting but no matching entity found");
 		}

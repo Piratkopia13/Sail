@@ -33,6 +33,8 @@ bool PlayerSystem::onEvent(const Event& event) {
 			| BoundingBoxComponent::getBID()
 			| ReplayReceiverComponent::getBID()
 			| AudioComponent::getBID()
+			| ParticleEmitterComponent::getBID()
+
 			);
 
 

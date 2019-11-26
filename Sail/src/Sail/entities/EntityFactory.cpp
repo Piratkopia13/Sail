@@ -42,14 +42,19 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	candle->addComponent<CullingComponent>();
 
 	auto* particleEmitterComp = candle->addComponent<ParticleEmitterComponent>();
-	particleEmitterComp->size = 0.09f;
-	particleEmitterComp->offset = { 0.0f, 0.41f, 0.0f };
-	particleEmitterComp->constantVelocity = { 0.0f, 0.7f, 0.0f };
-	particleEmitterComp->acceleration = { 0.0f, 0.4f, 0.0f };
-	particleEmitterComp->spread = { 0.22f, 0.5f, 0.22f };
-	particleEmitterComp->spawnRate = 0.0001f;
-	particleEmitterComp->lifeTime = 0.15f;
-	particleEmitterComp->setTexture("particles/animFire.tga");
+
+	particleEmitterComp->size = 0.1f;
+	particleEmitterComp->offset = { 0.0f, 0.44f, 0.0f };
+	particleEmitterComp->constantVelocity = { 0.0f, 0.2f, 0.0f };
+	particleEmitterComp->acceleration = { 0.0f, 1.0f, 0.0f };
+	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
+	particleEmitterComp->spawnRate = 0.001f;
+	particleEmitterComp->lifeTime = 0.13f;
+	std::string particleTextureName = "particles/animFire.tga";
+	if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
+		Application::getInstance()->getResourceManager().loadTexture(particleTextureName);
+	}
+	particleEmitterComp->setTexture(particleTextureName);
 
 	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
 	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.08f));
@@ -456,7 +461,7 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 }
 
 Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory::ProjectileArguments& info) {
-	e->addComponent<MetaballComponent>();
+	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
 	e->addComponent<ProjectileComponent>(10.0f, info.hasLocalOwner); // TO DO should not be manually set to true
@@ -489,7 +494,7 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 }
 
 Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const ProjectileArguments& info) {
-	e->addComponent<MetaballComponent>();
+	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
 
