@@ -63,6 +63,7 @@ bool PlayerSystem::onEvent(const Event& event) {
 			auto& listIterator = audioC->m_currentlyStreaming.begin();
 			while (listIterator != audioC->m_currentlyStreaming.end()) {
 				audioC->streamSoundRequest_HELPERFUNC((*listIterator).first, false, 1.0f, false, false);
+				listIterator++;
 			}
 			for (int i = 0; i < Audio::SoundType::COUNT; i++) {
 				audioC->m_sounds[i].isPlaying = false;
