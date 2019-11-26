@@ -238,8 +238,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 		// - - - S T R E A M I N G  --------------------------------------------------------------------
 		{
 			// Deal with requests
+			if (audioC->m_streamingRequests.size() > 0)
 			for (m_i = audioC->m_streamingRequests.begin(); m_i != audioC->m_streamingRequests.end();) {
-
 				// If the request wants to start
 				if (m_i->second.startTRUE_stopFALSE == true) {
 					startPlayingRequestedStream(e, audioC);
@@ -254,7 +254,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			// Per currently streaming sound
 			for (m_k = audioC->m_currentlyStreaming.begin(); m_k != audioC->m_currentlyStreaming.end();) {
 				// Update its position in the world
-				updateStreamPosition(e, cam, alpha);
+				if (m_k->second.isPositionalAudio) {
+					updateStreamPosition(e, cam, alpha);
+				}
 				// Update volume if it has changed
 				if (m_k->second.prevVolume != m_k->second.volume) {
 					m_k->second.prevVolume = m_k->second.volume;
@@ -273,9 +275,17 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 }
 
 void AudioSystem::stop() {
+	m_audioEngine->pause_unpause_AllStreams(false);
 	m_audioEngine->stopAllStreams();
-}
+	m_audioEngine->pauseAllSounds();
 
+	for (auto e : entities) {
+		auto audioC = e->getComponent<AudioComponent>();
+
+		audioC->m_currentlyStreaming.clear();
+		audioC->m_streamingRequests.clear();
+	}
+}
 int AudioSystem::randomASoundIndex(int soundPoolSize, Audio::SoundInfo_General* soundGeneral) {
 	int randomSoundIndex = -1;
 
@@ -658,8 +668,15 @@ bool AudioSystem::onEvent(const Event& event) {
 			for (auto& sound : ac->m_sounds) {
 				sound.isPlaying = false;
 			}
+			// Stop all streams EXCEPT for 'lab ambiance'
+			auto& iterator = ac->m_currentlyStreaming.begin();
+			while (iterator != ac->m_currentlyStreaming.end()) {
+				if ((*iterator).first != "res/sounds/ambient/ambiance_lab.xwb") {
+					ac->streamSoundRequest_HELPERFUNC((*iterator).first, false, 1.0f, false, false);
+				}
+				iterator++;
+			}
 		}
-		m_audioEngine->stopAllStreams();
 		onPlayerDied((const PlayerDiedEvent&)event); 
 		break;
 	case Event::Type::PLAYER_JUMPED: onPlayerJumped((const PlayerJumpedEvent&)event); break;

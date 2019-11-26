@@ -23,6 +23,7 @@
 #include "API/DX12/DX12API.h"
 #include "API/DX12/renderer/DX12HybridRaytracerRenderer.h"
 #include "API/DX12/dxr/DXRBase.h"
+#include "../Sail/src/API/Audio/AudioEngine.h"
 
 
 
@@ -308,9 +309,16 @@ bool GameState::processInput(float dt) {
 	}
 #endif
 
+	// Unpause Game
+	if (m_readyRestartAmbiance) {
+		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(false);
+		m_readyRestartAmbiance = false;
+	}
 
 	// Pause game
 	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::SHOW_IN_GAME_MENU)) {
+		m_readyRestartAmbiance = true;
+		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(true);
 		requestStackPush(States::InGameMenu);
 	}
 
@@ -720,7 +728,7 @@ bool GameState::update(float dt, float alpha) {
 	m_killFeedWindow.updateTiming(dt);	
 	waitForOtherPlayers();
 
-	//Don't update game if game have not started. This is to sync all players to start at the same time
+	// Don't update game if game have not started. This is to sync all players to start at the same time
 	if (!m_gameStarted) {
 		return true;
 	}
@@ -770,7 +778,6 @@ bool GameState::fixedUpdate(float dt) {
 	}
 	
 	updatePerTickComponentSystems(dt);
-
 
 	return true;
 }
@@ -867,7 +874,6 @@ void GameState::shutDownGameState() {
 	ECS::Instance()->destroyAllEntities();
 }
 
-
 // TODO: Add more systems here that only deal with replay entities/components
 void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	if (m_componentSystems.killCamReceiverSystem->skipUpdate()) {
@@ -939,7 +945,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// TODO? move to its own thread
 	m_componentSystems.sprintingSystem->update(dt, alpha);
-
 
 	m_componentSystems.gameInputSystem->processMouseInput(dt);
 	if (m_isInKillCamMode) {
