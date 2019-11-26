@@ -60,6 +60,10 @@ public:
 	const int teamColorIndex(const int team);
 	glm::vec3 getColor(const int team);
 
+	void setMap(const int mode, const int index, const int playerCount);
+
+
+
 	// settings[area][setting].selected == current selected setting; 
 	// settings[area][setting].options[selected].value == value of selected setting; 
 
@@ -68,6 +72,7 @@ public:
 
 
 	std::unordered_map<std::string, std::unordered_map<std::string, Setting>> gameSettingsStatic;
+	std::unordered_map<std::string, Setting> defaultMaps;
 	std::unordered_map<std::string, std::unordered_map<std::string, DynamicSetting>> gameSettingsDynamic;
 
 
@@ -86,4 +91,7 @@ private:
 	void createGameDefaultMap();
 	void createGameModeDefault();
 	void createGameColorsDefault();
+
+	void setMapValues(const int x, const int y, const float clutter, const int seed);
+
 };

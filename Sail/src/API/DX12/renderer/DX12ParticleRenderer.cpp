@@ -53,7 +53,7 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 			continue;
 		}
 		auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(0));
-		if (tex && !tex->hasBeenInitialized()) {
+		if (tex) {
 			tex->initBuffers(cmdList.Get());
 		}
 	}
@@ -81,7 +81,7 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 	// Close command list
 	cmdList->Close();
 
-	m_context->executeCommandLists({m_command.list.Get()});
+	m_context->getDirectQueue()->executeCommandLists({m_command.list.Get()});
 }
 
 bool DX12ParticleRenderer::onEvent(const Event& event) {

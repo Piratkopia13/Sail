@@ -88,6 +88,7 @@ private:
 	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
 	bool onPlayerTeamRequest(const NetworkPlayerRequestedTeamChange& event);
 	bool onPlayerTeamChanged(const NetworkPlayerChangedTeam& event);
+	bool onSettingsChanged();
 
 	void renderPlayerList();
 	void renderGameSettings();		// Currently empty
