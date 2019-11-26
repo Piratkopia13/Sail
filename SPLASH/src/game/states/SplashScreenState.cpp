@@ -16,6 +16,7 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 	m_input = Input::GetInstance();
 	m_app = Application::getInstance();
 
+	m_app->getResourceManager().loadTexture("splash_logo.tga");
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 }
 
@@ -211,6 +212,7 @@ bool SplashScreenState::loadTextures(Application* app) {
 
 	rm->loadTexture("Icons/TorchLeft.tga");
 	rm->loadTexture("Icons/TorchThrow2.tga");
+	rm->loadTexture("Icons/PlayersLeft.tga");
 
 	return true;
 }
