@@ -649,8 +649,16 @@ bool AudioSystem::onEvent(const Event& event) {
 			for (auto& sound : ac->m_sounds) {
 				sound.isPlaying = false;
 			}
+
+			auto& iterator = ac->m_currentlyStreaming.begin();
+			while (iterator != ac->m_currentlyStreaming.end()) {
+				if ((*iterator).first != "res/sounds/ambient/ambiance_lab.xwb") {
+					ac->streamSoundRequest_HELPERFUNC((*iterator).first, false, 1.0f, false, false);
+				}
+				iterator++;
+			}
 		}
-		m_audioEngine->stopAllStreams();
+		//m_audioEngine->stopAllStreams();
 		onPlayerDied((const PlayerDiedEvent&)event); 
 		break;
 	case Event::Type::PLAYER_JUMPED: onPlayerJumped((const PlayerJumpedEvent&)event); break;
