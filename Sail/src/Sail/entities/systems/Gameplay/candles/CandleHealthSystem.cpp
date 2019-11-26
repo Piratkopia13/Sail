@@ -199,6 +199,23 @@ const int CandleHealthSystem::getMaxNumberOfRespawns() {
 	return m_maxNumRespawns;
 }
 
+//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+int CandleHealthSystem::getNumLivingEntites() {
+	int i = 0;
+	//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+	for (auto& e : entities) {
+		//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+		TransformComponent* tc = e->getComponent<TransformComponent>();
+		//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+		if (e->getComponent<CandleComponent>()->isAlive && tc && tc->getRenderMatrix()[3].y > -1) {
+			//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+			i++;
+		}
+	}
+	//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+	return i;
+}
+
 #ifdef DEVELOPMENT
 unsigned int CandleHealthSystem::getByteSize() const {
 	return BaseComponentSystem::getByteSize() + sizeof(*this);
