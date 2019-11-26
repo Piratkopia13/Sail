@@ -37,7 +37,7 @@ void CandleHealthSystem::update(float dt) {
 
 		// Scale fire particles with health
 		auto particles = e->getComponent<ParticleEmitterComponent>();
-		particles->spawnRate = 0.01f * (MAX_HEALTH / candle->health);
+		particles->spawnRate = 0.01f * glm::max(0.f, (MAX_HEALTH / candle->health));
 
 #pragma region HOST_ONLY_STUFF
 		if (isHost && candle->isLit) {
