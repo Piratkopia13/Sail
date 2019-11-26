@@ -720,9 +720,9 @@ void Network::listen(Connection* conn) {
 		//	ar(bytesToReceive);
 		//}
 
-		bytesToReceive = reinterpret_cast<size_t&>(incomingPackageSize[0]);
+		bytesToReceive = (unsigned char)(incomingPackageSize[0]);
 		size_t test = 0;
-		test = (reinterpret_cast<size_t&>(incomingPackageSize[1]);
+		test = (unsigned char)(incomingPackageSize[1]);
 		test <<= 8;
 		bytesToReceive |= test;
 
