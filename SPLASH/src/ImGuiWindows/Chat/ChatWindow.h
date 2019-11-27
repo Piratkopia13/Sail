@@ -35,6 +35,7 @@ public:
 	void addMessage(const int id, const std::string& name, const std::string message);
 	void clearHistory();
 
+	void cleanMessage(std::string& msg);
 
 
 	void setFadeTime(const float& time);

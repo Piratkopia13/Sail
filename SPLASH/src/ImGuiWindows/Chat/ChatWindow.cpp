@@ -203,6 +203,8 @@ void ChatWindow::renderChat(float dt) {
 			m_message = buf;
 			if (m_message != "" && releasedEnter) {
 				//Send Message
+
+				cleanMessage(m_message);
 				m_eventDispatcher->emit(ChatSent(m_message));
 				m_message = "";
 			}
@@ -220,6 +222,7 @@ void ChatWindow::renderChat(float dt) {
 		ImGui::SameLine();
 		if (ImGui::Button(" >  ")) {
 			if (m_message != "") {
+				cleanMessage(m_message);
 				m_eventDispatcher->emit(ChatSent(m_message));
 				m_message = "";
 				justSent = true;
@@ -266,6 +269,12 @@ void ChatWindow::addMessage(const int id, const std::string& name, const std::st
 
 void ChatWindow::clearHistory() {
 	m_messages.clear();
+}
+
+void ChatWindow::cleanMessage(std::string& msg) {
+	while (msg.find("%") != std::string::npos) {
+		msg = msg.erase(msg.find("%"),1);
+	}
 }
 
 void ChatWindow::setFadeTime(const float& time) {
