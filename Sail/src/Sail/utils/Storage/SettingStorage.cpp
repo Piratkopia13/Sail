@@ -282,8 +282,8 @@ void SettingStorage::createGameDefaultMap() {
 		{"Cologne",		5},
 		{"Frankfurt",	6},
 		{"Bremen",		7},
-		{"",			8},
-		{"",			9},
+		{"Flensburg",			8},
+		{"Hanover",			9},
 		{"Wasserburg",	10}, // Alex - Hanslin/Hansburg/
 		{"Lubeck",		11}, // Fred - /
 	}));
@@ -380,7 +380,7 @@ void SettingStorage::createGameColorsDefault() {
 
 	//Spectators
 	gameSettingsStatic["team" + std::to_string(-1)]["color"] = Setting(0, std::vector<Setting::Option>({
-			{ "-1", -1.0f },
+			{ "White", -1.0f },
 		}));
 	//Player teams
 	for (int i = 0; i < 12; i++) {
@@ -395,8 +395,8 @@ void SettingStorage::createGameColorsDefault() {
 			{ "Pink", 7.0f },
 			{ "Violet", 8.0f },
 			{ "Grey", 9.0f },
-			{ "Dark Green", 10.0f },
-			{ "Light Green", 11.0f },
+			{ "D Green", 10.0f },
+			{ "L Green", 11.0f },
 		}));
 	}
 }
