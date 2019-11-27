@@ -358,10 +358,13 @@ void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const 
 	// Find the candle whose parent has the correct ID
 	for (auto candleEntity : entities) {
 		if (auto parentEntity = candleEntity->getParent(); parentEntity) {
-			if (parentEntity->getComponent<ReplayReceiverComponent>()->m_id == id) {
-				player = parentEntity;
-				candle = candleEntity;
-				break;
+			auto rrc = parentEntity->getComponent<ReplayReceiverComponent>();
+			if (rrc) {
+				if (rrc->m_id == id) {
+					player = parentEntity;
+					candle = candleEntity;
+					break;
+				}
 			}
 		}
 	}
