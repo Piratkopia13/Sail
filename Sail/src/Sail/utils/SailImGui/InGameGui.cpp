@@ -34,7 +34,7 @@ void InGameGui::renderWindow() {
 		progresbarLenght,
 		progresbarHeight - progresbarHeight * 2.2
 	));
-
+	bool drawCrossHair = true;
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	flags |= ImGuiWindowFlags_NoResize;
 	flags |= ImGuiWindowFlags_NoMove;
@@ -95,6 +95,18 @@ void InGameGui::renderWindow() {
 			ImGui::SetWindowPos(ImVec2(screenWidth - ImGui::GetWindowSize().x - 300, screenHeight - ImGui::GetWindowSize().y - 50));
 			ImGui::End();
 		}
+		if (c3 && !c3->isLit) {
+			Texture& cantShootTexture = app->getResourceManager().getTexture("Icons/CantShootIcon1.tga");
+			ImGui::Begin("CantShoot", nullptr, flags);
+			ImGui::Image(imguiHandler->getTextureID(&cantShootTexture), ImVec2(64, 64));
+			ImGui::SetWindowPos(ImVec2(
+				screenWidth * 0.505f - 40,
+				screenHeight * 0.55f - 40
+			));
+			ImGui::End();
+			drawCrossHair = false;
+		}
+
 		int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
 		Texture& testTexture = app->getResourceManager().getTexture("Icons/TorchLeft.tga");
 		if (ImGui::Begin("TorchesLeft", nullptr, flags)) {
@@ -137,7 +149,7 @@ void InGameGui::renderWindow() {
 		ImGui::End();
 	}
 
-	if (m_crosshairEntity) {
+	if (m_crosshairEntity && drawCrossHair) {
 		if (!m_crosshairEntity->getComponent<CrosshairComponent>()->sprinting) {
 			renderCrosshair(screenWidth, screenHeight);
 		}
