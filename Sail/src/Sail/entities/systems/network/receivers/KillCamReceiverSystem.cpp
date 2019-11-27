@@ -371,7 +371,11 @@ void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const 
 
 	// candle exists => player exists (only need to check candle)
 	if (!candle) {
-		Logger::Warning("Holding candle toggled but no matching entity found");
+		Logger::Warning("Holding candle toggled but no matching candle entity found");
+		return;
+	}
+	if (!player) {
+		Logger::Warning("Holding candle toggled but no matching player entity found");
 		return;
 	}
 
