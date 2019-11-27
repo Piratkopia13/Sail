@@ -280,8 +280,8 @@ void GameDataTracker::renderPersonalStats() {
 }
 
 void GameDataTracker::renderFunStats() {
-	std::string bdString = "Most bullets fires by " +
-		m_hostPlayerTracker[m_loggedDataGlobal.bulletsFiredID].playerName + ": " + std::to_string(m_loggedDataGlobal.bulletsFired);
+	std::string bdString = "Most water wasted by " +
+		m_hostPlayerTracker[m_loggedDataGlobal.bulletsFiredID].playerName + ": " + std::to_string(m_loggedDataGlobal.bulletsFired) +"L";
 	ImGui::Text(bdString.c_str());
 
 	bdString = "Longest distance walked by " +

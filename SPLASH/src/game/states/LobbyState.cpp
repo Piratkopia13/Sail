@@ -333,7 +333,7 @@ void LobbyState::renderPlayerList() {
 		unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
 		for (auto currentplayer : NWrapperSingleton::getInstance().getPlayers()) {			
 			ImGui::BeginGroup();
-
+			//std::string uniqueID = "##"+currentplayer.name + currentplayer.team;
 			int index = m_settings->teamColorIndex((int)currentplayer.team);
 			glm::vec4 temp(m_settings->getColor(index), 1);
 
@@ -430,8 +430,8 @@ void LobbyState::renderPlayerList() {
 				);
 				ImGui::PushStyleColor(ImGuiCol_Text, col);
 
-				ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.1f);
-				if (ImGui::BeginCombo(unique.c_str(), m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().name.c_str())) {
+				ImGui::SetNextItemWidth(27);
+				if (ImGui::BeginCombo(unique.c_str(), std::string("##"+m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().name).c_str())) {
 					ImGui::PopStyleColor();
 					for (auto const& key : m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].options) {
 						std::string name = key.name + unique;
@@ -464,16 +464,12 @@ void LobbyState::renderPlayerList() {
 				}
 			}
 			else {
-				std::string s = selectedGameTeams.options.back().name;
+				std::string s = m_settings->gameSettingsStatic["team" + std::to_string(index)]["color"].getSelected().name;
 
-				for (auto t : selectedGameTeams.options) {
-					if ((int)(t.value) == (int)(currentplayer.team)) {
-						s = t.name;
-						break;
-					}
-				}
-
+				
+				ImGui::PushStyleColor(ImGuiCol_Text, col);
 				ImGui::Text(s.c_str());
+				ImGui::PopStyleColor();
 			}
 
 
