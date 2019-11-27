@@ -167,5 +167,9 @@ SpectateMovement SpectateInputSystem::getPlayerMovementInput(Entity* e) {
 		playerMovement.upMovement -= 1.0f; 
 	}
 
+	if (Input::IsKeyPressed(KeyBinds::SPRINT)) {
+		playerMovement.speedModifier = 5.f;
+	}
+
 	return playerMovement;
 }
