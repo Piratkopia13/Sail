@@ -628,6 +628,10 @@ void MenuState::renderProfile() {
 		strncpy_s(buf, name.c_str(), name.size());
 		if (ImGui::InputText("##name", buf, MAX_NAME_LENGTH, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			name = buf;
+			while (name.find("%") != std::string::npos) {
+				name = name.erase(name.find("%"), 1);
+			}
+
 			if (name == "") {
 				name = "Hans";
 			}

@@ -9,6 +9,7 @@
 #include "Sail/entities/components/CrosshairComponent.h"
 #include "Sail/entities/components/CandleComponent.h"
 #include "Sail/entities/components/SpectatorComponent.h"
+#include "Sail/entities/systems/Gameplay/candles/CandleHealthSystem.h"
 
 InGameGui::InGameGui(bool showWindow) {
 }
@@ -33,7 +34,7 @@ void InGameGui::renderWindow() {
 		progresbarLenght,
 		progresbarHeight - progresbarHeight * 2.2
 	));
-
+	bool drawCrossHair = true;
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	flags |= ImGuiWindowFlags_NoResize;
 	flags |= ImGuiWindowFlags_NoMove;
@@ -94,6 +95,18 @@ void InGameGui::renderWindow() {
 			ImGui::SetWindowPos(ImVec2(screenWidth - ImGui::GetWindowSize().x - 300, screenHeight - ImGui::GetWindowSize().y - 50));
 			ImGui::End();
 		}
+		if (c3 && !c3->isLit) {
+			Texture& cantShootTexture = app->getResourceManager().getTexture("Icons/CantShootIcon1.tga");
+			ImGui::Begin("CantShoot", nullptr, flags);
+			ImGui::Image(imguiHandler->getTextureID(&cantShootTexture), ImVec2(64, 64));
+			ImGui::SetWindowPos(ImVec2(
+				screenWidth * 0.505f - 40,
+				screenHeight * 0.55f - 40
+			));
+			ImGui::End();
+			drawCrossHair = false;
+		}
+
 		int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
 		Texture& testTexture = app->getResourceManager().getTexture("Icons/TorchLeft.tga");
 		if (ImGui::Begin("TorchesLeft", nullptr, flags)) {
@@ -111,7 +124,9 @@ void InGameGui::renderWindow() {
 	ImGui::End();
 
 	if (m_player) {
-		int nrOfPlayersLeft = GameDataTracker::getInstance().getPlayersLeft();
+		//int nrOfPlayersLeft = GameDataTracker::getInstance().getPlayersLeft();
+		int nrOfPlayersLeft = ECS::Instance()->getSystem<CandleHealthSystem>()->getNumLivingEntites();
+
 		auto* imguiHandler = app->getImGuiHandler();
 		Texture& testTexture = app->getResourceManager().getTexture("Icons/PlayersLeft.tga");
 		if (ImGui::Begin("PlayersLeftIcon", nullptr, flags)) {
@@ -122,17 +137,19 @@ void InGameGui::renderWindow() {
 		}
 		ImGui::End();
 		if (ImGui::Begin("PlayersLeftNumber", nullptr, flags)) {
+			ImGui::PushFont(imguiHandler->getFont("Beb50"));
 			std::string progress =std::to_string(nrOfPlayersLeft);
 			ImGui::Text(progress.c_str());
-			ImGui::SetWindowFontScale(2.5f);
 			ImGui::SetWindowPos(ImVec2(
-				40, 0
+				40, 1
 			));
+			ImGui::PopFont();
+
 		}
 		ImGui::End();
 	}
 
-	if (m_crosshairEntity) {
+	if (m_crosshairEntity && drawCrossHair) {
 		if (!m_crosshairEntity->getComponent<CrosshairComponent>()->sprinting) {
 			renderCrosshair(screenWidth, screenHeight);
 		}

@@ -35,7 +35,7 @@ void FleeingState::init(Entity* entity) {
 }
 
 int FleeingState::findBestNode(const glm::vec3& aiPos, Entity* enemy) {
-	float farthestDist2 = -INFINITY;
+	float farthestDist2 = -9999999.0f;
 	int bestNodeIndex = -1;
 	int nodeIndex = 0;
 

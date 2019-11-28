@@ -41,6 +41,7 @@ private:
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
 	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
+	void onToggleKillCam(const ToggleKillCamEvent& event);
 
 	void shutDownGameState();
 
@@ -84,6 +85,7 @@ private:
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
 	InGameGui m_inGameGui;
 	ImGuiWindowFlags m_standaloneButtonflags;
+	ImGuiWindowFlags m_backgroundOnlyflags;
 	NetworkInfoWindow m_networkInfoImGuiWindow;
 
 	size_t m_currLightIndex;
@@ -104,6 +106,7 @@ private:
 	bool m_wasDropped = false;
 
 	bool m_isInKillCamMode = false;
+	std::string m_wasKilledBy = {};
 
 #ifdef _PERFORMANCE_TEST
 	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);

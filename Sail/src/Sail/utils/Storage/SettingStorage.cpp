@@ -126,7 +126,7 @@ glm::vec3 SettingStorage::getColor(const int team) {
 }
 
 void SettingStorage::setMap(const int mode, const int index, const int playerCount) {
-
+	srand(time(0));
 	switch (mode) {
 		//DEATHMATCH
 		case 0:
@@ -258,10 +258,10 @@ void SettingStorage::createGameDefaultMap() {
 	gameSettingD["sizeX"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
 	gameSettingD["sizeY"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
 	gameSettingD["tileSize"] =	DynamicSetting(7.0f, 1.0f, 30.0f);
-	gameSettingD["clutter"] = DynamicSetting(0.85f,	0.0f,	5.0f);
+	gameSettingD["clutter"] = DynamicSetting(0.85f,	0.0f,	1.0f);
 	gameSettingD["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
-	gameSettingD["sprinklerTime"] = DynamicSetting(60.0f, 0.0f, 600.0f);
-	gameSettingD["sprinklerIncrement"] = DynamicSetting(10.0f, 5.0f, 300.0f);
+	gameSettingD["sprinklerTime"] = DynamicSetting(75.0f, 0.0f, 600.0f);
+	gameSettingD["sprinklerIncrement"] = DynamicSetting(30.0f, 5.0f, 300.0f);
 
 	gameSettingsStatic["map"] = std::unordered_map<std::string, Setting>();
 	gameSettingsStatic["map"]["sprinkler"] = Setting(0, std::vector<Setting::Option>({
@@ -282,8 +282,8 @@ void SettingStorage::createGameDefaultMap() {
 		{"Cologne",		5},
 		{"Frankfurt",	6},
 		{"Bremen",		7},
-		{"",			8},
-		{"",			9},
+		{"Flensburg",			8},
+		{"Hanover",			9},
 		{"Wasserburg",	10}, // Alex - Hanslin/Hansburg/
 		{"Lubeck",		11}, // Fred - /
 	}));
@@ -380,7 +380,7 @@ void SettingStorage::createGameColorsDefault() {
 
 	//Spectators
 	gameSettingsStatic["team" + std::to_string(-1)]["color"] = Setting(0, std::vector<Setting::Option>({
-			{ "-1", -1.0f },
+			{ "White", -1.0f },
 		}));
 	//Player teams
 	for (int i = 0; i < 12; i++) {
@@ -395,8 +395,8 @@ void SettingStorage::createGameColorsDefault() {
 			{ "Pink", 7.0f },
 			{ "Violet", 8.0f },
 			{ "Grey", 9.0f },
-			{ "Dark Green", 10.0f },
-			{ "Light Green", 11.0f },
+			{ "D Green", 10.0f },
+			{ "L Green", 11.0f },
 		}));
 	}
 }

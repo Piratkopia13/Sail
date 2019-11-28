@@ -17,6 +17,8 @@
 #include "types/StopWalkingEvent.h"
 #include "types/StartThrowingEvent.h"
 #include "types/StopThrowingEvent.h"
+#include "types/ToggleKillCamEvent.h"
 #include "types/ToggleSlowMotionReplayEvent.h"
 #include "types/TorchExtinguishedEvent.h"
+#include "types/TorchNotHeldEvent.h"
 #include "types/UpdateSanityEvent.h"

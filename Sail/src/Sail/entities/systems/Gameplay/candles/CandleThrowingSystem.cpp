@@ -18,6 +18,7 @@ CandleThrowingSystem::CandleThrowingSystem() {
 	registerComponent<AnimationComponent>(false, true, true);
 	registerComponent<CollisionComponent>(false, true, true);
 	registerComponent<CandleComponent>(false, true, true);
+	registerComponent<RagdollComponent>(false, true, false);
 }
 
 CandleThrowingSystem::~CandleThrowingSystem() {}
@@ -131,7 +132,19 @@ void CandleThrowingSystem::update(float dt) {
 					// Set initial throw position
 					transC->setTranslation(throwPos);
 
-					torchE->addComponent<CollisionComponent>(true);
+					if (e->hasComponent<RagdollComponent>()) {
+						transC->setCenter(e->getComponent<RagdollComponent>()->localCenterOfMass);
+					}
+
+					// Throw the torch
+					moveC->velocity = throwC->direction * throwC->throwingTimer * throwC->throwChargeMultiplier + e->getComponent<MovementComponent>()->velocity;
+					moveC->constantAcceleration = glm::vec3(0.f, -9.82f, 0.f);
+					//throwC->direction.y = 0.f;
+					auto rotationAxis = glm::normalize(glm::cross(throwC->direction, glm::vec3(0.f, 1.f, 0.f)));
+					moveC->rotation = rotationAxis * -6.14f * 2.0f;
+					auto* collComp = torchE->addComponent<CollisionComponent>(true);
+					collComp->bounciness = 0.2f;
+					collComp->drag = 50.0f;
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 
 					// Send stop throw event

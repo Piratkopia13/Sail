@@ -83,7 +83,9 @@ namespace Netcode {
 		CHANGE_LOCAL_POSITION,
 		CHANGE_LOCAL_ROTATION,
 		CHANGE_ABSOLUTE_POS_AND_ROT,
+		UPDATE_PROJECTILE_ONCE,
 		SPAWN_PROJECTILE,
+		SUBMIT_WATER_POINTS,
 		ANIMATION,
 		SHOOT_START,
 		SHOOT_LOOP,
@@ -118,7 +120,9 @@ namespace Netcode {
 		"CHANGE_LOCAL_POSITION",
 		"CHANGE_LOCAL_ROTATION",
 		"CHANGE_ABSOLUTE_POS_AND_ROT",
+		"UPDATE_PROJECTILE_ONCE",
 		"SPAWN_PROJECTILE",
+		"SUBMIT_WATER_POINTS",
 		"ANIMATION",
 		"SHOOT_START",
 		"SHOOT_LOOP",
@@ -217,6 +221,14 @@ namespace Netcode {
 		float lowPassFrequency;
 		Netcode::ComponentID projectileComponentID;
 		Netcode::ComponentID ownerPlayerComponentID;
+	};
+
+	class MessageSubmitWaterPoints : public MessageData {
+	public:
+		MessageSubmitWaterPoints(std::vector<glm::vec3> _points) : points(_points) {}
+		virtual ~MessageSubmitWaterPoints() {}
+
+		std::vector<glm::vec3> points;
 	};
 
 	class MessageWaterHitPlayer : public MessageData {

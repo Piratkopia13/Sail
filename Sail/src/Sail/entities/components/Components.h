@@ -16,6 +16,7 @@
 #include "FSMComponent.h"
 #include "GUIComponent.h"
 #include "GunComponent.h"
+#include "KillerComponent.h"
 #include "LifeTimeComponent.h"
 #include "LightComponent.h"
 #include "LightListComponent.h"

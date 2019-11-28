@@ -113,14 +113,14 @@ void NWrapper::sendMsgAllClients(const char* msg, size_t size) {
 }
 
 
-void NWrapper::sendSerializedDataAllClients(std::string data) {
+void NWrapper::sendSerializedDataAllClients(const std::string& data) {
 	std::string msg;
 	msg += ML_SERIALIZED;
 	msg += data;	
 	m_network->send(msg.c_str(), msg.length(), -1);
 }
 
-void NWrapper::sendSerializedDataToHost(std::string data) {
+void NWrapper::sendSerializedDataToHost(const std::string& data) {
 	std::string msg;
 	msg += ML_SERIALIZED;
 	msg += data;

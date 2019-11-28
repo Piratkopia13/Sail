@@ -57,7 +57,7 @@ void NWrapperHost::updateServerDescription() {
 	m_network->setServerMetaDescription(m_serverDescription.c_str(), m_serverDescription.length() + 1);
 }
 
-void NWrapperHost::sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayeriD) {
+void NWrapperHost::sendSerializedDataToClient(const std::string& data, Netcode::PlayerID PlayeriD) {
 	std::string msg;
 	msg += ML_SERIALIZED;
 	msg += data;

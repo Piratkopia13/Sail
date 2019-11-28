@@ -38,7 +38,7 @@ private:
 	void updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID playerId, std::string& name);
 
 
-	void sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayeriD);
+	void sendSerializedDataToClient(const std::string& data, Netcode::PlayerID PlayeriD) override;
 	/*
 		This will request clients to enter a new state. GameState, EndGameState etc.
 		id == 0 will send to all

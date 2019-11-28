@@ -12,20 +12,23 @@
 class GameState;
 class NetworkSenderSystem;
 class GameDataTracker;
+class Camera;
+class CameraController;
 
 class KillCamReceiverSystem : public ReceiverBase, public EventReceiver {
 public:
 	// Packets from the past five seconds are saved so that they can be replayed in the killcam.
 	static constexpr size_t REPLAY_BUFFER_SIZE = TICKRATE * 5;
-	static constexpr size_t SLOW_MO_MULTIPLIER = 4;
+	static constexpr size_t SLOW_MO_MULTIPLIER = 20;
 
 public:
 	KillCamReceiverSystem();
 	virtual ~KillCamReceiverSystem();
 
-	void init(Netcode::PlayerID player);
+	void init(Netcode::PlayerID player, Camera* cam);
 	void handleIncomingData(const std::string& data) override;
 	void update (float dt) override;
+	void updatePerFrame(float dt, float alpha);
 	void stop() override;
 
 	void prepareUpdate();
@@ -38,6 +41,10 @@ public:
 		} else {
 			return alpha;
 		}
+	}
+
+	float getKillCamDelta(const float delta) const {
+		return (m_slowMotionState == SlowMotionSetting::ENABLE) ? (delta / SLOW_MO_MULTIPLIER) : delta;
 	}
 
 	// If slow motion is enabled only update once every SLOW_MO_MULTIPLIER ticks
@@ -54,24 +61,26 @@ public:
 	}
 #endif
 private:
-	void destroyEntity   (const Netcode::ComponentID entityID)                                    override;
-	void enableSprinklers()                                                                       override;
-	void endMatch        (const GameDataForOthersInfo& info)                                      override;
-	void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID) override;
-	void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                               override;
-	void igniteCandle    (const Netcode::ComponentID candleID)                                    override;
-	void matchEnded      ()                                                                       override;
-	void playerDied      (const Netcode::ComponentID id, const Netcode::ComponentID killerID)     override;
-	void setAnimation    (const Netcode::ComponentID id, const AnimationInfo& info)               override;
-	void setCandleHealth (const Netcode::ComponentID candleID, const float health)                override;
-	void setCandleState  (const Netcode::ComponentID id, const bool isHeld)                       override;
-	void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                    override;
-	void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                    override;
-	void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                    override;
-	void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement)                 override;
-	void updateSanity    (const Netcode::ComponentID id, const float sanity)                      override;
-	void spawnProjectile (const ProjectileInfo& info)                                             override;
-	void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID killerID)     override;
+	void destroyEntity   (const Netcode::ComponentID entityID)                                       override;
+	void enableSprinklers()                                                                          override;
+	void endMatch        (const GameDataForOthersInfo& info)                                         override;
+	void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID)    override;
+	void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                                  override;
+	void igniteCandle    (const Netcode::ComponentID candleID)                                       override;
+	void matchEnded      ()                                                                          override;
+	void playerDied      (const Netcode::ComponentID id, const Netcode::ComponentID killerID)        override;
+	void setAnimation    (const Netcode::ComponentID id, const AnimationInfo& info)                  override;
+	void setCandleHealth (const Netcode::ComponentID candleID, const float health)                   override;
+	void setCandleState  (const Netcode::ComponentID id, const bool isHeld)                          override;
+	void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                       override;
+	void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                       override;
+	void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                       override;
+	void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken)                    override;
+	void updateSanity    (const Netcode::ComponentID id, const float sanity)                         override;
+	void updateProjectile(const Netcode::ComponentID id, const glm::vec3& pos, const glm::vec3& vel) override;
+	void spawnProjectile (const ProjectileInfo& info)                                                override;
+	void submitWaterPoint(const glm::vec3& point)                                                    override;
+	void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID killerID)        override;
 
 	// AUDIO
 	void playerJumped (const Netcode::ComponentID id)                  override;
@@ -105,15 +114,26 @@ private:
 	// All the messages that have been sent/received over the network in the past few seconds
 	// Will be used like a ring buffer
 	std::array<std::queue<std::string>, REPLAY_BUFFER_SIZE> m_replayData;
+	std::array<std::vector<Netcode::ComponentID>, REPLAY_BUFFER_SIZE> m_notHoldingTorches;
 	std::mutex m_replayDataLock;
 
 	size_t m_currentWriteInd = 0;
 	size_t m_currentReadInd  = 1;
 	bool   m_hasStarted      = false;
 
-	SlowMotionSetting m_slowMotionState = SlowMotionSetting::ENABLE;
+	SlowMotionSetting m_slowMotionState = SlowMotionSetting::DISABLE;
 	size_t m_killCamTickCounter = 0; // Counts ticks in the range [ 0, SLOW_MO_MULTIPLIER )
 
-
 	Netcode::ComponentID m_idOfKillingProjectile = Netcode::UNINITIALIZED;
+	Netcode::ComponentID m_idOfKiller = Netcode::UNINITIALIZED;
+
+	Entity* m_killerPlayer     = nullptr;
+	Entity* m_killerProjectile = nullptr;
+	bool m_trackingProjectile  = false;
+
+	CameraController* m_cam = nullptr;
+
+	glm::vec3 m_projectilePos = { 0,0,0 };
+	glm::vec3 m_killerHeadPos = { 0,0,0 };
+
 };

@@ -7,6 +7,9 @@
 #include "Sail/entities/components/NoEntityComponent.h"
 #include "Sail/entities/Entity.h"
 
+#include "Sail/utils/GameDataTracker.h"
+
+
 #include <array>
 
 PlayerSystem::PlayerSystem() {
@@ -21,17 +24,14 @@ PlayerSystem::~PlayerSystem() {
 bool PlayerSystem::onEvent(const Event& event) {
 
 	auto onPlayerDied = [](const PlayerDiedEvent& e) {
-		constexpr float LIFETIME_AFTER_DEATH = 10.f; // Dead entities are removed after 10 seconds
+		constexpr float LIFETIME_AFTER_DEATH = 1.f; // Dead entities are removed after 1 seconds
 
 		const auto& myPlayerID = NWrapperSingleton::getInstance().getMyPlayerID();
 
 		// Each bit corresponds to a ComponentType
 		// if it's a component we want to keep the bit is set to 1
 		const ComponentTypeBitID componentsToKeep = (
-			ModelComponent::getBID()
-			| CullingComponent::getBID() // needed ??
-			| BoundingBoxComponent::getBID()
-			| ReplayReceiverComponent::getBID()
+			TransformComponent::getBID()
 			| AudioComponent::getBID()
 			| ParticleEmitterComponent::getBID()
 
@@ -54,20 +54,33 @@ bool PlayerSystem::onEvent(const Event& event) {
 			c->addComponent<LifeTimeComponent>(LIFETIME_AFTER_DEATH);
 		}
 
+		for (ComponentTypeID c_ID = 0; c_ID < BaseComponent::nrOfComponentTypes(); c_ID++) {
+			// If the current index is not one of the components that we want to keep then remove it
+			if ((GetBIDofID(c_ID) & componentsToKeep).none()) {
+				e.killed->removeComponent(c_ID);
+			}
+		}
 
 		// Check if the player was the one who died
 		if (Netcode::getComponentOwner(e.netIDofKilled) == myPlayerID) {
+			AudioComponent* audioC = e.killed->getComponent<AudioComponent>();
+
 			// If my player died, I become a spectator
+
+			// Stop all currently-streaming sounds (if any exist)
+			auto& listIterator = audioC->m_currentlyStreaming.begin();
+			while (listIterator != audioC->m_currentlyStreaming.end()) {
+				audioC->streamSoundRequest_HELPERFUNC((*listIterator).first, false, 1.0f, false, false);
+				listIterator++;
+			}
+			for (int i = 0; i < Audio::SoundType::COUNT; i++) {
+				audioC->m_sounds[i].isPlaying = false;
+			}
 
 			// Make this into a real spectator
 			e.killed->addComponent<SpectatorComponent>();
-			e.killed->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f);
-			e.killed->getComponent<MovementComponent>()->velocity = glm::vec3(0.f);
-			e.killed->getComponent<NetworkSenderComponent>()->removeAllMessageTypes();
-			e.killed->removeComponent<GunComponent>();
-			e.killed->removeComponent<AnimationComponent>();
-			e.killed->removeComponent<ModelComponent>();
-			e.killed->removeComponent<LocalOwnerComponent>();
+			e.killed->addComponent<RenderInActiveGameComponent>();
+
 
 			// Move entity above the level and make it look down
 			auto transform = e.killed->getComponent<TransformComponent>();
@@ -79,15 +92,22 @@ bool PlayerSystem::onEvent(const Event& event) {
 			const auto& dir = glm::normalize(middleOfLevel - pos);
 			const auto& rots = Utils::getRotations(dir);
 			transform->setRotations(glm::vec3(0.f, -rots.y, rots.x));
-		} else {
-			// if it wasn't our player then remove all components that aren't needed for replay and 
-			// add lifetime component so that it eventually gets destroyed
-			for (ComponentTypeID c_ID = 0; c_ID < BaseComponent::nrOfComponentTypes(); c_ID++) {
-				// If the current index is not one of the components that we want to keep then remove it
-				if ((GetBIDofID(c_ID) & componentsToKeep).none()) {
-					e.killed->removeComponent(c_ID);
-				}
+
+
+			GameDataTracker::getInstance().reduceTorchesLeft();
+
+			// TODO: we should probably have a short delay and a death animation or something before 
+			// the killcam starts
+			const bool wasKilledByAnotherPlayer = (
+				e.killerID != Netcode::UNINITIALIZED &&
+				e.killerID != Netcode::INSANITY_COMP_ID &&
+				e.killerID != Netcode::SPRINKLER_COMP_ID &&
+				Netcode::getComponentOwner(e.killerID) != myPlayerID);
+
+			if (wasKilledByAnotherPlayer) {
+				EventDispatcher::Instance().emit(ToggleKillCamEvent(true, Netcode::getComponentOwner(e.killerID)));
 			}
+		} else {
 			e.killed->addComponent<LifeTimeComponent>(LIFETIME_AFTER_DEATH);
 		}
 	};

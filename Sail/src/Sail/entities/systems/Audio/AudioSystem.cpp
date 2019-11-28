@@ -101,8 +101,6 @@ void AudioSystem::initialize() {
 	m_audioEngine->loadSound("sanity/heart_secondbeat4.wav");
 	m_audioEngine->loadSound("sanity/heart_secondbeat5.wav");
 	m_audioEngine->loadSound("sanity/heart_secondbeat6.wav");
-	m_audioEngine->loadSound("sanity/insanity_ambiance.wav");
-	m_audioEngine->loadSound("sanity/insanity_breathing.wav");
 	m_audioEngine->loadSound("sanity/insanity_scream.wav");
 	m_audioEngine->loadSound("sanity/insanity_violin1.wav");
 	m_audioEngine->loadSound("sanity/insanity_violin2.wav");
@@ -527,21 +525,27 @@ bool AudioSystem::onEvent(const Event& event) {
 	auto onPlayerDied = [](const PlayerDiedEvent& e) {
 		// Play kill sound if the player was the one who shot
 		if (Netcode::getComponentOwner(e.killerID) == NWrapperSingleton::getInstance().getMyPlayerID()) {
-			auto& killSound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::KILLING_BLOW];
-			killSound.isPlaying = true;
-			killSound.playOnce = true;
+			if (auto* audioComp = e.myPlayer->getComponent<AudioComponent>()) {
+				auto& killSound = audioComp->m_sounds[Audio::SoundType::KILLING_BLOW];
+				killSound.isPlaying = true;
+				killSound.playOnce = true;
+			}
 		}
 
 		//TODO: Find out why death sound is high as fuck!
 		else if (e.killerID == Netcode::INSANITY_COMP_ID) {
-			auto& insanitySound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::INSANITY_SCREAM];
-			insanitySound.isPlaying = true;
-			insanitySound.playOnce = true;
+			if (auto* audioComp = e.myPlayer->getComponent<AudioComponent>()) {
+				auto& insanitySound = audioComp->m_sounds[Audio::SoundType::INSANITY_SCREAM];
+				insanitySound.isPlaying = true;
+				insanitySound.playOnce = true;
+			}
 		} else {
 			// Play death sound
-			auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
-			deathSound.isPlaying = true;
-			deathSound.playOnce = true;
+			if (auto* audioComp = e.killed->getComponent<AudioComponent>()) {
+				auto& deathSound = audioComp->m_sounds[Audio::SoundType::DEATH];
+				deathSound.isPlaying = true;
+				deathSound.playOnce = true;
+			}
 			
 		}
 	};

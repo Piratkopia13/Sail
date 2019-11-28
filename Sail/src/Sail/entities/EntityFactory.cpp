@@ -57,6 +57,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->setTexture(particleTextureName);
 
 	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
+	ragdollComp->localCenterOfMass = { 0.f, 0.2f, 0.f };
 	ragdollComp->addContactPoint(glm::vec3(0.f), glm::vec3(0.08f));
 	ragdollComp->addContactPoint(glm::vec3(0.f, 0.37f, 0.0f), glm::vec3(0.08f));
 
@@ -234,13 +235,18 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 	replayPlayer->addComponent<ReplayReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 
 	// Remove components that shouldn't be used by entities in the killcam
-	replayPlayer->removeComponent<PlayerComponent>();
 	replayPlayer->removeComponent<CollidableComponent>();
 	replayPlayer->removeComponent<SpeedLimitComponent>();
 	replayPlayer->removeComponent<SanityComponent>();
 	replayPlayer->removeComponent<AudioComponent>(); // TODO: Remove this line when we start having audio in the killcam
 	replayPlayer->removeComponent<GunComponent>();
 	replayPlayer->removeComponent<BoundingBoxComponent>();
+
+
+	// So that we can get their camera positions in the replay
+	AnimationComponent* ac = replayPlayer->getComponent<AnimationComponent>();
+	ac->is_camFollowingHead = true;
+	ac->headPositionMatrix = glm::translate(glm::identity<glm::mat4>(), ac->headPositionLocalDefault);
 
 
 	// Create the player
@@ -461,8 +467,10 @@ Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model
 }
 
 Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory::ProjectileArguments& info) {
+	constexpr float radius = 0.075f; // the radius of the projectile's hitbox (in meters)
+
 	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
-	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
+	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(radius, radius, radius));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
 	e->addComponent<ProjectileComponent>(10.0f, info.hasLocalOwner); // TO DO should not be manually set to true
 	e->getComponent<ProjectileComponent>()->ownedBy = info.ownersNetId;
@@ -486,7 +494,7 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 	collision->drag = 15.0f;
 	// NOTE: 0.0f <= Bounciness <= 1.0f
 	collision->bounciness = 0.0f;
-	collision->padding = 0.15f;
+	collision->padding = radius;
 
 	e->addComponent<RenderInActiveGameComponent>();
 

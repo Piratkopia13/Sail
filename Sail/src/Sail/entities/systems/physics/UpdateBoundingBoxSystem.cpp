@@ -44,7 +44,7 @@ void UpdateBoundingBoxSystem::recalculateBoundingBoxFully(Entity* e) {
 	BoundingBoxComponent* boundingBox = e->getComponent<BoundingBoxComponent>();
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	if (model) {
-		glm::vec3 minPositions(INFINITY), maxPositions(-INFINITY);
+		glm::vec3 minPositions(9999999.0f), maxPositions(-9999999.0f);
 
 		//Recalculate min and max
 		for (unsigned int i = 0; i < model->getModel()->getNumberOfMeshes(); i++) {
