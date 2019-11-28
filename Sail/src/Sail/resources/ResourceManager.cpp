@@ -85,7 +85,11 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 //
 
 void ResourceManager::loadTexture(const std::string& filename) {
-	m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename)) });
+	auto inserted = m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename)) });
+	if (inserted.second) {
+		// Upload to GPU immediately
+		EventDispatcher::Instance().emit(TextureLoadedToRAMEvent(inserted.first->second.get()));
+	}
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
 	auto pos = m_textures.find(filename);

@@ -19,10 +19,11 @@
 #include "Sail/entities/ECS.h"
 #include "../DX12VertexBuffer.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
-#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/Events.h"
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().subscribe(Event::Type::TEXTURE_LOADED_TO_RAM, this);
 
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
@@ -47,6 +48,7 @@ DX12GBufferRenderer::~DX12GBufferRenderer() {
 		delete m_gbufferTextures[i];
 	}
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::TEXTURE_LOADED_TO_RAM, this);
 }
 
 void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
@@ -260,8 +262,36 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 }
 
 bool DX12GBufferRenderer::onEvent(const Event& event) {
+	auto onTextureLoadedToRAM = [&](const TextureLoadedToRAMEvent& e) {
+		auto dx12Tex = static_cast<DX12Texture*>(e.texture);
+
+		if (dx12Tex && !dx12Tex->hasBeenInitialized()) {
+			
+			Logger::Error("CALLED FROM DX12GBufferRenderer::onEvent()");
+			
+			auto frameIndex = m_context->getFrameIndex();
+			auto cmdAlloc = m_command[0].allocators[frameIndex];
+			auto cmdList = m_command[0].list;
+
+			cmdAlloc->Reset();
+			cmdList->Reset(cmdAlloc.Get(), nullptr);
+
+			dx12Tex->initBuffers(cmdList.Get());
+
+			cmdList->Close();
+
+			m_context->executeCommandLists({ cmdList.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+			// WAIT FOR GPU ?
+			//	 FENCE STATUS COMPROMISED ?
+			// THREAD SAFE ?
+			// 
+		}
+	};
+
 	switch (event.type) {
 	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	case Event::Type::TEXTURE_LOADED_TO_RAM: onTextureLoadedToRAM((const TextureLoadedToRAMEvent&)event); break;
 	default: break;
 	}
 	return true;
