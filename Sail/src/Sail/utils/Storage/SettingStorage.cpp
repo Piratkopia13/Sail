@@ -101,8 +101,6 @@ bool SettingStorage::deSerialize(const std::string& content, std::unordered_map<
 
 const int SettingStorage::teamColorIndex(const int team) {
 	if (team < 12 && team >= -1) {
-		std::string name = "team" + std::to_string(team);
-		unsigned int value = (unsigned int)(int)gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().value;
 		return (unsigned int)(int)gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().value;
 	}
 	else {
