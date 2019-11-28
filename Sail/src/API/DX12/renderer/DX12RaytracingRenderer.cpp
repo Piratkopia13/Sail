@@ -43,7 +43,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 		createSoftShadowsTextures();
 	}
 
-	m_brdfTexture = &app->getResourceManager().getTexture("pbr/brdfLUT.tga");
+	m_brdfTexture = static_cast<DX12Texture*>(&app->getResourceManager().getTexture("pbr/brdfLUT.tga"));
 
 	m_shadeShader = &app->getResourceManager().getShaderSet<ShadePassShader>();
 	m_fullscreenModel = ModelFactory::ScreenQuadModel::Create(m_shadeShader);
@@ -417,6 +417,7 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 	m_outputTextures.positionsTwo->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	m_outputBloomTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	shadows->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	m_brdfTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
 	return m_shadedOutput.get();
 }

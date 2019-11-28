@@ -53,7 +53,7 @@ private:
 	DX12API::Command m_commandComputePostProcess;
 
 	DX12RenderableTexture** m_gbufferTextures;
-	Texture* m_brdfTexture;
+	DX12Texture* m_brdfTexture;
 
 	DXRBase::BounceOutput m_outputTextures;
 	std::unique_ptr<DX12RenderableTexture> m_outputBloomTexture;
