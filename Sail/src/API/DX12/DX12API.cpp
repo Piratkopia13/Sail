@@ -735,6 +735,7 @@ bool DX12API::onResize(const WindowResizeEvent& event) {
 	if (event.isMinimized) {
 		SAIL_LOG("minimized!");
 	}
+	waitForGPU();
 	resizeBuffers(event.width, event.height);
 	SAIL_LOG("dx12 resize ran");
 	return true;

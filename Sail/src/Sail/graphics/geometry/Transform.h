@@ -46,6 +46,8 @@ public:
 
 	void setStartTranslation(const glm::vec3& translation);
 
+	void setCenter(const glm::vec3& center);
+
 	void translate(const glm::vec3& move);
 	void translate(const float x, const float y, const float z);
 
@@ -98,6 +100,8 @@ public:
 
 private:
 	TransformFrame m_data;
+
+	glm::vec3 m_center;
 
 	// Used for collision detection
 	// At most updated once per tick

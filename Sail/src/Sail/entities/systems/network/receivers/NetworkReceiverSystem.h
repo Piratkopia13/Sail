@@ -29,24 +29,26 @@ public:
 #endif
 
 protected:
-	void destroyEntity   (const Netcode::ComponentID entityID)                                    override;
-	void enableSprinklers()                                                                       override;
-	void endMatch        (const GameDataForOthersInfo& info)                                      override;
-	void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID) override;
-	void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                               override;
-	void igniteCandle    (const Netcode::ComponentID candleID)                                    override;
-	void matchEnded      ()                                                                       override;
-	void playerDied      (const Netcode::ComponentID id, const Netcode::ComponentID killerID)     override;
-	void setAnimation    (const Netcode::ComponentID id, const AnimationInfo& info)               override;
-	void setCandleHealth (const Netcode::ComponentID candleID, const float health)                override;
-	void setCandleState  (const Netcode::ComponentID id, const bool isHeld)                       override;
-	void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                    override;
-	void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                    override;
-	void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                    override;
-	void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement)                 override;
-	void updateSanity    (const Netcode::ComponentID id, const float sanity)                      override;
-	void spawnProjectile (const ProjectileInfo& info)                                             override;
-	void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID projectileID) override;
+	void destroyEntity   (const Netcode::ComponentID entityID)                                       override;
+	void enableSprinklers()                                                                          override;
+	void endMatch        (const GameDataForOthersInfo& info)                                         override;
+	void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID)    override;
+	void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                                  override;
+	void igniteCandle    (const Netcode::ComponentID candleID)                                       override;
+	void matchEnded      ()                                                                          override;
+	void playerDied      (const Netcode::ComponentID id, const Netcode::ComponentID killerID)        override;
+	void setAnimation    (const Netcode::ComponentID id, const AnimationInfo& info)                  override;
+	void setCandleHealth (const Netcode::ComponentID candleID, const float health)                   override;
+	void setCandleState  (const Netcode::ComponentID id, const bool isHeld)                          override;
+	void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                       override;
+	void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                       override;
+	void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                       override;
+	void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken)                    override;
+	void updateSanity    (const Netcode::ComponentID id, const float sanity)                         override;
+	void updateProjectile(const Netcode::ComponentID id, const glm::vec3& pos, const glm::vec3& vel) override;
+	void spawnProjectile (const ProjectileInfo& info)                                                override;
+	void submitWaterPoint(const glm::vec3& point)                                                    override;
+	void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID projectileID)    override;
 
 	// AUDIO
 	void playerJumped (const Netcode::ComponentID id)                  override;

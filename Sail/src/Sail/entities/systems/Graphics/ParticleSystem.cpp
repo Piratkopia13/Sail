@@ -24,10 +24,7 @@ ParticleSystem::ParticleSystem() {
 }
 
 ParticleSystem::~ParticleSystem() {
-	for (auto& it : m_emitters) {
-		auto& emitter = it.second;
-		delete[] emitter.physicsBufferDefaultHeap;
-	}
+	stop();
 }
 
 void ParticleSystem::update(float dt) {
@@ -54,7 +51,6 @@ void ParticleSystem::update(float dt) {
 		partComponent->velocity = partComponent->constantVelocity + velocityToAdd;
 
 		partComponent->updateTimers(dt);
-
 	}
 	// Mark removed emitters as dead
 	for (auto& it : m_emitters) {
@@ -63,8 +59,9 @@ void ParticleSystem::update(float dt) {
 		}
 	}
 	// Remove from m_emitters those which are dead and is not in use by any renderers/not used for 2 frames
+	// Also removed emitters from entities marked for removal, this might or might not fix a crash. Investigate this
 	for (auto& it = std::begin(m_emitters); it != std::end(m_emitters);) {
-		if (it->second.framesDead >= 2) {
+		if (it->second.framesDead >= 2 || it->first->isAboutToBeDestroyed()) {
 			delete[] it->second.physicsBufferDefaultHeap;
 			it = m_emitters.erase(it);
 		} else {
@@ -141,4 +138,14 @@ void ParticleSystem::initEmitter(Entity* owner, ParticleEmitterComponent* compon
 	}
 
 	component->setAsCreatedInSystem();
+}
+
+void ParticleSystem::stop() {
+	//Clean each after game
+	for (auto& it : m_emitters) {
+		auto& emitter = it.second;
+		delete[] emitter.physicsBufferDefaultHeap;
+	}
+
+	m_emitters.clear();
 }

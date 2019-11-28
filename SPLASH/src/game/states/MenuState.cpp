@@ -103,15 +103,10 @@ bool MenuState::render(float dt, float alpha) {
 bool MenuState::renderImgui(float dt) {
 
 	// Showcasing imgui texture rendering - remove when everyone who needs to know how this works knows how this works.
-#ifdef DEVELOPMENT
-	//KEEP
-	//auto* imguiHandler = Application::getInstance()->getImGuiHandler();
-	//Application::getInstance()->getResourceManager().loadTexture("Crosshair.tga");
-	//Texture& testTexture = Application::getInstance()->getResourceManager().getTexture("Crosshair.tga");
-	//ImGui::Begin("ImageTest");
-	//ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(100, 100));
-	//ImGui::End();
-#endif
+	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
+
+
+
 
 	
 #ifdef DEVELOPMENT
@@ -161,6 +156,10 @@ if (m_usePercentage) {
 
 	renderMenu();
 
+	ImVec4 col(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+	col.w = 0.9;
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, col);
+
 	// NOT YET IMPLEMENTED
 	renderSingleplayer();
 
@@ -183,8 +182,15 @@ if (m_usePercentage) {
 	if (m_joiningLobby) {
 		renderJoiningLobby();
 	}
+	ImGui::PopStyleColor();
 
-
+	if (ImGui::Begin("##LOGOWINDOW", nullptr, m_standaloneButtonflags)) {
+		static ImVec2 z(3.7, 1.0);
+		Texture& logo = m_app->getResourceManager().getTexture("splash_logo.tga");
+		ImGui::Image(imguiHandler->getTextureID(&logo), ImVec2(m_app->getWindow()->getWindowWidth() *0.4f, (m_app->getWindow()->getWindowWidth()*0.4f) / z.x));
+		ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth()*0.5f - ImGui::GetWindowSize().x*0.5f, 0));
+	}
+	ImGui::End();
 
 	ImGui::PopFont();
 
@@ -622,6 +628,10 @@ void MenuState::renderProfile() {
 		strncpy_s(buf, name.c_str(), name.size());
 		if (ImGui::InputText("##name", buf, MAX_NAME_LENGTH, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			name = buf;
+			while (name.find("%") != std::string::npos) {
+				name = name.erase(name.find("%"), 1);
+			}
+
 			if (name == "") {
 				name = "Hans";
 			}

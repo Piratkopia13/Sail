@@ -345,6 +345,18 @@ void NetworkSenderSystem::writeMessageToArchive(const Netcode::MessageType& mess
 		ar(ic->sanity);
 	}
 	break;
+	case Netcode::MessageType::UPDATE_PROJECTILE_ONCE:
+	{
+		TransformComponent* tc = e->getComponent<TransformComponent>();
+		MovementComponent* mc = e->getComponent<MovementComponent>();
+		
+		ArchiveHelpers::saveVec3(ar, tc->getCurrentTransformState().m_translation);
+		ArchiveHelpers::saveVec3(ar, mc->velocity);
+
+		// Only send this message when their is a collision
+		e->getComponent<NetworkSenderComponent>()->removeMessageType(Netcode::MessageType::UPDATE_PROJECTILE_ONCE);
+	}
+	break;
 	default:
 		SAIL_LOG_ERROR("TRIED TO SEND INVALID NETWORK MESSAGE (" + std::to_string((int)messageType));
 		break;
@@ -379,8 +391,11 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		// Send all per player data. Match this on the reciever end
 		for (auto player = tmpPlayerMap.begin(); player != tmpPlayerMap.end(); ++player) {
 			ar(player->first);
-			ar(player->second.nKills);
 			ar(player->second.placement);
+			ar(player->second.nKills);
+			ar(player->second.nDeaths);
+			ar(player->second.damage);
+			ar(player->second.damageTaken);
 		}
 
 		// Send all specific data. The host has processed data from all clients and will 
@@ -487,6 +502,19 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		
 		ar(data->candleThatWasHit);
 		ar(data->health);
+	}
+	break;
+	case Netcode::MessageType::SUBMIT_WATER_POINTS:
+	{
+		Netcode::MessageSubmitWaterPoints* data = static_cast<Netcode::MessageSubmitWaterPoints*>(event->data);
+		
+		size_t nrOfPoints = data->points.size();
+
+		ar(nrOfPoints); // Tell the receiver how many points they should receive
+
+		for (size_t i = 0; i < nrOfPoints; i++) {
+			ArchiveHelpers::saveVec3(ar, data->points[i]); // Send all points to the receiver
+		}
 	}
 	break;
 	case Netcode::MessageType::SPAWN_PROJECTILE:

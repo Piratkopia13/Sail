@@ -178,7 +178,7 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 					ar(lowPassFrequency);
 
 
-					shootStart(compID, lowPassFrequency);
+					shootLoop(compID, lowPassFrequency);
 				}
 				break;
 				case Netcode::MessageType::SHOOT_END:
@@ -186,6 +186,16 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 					ar(lowPassFrequency);
 
 					shootEnd(compID, lowPassFrequency);
+				}
+				break;
+				case Netcode::MessageType::UPDATE_PROJECTILE_ONCE:
+				{
+					glm::vec3 velocity;
+
+					ArchiveHelpers::loadVec3(ar, vector); // Read pos
+					ArchiveHelpers::loadVec3(ar, velocity);    // Read velocity
+
+					updateProjectile(compID, vector, velocity);
 				}
 				break;
 				case Netcode::MessageType::UPDATE_SANITY:
@@ -242,18 +252,24 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				GameDataForOthersInfo info;
 				size_t nrOfPlayers;
 				Netcode::PlayerID pID;
-				int nKills;
-				int placement;
+				int placement = 0;
+				int nKills = -1;
+				int nDeaths = -1;
+				int damage = -1;
+				int damageTaken = -1;
 
 				ar(nrOfPlayers);
 
 				// Get all per player data from the Host
 				for (int k = 0; k < nrOfPlayers; k++) {
 					ar(pID);
-					ar(nKills);
 					ar(placement);
+					ar(nKills);
+					ar(nDeaths);
+					ar(damage);
+					ar(damageTaken);
 
-					setPlayerStats(pID, nKills, placement);
+					setPlayerStats(pID, nKills, placement, nDeaths, damage, damageTaken);
 				}
 
 				// Get all specific data from the Host
@@ -370,6 +386,18 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				ar(health);
 
 				setCandleHealth(compID, health);
+			}
+			break;
+			case Netcode::MessageType::SUBMIT_WATER_POINTS:
+			{
+				size_t nrOfPoints = 0;
+
+				ar(nrOfPoints);
+
+				for (size_t nPoint = 0; nPoint < nrOfPoints; nPoint++) {
+					ArchiveHelpers::loadVec3(ar, vector);
+					submitWaterPoint(vector);
+				}
 			}
 			break;
 			case Netcode::MessageType::SPAWN_PROJECTILE:

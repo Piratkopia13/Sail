@@ -10,6 +10,7 @@
 
 #include "Sail/events/EventDispatcher.h"
 #include "Sail/events/types/HoldingCandleToggleEvent.h"
+#include "Sail/events/types/TorchNotHeldEvent.h"
 
 CandlePlacementSystem::CandlePlacementSystem() {
 	registerComponent<CandleComponent>(true, true, true);
@@ -41,10 +42,14 @@ void CandlePlacementSystem::update(float dt) {
 		}
 
 		candle->wasCarriedLastUpdate = candle->isCarried;
-		static const float candleHeight = 0.44f;
+		constexpr float candleHeight = 0.37f;
 		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrixWithUpdate() * glm::vec4(0, candleHeight, 0, 1);
 
 		e->getComponent<LightComponent>()->currentPos = flamePos;
+
+		if (!candle->isCarried && e->getParent() && e->getParent()->hasComponent<NetworkReceiverComponent>()) {
+			EventDispatcher::Instance().emit(TorchNotHeldEvent(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id));
+		}
 	}
 }
 
@@ -65,6 +70,7 @@ void CandlePlacementSystem::toggleCandlePlacement(Entity* e) {
 				moveC->velocity = glm::vec3(0.f);
 				moveC->oldVelocity = glm::vec3(0.f);
 			}
+			candleTransComp->setCenter(glm::vec3(0.0f));
 		} else {
 			candleComp->isCarried = false;
 		}

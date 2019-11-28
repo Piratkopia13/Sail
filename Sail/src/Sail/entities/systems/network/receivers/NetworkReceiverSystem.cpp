@@ -212,8 +212,8 @@ void NetworkReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement) {
-	GameDataTracker::getInstance().setStatsForPlayer(player, nrOfKills, placement);
+void NetworkReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken) {
+	GameDataTracker::getInstance().setStatsForPlayer(player, nrOfKills, placement, nDeaths, damage, damageTaken);
 }
 
 void NetworkReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {
@@ -222,6 +222,17 @@ void NetworkReceiverSystem::updateSanity(const Netcode::ComponentID id, const fl
 		return;
 	}
 	SAIL_LOG_WARNING("updateSanity called but no matching entity found");
+}
+
+void NetworkReceiverSystem::updateProjectile(const Netcode::ComponentID id, const glm::vec3& pos, const glm::vec3& vel) {
+	if (auto e = findFromNetID(id); e) {
+		e->getComponent<TransformComponent>()->setTranslation(pos);
+		e->getComponent<MovementComponent>()->velocity = vel;
+
+		Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(pos);
+		return;
+	}
+	SAIL_LOG_WARNING("updateProjectile called but no matching entity found");
 }
 
 // If I requested the projectile it has a local owner
@@ -248,6 +259,11 @@ void NetworkReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 #endif
 
 	EntityFactory::CreateProjectile(e, args);
+}
+
+void NetworkReceiverSystem::submitWaterPoint(const glm::vec3& point) {
+	// Place water point at intersection position
+	Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(point);
 }
 
 

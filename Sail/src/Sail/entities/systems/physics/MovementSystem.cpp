@@ -1,15 +1,18 @@
 #include "pch.h"
 #include "MovementSystem.h"
-#include "..//..//components/TransformComponent.h"
-#include "..//..//components/MovementComponent.h"
-#include "..//..//components/RenderInActiveGameComponent.h"
-#include "..//..//components/RenderInReplayComponent.h"
-#include "..//..//Entity.h"
+#include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/MovementComponent.h"
+#include "Sail/entities/components/RagdollComponent.h"
+#include "Sail/entities/components/RenderInActiveGameComponent.h"
+#include "Sail/entities/components/RenderInReplayComponent.h"
+#include "Sail/entities/Entity.h"
+
 
 template <typename T>
 MovementSystem<T>::MovementSystem() {
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<MovementComponent>(true, true, true);
+	registerComponent<RagdollComponent>(false, true, false);
 	registerComponent<T>(true, false, false);
 }
 

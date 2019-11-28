@@ -36,14 +36,16 @@ public:
 	}
 
 	// This function is only called by the host
-	void hitWithWater(float damage, DamageSource source, Netcode::ComponentID hitByEntity) {
+	int hitWithWater(float damage, DamageSource source, Netcode::ComponentID hitByEntity) {
 		if (health > 0.0f && invincibleTimer <= 0.0f) {
-			invincibleTimer = 0.4f; // TODO: Replace 0.4f with game settings
+			invincibleTimer = 0.1f; // TODO: Replace 0.4f with game settings
 			health -= damage;
 			wasHitByEntity = hitByEntity;
 			wasHitByPlayerID = Netcode::getComponentOwner(hitByEntity);
 			wasHitThisTick = true;
+			return damage;
 		}
+		return 0;
 	}
 #ifdef DEVELOPMENT
 	const unsigned int getByteSize() const override {

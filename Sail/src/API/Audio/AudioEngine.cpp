@@ -37,7 +37,7 @@
 
 AudioEngine::AudioEngine() {
 	HRESULT hr;
-	hr = CoInitialize(nullptr);
+	hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
 #pragma region ERROR_CHECKING
 	try {
@@ -60,6 +60,14 @@ AudioEngine::~AudioEngine() {
 	m_isRunning = false;
 	for (auto& e : m_sound) {
 		e.xapo.ReleaseAndGetAddressOf();
+	}
+
+	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		m_isStreaming[i] = false;
+		m_isStreamPaused[i] = false;
+		m_isFinished[i] = true;
+		m_overlapped[i] = { 0 };
+		m_streamLocks[i].store(false);
 	}
 }
 
@@ -409,6 +417,21 @@ void AudioEngine::stopSpecificStream(int index) {
 	}
 }
 
+void AudioEngine::pause_unpause_AllStreams(bool pauseTRUE_unpauseFALSE)
+{
+	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		this->m_isStreamPaused[i] = pauseTRUE_unpauseFALSE;
+		if (this->m_stream[i].sourceVoice != nullptr) {
+			if (pauseTRUE_unpauseFALSE == true) {
+				this->m_stream[i].sourceVoice->Stop();
+			}
+			else {
+				this->m_stream[i].sourceVoice->Start();
+			}
+		}
+	}
+}
+
 void AudioEngine::stopAllStreams() {
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
 		m_isStreaming[i] = false;
@@ -426,6 +449,14 @@ void AudioEngine::stopAllSounds() {
 
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
 		m_isStreaming[i] = false;
+	}
+}
+
+void AudioEngine::pauseAllSounds() {
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		if (m_sound[i].sourceVoice != nullptr) {
+			m_sound[i].sourceVoice->Stop();
+		}
 	}
 }
 
@@ -564,6 +595,7 @@ void AudioEngine::initialize() {
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
 		m_stream[i].sourceVoice = nullptr;
 		m_isStreaming[i] = false;
+		m_isStreamPaused[i] = false;
 		m_isFinished[i] = true;
 		m_overlapped[i] = { 0 };
 		m_streamLocks[i].store(false);
@@ -610,9 +642,14 @@ HRESULT AudioEngine::initXAudio2() {
 	// Mastering voice will be automatically destroyed when XAudio2 instance is destroyed.
 	if (SUCCEEDED(hr)) {
 		hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice, 2, 48000);
-	}
 
-	
+		if (FAILED(hr)) {
+			assert(false);
+		}
+	}
+	else {
+		SAIL_LOG_ERROR("Failed to create Xaudio2");
+	}
 
 #if DEVELOPMENT
 	// Activate debug layer if we're in development
@@ -805,10 +842,6 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 				}
 			}
 
-			// creating a 'sourceVoice' for WAV file-type
-			//if (SUCCEEDED(hr)) {
-			//	hr = m_xAudio2->CreateSourceVoice(&m_stream[myIndex].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
-			//}
 			hr = m_xAudio2->CreateSourceVoice(&m_stream[myIndex].sourceVoice, wfx, 0, 1.0f, &voiceContext);
 			if (hr != S_OK) {
 				SAIL_LOG_ERROR("Failed to create source voice!");
@@ -863,13 +896,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 			// Reading from the file (when time-since-last-read has passed threshold)
 			while ((currentPosition < metadata.lengthBytes) && m_isStreaming[myIndex]) {
-				if (GetAsyncKeyState(VK_ESCAPE)) {
-					m_isStreaming[myIndex] = false;
-					while (GetAsyncKeyState(VK_ESCAPE) && m_isStreaming[myIndex]) {
-						Sleep(10);
-					}
-					break;
-				}
+				while (m_isStreamPaused[myIndex]); // Wait while paused
 
 				DWORD cbValid = std::min(STREAMING_BUFFER_SIZE, static_cast<int>(metadata.lengthBytes - static_cast<UINT32>(currentPosition)));
 				m_overlapped[myIndex].Offset = metadata.offsetBytes + currentPosition;
@@ -886,11 +913,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 				currentPosition += cbValid;
 
-				//
-				// At this point the read is progressing in the background and we are free to do
-				// other processing while we wait for it to finish. For the purposes of this sample,
-				// however, we'll just go to sleep until the read is done.
-				//
+				// Sleep while waiting for currently-playing chunk to finish
 				if (wait) {
 					WaitForSingleObject(m_overlapped[myIndex].hEvent, INFINITE);
 				}
@@ -952,24 +975,13 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			m_isStreaming[myIndex] = false;
 		}
 
-		//if (!m_isStreaming[myIndex])
-		//{
-		//	m_sourceVoiceStream[myIndex]->SetVolume(0);
-
-		//	XAUDIO2_VOICE_STATE state;
-		//	for (;;)
-		//	{
-		//		m_sourceVoiceStream[myIndex]->GetState(&state);
-		//		if (!state.BuffersQueued)
-		//			break;
-
-		//		WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
-		//	}
-		//}
-
 		currentChunk = 0;
 		currentVolume = 0;
-		m_stream[myIndex].sourceVoice->Stop();
+		// There is a rare case where multi-threading means this sourceVoice MAY have been
+		// cleaned by another part of the system (AKA: Keep this nullptr check to avoid rare crash)
+		if (m_stream[myIndex].sourceVoice != nullptr) {
+			m_stream[myIndex].sourceVoice->Stop();
+		}
 	}
 	//
 	// Clean up
@@ -982,15 +994,6 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 	}
 
 	m_isFinished[myIndex] = true;
-	m_streamLocks[myIndex].store(false);
-
-		// Commented-out because it causes a crash during death of other player
-	// Clean up audio component as well
-	//if (pAudioC != nullptr) {
-	//	if (pAudioC->m_currentlyStreaming.size() == 1) {
-	//		pAudioC->m_currentlyStreaming.clear();
-	//	}
-	//}
 }
 
 //--------------------------------------------------------------------------------------

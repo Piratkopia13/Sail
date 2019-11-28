@@ -15,6 +15,8 @@
 HostSendToSpectatorSystem::HostSendToSpectatorSystem() {
 	registerComponent<NetworkSenderComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, false);
+	//registerComponent<AudioComponent>(false, true, true);
+	registerComponent<CandleComponent>(true, true, true);
 }
 
 HostSendToSpectatorSystem::~HostSendToSpectatorSystem() {
@@ -45,11 +47,16 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID Play
 
 	// Find how many players are alive so that the receiver knows how many messages to receive
 	for (auto e : entities) {
-		if (e->getComponent<NetworkSenderComponent>()->m_entityType == Netcode::EntityType::PLAYER_ENTITY) {
-			for (auto c : e->getChildEntities()) {
-				if (c->hasComponent<CandleComponent>() && !c->getComponent<CandleComponent>()->isCarried) {
-					nrOfEvents++;
-				}
+		//if (e->hasComponent<AudioComponent>()) {
+		//	for (int i = 0; i < Audio::SoundType::COUNT; i++) {
+		//		e->getComponent<AudioComponent>()->m_sounds[i].isPlaying = false;
+		//	}
+		//}
+
+
+		if (e->getComponent<NetworkSenderComponent>()->m_entityType == Netcode::EntityType::CANDLE_ENTITY) {
+			if (e->hasComponent<CandleComponent>() && !e->getComponent<CandleComponent>()->isCarried) {
+				nrOfEvents++;
 			}
 		}
 	}
@@ -61,23 +68,23 @@ void HostSendToSpectatorSystem::sendEntityCreationPackage(Netcode::PlayerID Play
 		NetworkSenderComponent* nsc = e->getComponent<NetworkSenderComponent>();
 
 		switch (nsc->m_entityType) {
-		case Netcode::EntityType::PLAYER_ENTITY:
+		case Netcode::EntityType::CANDLE_ENTITY:
 		{
-			Netcode::ComponentID candleID;
 			// Find the component ID of the player's candle
-			for (auto c : e->getChildEntities()) {
-				if (c->hasComponent<CandleComponent>()) {
-					candleID = c->getComponent<NetworkSenderComponent>()->m_id;
-				}
-			}
+			Netcode::ComponentID candleID = e->getComponent<NetworkSenderComponent>()->m_id;
+			//for (auto c : e->getChildEntities()) {
+			//	if (c->hasComponent<CandleComponent>()) {
+			//		candleID = c->getComponent<NetworkSenderComponent>()->m_id;
+			//	}
+			//}
 
-			for (auto c : e->getChildEntities()) {
-				if (c->hasComponent<CandleComponent>() && !c->getComponent<CandleComponent>()->isCarried) {
-					ar(Netcode::MessageType::CANDLE_HELD_STATE);
-					ar(nsc->m_id);
-					ar(false);
-				}
+			//for (auto c : e->getChildEntities()) {
+			if (e->hasComponent<CandleComponent>() && !e->getComponent<CandleComponent>()->isCarried) {
+				ar(Netcode::MessageType::CANDLE_HELD_STATE);
+				ar(nsc->m_id);
+				ar(false);
 			}
+			//}
 
 		}
 		break;

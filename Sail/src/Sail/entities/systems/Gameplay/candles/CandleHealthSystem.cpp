@@ -29,6 +29,7 @@ void CandleHealthSystem::update(float dt) {
 
 	// The number of living candles, representing living players
 	size_t livingCandles = entities.size();
+	GameDataTracker::getInstance().setPlayersLeft(livingCandles);
 
 	for (auto e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
@@ -36,7 +37,12 @@ void CandleHealthSystem::update(float dt) {
 
 		// Scale fire particles with health
 		auto particles = e->getComponent<ParticleEmitterComponent>();
-		particles->spawnRate = 0.01f * (MAX_HEALTH / candle->health);
+		if (candle->health <= 0.f) {
+			particles->spawnRate = 1000000.0f;
+		}
+		else {
+			particles->spawnRate = 0.01f * (MAX_HEALTH / glm::max(candle->health, 1.f));
+		}
 
 #pragma region HOST_ONLY_STUFF
 		if (isHost && candle->isLit) {
@@ -69,11 +75,12 @@ void CandleHealthSystem::update(float dt) {
 						},
 						true
 					);
+
 					// If the player has no more respawns kill them
 				} else {
 
 					if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candle->wasHitByPlayerID != candle->playerEntityID) {
-						GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+						
 					}
 
 					livingCandles--;
@@ -86,6 +93,13 @@ void CandleHealthSystem::update(float dt) {
 						},
 						true
 					);
+
+					if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candle->wasHitByPlayerID != candle->playerEntityID) {
+						GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+
+					}
+					GameDataTracker::getInstance().logDeath(e->getComponent<NetworkReceiverComponent>()->m_id >> 18);
+
 
 					// Save the placement for the player who lost
 					GameDataTracker::getInstance().logPlacement(
@@ -159,8 +173,11 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		if (e.hitterID == Netcode::SPRINKLER_COMP_ID) {
 			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::SPRINKLER, e.hitterID);
 		} else {
-			candle->getComponent<CandleComponent>()->hitWithWater(5.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
-
+			int dmg = candle->getComponent<CandleComponent>()->hitWithWater(7.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
+			if (dmg > 0) {
+				GameDataTracker::getInstance().logDamageDone(e.hitterID>>18, dmg);
+				GameDataTracker::getInstance().logDamageTaken(candle->getComponent<NetworkReceiverComponent>()->m_id>>18, dmg);
+			}
 		}
 	};
 
@@ -178,15 +195,11 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 
 				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candleC->wasHitByPlayerID != candleC->playerEntityID) {
 					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
+
 				} else if (candleC->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
 					torchE->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
 				}
-
-				// Play the re-ignition sound if the player has any candles left
-				if (candleC->respawns < m_maxNumRespawns) {
-					auto playerEntity = torchE->getParent();
-					playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
-				}
+				GameDataTracker::getInstance().logDeath(torchE->getComponent<NetworkReceiverComponent>()->m_id >> 18);
 			}
 		}
 	};
@@ -202,6 +215,23 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 
 const int CandleHealthSystem::getMaxNumberOfRespawns() {
 	return m_maxNumRespawns;
+}
+
+//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+int CandleHealthSystem::getNumLivingEntites() {
+	int i = 0;
+	//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+	for (auto& e : entities) {
+		//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+		TransformComponent* tc = e->getComponent<TransformComponent>();
+		//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+		if (e->getComponent<CandleComponent>()->isAlive && tc && tc->getRenderMatrix()[3].y > -1) {
+			//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+			i++;
+		}
+	}
+	//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+	return i;
 }
 
 #ifdef DEVELOPMENT

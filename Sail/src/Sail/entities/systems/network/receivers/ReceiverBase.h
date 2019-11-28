@@ -65,24 +65,26 @@ protected:
 protected: // Functions
 	void initBase(Netcode::PlayerID playerID);
 
-	virtual void destroyEntity   (const Netcode::ComponentID entityID)                                    = 0;
-	virtual void enableSprinklers()                                                                       = 0;
-	virtual void endMatch        (const GameDataForOthersInfo& info)                                      = 0;
-	virtual void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID) = 0;
-	virtual void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                               = 0;
-	virtual void igniteCandle    (const Netcode::ComponentID candleID)                                    = 0;
-	virtual void matchEnded      ()                                                                       = 0;
-	virtual void playerDied      (const Netcode::ComponentID id, const Netcode::ComponentID killerID)     = 0;
-	virtual void setAnimation    (const Netcode::ComponentID id, const AnimationInfo& info)               = 0;
-	virtual void setCandleHealth (const Netcode::ComponentID candleID, const float health)                = 0;
-	virtual void setCandleState  (const Netcode::ComponentID id, const bool isHeld)                       = 0;
-	virtual void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                    = 0;
-	virtual void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                    = 0;
-	virtual void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                    = 0;
-	virtual void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement)                 = 0;
-	virtual void updateSanity    (const Netcode::ComponentID id, const float sanity)                      = 0;
-	virtual void spawnProjectile (const ProjectileInfo& info)                                             = 0;
-	virtual void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID projectileID) = 0;
+	virtual void destroyEntity   (const Netcode::ComponentID entityID)                                       = 0;
+	virtual void enableSprinklers()                                                                          = 0;
+	virtual void endMatch        (const GameDataForOthersInfo& info)                                         = 0;
+	virtual void extinguishCandle(const Netcode::ComponentID candleID, const Netcode::PlayerID shooterID)    = 0;
+	virtual void hitBySprinkler  (const Netcode::ComponentID candleOwnerID)                                  = 0;
+	virtual void igniteCandle    (const Netcode::ComponentID candleID)                                       = 0;
+	virtual void matchEnded      ()                                                                          = 0;
+	virtual void playerDied      (const Netcode::ComponentID id, const Netcode::ComponentID killerID)        = 0;
+	virtual void setAnimation    (const Netcode::ComponentID id, const AnimationInfo& info)                  = 0;
+	virtual void setCandleHealth (const Netcode::ComponentID candleID, const float health)                   = 0;
+	virtual void setCandleState  (const Netcode::ComponentID id, const bool isHeld)                          = 0;
+	virtual void setLocalPosition(const Netcode::ComponentID id, const glm::vec3& pos)                       = 0;
+	virtual void setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rot)                       = 0;
+	virtual void setLocalRotation(const Netcode::ComponentID id, const glm::quat& rot)                       = 0;
+	virtual void setPlayerStats  (Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken)                    = 0;
+	virtual void updateProjectile(const Netcode::ComponentID id, const glm::vec3& pos, const glm::vec3& vel) = 0;
+	virtual void updateSanity    (const Netcode::ComponentID id, const float sanity)                         = 0;
+	virtual void spawnProjectile (const ProjectileInfo& info)                                                = 0;
+	virtual void submitWaterPoint(const glm::vec3& point)                                                    = 0;
+	virtual void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID projectileID)    = 0;
 
 	// AUDIO
 	virtual void playerJumped (const Netcode::ComponentID id)                = 0;
