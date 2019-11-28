@@ -522,21 +522,16 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_DEFAULT & ~INSTANCE_MASK_METABALLS, 0, 0, 0, reflectRaydesc, reflect_payload);
 		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_DEFAULT & ~INSTANCE_MASK_METABALLS, 0, 0, 0, reftractRaydesc, refract_payload);
 
-	} else {
-		reflect_payload.color = float4(0.0f, 0.0f, 0.1f,1.0f);
-		refract_payload.color = float4(0.0f, 0.0f, 0.f,1.0f);
-	}
+		float4 reflect_color = reflect_payload.albedoTwo;
+		reflect_color.b += 0.01f;
+		reflect_color =  saturate(reflect_color);
 
-	float4 reflect_color = reflect_payload.color;
-	reflect_color.b += 0.01f;
-	reflect_color =  saturate(reflect_color);
+		float4 refract_color = refract_payload.albedoTwo;
+		refract_color.b += 0.01f;
+		refract_color = saturate(refract_color);
 
-	float4 refract_color = refract_payload.color;
-	refract_color.b += 0.01f;
-	refract_color = saturate(refract_color);
-
-	float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
-	float refconst = pow(abs(dot(normalize(hitToCam), normalInWorldSpace)), 2);
+		float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
+		float refconst = pow(abs(dot(normalize(hitToCam), normalInWorldSpace)), 2);
 
 		// float4 finaldiffusecolor = saturate((refract_color * refconst + reflect_color * (1- refconst)));
 		float4 finaldiffusecolor = refract_color * 0.8f + reflect_color * 0.2f;
