@@ -270,8 +270,10 @@ bool DX12GBufferRenderer::onEvent(const Event& event) {
 			SAIL_LOG("CALLED FROM DX12GBufferRenderer::onEvent()");
 			
 			auto frameIndex = m_context->getFrameIndex();
-			auto cmdAlloc = m_command[0].allocators[frameIndex];
-			auto cmdList = m_command[0].list;
+
+			constexpr int mainThreadIndex = 0;	// Assuming the main thread can be used
+			auto cmdAlloc = m_command[mainThreadIndex].allocators[frameIndex];
+			auto cmdList = m_command[mainThreadIndex].list;
 
 			cmdAlloc->Reset();
 			cmdList->Reset(cmdAlloc.Get(), nullptr);
