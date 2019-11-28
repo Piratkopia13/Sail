@@ -267,7 +267,7 @@ bool DX12GBufferRenderer::onEvent(const Event& event) {
 
 		if (dx12Tex && !dx12Tex->hasBeenInitialized()) {
 			
-			Logger::Error("CALLED FROM DX12GBufferRenderer::onEvent()");
+			SAIL_LOG("CALLED FROM DX12GBufferRenderer::onEvent()");
 			
 			auto frameIndex = m_context->getFrameIndex();
 			auto cmdAlloc = m_command[0].allocators[frameIndex];
