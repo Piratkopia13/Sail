@@ -266,9 +266,6 @@ bool DX12GBufferRenderer::onEvent(const Event& event) {
 		auto dx12Tex = static_cast<DX12Texture*>(e.texture);
 
 		if (dx12Tex && !dx12Tex->hasBeenInitialized()) {
-			
-			SAIL_LOG("CALLED FROM DX12GBufferRenderer::onEvent()");
-			
 			auto frameIndex = m_context->getFrameIndex();
 
 			constexpr int mainThreadIndex = 0;	// Assuming the main thread can be used
@@ -282,12 +279,15 @@ bool DX12GBufferRenderer::onEvent(const Event& event) {
 
 			cmdList->Close();
 
-			m_context->executeCommandLists({ cmdList.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+			m_context->getDirectQueue()->executeCommandLists({ cmdList.Get() });
 
-			// WAIT FOR GPU ?
-			//	 FENCE STATUS COMPROMISED ?
+			m_context->waitForGPU();
+			// FENCE STATUS COMPROMISED ?
 			// THREAD SAFE ?
-			// 
+
+			SAIL_LOG("Uploaded " + e.fileName + " to VRAM");
+
+			EventDispatcher::Instance().emit(TextureUploadedToGPUEvent(e.fileName));
 		}
 	};
 

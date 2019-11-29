@@ -6,9 +6,6 @@
 #include "../DX12ComputeShaderDispatcher.h"
 #include "../shader/DX12ShaderPipeline.h"
 
-#include "Sail/events/EventDispatcher.h"
-#include "Sail/events/types/TextureUploadedToGPUEvent.h"
-
 Texture* Texture::Create(const std::string& filename) {
 	return SAIL_NEW DX12Texture(filename);
 }
@@ -102,8 +99,6 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	});
 
 	m_isInitialized = true;
-
-	EventDispatcher::Instance().emit(TextureUploadedToGPUEvent(m_textureData.getFileName()));
 }
 
 bool DX12Texture::hasBeenInitialized() const {

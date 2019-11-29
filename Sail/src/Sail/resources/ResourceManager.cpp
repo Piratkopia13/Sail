@@ -88,7 +88,8 @@ void ResourceManager::loadTexture(const std::string& filename) {
 	auto inserted = m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename)) });
 	if (inserted.second) {
 		// Upload to GPU immediately
-		EventDispatcher::Instance().emit(TextureLoadedToRAMEvent(inserted.first->second.get()));
+		SAIL_LOG("Loaded " + filename + " to RAM");
+		EventDispatcher::Instance().emit(TextureLoadedToRAMEvent(inserted.first->second.get(), filename));
 	}
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
@@ -277,6 +278,7 @@ void ResourceManager::logRemainingTextures() const {
 
 bool ResourceManager::onEvent(const Event& event) {
 	auto onTextureUploadedToGPU = [&](const TextureUploadedToGPUEvent& e) {
+		SAIL_LOG("Removed " + e.fileName + " from RAM");
 		m_textureDatas.erase(e.fileName);
 		m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
 	};
