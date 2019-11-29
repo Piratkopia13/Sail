@@ -76,9 +76,6 @@ template <typename T>
 void AnimationSystem<T>::updateTransforms(const float dt) { 
 	for (auto& e : entities) {
 		AnimationComponent* animationC = e->getComponent<AnimationComponent>();
-		if (animationC->updateDT) {
-			addTime(animationC, dt);
-		}
 
 		if (!animationC->currentAnimation) {
 #if defined(_DEBUG)
@@ -86,42 +83,50 @@ void AnimationSystem<T>::updateTransforms(const float dt) {
 #endif
 			continue;
 		}
-		//remove empty transitions
-		while (animationC->transitions.size() > 0) {
-			if (animationC->transitions.front().to) {
-				break;
-			}
-			animationC->transitions.pop();
-		}
+
 		//transition update
-		if (animationC->currentTransition) {
-			//transitions complete
-			if (animationC->currentTransition->transpiredTime >= animationC->currentTransition->transitionTime) {
-				animationC->currentAnimation = animationC->currentTransition->to;
-				animationC->animationTime = animationC->currentTransition->transpiredTime;
-				animationC->nextAnimation = nullptr;
-				animationC->currentTransition = nullptr;
-				animationC->transitions.pop();
-			}
-		}
-		
-		//set transition
-		if (!animationC->currentTransition && animationC->transitions.size() > 0) {
-			if (!animationC->transitions.front().waitForEnd) {
-				animationC->currentTransition = &animationC->transitions.front();
-				animationC->nextAnimation = animationC->currentTransition->to;
-			}
-			else {
-				if (animationC->animationTime >= animationC->currentAnimation->getMaxAnimationTime() - animationC->transitions.front().transitionTime) {
-					animationC->currentTransition = &animationC->transitions.front();
-					animationC->nextAnimation = animationC->currentTransition->to;
+		if (animationC->currentTransition.to != nullptr) {
+			if (animationC->currentTransition.done) {
+				//transitions complete
+				if (animationC->currentTransition.transpiredTime >= animationC->currentTransition.transitionTime) {
+					animationC->currentAnimation = animationC->currentTransition.to;
+					animationC->animationTime = animationC->currentTransition.transpiredTime;
+					animationC->animationIndex = animationC->currentTransition.toIndex;
+					animationC->currentTransition.to = nullptr;
+					animationC->nextAnimation = nullptr;
+				}
+			} else {
+				if (animationC->currentTransition.transpiredTime == 0.f) {
+					if (animationC->currentTransition.waitForEnd) {
+						if (animationC->animationTime + dt * animationC->animationSpeed >= animationC->currentAnimation->getMaxAnimationTime()) {
+							animationC->nextAnimation = animationC->currentTransition.to;
+							animationC->currentTransition.transpiredTime += dt;
+							SAIL_LOG("Done with animation, begin transition");
+						}
+					} else {
+						animationC->nextAnimation = animationC->currentTransition.to;
+						animationC->currentTransition.transpiredTime += dt;
+					}
+				} else if (animationC->currentTransition.transpiredTime >= animationC->currentTransition.transitionTime) {
+					// Transition done
+					animationC->currentTransition.done = true;
+				} else {
+					// Transition transpiring
+					animationC->currentTransition.transpiredTime += dt;
 				}
 			}
 		}
+
+		if (animationC->updateDT) {
+			addTime(animationC, dt);
+		}
+		
 		const unsigned int frame00 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::BEHIND);
 		const unsigned int frame01 = animationC->currentAnimation->getFrameAtTime(animationC->animationTime, Animation::INFRONT); // TODO: make getNextFrame function.
-		const unsigned int frame10 = animationC->nextAnimation ? animationC->nextAnimation->getFrameAtTime(animationC->transitions.front().transpiredTime, Animation::BEHIND) : 0;
-		const unsigned int frame11 = animationC->nextAnimation ? animationC->nextAnimation->getFrameAtTime(animationC->transitions.front().transpiredTime, Animation::INFRONT) : 0;
+		const unsigned int frame10 = animationC->nextAnimation ? animationC->nextAnimation->getFrameAtTime(animationC->currentTransition.transpiredTime,
+																														   Animation::BEHIND) : 0;
+		const unsigned int frame11 = animationC->nextAnimation ? animationC->nextAnimation->getFrameAtTime(animationC->currentTransition.transpiredTime,
+																														   Animation::INFRONT) : 0;
 
 		const unsigned int transformSize = animationC->currentAnimation->getAnimationTransformSize(frame00);
 		if (transformSize != animationC->transformSize) {
@@ -134,9 +139,13 @@ void AnimationSystem<T>::updateTransforms(const float dt) {
 		}
 
 		const glm::mat4* transforms00 = animationC->currentAnimation->getAnimationTransform(frame00);
-		const glm::mat4* transforms01 = frame01 > frame00 ? animationC->currentAnimation->getAnimationTransform(frame01) : nullptr;
+		const glm::mat4* transforms01 = animationC->currentAnimation->getAnimationTransform(frame01);//frame01 > frame00 ? animationC->currentAnimation->getAnimationTransform(frame01) : nullptr;
 		const glm::mat4* transforms10 = animationC->nextAnimation ? animationC->nextAnimation->getAnimationTransform(frame10) : nullptr;
 		const glm::mat4* transforms11 = (animationC->nextAnimation && frame11 > frame10) ? animationC->nextAnimation->getAnimationTransform(frame11) : nullptr;
+
+		// Origin of root bone - "hips"
+		const glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
+		auto trans = glm::translate(transOrig) * glm::rotate(animationC->pitch, glm::vec3(1.f, 0.f, 0.f)) * glm::translate(-transOrig);
 
 		//INTERPOLATE
 		if (transforms00 && transforms01 && transforms10 && transforms11 && m_interpolate) {
@@ -147,8 +156,8 @@ void AnimationSystem<T>::updateTransforms(const float dt) {
 			// weight = time - time(0) / time(1) - time(0)
 
 			const float w0 = (animationC->animationTime - frame00Time) / (frame01Time - frame00Time);
-			const float w1 = (animationC->transitions.front().transpiredTime - frame10Time) / (frame11Time - frame10Time);
-			const float wt = animationC->transitions.front().transpiredTime / animationC->transitions.front().transitionTime;
+			const float w1 = (animationC->currentTransition.transpiredTime - frame10Time) / (frame11Time - frame10Time);
+			const float wt = animationC->currentTransition.transpiredTime / animationC->currentTransition.transitionTime;
 			animationC->animationW = wt;
 
 			glm::mat4 m0 = glm::identity<glm::mat4>();
@@ -158,14 +167,24 @@ void AnimationSystem<T>::updateTransforms(const float dt) {
 				interpolate(m0, transforms00[transformIndex], transforms01[transformIndex], w0);
 				interpolate(m1, transforms10[transformIndex], transforms11[transformIndex], w1);
 				interpolate(animationC->transforms[transformIndex], m0, m1, wt);
+
+				// Rotate the upper body in relation to camera pitch
+				if (transformIndex > 0 && transformIndex < 31) {
+					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
+				}
 			}
 
 		}
 		else if (transforms00 && transforms10) {
-			const float wt = animationC->transitions.front().transpiredTime / animationC->transitions.front().transitionTime;
+			const float wt = animationC->currentTransition.transpiredTime / animationC->currentTransition.transitionTime;
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				interpolate(animationC->transforms[transformIndex], transforms00[transformIndex], transforms10[transformIndex], wt);
 				animationC->transforms[transformIndex] = transforms00[transformIndex];
+
+				// Rotate the upper body in relation to camera pitch
+				if (transformIndex > 0 && transformIndex < 31) {
+					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
+				}
 			}
 		}
 		else if (transforms00 && transforms01 && m_interpolate) {
@@ -178,30 +197,29 @@ void AnimationSystem<T>::updateTransforms(const float dt) {
 				interpolate(animationC->transforms[transformIndex], transforms00[transformIndex], transforms01[transformIndex], w);
 				// Rotate the upper body in relation to camera pitch
 				if (transformIndex > 0 && transformIndex < 31) {
-					// Origin of root bone - "hips"
-					const glm::vec3 transOrig = glm::vec3(0.02f, 0.95f, -0.03f);
-					auto trans = glm::translate(transOrig) * glm::rotate(animationC->pitch, glm::vec3(1.f, 0.f, 0.f)) * glm::translate(-transOrig);
 					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
 				}
 			}
 		} else if (transforms00) {
 			for (unsigned int transformIndex = 0; transformIndex < transformSize; transformIndex++) {
 				animationC->transforms[transformIndex] = transforms00[transformIndex];
+
+				// Rotate the upper body in relation to camera pitch
+				if (transformIndex > 0 && transformIndex < 31) {
+					animationC->transforms[transformIndex] = trans * animationC->transforms[transformIndex];
+				}
 			}
 		}
 
-		if (animationC->currentTransition) {
-			animationC->currentTransition->transpiredTime += dt * animationC->animationSpeed;
-		}
 		animationC->hasUpdated = true;
 
 		if (animationC->leftHandEntity) {
 			glm::mat4 res = animationC->transforms[10] * animationC->leftHandPosition;
-			
+
 			glm::vec3 pos, scale;
 			glm::quat rot;
 			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
-			
+
 			//KEEP THIS DO NOT REMOVE FUCK YOU
 			animationC->leftHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
 			animationC->leftHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
@@ -209,11 +227,11 @@ void AnimationSystem<T>::updateTransforms(const float dt) {
 
 		if (animationC->rightHandEntity) {
 			glm::mat4 res = animationC->transforms[22] * animationC->rightHandPosition;
-		
+
 			glm::vec3 pos, scale;
 			glm::quat rot;
 			glm::decompose(res, scale, rot, pos, glm::vec3(), glm::vec4());
-		
+
 			animationC->rightHandEntity->getComponent<TransformComponent>()->setRotations(glm::eulerAngles(rot));
 			animationC->rightHandEntity->getComponent<TransformComponent>()->setTranslation(pos);
 		}
@@ -429,7 +447,7 @@ template <typename T>
 void AnimationSystem<T>::addTime(AnimationComponent* e, const float time) {
 	e->animationTime += time * e->animationSpeed;
 	if (e->animationTime >= e->currentAnimation->getMaxAnimationTime()) {
-		e->animationTime -= (int(e->animationTime / e->currentAnimation->getMaxAnimationTime()) * e->currentAnimation->getMaxAnimationTime());
+		e->animationTime = fmodf(e->animationTime, e->currentAnimation->getMaxAnimationTime());
 	}
 }
 

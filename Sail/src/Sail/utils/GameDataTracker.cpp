@@ -43,6 +43,8 @@ void GameDataTracker::resetData() {
 	m_loggedDataGlobal.jumpsMadeID = 0;
 	m_hostPlayerTracker.clear();
 
+	m_torchesLeft = 3;
+	m_playersLeft = 0;
 	m_nPlayersCurrentSession = 0;
 	for (auto player : m_network->getPlayers()) {
 
@@ -67,8 +69,19 @@ void GameDataTracker::logWeaponFired() {
 	}
 }
 
-void GameDataTracker::logEnemyKilled(Netcode::PlayerID playerID) {
-	m_hostPlayerTracker[playerID].nKills += 1;
+void GameDataTracker::logEnemyKilled(Netcode::PlayerID killer) {
+	m_hostPlayerTracker[killer].nKills += 1;
+}
+
+void GameDataTracker::logDeath(Netcode::PlayerID victim) {
+	m_hostPlayerTracker[victim].nDeaths += 1;
+}
+
+void GameDataTracker::logDamageDone(Netcode::PlayerID playerID, const int dmg) {
+	m_hostPlayerTracker[playerID].damage += dmg;
+}
+void GameDataTracker::logDamageTaken(Netcode::PlayerID playerID, const int dmg) {
+	m_hostPlayerTracker[playerID].damageTaken += dmg;
 }
 
 void GameDataTracker::logJump() {
@@ -109,9 +122,12 @@ const std::map<Netcode::PlayerID, HostStatsPerPlayer> GameDataTracker::getPlayer
 	return m_hostPlayerTracker;
 }
 
-void GameDataTracker::setStatsForPlayer(Netcode::PlayerID id, int nKills, int placement) {
-	m_hostPlayerTracker[id].nKills = nKills;
+void GameDataTracker::setStatsForPlayer(Netcode::PlayerID id, int nKills, int placement, int nDeaths, int damage, int damageTaken) {
 	m_hostPlayerTracker[id].placement = placement;
+	m_hostPlayerTracker[id].nKills = nKills;
+	m_hostPlayerTracker[id].nDeaths = nDeaths;
+	m_hostPlayerTracker[id].damage = damage;
+	m_hostPlayerTracker[id].damageTaken = damageTaken;
 }
 
 void GameDataTracker::setStatsForOtherData(Netcode::PlayerID bfID, int bf, Netcode::PlayerID dwID, float dw, Netcode::PlayerID jmID, int jm) {
@@ -249,8 +265,6 @@ void GameDataTracker::renderPlacement() {
 	ImGui::EndChild();
 }
 
-
-
 void GameDataTracker::renderPersonalStats() {
 
 
@@ -266,8 +280,8 @@ void GameDataTracker::renderPersonalStats() {
 }
 
 void GameDataTracker::renderFunStats() {
-	std::string bdString = "Most bullets fires by " +
-		m_hostPlayerTracker[m_loggedDataGlobal.bulletsFiredID].playerName + ": " + std::to_string(m_loggedDataGlobal.bulletsFired);
+	std::string bdString = "Most water wasted by " +
+		m_hostPlayerTracker[m_loggedDataGlobal.bulletsFiredID].playerName + ": " + std::to_string(m_loggedDataGlobal.bulletsFired) +"L";
 	ImGui::Text(bdString.c_str());
 
 	bdString = "Longest distance walked by " +
@@ -296,6 +310,21 @@ void GameDataTracker::addDebugData() {
 	}
 }
 #endif
+
+const int GameDataTracker::getTorchesLeft() {
+	return m_torchesLeft;
+}
+
+void GameDataTracker::reduceTorchesLeft() {
+	m_torchesLeft--;
+}
+
+const int GameDataTracker::getPlayersLeft() {
+	return m_playersLeft;
+}
+void GameDataTracker::setPlayersLeft(int playersLeft) {
+	m_playersLeft = playersLeft;
+}
 
 bool GameDataTracker::onEvent(const Event& e) {
 

@@ -23,7 +23,11 @@
 #include "API/DX12/DX12API.h"
 #include "API/DX12/renderer/DX12HybridRaytracerRenderer.h"
 #include "API/DX12/dxr/DXRBase.h"
+#include "../Sail/src/API/Audio/AudioEngine.h"
 
+
+
+constexpr int SPECTATOR_TEAM = -1;
 
 GameState::GameState(StateStack& stack)
 	: State(stack)
@@ -38,13 +42,19 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
+	EventDispatcher::Instance().subscribe(Event::Type::TOGGLE_KILLCAM, this);
 
+	// Reset the counter used to generate unique ComponentIDs for the network
+	Netcode::resetIDCounter();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
-	m_gameStarted = m_isSingleplayer; //Delay gamestart untill everyOne is ready if playing multiplayer
+	m_gameStarted = m_isSingleplayer; //Delay start of game until everyOne is ready if playing multiplayer
 	
+
+
+
 	if (!m_isSingleplayer) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
 		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
@@ -53,8 +63,13 @@ GameState::GameState(StateStack& stack)
 	initConsole();
 	m_app->setCurrentCamera(&m_cam);
 
-	
-	
+	m_app->getChatWindow()->setFadeThreshold(4.0f);
+	m_app->getChatWindow()->setFadeTime(0.7f);
+	m_app->getChatWindow()->resetMessageTime();
+	m_app->getChatWindow()->setRetainFocus(false);
+	m_app->getChatWindow()->removeFocus();
+	m_app->getChatWindow()->setBackgroundOpacity(0.05f);
+
 	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 	auto& settings = m_app->getSettings();
 	std::vector<glm::vec3> m_teamColors;
@@ -155,9 +170,7 @@ GameState::GameState(StateStack& stack)
 	createLevel(shader, boundingBoxModel);
 
 	// Player creation
-
-	// team -1 = spectator
-	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == -1) {
+	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
 		
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
@@ -167,10 +180,7 @@ GameState::GameState(StateStack& stack)
 
 		m_player = EntityFactory::CreateMySpectator(playerID, m_currLightIndex++, spawnLocation).get();
 
-	}
-	else {
-	
-
+	} else {
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
 		for (int i = -1; i < id; i++) {
@@ -181,12 +191,18 @@ GameState::GameState(StateStack& stack)
 	}
 
 	
+	// Spawn other players
+	for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+		if (p.team != SPECTATOR_TEAM && p.id != playerID) {
+			auto otherPlayer = ECS::Instance()->createEntity("Player: " + p.name);
+			EntityFactory::CreateOtherPlayer(otherPlayer, p.id, m_currLightIndex++);
+		}
+	}
+
 	
 	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
 	m_componentSystems.networkReceiverSystem->setGameState(this);
 	
-
-
 
 	// Bots creation
 	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
@@ -224,21 +240,52 @@ GameState::GameState(StateStack& stack)
 	// Clear all water on the level
 	EventDispatcher::Instance().emit(ResetWaterEvent());
 
-	if (!m_isSingleplayer) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.
-	}
-
 
 	m_inGameGui.setPlayer(m_player);
 	m_inGameGui.setCrosshair(crosshairEntity.get());
 	m_componentSystems.projectileSystem->setCrosshair(crosshairEntity.get());
 	m_componentSystems.sprintingSystem->setCrosshair(crosshairEntity.get());
+
+	// Flags for hud icons with imgui
+	m_standaloneButtonflags = ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoBackground;
+
+	// Used for the killcam overlay
+	m_backgroundOnlyflags = ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+	
+	//This will create all torch particles before players report done loading which will remove the freazing after waiting for players. 
+	m_componentSystems.particleSystem->addQueuedEntities();
+	m_componentSystems.particleSystem->update(0);
+
+	// Keep this at the bottom
+	if (!m_isSingleplayer) {
+		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.
+	}
 }
 
 GameState::~GameState() {
+	Application::getInstance()->getAPI<DX12API>()->waitForGPU();
+
 	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("GameState");
 	shutDownGameState();
 	delete m_octree;
+
+	m_app->getChatWindow()->setFadeThreshold(-1.0f);
+	m_app->getChatWindow()->setFadeTime(-1.0f);
+	m_app->getChatWindow()->setRetainFocus(true);
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
@@ -246,6 +293,7 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_KILLCAM, this);
 }
 
 // Process input for the state
@@ -272,11 +320,23 @@ bool GameState::processInput(float dt) {
 
 #ifndef DEVELOPMENT
 	//Capture mouse
-	Input::HideCursor(true);		//Shreks multiple applications on the same computer
+	if (m_app->getWindow()->isFocused()) {
+		Input::HideCursor(true);
+	} else {
+		Input::HideCursor(false);
+	}
 #endif
+
+	// Unpause Game
+	if (m_readyRestartAmbiance) {
+		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(false);
+		m_readyRestartAmbiance = false;
+	}
 
 	// Pause game
 	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::SHOW_IN_GAME_MENU)) {
+		m_readyRestartAmbiance = true;
+		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(true);
 		requestStackPush(States::InGameMenu);
 	}
 
@@ -538,7 +598,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 
 	// Create systems needed for the killcam
-	m_componentSystems.killCamReceiverSystem->init(playerID);
+	m_componentSystems.killCamReceiverSystem->init(playerID, &m_cam);
 	
 	m_componentSystems.killCamAnimationSystem             = ECS::Instance()->createSystem<AnimationSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamLightSystem                 = ECS::Instance()->createSystem<LightSystem<RenderInReplayComponent>>();
@@ -546,7 +606,6 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.killCamModelSubmitSystem           = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementSystem              = ECS::Instance()->createSystem<MovementSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<RenderInReplayComponent>>();
-
 }
 
 void GameState::initConsole() {
@@ -623,6 +682,7 @@ bool GameState::onEvent(const Event& event) {
 		case Event::Type::NETWORK_DROPPED:                  onPlayerDropped((const NetworkDroppedEvent&)event); break;
 		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS: onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
 		case Event::Type::NETWORK_JOINED:                   onPlayerJoined((const NetworkJoinedEvent&)event); break;
+		case Event::Type::TOGGLE_KILLCAM:                   onToggleKillCam((const ToggleKillCamEvent&)event); break;
 		default: break;
 	}
 
@@ -671,6 +731,14 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	return true;
 }
 
+void GameState::onToggleKillCam(const ToggleKillCamEvent& event) {
+	m_isInKillCamMode = event.isActive;
+	m_wasKilledBy = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(event.killedBy)->name;
+	if (!m_isInKillCamMode) {
+		m_componentSystems.killCamReceiverSystem->stop();
+	}
+}
+
 
 void GameState::onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event) {
 
@@ -690,7 +758,7 @@ bool GameState::update(float dt, float alpha) {
 	m_killFeedWindow.updateTiming(dt);	
 	waitForOtherPlayers();
 
-	//Don't update game if game have not started. This is to sync all players to start at the same time
+	// Don't update game if game have not started. This is to sync all players to start at the same time
 	if (!m_gameStarted) {
 		return true;
 	}
@@ -706,8 +774,10 @@ bool GameState::update(float dt, float alpha) {
 bool GameState::fixedUpdate(float dt) {
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
-	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | "
+#ifdef DEVELOPMENT
+	m_app->getWindow()->setWindowTitle("S.P.L.A.S.H2O | Development | "
 		+ Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
+#endif
 
 	static float counter = 0.0f;
 	static float size = 1.0f;
@@ -738,7 +808,6 @@ bool GameState::fixedUpdate(float dt) {
 	}
 	
 	updatePerTickComponentSystems(dt);
-
 
 	return true;
 }
@@ -784,6 +853,8 @@ bool GameState::renderImgui(float dt) {
 		m_waitingForPlayersWindow.renderWindow();
 	}
 
+	m_app->getChatWindow()->renderChat(dt);
+
 	//// KEEP UNTILL FINISHED WITH HANDPOSITIONS
 	//static glm::vec3 lPos(0.563f, 1.059f, 0.110f);
 	//static glm::vec3 rPos(-0.555f, 1.052f, 0.107f);
@@ -811,6 +882,55 @@ bool GameState::renderImgui(float dt) {
 	//ECS::Instance()->getSystem<AnimationSystem>()->updateHands(lPos, rPos, lRot, rRot);
 
 
+
+	if (m_isInKillCamMode) {
+		const unsigned int height = m_app->getWindow()->getWindowHeight() / 6;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.f, 0.f, 0.f, 0.7f));
+		if (ImGui::Begin("##KILLCAMBACKGROUNDTOP", nullptr, m_backgroundOnlyflags)) {
+			ImGui::SetWindowSize(ImVec2(m_app->getWindow()->getWindowWidth(), height));
+			ImGui::SetWindowPos(ImVec2(0, 0));
+		}
+		ImGui::End();
+		ImGui::PopStyleColor(1);
+		ImGui::PopStyleVar(1);
+
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.f, 0.f, 0.f, 0.7f));
+		if (ImGui::Begin("##KILLCAMBACKGROUNDBOTTOM", nullptr, m_backgroundOnlyflags)) {
+
+			ImGui::SetWindowSize(ImVec2(m_app->getWindow()->getWindowWidth(), height));
+			ImGui::SetWindowPos(ImVec2(0, m_app->getWindow()->getWindowHeight() - height));
+		}
+		ImGui::End();
+		ImGui::PopStyleColor(1);
+		ImGui::PopStyleVar(1);
+
+		if (ImGui::Begin("##KILLCAMWINDOW", nullptr, m_standaloneButtonflags)) {
+			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb70"));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.f));
+			ImGui::Text("SPLASHCAM");
+			ImGui::PopStyleColor(1);
+			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, height / 2 - (ImGui::GetWindowSize().y / 2)));
+			ImGui::PopFont();
+		}
+		ImGui::End();
+
+
+		if (ImGui::Begin("##KILLCAMKILLEDBY", nullptr, m_standaloneButtonflags)) {
+			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb30"));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.f));
+			ImGui::Text(m_wasKilledBy.c_str());
+			ImGui::PopStyleColor(1);
+			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, m_app->getWindow()->getWindowHeight() - height / 2 - (ImGui::GetWindowSize().y / 2)));
+			ImGui::PopFont();
+		}
+		ImGui::End();
+	} 
+
+
 	return false;
 }
 
@@ -834,7 +954,6 @@ void GameState::shutDownGameState() {
 	ECS::Instance()->destroyAllEntities();
 }
 
-
 // TODO: Add more systems here that only deal with replay entities/components
 void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	if (m_componentSystems.killCamReceiverSystem->skipUpdate()) {
@@ -847,7 +966,6 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
 	m_componentSystems.killCamMovementSystem->update(dt);
 	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
-	m_componentSystems.killCamAnimationSystem->update(dt);
 }
 
 // HERE BE DRAGONS
@@ -878,7 +996,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
-	runSystem(dt, m_componentSystems.animationSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
 	runSystem(dt, m_componentSystems.candleThrowingSystem);
 	runSystem(dt, m_componentSystems.candleHealthSystem);
@@ -905,10 +1022,22 @@ void GameState::updatePerTickComponentSystems(float dt) {
 }
 
 void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
+	const float killCamAlpha = m_componentSystems.killCamReceiverSystem->getKillCamAlpha(alpha);
+	const float killCamDelta = m_componentSystems.killCamReceiverSystem->getKillCamDelta(dt);
+
 	// TODO? move to its own thread
 	m_componentSystems.sprintingSystem->update(dt, alpha);
+
+	m_componentSystems.gameInputSystem->processMouseInput(dt);
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamAnimationSystem->update(killCamDelta);
+		m_componentSystems.killCamAnimationSystem->updatePerFrame();
+	} else {
+		m_componentSystems.animationSystem->update(dt);
+		m_componentSystems.animationSystem->updatePerFrame();
+	}
 	// Updates keyboard/mouse input and the camera
-	m_componentSystems.gameInputSystem->update(dt, alpha);
+	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 	m_componentSystems.spectateInputSystem->update(dt, alpha);
 
 	// There is an imgui debug toggle to override lights
@@ -916,7 +1045,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_lights.clearPointLights();
 		//check and update all lights for all entities
 		if (m_isInKillCamMode) {
-			m_componentSystems.killCamLightSystem->updateLights(&m_lights, m_componentSystems.killCamReceiverSystem->getKillCamAlpha(alpha));
+			m_componentSystems.killCamLightSystem->updateLights(&m_lights, killCamAlpha);
 		} else {
 			m_componentSystems.lightSystem->updateLights(&m_lights, alpha);
 		}
@@ -930,13 +1059,12 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 	
-	if (m_isInKillCamMode) {
-		m_componentSystems.killCamAnimationSystem->updatePerFrame();
-	} else {
-		m_componentSystems.animationSystem->updatePerFrame();
-	}
 	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
+
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamReceiverSystem->updatePerFrame(dt, killCamAlpha);
+	}
 
 	// Will probably need to be called last
 	m_componentSystems.entityAdderSystem->update();
@@ -1293,6 +1421,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	// Create the level generator system and put it into the datatype.
 	SettingStorage& settings = m_app->getSettings();
+	m_componentSystems.levelSystem->destroyWorld();
 
 	m_componentSystems.levelSystem->seed = settings.gameSettingsDynamic["map"]["seed"].value;
 	m_componentSystems.levelSystem->clutterModifier = settings.gameSettingsDynamic["map"]["clutter"].value * 100;

@@ -10,7 +10,10 @@ public:
 
 	void update(float dt) override;
 	bool onEvent(const Event& event) override;
+	const int getMaxNumberOfRespawns();
 
+	//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+	int getNumLivingEntites();
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const override;
 #endif

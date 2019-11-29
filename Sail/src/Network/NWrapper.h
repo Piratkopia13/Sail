@@ -62,6 +62,11 @@ struct GameOnLanDescription {
 	States::ID currentState;
 };
 
+struct Message {
+	Netcode::PlayerID senderID;
+	std::string content;
+};
+
 class NWrapper : public NetworkEventHandler {
 public:
 	NWrapper(Network* pNetwork);
@@ -72,9 +77,9 @@ public:
 
 	virtual void sendChatMsg(std::string msg) = 0;
 
-	void sendSerializedDataAllClients(std::string data);
-	void sendSerializedDataToHost(std::string data);
-	virtual void sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayerId) = 0;
+	void sendSerializedDataAllClients(const std::string& data);
+	void sendSerializedDataToHost(const std::string& data);
+	virtual void sendSerializedDataToClient(const std::string& data, Netcode::PlayerID PlayerId) = 0;
 
 	/*
 		Host Only

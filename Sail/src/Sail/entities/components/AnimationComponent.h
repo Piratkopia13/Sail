@@ -58,23 +58,35 @@ class AnimationComponent : public Component<AnimationComponent> {
 public:
 	class Transition {
 	public:
+		Transition() {
+			to = nullptr;
+			transitionTime = 1.0f;
+			transpiredTime = 0.0f;
+			waitForEnd = true;
+			done = true;
+			toIndex = 51020130;
+		}
 		Transition(Animation* _to, const float time = 1.0f, const bool wait = true) {
 			to = _to;
 			transitionTime = time;
 			transpiredTime = 0.0f;
 			waitForEnd = wait;
+			done = true;
+			toIndex = 51020130;
 		}
 		Animation* to;
 		float transitionTime;
 		float transpiredTime;
 		bool waitForEnd;
+		bool done;
+		unsigned int toIndex;
 	};
 
 public:
 	AnimationComponent(AnimationStack* animationStack);
 	~AnimationComponent();
 	
-	void setAnimation(const unsigned int index);
+	void setAnimation(const unsigned int index, const bool allowTransitionWait = true);
 	void setAnimation(const std::string& name);
 	AnimationStack* getAnimationStack();
 #ifdef DEVELOPMENT
@@ -117,11 +129,14 @@ public:
 
 	std::unique_ptr<VertexBuffer> tposeVBuffer;
 
-	std::queue<Transition> transitions;
-	Transition* currentTransition;
+	Transition currentTransition;
 
 	// Used for upper body rotation
 	float pitch = 0.f;
+	float prevPitch = 0.f;
+
+	// For some reason needed
+	bool throwAnimationDone = false;
 
 private:
 	AnimationStack* m_stack;
