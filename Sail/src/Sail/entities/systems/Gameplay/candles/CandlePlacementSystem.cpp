@@ -10,6 +10,7 @@
 
 #include "Sail/events/EventDispatcher.h"
 #include "Sail/events/types/HoldingCandleToggleEvent.h"
+#include "Sail/events/types/TorchNotHeldEvent.h"
 
 CandlePlacementSystem::CandlePlacementSystem() {
 	registerComponent<CandleComponent>(true, true, true);
@@ -32,7 +33,6 @@ void CandlePlacementSystem::update(float dt) {
 			continue;
 		}
 
-
 		auto candle = e->getComponent<CandleComponent>();
 		if (candle->isCarried != candle->wasCarriedLastUpdate) {
 			toggleCandlePlacement(e);
@@ -42,9 +42,14 @@ void CandlePlacementSystem::update(float dt) {
 		}
 
 		candle->wasCarriedLastUpdate = candle->isCarried;
-		static const float candleHeight = 0.5f;
+		constexpr float candleHeight = 0.37f;
 		glm::vec3 flamePos = e->getComponent<TransformComponent>()->getMatrixWithUpdate() * glm::vec4(0, candleHeight, 0, 1);
-		e->getComponent<LightComponent>()->getPointLight().setPosition(flamePos);
+
+		e->getComponent<LightComponent>()->currentPos = flamePos;
+
+		if (!candle->isCarried && e->getParent() && e->getParent()->hasComponent<NetworkReceiverComponent>()) {
+			EventDispatcher::Instance().emit(TorchNotHeldEvent(e->getParent()->getComponent<NetworkReceiverComponent>()->m_id));
+		}
 	}
 }
 
@@ -59,6 +64,13 @@ void CandlePlacementSystem::toggleCandlePlacement(Entity* e) {
 			candleTransComp->setParent(parentTransComp);
 			e->getParent()->getComponent<AnimationComponent>()->rightHandEntity = e;
 			e->removeComponent<CollisionComponent>();
+			if (e->hasComponent<MovementComponent>()) {
+				auto moveC = e->getComponent<MovementComponent>();
+				moveC->constantAcceleration = glm::vec3(0.f);
+				moveC->velocity = glm::vec3(0.f);
+				moveC->oldVelocity = glm::vec3(0.f);
+			}
+			candleTransComp->setCenter(glm::vec3(0.0f));
 		} else {
 			candleComp->isCarried = false;
 		}
@@ -113,7 +125,7 @@ bool CandlePlacementSystem::onEvent(const Event& event) {
 
 		// candle exists => player exists (only need to check candle)
 		if (!candle) {
-			Logger::Warning("Holding candle toggled but no matching entity found");
+			SAIL_LOG_WARNING("Holding candle toggled but no matching entity found");
 			return;
 		}
 
@@ -127,6 +139,14 @@ bool CandlePlacementSystem::onEvent(const Event& event) {
 			candleTransComp->setParent(player->getComponent<TransformComponent>());
 
 			player->getComponent<AnimationComponent>()->rightHandEntity = candle;
+			if (candle->hasComponent<MovementComponent>()) {
+				if (candle->hasComponent<MovementComponent>()) {
+					auto moveC = candle->getComponent<MovementComponent>();
+					moveC->constantAcceleration = glm::vec3(0.f);
+					moveC->velocity = glm::vec3(0.f);
+					moveC->oldVelocity = glm::vec3(0.f);
+				}
+			}
 		} else {
 			candleTransComp->removeParent();
 			player->getComponent<AnimationComponent>()->rightHandEntity = nullptr;

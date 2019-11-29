@@ -1,6 +1,7 @@
 #pragma once
 #include "EventDispatcher.h"
 
+#include "types/NewFrameEvent.h"
 #include "types/WindowResizeEvent.h"
 #include "types/WindowFocusChangedEvent.h"
 #include "types/WaterHitPlayerEvent.h"
@@ -16,4 +17,8 @@
 #include "types/StopWalkingEvent.h"
 #include "types/StartThrowingEvent.h"
 #include "types/StopThrowingEvent.h"
+#include "types/ToggleKillCamEvent.h"
+#include "types/ToggleSlowMotionReplayEvent.h"
+#include "types/TorchExtinguishedEvent.h"
+#include "types/TorchNotHeldEvent.h"
 #include "types/UpdateSanityEvent.h"

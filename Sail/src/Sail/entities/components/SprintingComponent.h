@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "Component.h"
@@ -13,6 +14,9 @@ public:
 	~SprintingComponent() {}
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		SprintingComponent* sprintC = this;
 		ImGui::SliderFloat("speedModifier", &sprintC->sprintSpeedModifier, 0.f, 2.f);
@@ -25,7 +29,7 @@ public:
 #endif
 
 public:
-	float sprintSpeedModifier = 1.3f;
+	float sprintSpeedModifier = 1.6f;
 	float sprintTimer = 0.f;
 	float downTimer = 0.f;
 	

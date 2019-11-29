@@ -94,36 +94,46 @@ const float Animation::getTimeAtFrame(const unsigned int frame) {
 	return 0.0f;
 }
 const unsigned int Animation::getFrameAtTime(float time, const FindType type) {
-	time -= (int(time / getMaxAnimationTime()) * getMaxAnimationTime());
+	time = fmodf(time, getMaxAnimationTime());
+
+	float leastDiff = 50000;
+	unsigned int closestFrame = m_maxFrame;
+	/* find closest frame */
 	for (unsigned int frame = 0; frame < m_maxFrame; frame++) {
-		float lastFrameTime = 0;
-		if (exists(frame)) {
-			if ((m_frameTimes[frame] == time)) {
-				return frame;
-			}
-			if (m_frameTimes[frame] > time) {
-
-				if (type == BEHIND) {
-					return frame - 1;
-				}
-				else if (type == INFRONT) {
-					return frame % m_maxFrame;
-				}
-				else {
-					float behind = time - m_frameTimes[frame - 1];
-					float inFront = m_frameTimes[frame] - time;
-
-					if (behind >= inFront) {
-						return frame - 1;
-					}
-					else {
-						return frame % m_maxFrame;
-					}
-				}
-			}	
+		float diff = fabsf(m_frameTimes[frame] - time);
+		if (diff < leastDiff) {
+			leastDiff = diff;
+			closestFrame = frame;
+		} else {
+			continue;
 		}
 	}
-	return 0;
+
+	if (closestFrame != m_maxFrame) {
+		switch (type) {
+		case BEHIND:
+			if (closestFrame == 0) {
+				return m_maxFrame - 1;
+			} else {
+				return closestFrame - 1;
+			}
+			break;
+		case INFRONT:
+			if (closestFrame == m_maxFrame - 1) {
+				return 0;
+			} else {
+				return closestFrame + 1;
+			}
+			break;
+		default:
+			return closestFrame;
+			break;
+		}
+	} else {
+		// Couldn't find a frame for some reason?
+		SAIL_LOG_WARNING("Animation::getFrameAtTime: Couldn't find a proper frame.");
+		return 0;
+	}
 }
 
 void Animation::addFrame(const unsigned int frame, const float time, Animation::Frame* data) {
@@ -267,6 +277,14 @@ const unsigned int AnimationStack::boneCount() {
 }
 AnimationStack::Bone& AnimationStack::getBone(const unsigned int index) {
 	return m_bones[index];
+}
+
+unsigned int AnimationStack::getByteSize() {
+	unsigned int size = 0.f;
+	for (int i = 0; i < getAnimationCount(); i++) {
+		size += getAnimation(i)->getMaxAnimationFrame() * boneCount() * sizeof(glm::mat4);
+	}
+	return size;
 }
 
 Animation* AnimationStack::getAnimation(const std::string& name) {

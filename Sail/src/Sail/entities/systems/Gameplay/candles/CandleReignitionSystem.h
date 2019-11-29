@@ -10,10 +10,13 @@ public:
 
 	void update(float dt) override;
 
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
 private:
 	bool onEvent(const Event& event) override;
 
 private:
 	// TODO: Replace using game settings when that is implemented
-	float m_candleForceRespawnTimer = 5.0f;
+	float m_candleForceRespawnTimer = 2.0f;
 };

@@ -57,6 +57,10 @@ public:
 	std::string serialize(const std::unordered_map<std::string, std::unordered_map<std::string, Setting>>& stat, const std::unordered_map<std::string, std::unordered_map<std::string, DynamicSetting>>& dynamic);
 	bool deSerialize(const std::string& msg, std::unordered_map<std::string, std::unordered_map<std::string, Setting>>& stat, std::unordered_map<std::string, std::unordered_map<std::string, DynamicSetting>>& dynamic);
 
+	const int teamColorIndex(const int team);
+	glm::vec3 getColor(const int team);
+
+	void setMap(const int mode, const int index, const int playerCount);
 
 
 
@@ -68,6 +72,7 @@ public:
 
 
 	std::unordered_map<std::string, std::unordered_map<std::string, Setting>> gameSettingsStatic;
+	std::unordered_map<std::string, Setting> defaultMaps;
 	std::unordered_map<std::string, std::unordered_map<std::string, DynamicSetting>> gameSettingsDynamic;
 
 
@@ -85,5 +90,8 @@ private:
 	void createGameDefaultStructure();
 	void createGameDefaultMap();
 	void createGameModeDefault();
+	void createGameColorsDefault();
+
+	void setMapValues(const int x, const int y, const float clutter, const int seed);
 
 };

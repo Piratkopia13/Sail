@@ -45,8 +45,6 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 	cmdList->RSSetScissorRects(1, m_context->getScissorRect());
 	m_context->prepareToRender(cmdList.Get());
 
-	int meshIndex = 100; // TODO: shoule be able to set this to zero without breaking stuff right??
-
 	// TODO: optimize!
 	for (auto& renderCommand : commandQueue) {
 		auto& vbuffer = static_cast<DX12VertexBuffer&>(renderCommand.model.mesh->getVertexBuffer());
@@ -55,9 +53,8 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 			continue;
 		}
 		auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(0));
-		if (tex && !tex->hasBeenInitialized()) {
-			tex->initBuffers(cmdList.Get(), meshIndex);
-			meshIndex++;
+		if (tex) {
+			tex->initBuffers(cmdList.Get());
 		}
 	}
 
@@ -68,16 +65,15 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
 	
 	for (auto& command : commandQueue) {
-		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.model.mesh->getMaterial()->getShader()->getPipeline());
-		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
+		ShaderPipeline* shaderPipeline = command.model.mesh->getMaterial()->getShader()->getPipeline();
+		shaderPipeline->bind(cmdList.Get());
 
 		// Used in most shaders
-		shaderPipeline->trySetCBufferVar_new("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), meshIndex);
-		shaderPipeline->trySetCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
-		shaderPipeline->trySetCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
+		shaderPipeline->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
+		shaderPipeline->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
+		shaderPipeline->trySetCBufferVar("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4));
 
-		static_cast<DX12Mesh*>(command.model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);
-		meshIndex++;
+		command.model.mesh->draw(*this, cmdList.Get());
 	}
 
 	// Lastly - transition back buffer to present
@@ -85,7 +81,7 @@ void DX12ParticleRenderer::present(PostProcessPipeline* postProcessPipeline, Ren
 	// Close command list
 	cmdList->Close();
 
-	m_context->executeCommandLists({m_command.list.Get()});
+	m_context->getDirectQueue()->executeCommandLists({m_command.list.Get()});
 }
 
 bool DX12ParticleRenderer::onEvent(const Event& event) {

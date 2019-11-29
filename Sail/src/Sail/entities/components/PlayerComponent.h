@@ -8,4 +8,10 @@ class PlayerComponent : public Component<PlayerComponent> {
 public:
 	PlayerComponent() {}
 	virtual ~PlayerComponent() {}
+
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+#endif
 };

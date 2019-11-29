@@ -14,12 +14,12 @@ public:
 
 	// initBuffers is called once during its first bind
 	// It is used to create resource objects that needs an open command list
-	void initBuffers(ID3D12GraphicsCommandList4* cmdList, int meshIndex);
+	void initBuffers(ID3D12GraphicsCommandList4* cmdList);
 	bool hasBeenInitialized() const;
 	ID3D12Resource1* getResource() const;
 
 private:
-	void generateMips(ID3D12GraphicsCommandList4* cmdList, int meshIndex);
+	void generateMips(ID3D12GraphicsCommandList4* cmdList);
 
 private:
 	static const unsigned int MIP_LEVELS = 4;
@@ -27,7 +27,10 @@ private:
 	DX12API* context;
 	TextureData& m_textureData;
 	D3D12_RESOURCE_DESC m_textureDesc;
+
 	wComPtr<ID3D12Resource1> m_textureUploadBuffer;
+	DX12API::CommandQueue* m_queueUsedForUpload;
+	UINT64 m_initFenceVal;
 
 	std::mutex m_initializeMutex;
 	bool m_isInitialized;

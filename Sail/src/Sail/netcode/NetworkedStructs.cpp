@@ -2,5 +2,12 @@
 #include "NetworkedStructs.h"
 
 namespace Netcode {
-	std::atomic<ComponentID> gNetworkIDCounter = 0;
+
+	/* Special values:
+	   0: not initialized
+	   1: used for the player's ComponentID
+	   2: used for the player's gun's ComponentID
+	   3: used for the player's torch's ComponentID
+	*/
+	std::atomic<ComponentID> gNetworkIDCounter = RESET_VALUE;
 }

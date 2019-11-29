@@ -116,12 +116,16 @@ void NetworkSenderSystem::update() {
 			continue;
 		}
 
-		sendToOthers(nsc->m_id);                // ComponentID    
-		sendToOthers(nsc->m_entityType);        // Entity type
-		sendToOthers(nsc->m_dataTypes.size());  // NrOfMessages
+		// Create a copy of the message types that are currently in the sender component so that we can make changes to 
+		// the sender component without corrupting the packet that we're writing right now.
+		const std::vector<Netcode::MessageType> messages = nsc->m_dataTypes;
+
+		sendToOthers(nsc->m_id);         // ComponentID    
+		sendToOthers(nsc->m_entityType); // Entity type
+		sendToOthers(messages.size());   // NrOfMessages
 
 		// Per type of data
-		for (auto& messageType : nsc->m_dataTypes) {
+		for (auto& messageType : messages) {
 			sendToOthers(messageType);          // Current MessageType
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 			out << "SenderComp: " << Netcode::MessageNames[(int)(messageType) - 1] << "\n";
@@ -191,7 +195,7 @@ void NetworkSenderSystem::queueEvent(NetworkSenderEvent* event) {
 
 #ifdef DEVELOPMENT
 	// Don't send broken events to others or to yourself
-	if (event->type < Netcode::MessageType::CREATE_NETWORKED_PLAYER || event->type >= Netcode::MessageType::EMPTY) {
+	if (event->type < Netcode::MessageType::DESTROY_ENTITY || event->type >= Netcode::MessageType::EMPTY) {
 		SAIL_LOG_ERROR("Attempted to send invalid message\n");
 		return;
 	}
@@ -210,6 +214,19 @@ void NetworkSenderSystem::pushDataToBuffer(const std::string& data) {
 	std::lock_guard<std::mutex> lock(m_forwardBufferLock);
 	m_HOSTONLY_dataToForward.push(data);
 }
+
+#ifdef DEVELOPMENT
+unsigned int NetworkSenderSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	size += m_eventQueue.size() * sizeof(NetworkSenderEvent*);
+	const size_t queueSize = m_HOSTONLY_dataToForward.size();
+	size += queueSize * sizeof(std::string);
+	if (queueSize) {
+		size += queueSize * m_HOSTONLY_dataToForward.front().capacity() * sizeof(unsigned char);		// Approximate string length
+	}
+	return size;
+}
+#endif
 
 // TODO: Test this to see if it's actually needed or not
 void NetworkSenderSystem::stop() {
@@ -246,7 +263,7 @@ void NetworkSenderSystem::stop() {
 	}
 }
 
-void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar) {
+void NetworkSenderSystem::writeMessageToArchive(const Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar) {
 	// Package it depending on the type
 	// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 	switch (messageType) {
@@ -255,6 +272,9 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	{
 		ar(e->getComponent<AnimationComponent>()->animationIndex);
 		ar(e->getComponent<AnimationComponent>()->animationTime);
+
+
+		ar(e->getComponent<AnimationComponent>()->pitch);
 	}
 	break; 
 	case Netcode::MessageType::CHANGE_ABSOLUTE_POS_AND_ROT:
@@ -322,9 +342,19 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 	case Netcode::MessageType::UPDATE_SANITY:
 	{
 		SanityComponent* ic = e->getComponent<SanityComponent>();
-		if (ic) {
-			ar(ic->sanity);
-		}
+		ar(ic->sanity);
+	}
+	break;
+	case Netcode::MessageType::UPDATE_PROJECTILE_ONCE:
+	{
+		TransformComponent* tc = e->getComponent<TransformComponent>();
+		MovementComponent* mc = e->getComponent<MovementComponent>();
+		
+		ArchiveHelpers::saveVec3(ar, tc->getCurrentTransformState().m_translation);
+		ArchiveHelpers::saveVec3(ar, mc->velocity);
+
+		// Only send this message when their is a collision
+		e->getComponent<NetworkSenderComponent>()->removeMessageType(Netcode::MessageType::UPDATE_PROJECTILE_ONCE);
 	}
 	break;
 	default:
@@ -336,10 +366,6 @@ void NetworkSenderSystem::writeMessageToArchive(Netcode::MessageType& messageTyp
 void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive& ar) {
 	ar(event->type); // Send the event-type
 
-	if ((int)event->type == 85) {
-		int asdf = 3;
-	}
-
 	// NOTE: Please keep this switch in alphabetical order (at least for the first word)
 	switch (event->type) {
 	case Netcode::MessageType::CANDLE_HELD_STATE:
@@ -350,16 +376,6 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->isHeld);
 	}
 	break;
-	case Netcode::MessageType::CREATE_NETWORKED_PLAYER:
-	{
-		Netcode::MessageCreatePlayer* data = static_cast<Netcode::MessageCreatePlayer*>(event->data);
-
-		ar(data->playerCompID);
-		ar(data->candleCompID);
-		ar(data->gunCompID);
-		ArchiveHelpers::saveVec3(ar, data->position);
-	}
-	break;
 	case Netcode::MessageType::ENABLE_SPRINKLERS:
 	{
 		Netcode::MessageHitBySprinkler* data = static_cast<Netcode::MessageHitBySprinkler*>(event->data);
@@ -368,15 +384,18 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	case Netcode::MessageType::ENDGAME_STATS:
 	{
 		GameDataTracker* dgtp = &GameDataTracker::getInstance();
-		std::map<Netcode::PlayerID, HostStatsPerPlayer> tmpPlayerMap = dgtp->getPlayerDataMap();
+		const std::map<Netcode::PlayerID, HostStatsPerPlayer> tmpPlayerMap = dgtp->getPlayerDataMap();
 		// Send player count to clients for them to loop following data
 		ar(tmpPlayerMap.size());
 
 		// Send all per player data. Match this on the reciever end
 		for (auto player = tmpPlayerMap.begin(); player != tmpPlayerMap.end(); ++player) {
 			ar(player->first);
-			ar(player->second.nKills);
 			ar(player->second.placement);
+			ar(player->second.nKills);
+			ar(player->second.nDeaths);
+			ar(player->second.damage);
+			ar(player->second.damageTaken);
 		}
 
 		// Send all specific data. The host has processed data from all clients and will 
@@ -423,7 +442,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		Netcode::MessagePlayerDied* data = static_cast<Netcode::MessagePlayerDied*>(event->data);
 
 		ar(data->playerWhoDied); // Send
-		ar(data->playerWhoFired);
+		ar(data->killingEntity);
 	}
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED:
@@ -485,6 +504,19 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->health);
 	}
 	break;
+	case Netcode::MessageType::SUBMIT_WATER_POINTS:
+	{
+		Netcode::MessageSubmitWaterPoints* data = static_cast<Netcode::MessageSubmitWaterPoints*>(event->data);
+		
+		size_t nrOfPoints = data->points.size();
+
+		ar(nrOfPoints); // Tell the receiver how many points they should receive
+
+		for (size_t i = 0; i < nrOfPoints; i++) {
+			ArchiveHelpers::saveVec3(ar, data->points[i]); // Send all points to the receiver
+		}
+	}
+	break;
 	case Netcode::MessageType::SPAWN_PROJECTILE:
 	{
 		Netcode::MessageSpawnProjectile* data = static_cast<Netcode::MessageSpawnProjectile*>(event->data);
@@ -493,13 +525,6 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ArchiveHelpers::saveVec3(ar, data->velocity);
 		ar(data->projectileComponentID);
 		ar(data->ownerPlayerComponentID);
-	}
-	break;
-	case Netcode::MessageType::WATER_HIT_PLAYER:
-	{
-		Netcode::MessageWaterHitPlayer* data = static_cast<Netcode::MessageWaterHitPlayer*>(event->data);
-
-		ar(data->playerWhoWasHitID);
 	}
 	break;
 	case Netcode::MessageType::START_THROWING:
@@ -512,6 +537,14 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 	{
 		Netcode::MessageStopThrowing* data = static_cast<Netcode::MessageStopThrowing*>(event->data);
 		ar(data->playerCompID); // Send
+	}
+	break;
+	case Netcode::MessageType::WATER_HIT_PLAYER:
+	{
+		Netcode::MessageWaterHitPlayer* data = static_cast<Netcode::MessageWaterHitPlayer*>(event->data);
+
+		ar(data->playerWhoWasHitID);
+		ar(data->projectileThatHitID);
 	}
 	break;
 	default:

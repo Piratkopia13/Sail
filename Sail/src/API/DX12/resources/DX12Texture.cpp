@@ -13,6 +13,7 @@ Texture* Texture::Create(const std::string& filename) {
 DX12Texture::DX12Texture(const std::string& filename) 
 	: m_isInitialized(false)
 	, m_textureData(getTextureData(filename))
+	, m_initFenceVal(UINT64_MAX)
 {
 	context = Application::getInstance()->getAPI<DX12API>();
 	// Dont create one resource per swap buffer
@@ -45,18 +46,30 @@ DX12Texture::DX12Texture(const std::string& filename)
 
 	// Dont allow UAV access
 	uavHeapCDHs[0] = {0};
-
 }
 
 DX12Texture::~DX12Texture() {
 
 }
 
-void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList, int meshIndex) {
-	//The lock_guard will make sure multiple threads wont try to initialize the same texture
+void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
+	// This method is called at least once every frame that this texture is used for rendering
+
+	// The lock_guard will make sure multiple threads wont try to initialize the same texture
 	std::lock_guard<std::mutex> lock(m_initializeMutex);
-	if (m_isInitialized)
+
+	if (m_isInitialized) {
+		// Release the upload heap as soon as the texture has been uploaded to the GPU
+		if (m_textureUploadBuffer && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
+			m_textureUploadBuffer.ReleaseAndGetAddressOf();
+
+			// Generate mip maps
+			// This waits until the texture data is uploaded to the default heap since the generator reads from that source
+			DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
+			generateMips(cmdList);
+		}
 		return;
+	}
 
 	UINT64 textureUploadBufferSize;
 	// this function gets the size an upload buffer needs to be to upload a texture to the gpu.
@@ -65,7 +78,6 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList, int meshIndex
 	context->getDevice()->GetCopyableFootprints(&m_textureDesc, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
 
 	// Create the upload heap
-	// TODO: release the upload heap when it has been copied to the default buffer
 	// This could be done in a buffer manager owned by dx12api
 	m_textureUploadBuffer.Attach(DX12Utils::CreateBuffer(context->getDevice(), textureUploadBufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 	m_textureUploadBuffer->SetName(L"Texture upload buffer");
@@ -77,12 +89,17 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList, int meshIndex
 	// Copy the upload buffer contents to the default heap using a helper method from d3dx12.h
 	DX12Utils::UpdateSubresources(cmdList, textureDefaultBuffers[0].Get(), m_textureUploadBuffer.Get(), 0, 0, 1, &textureData);
 	//transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE); // Uncomment if generateMips is disabled
-
-	DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
-
-	generateMips(cmdList, meshIndex);
+	
+	auto type = cmdList->GetType();
+	m_queueUsedForUpload = (type == D3D12_COMMAND_LIST_TYPE_DIRECT) ? context->getDirectQueue() : context->getComputeQueue();
+	// Schedule a signal to be called directly after this command list has executed
+	// This allows us to know when the texture has been uploaded to the GPU
+	m_queueUsedForUpload->scheduleSignal([this](UINT64 signaledValue) {
+		m_initFenceVal = signaledValue;
+	});
 
 	m_isInitialized = true;
+
 }
 
 bool DX12Texture::hasBeenInitialized() const {
@@ -93,19 +110,20 @@ ID3D12Resource1* DX12Texture::getResource() const {
 	return textureDefaultBuffers[0].Get();
 }
 
-void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshIndex) {
+void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 	auto& mipsShader = Application::getInstance()->getResourceManager().getShaderSet<GenerateMipsComputeShader>();
 	DX12ComputeShaderDispatcher csDispatcher;
 	const auto& settings = mipsShader.getComputeSettings();
 	csDispatcher.begin(cmdList);
 
-	auto* dxPipeline = static_cast<DX12ShaderPipeline*>(mipsShader.getPipeline());
+	auto* dxPipeline = mipsShader.getPipeline();
 
 	// TODO: read this from texture data
 	bool isSRGB = false;
-	dxPipeline->setCBufferVar_new("IsSRGB", &isSRGB, sizeof(bool), meshIndex);
 
 	for (uint32_t srcMip = 0; srcMip < m_textureDesc.MipLevels - 1u;) {
+		dxPipeline->setCBufferVar("IsSRGB", &isSRGB, sizeof(bool));
+		
 		uint64_t srcWidth = m_textureDesc.Width >> srcMip;
 		uint32_t srcHeight = m_textureDesc.Height >> srcMip;
 		uint32_t dstWidth = static_cast<uint32_t>(srcWidth >> 1);
@@ -116,7 +134,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 		// 0b10(2): Width is even, height is odd.
 		// 0b11(3): Both width and height are odd.
 		unsigned int srcDimension = (srcHeight & 1) << 1 | (srcWidth & 1);
-		dxPipeline->setCBufferVar_new("SrcDimension", &srcDimension, sizeof(unsigned int), meshIndex);
+		dxPipeline->setCBufferVar("SrcDimension", &srcDimension, sizeof(unsigned int));
 
 		// How many mipmap levels to compute this pass (max 4 mips per pass)
 		DWORD mipCount;
@@ -141,9 +159,9 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 
 		glm::vec2 texelSize = glm::vec2(1.0f / (float)dstWidth, 1.0f / (float)dstHeight);
 
-		dxPipeline->setCBufferVar_new("SrcMipLevel", &srcMip, sizeof(unsigned int), meshIndex);
-		dxPipeline->setCBufferVar_new("NumMipLevels", &mipCount, sizeof(unsigned int), meshIndex);
-		dxPipeline->setCBufferVar_new("TexelSize", &texelSize, sizeof(glm::vec2), meshIndex);
+		dxPipeline->setCBufferVar("SrcMipLevel", &srcMip, sizeof(unsigned int));
+		dxPipeline->setCBufferVar("NumMipLevels", &mipCount, sizeof(unsigned int));
+		dxPipeline->setCBufferVar("TexelSize", &texelSize, sizeof(glm::vec2));
 
 		const auto& heap = context->getComputeGPUDescriptorHeap();
 		unsigned int indexStart = heap->getAndStepIndex(20); // TODO: read this from root parameters
@@ -177,7 +195,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList, int meshInde
 		GenerateMipsComputeShader::Input input;
 		input.threadGroupCountX = (unsigned int)glm::ceil(dstWidth * settings->threadGroupXScale);
 		input.threadGroupCountY = (unsigned int)glm::ceil(dstHeight * settings->threadGroupYScale);
-		csDispatcher.dispatch(mipsShader, input, meshIndex, cmdList);
+		csDispatcher.dispatch(mipsShader, input, cmdList);
 
 		// Transition all subresources to the state that the texture think it is in
 		for (uint32_t mip = 0; mip < mipCount; ++mip) {

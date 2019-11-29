@@ -63,53 +63,88 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	auto fenceVal = m_context->getDirectQueue()->signal();
 	m_context->getComputeQueue()->wait(fenceVal);
 
-	std::sort(m_metaballs.begin(), m_metaballs.end(),
-		[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
+
+	int gpuGroupIndex = 0;
+	int gpuGroupStartOffset = 0;
+	int nMetaballs = 0;
+	bool removeGroups = false;
+	std::vector<DXRBase::MetaballGroup*> metaballGroups_vec;
+
+	for (auto& group : m_metaballGroups_map) {
+		group.second.averageDistToCamera /= group.second.balls.size();
+		metaballGroups_vec.push_back(&group.second);
+	}
+
+	//Sort groups by dist to camera
+	std::sort(metaballGroups_vec.begin(), metaballGroups_vec.end(),
+		[](const DXRBase::MetaballGroup* a, const DXRBase::MetaballGroup* b) -> const bool
 		{
-			return a.distToCamera < b.distToCamera;
+			return a->averageDistToCamera < b->averageDistToCamera;
 		});
 
-	if (m_metaballs.size() > 0) {
-		commandQueue.emplace_back();
-		RenderCommand& cmd = commandQueue.back();
-		cmd.type = RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
-		cmd.flags = Renderer::MESH_DYNAMIC;
-		cmd.nonModel.material = nullptr;
-		cmd.transform = glm::identity<glm::mat4>();
-		cmd.transform = glm::transpose(cmd.transform);
-		cmd.hasUpdatedSinceLastRender.resize(m_context->getNumGPUBuffers(), true);
+	for (auto& group : metaballGroups_vec) {
+		if (gpuGroupIndex >= MAX_NUM_METABALL_GROUPS || nMetaballs >= MAX_NUM_METABALLS) {
+			removeGroups = true;
+			break;
+		}
+
+		//Sort Metaballs by dist to camera
+		std::sort(group->balls.begin(), group->balls.end(),
+			[](const DXRBase::Metaball& a, const DXRBase::Metaball& b) -> const bool
+			{
+				return a.distToCamera < b.distToCamera;
+			});
 
 		//Calculate the needed size of m_next_metaball_aabb.
-		glm::vec3& pos = m_metaballs.front().pos;
-		m_nextMetaballAabb.MaxX = pos.x + METABALL_RADIUS;
-		m_nextMetaballAabb.MaxY = pos.y + METABALL_RADIUS;
-		m_nextMetaballAabb.MaxZ = pos.z + METABALL_RADIUS;
-		m_nextMetaballAabb.MinX = pos.x - METABALL_RADIUS;
-		m_nextMetaballAabb.MinY = pos.y - METABALL_RADIUS;
-		m_nextMetaballAabb.MinZ = pos.z - METABALL_RADIUS;
-		for (size_t i = 1; i < m_metaballs.size() && i < MAX_NUM_METABALLS; i++) {
-			glm::vec3& pos = m_metaballs[i].pos;
+		glm::vec3& pos = group->balls.front().pos;
 
-			if (m_nextMetaballAabb.MaxX < pos.x + METABALL_RADIUS) {
-				m_nextMetaballAabb.MaxX = pos.x + METABALL_RADIUS;
+		D3D12_RAYTRACING_AABB nextMetaballAabb;
+		nextMetaballAabb.MaxX = pos.x + METABALL_RADIUS;
+		nextMetaballAabb.MaxY = pos.y + METABALL_RADIUS;
+		nextMetaballAabb.MaxZ = pos.z + METABALL_RADIUS;
+		nextMetaballAabb.MinX = pos.x - METABALL_RADIUS;
+		nextMetaballAabb.MinY = pos.y - METABALL_RADIUS;
+		nextMetaballAabb.MinZ = pos.z - METABALL_RADIUS;
+		nMetaballs++;
+		size_t size = group->balls.size();
+		for (size_t i = 1; i < size; i++) {
+			if (nMetaballs >= MAX_NUM_METABALLS) {
+				group->balls.erase(group->balls.begin() + i, group->balls.end());
+				break;
 			}
-			if (m_nextMetaballAabb.MaxY < pos.y + METABALL_RADIUS) {
-				m_nextMetaballAabb.MaxY = pos.y + METABALL_RADIUS;
+			glm::vec3& pos = group->balls[i].pos;
+
+			if (nextMetaballAabb.MaxX < pos.x + METABALL_RADIUS) {
+				nextMetaballAabb.MaxX = pos.x + METABALL_RADIUS;
 			}
-			if (m_nextMetaballAabb.MaxZ < pos.z + METABALL_RADIUS) {
-				m_nextMetaballAabb.MaxZ = pos.z + METABALL_RADIUS;
+			if (nextMetaballAabb.MaxY < pos.y + METABALL_RADIUS) {
+				nextMetaballAabb.MaxY = pos.y + METABALL_RADIUS;
+			}
+			if (nextMetaballAabb.MaxZ < pos.z + METABALL_RADIUS) {
+				nextMetaballAabb.MaxZ = pos.z + METABALL_RADIUS;
 			}
 
-			if (m_nextMetaballAabb.MinX > pos.x - METABALL_RADIUS) {
-				m_nextMetaballAabb.MinX = pos.x - METABALL_RADIUS;
+			if (nextMetaballAabb.MinX > pos.x - METABALL_RADIUS) {
+				nextMetaballAabb.MinX = pos.x - METABALL_RADIUS;
 			}
-			if (m_nextMetaballAabb.MinY > pos.y - METABALL_RADIUS) {
-				m_nextMetaballAabb.MinY = pos.y - METABALL_RADIUS;
+			if (nextMetaballAabb.MinY > pos.y - METABALL_RADIUS) {
+				nextMetaballAabb.MinY = pos.y - METABALL_RADIUS;
 			}
-			if (m_nextMetaballAabb.MinZ > pos.z - METABALL_RADIUS) {
-				m_nextMetaballAabb.MinZ = pos.z - METABALL_RADIUS;
+			if (nextMetaballAabb.MinZ > pos.z - METABALL_RADIUS) {
+				nextMetaballAabb.MinZ = pos.z - METABALL_RADIUS;
 			}
+
+			nMetaballs++;
 		}
+
+		group->aabb = nextMetaballAabb;
+		group->index = gpuGroupIndex++;
+		group->gpuGroupStartOffset = gpuGroupStartOffset;
+		gpuGroupStartOffset += group->balls.size();
+	}
+	//Remove groups that do not fit in memory
+	if (removeGroups) {
+		metaballGroups_vec.erase(metaballGroups_vec.begin() + gpuGroupIndex, metaballGroups_vec.end());
 	}
 
 	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_DXR_SHADER)) {
@@ -129,16 +164,12 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}
 
 	if (camera && lightSetup) {
-		auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
-
-		auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
-		auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
-		m_dxr.updateSceneData(*camera, *lightSetup, m_metaballs, m_nextMetaballAabb, mapSize, mapStart, teamColors, (postProcessPipeline) ? false : true);
+		m_dxr.updateSceneData(*camera, *lightSetup, metaballGroups_vec, teamColors, (postProcessPipeline) ? false : true);
 	}
 
 	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateWaterData();
-	m_dxr.updateAccelerationStructures(commandQueue, cmdListCompute.Get());
+	m_dxr.updateAccelerationStructures(commandQueue, cmdListCompute.Get(), metaballGroups_vec);
 	m_dxr.dispatch(m_outputTexture.get(), m_outputBloomTexture.get(), cmdListCompute.Get());
 	// AS has now been updated this frame, reset flag
 	for (auto& renderCommand : commandQueue) {
@@ -146,7 +177,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	}
 
 	// TODO: move this to a graphics queue when current cmdList is executed on the compute queue
-
 	RenderableTexture* renderOutput = m_outputTexture.get();
 	if (postProcessPipeline) {
 		// Run post processing
@@ -161,7 +191,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	// Execute compute command list
 	cmdListCompute->Close();
-	m_context->executeCommandLists({ cmdListCompute.Get() }, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	m_context->getComputeQueue()->executeCommandLists({ cmdListCompute.Get() });
 	// Place a signal to syncronize copying the raytracing output to the backbuffer when it is available
 	fenceVal = m_context->getComputeQueue()->signal();
 
@@ -177,12 +207,12 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_context->getDirectQueue()->wait(fenceVal);
 	// Execute direct command list
 	cmdListDirect->Close();
-	m_context->executeCommandLists({ cmdListDirect.Get() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	m_context->getDirectQueue()->executeCommandLists({ cmdListDirect.Get() });
 }
 
 void DX12RaytracingRenderer::begin(Camera* camera) {
 	Renderer::begin(camera);
-	m_metaballs.clear();
+	m_metaballGroups_map.clear();
 }
 
 bool DX12RaytracingRenderer::onEvent(const Event& event) {
@@ -209,7 +239,7 @@ void DX12RaytracingRenderer::submit(Mesh* mesh, const glm::mat4& modelMatrix, Re
 	commandQueue.push_back(cmd);
 }
 
-void DX12RaytracingRenderer::submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) {
+void DX12RaytracingRenderer::submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags, int group) {
 	assert(type != RenderCommandType::RENDER_COMMAND_TYPE_MODEL);
 
 	if (type == RenderCommandType::RENDER_COMMAND_TYPE_NON_MODEL_METABALL) {
@@ -217,7 +247,8 @@ void DX12RaytracingRenderer::submitMetaball(RenderCommandType type, Material* ma
 		ball.pos = pos;
 		ball.distToCamera = glm::length(ball.pos - camera->getPosition());
 
-		m_metaballs.emplace_back(ball);
+		m_metaballGroups_map[group].balls.emplace_back(ball);
+		m_metaballGroups_map[group].averageDistToCamera += ball.distToCamera;
 	}
 }
 
@@ -249,6 +280,10 @@ void DX12RaytracingRenderer::updateMetaballAABB() {
 
 void DX12RaytracingRenderer::setGBufferInputs(DX12RenderableTexture** inputs) {
 	m_dxr.setGBufferInputs(inputs);
+}
+
+DXRBase* DX12RaytracingRenderer::getDXRBase() {
+	return &m_dxr;
 }
 
 bool DX12RaytracingRenderer::onResize(const WindowResizeEvent& event) {

@@ -79,7 +79,7 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		commandlists[i] = m_command[i].list.Get();
 	}
-	m_context->executeCommandLists(commandlists, nThreadsToUse);
+	m_context->getDirectQueue()->executeCommandLists(commandlists, nThreadsToUse);
 #else
 	recordCommands(0, frameIndex, 0, count, count, 1);
 	m_context->executeCommandLists({ m_command[0].list.Get() });
@@ -117,7 +117,6 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 		// Init all textures - this needs to be done on ONE thread
 		// TODO: optimize!
-		int meshIndex = 0;
 		for (auto& renderCommand : commandQueue) {
 			for (int i = 0; i < 3; i++) {
 				if (renderCommand.type != RENDER_COMMAND_TYPE_MODEL) {
@@ -125,9 +124,8 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 				}
 
 				auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
-				if (tex && !tex->hasBeenInitialized()) {
-					tex->initBuffers(cmdList.Get(), meshIndex);
-					meshIndex++;
+				if (tex) {
+					tex->initBuffers(cmdList.Get());
 				}
 			}
 		}
@@ -160,10 +158,10 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 
 	// TODO: Sort meshes according to material
-	unsigned int meshIndex = start;
+	unsigned int commandIndex = start;
 	RenderCommand* command;
-	for (int i = 0; i < nCommands && meshIndex < oobMax; i++, meshIndex++ /*RenderCommand& command : commandQueue*/) {
-		command = &commandQueue[meshIndex];
+	for (int i = 0; i < nCommands && commandIndex < oobMax; i++, commandIndex++ /*RenderCommand& command : commandQueue*/) {
+		command = &commandQueue[commandIndex];
 		if (command->type != RENDER_COMMAND_TYPE_MODEL) {
 			continue;
 		}
@@ -171,23 +169,23 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command->model.mesh->getMaterial()->getShader()->getPipeline());
 
 		shaderPipeline->checkBufferSizes(oobMax); //Temp fix to expand constant buffers if the scene contain to many objects
-		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
+		shaderPipeline->bind(cmdList.Get());
 
 		// Used in most shaders
-		shaderPipeline->trySetCBufferVar_new("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4), meshIndex);
-		shaderPipeline->trySetCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
-		shaderPipeline->trySetCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
+		shaderPipeline->trySetCBufferVar("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4));
+		shaderPipeline->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
+		shaderPipeline->trySetCBufferVar("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4));
 
-		shaderPipeline->trySetCBufferVar_new("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), meshIndex);
+		shaderPipeline->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 
 		if (lightSetup) {
 			auto& dlData = lightSetup->getDirLightData();
 			auto& plData = lightSetup->getPointLightsData();
-			shaderPipeline->trySetCBufferVar_new("dirLight", &dlData, sizeof(dlData), meshIndex);
-			shaderPipeline->trySetCBufferVar_new("pointLights", &plData, sizeof(plData), meshIndex);
+			shaderPipeline->trySetCBufferVar("dirLight", &dlData, sizeof(dlData));
+			shaderPipeline->trySetCBufferVar("pointLights", &plData, sizeof(plData));
 		}
 
-		static_cast<DX12Mesh*>(command->model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);
+		command->model.mesh->draw(*this, cmdList.Get());
 	}
 
 	// Lastly - transition back buffer to present

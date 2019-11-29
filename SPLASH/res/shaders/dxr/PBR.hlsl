@@ -71,7 +71,12 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
 				continue;
 			}
 
-			float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
+			// Standard attenuation
+			// float attenuation = 1.f / (p.attConstant + p.attLinear * distance + p.attQuadratic * distance * distance);
+			// Tweaked UE4 attenuation
+			float lightRadius = 10.f;
+			float attenuation = pow(saturate(1.f - pow(distance/lightRadius, 4.f)), 2.f) / (distance * distance + 1.f);
+			attenuation *= 8.f;
 			float3 radiance = p.color * attenuation;
 
 			float3 F = fresnelSchlick(max(dot(H, V), 0.0f), F0);
@@ -179,7 +184,7 @@ float4 pbrShade(float3 worldPosition, float3 worldNormal, float3 invViewDir, flo
         ray.Direction = R;
         ray.TMin = 0.0001;
         ray.TMax = 1000;
-		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTACE_MASK_DEFAULT | INSTACE_MASK_METABALLS, 0, 0, 0, ray, payload);
+		TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_DEFAULT | INSTANCE_MASK_METABALLS, 0, 0, 0, ray, payload);
         float3 prefilteredColor = payload.color.rgb;
         // float3 prefilteredColor = 0.5f;
 

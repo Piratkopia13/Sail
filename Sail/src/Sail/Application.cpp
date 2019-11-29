@@ -68,9 +68,11 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	m_rendererWrapper.initialize();
 	ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	ECS::Instance()->createSystem<MetaballSubmitSystem<TransformComponent>>();
-	ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
+	ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInActiveGameComponent>>();
+	ECS::Instance()->createSystem<ModelSubmitSystem<RenderInActiveGameComponent>>();
 	ECS::Instance()->createSystem<GUISubmitSystem>();
+	ECS::Instance()->createSystem<LevelSystem>()->generateMap();
+
 
 
 
@@ -82,10 +84,14 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
-
+	m_chatWindow = std::make_unique<ChatWindow>(true);
+	ImVec2 size(400, 300);
+	m_chatWindow->setSize(size);
+	m_chatWindow->setPosition(ImVec2(30,m_window->getWindowHeight()-size.y-30));
 }
 
 Application::~Application() {
+	m_settingStorage.saveToFile("res/data/settings.saildata");
 	delete Input::GetInstance();
 }
 
@@ -248,6 +254,10 @@ ConsoleCommands& Application::getConsole() {
 
 SettingStorage& Application::getSettings() {
 	return m_settingStorage;
+}
+
+ChatWindow* Application::getChatWindow() {
+	return m_chatWindow.get();
 }
 
 Camera* Application::getCurrentCamera() const {

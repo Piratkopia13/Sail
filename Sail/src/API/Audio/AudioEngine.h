@@ -76,8 +76,10 @@ public:
 	void startSpecificSound(int index, float volume = 1.0f);
 	void stopSpecificSound(int index);
 	void stopSpecificStream(int index);
+	void pause_unpause_AllStreams(bool pauseTRUE_unpauseFALSE);
 	void stopAllStreams();
 	void stopAllSounds();
+	void pauseAllSounds();
 
 	float getSoundVolume(int index);
 	float getStreamVolume(int index);
@@ -92,6 +94,16 @@ public:
 	std::atomic<bool> m_streamLocks[STREAMED_SOUNDS_COUNT];
 
 	void updateProjectileLowPass(float frequency, int indexToSource);
+
+	void startDeathSound(const std::string& filename, float volume);
+	void updateDeathvolume(float volume);
+	void startInsanitySound(const std::string& filename, float volume);
+	void updateInsanityVolume(float volume);
+
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const;
+	void logDebugData();
+#endif
 
 private: 
 	bool m_isRunning = true;
@@ -109,14 +121,19 @@ private:
 	soundStruct m_sound[SOUND_COUNT];
 	soundStruct m_stream[STREAMED_SOUNDS_COUNT];
 
+	soundStruct m_deathSound;
+	soundStruct m_insanitySound;
+
 	int m_currSoundIndex = 0;
 	float m_tempDistance = 0;
 	//std::atomic<int> m_currStreamIndex = 0;
 
 	void initialize();
+	void activateDebugLayer();
 
 	BYTE m_streamBuffers[MAX_BUFFER_COUNT][STREAMING_BUFFER_SIZE];
 	bool m_isStreaming[STREAMED_SOUNDS_COUNT];
+	bool m_isStreamPaused[STREAMED_SOUNDS_COUNT];
 	bool m_isFinished[STREAMED_SOUNDS_COUNT];
 	OVERLAPPED m_overlapped[STREAMED_SOUNDS_COUNT];
 

@@ -2,14 +2,15 @@
 #include "ParticleEmitterComponent.h"
 
 #include "Sail/Application.h"
-#include "Sail/graphics/shader/dxr/GBufferOutShader.h"
-#include "Sail/graphics/shader/dxr/GBufferOutShaderNoDepth.h"
-#include "API/DX12/DX12VertexBuffer.h"
-#include "API/DX12/DX12Utils.h"
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
+#include "API/DX12/DX12Utils.h"
+#include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/resources/DescriptorHeap.h"
 
-ParticleEmitterComponent::ParticleEmitterComponent() {
+ParticleEmitterComponent::ParticleEmitterComponent()
+	: m_hasBeenCreatedInSystem(false)
+{
+
 	size = 0.2f;
 	offset = { 0.f, 0.f, 0.f };
 	position = { 0.f, 0.f, 0.f };
@@ -26,33 +27,10 @@ ParticleEmitterComponent::ParticleEmitterComponent() {
 
 ParticleEmitterComponent::~ParticleEmitterComponent() {
 	delete[] m_cpuOutput;
-	delete[] m_physicsBufferDefaultHeap;
 	delete[] m_particleLife;
 }
 
 void ParticleEmitterComponent::init() {
-	m_particleShader = std::make_unique<ParticleComputeShader>();
-	m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
-	auto& gbufferShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
-	auto& inputLayout = gbufferShader.getPipeline()->getInputLayout();
-
-	m_outputVertexBufferSize = 6 * 1700;
-
-	auto& noDepthShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShaderNoDepth>();
-	m_model = std::make_unique<Model>(m_outputVertexBufferSize, &noDepthShader);
-
-	m_outputVertexBuffer = static_cast<DX12VertexBuffer*>(&m_model->getMesh(0)->getVertexBuffer());
-
-	auto* context = Application::getInstance()->getAPI<DX12API>();
-
-	m_particlePhysicsSize = 9 * 4; // 9 floats times 4 bytes
-
-	m_physicsBufferDefaultHeap = SAIL_NEW wComPtr<ID3D12Resource>[DX12API::NUM_GPU_BUFFERS];
-	for (UINT i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
-		m_physicsBufferDefaultHeap[i].Attach(DX12Utils::CreateBuffer(context->getDevice(), m_outputVertexBufferSize / 6 * m_particlePhysicsSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps));
-		m_physicsBufferDefaultHeap[i]->SetName(L"Particle Physics Default Resource Heap");
-	}
-
 	m_particleLife = SAIL_NEW std::vector<float>[DX12API::NUM_GPU_BUFFERS];
 	m_cpuOutput = SAIL_NEW CPUOutput[DX12API::NUM_GPU_BUFFERS];
 	for (unsigned int i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
@@ -65,7 +43,7 @@ void ParticleEmitterComponent::init() {
 	m_gpuUpdates = 0;
 }
 
-void ParticleEmitterComponent::syncWithGPUUpdate(unsigned int swapBufferIndex) {
+void ParticleEmitterComponent::syncWithGPUUpdate(unsigned int swapBufferIndex, unsigned int outputVertexBufferSize) {
 	// Remove
 	unsigned int numToRemove = (unsigned int)m_cpuOutput[swapBufferIndex].toRemove.size();
 
@@ -89,11 +67,23 @@ void ParticleEmitterComponent::syncWithGPUUpdate(unsigned int swapBufferIndex) {
 	m_particleLife[swapBufferIndex].erase(m_particleLife[swapBufferIndex].begin() + m_cpuOutput[swapBufferIndex].previousNrOfParticles - numToRemove, m_particleLife[swapBufferIndex].end());
 
 	// Add
-	unsigned int numToAdd = glm::min(glm::min((unsigned int)m_cpuOutput[swapBufferIndex].newParticles.size(), m_maxParticlesSpawnPerFrame), (unsigned int)(floor(m_outputVertexBufferSize / 6) - (m_cpuOutput[swapBufferIndex].previousNrOfParticles - numToRemove)));
+	unsigned int numToAdd = glm::min(glm::min((unsigned int)m_cpuOutput[swapBufferIndex].newParticles.size(), m_maxParticlesSpawnPerFrame), (unsigned int)(floor(outputVertexBufferSize / 6) - (m_cpuOutput[swapBufferIndex].previousNrOfParticles - numToRemove)));
 	for (unsigned int i = 0; i < numToAdd; i++) {
 		m_particleLife[swapBufferIndex].emplace_back();
 		m_particleLife[swapBufferIndex].back() = lifeTime - (m_cpuOutput[swapBufferIndex].lastFrameTime - m_cpuOutput[swapBufferIndex].newParticles[i].spawnTime);
 	}
+}
+
+bool ParticleEmitterComponent::hasBeenCreatedInSystem() {
+	return m_hasBeenCreatedInSystem;
+}
+
+void ParticleEmitterComponent::setAsCreatedInSystem() { 
+	m_hasBeenCreatedInSystem = true;
+}
+
+const std::string& ParticleEmitterComponent::getTextureName() const {
+	return m_textureName;
 }
 
 void ParticleEmitterComponent::spawnParticles(int particlesToSpawn) {
@@ -132,7 +122,7 @@ void ParticleEmitterComponent::updateTimers(float dt) {
 	spawnTimer += dt;
 }
 
-void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm::vec3& cameraPos) {
+void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm::vec3& cameraPos, EmitterData& data, ComputeShaderDispatcher& dispatcher) {
 	auto* context = Application::getInstance()->getAPI<DX12API>();
 
 	if (m_gpuUpdates < (int)(DX12API::NUM_GPU_BUFFERS * 2)) {
@@ -140,18 +130,16 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		float elapsedTime = m_timer.getTimeSince<float>(m_startTime) - m_cpuOutput[context->getSwapIndex()].lastFrameTime;
 		m_cpuOutput[context->getSwapIndex()].lastFrameTime += elapsedTime;
 		m_gpuUpdates++;
-	}
-	else {
-		m_outputVertexBuffer->init(cmdList);
+	} else {
+		data.outputVertexBuffer->init(cmdList);
 
-		m_dispatcher->begin(cmdList);
 
-		auto* settings = m_particleShader->getComputeSettings();
+		auto* settings = data.particleShader->getComputeSettings();
 
 		//----Compute shader constant buffer----
 		m_inputData.cameraPos = cameraPos;
 		m_inputData.previousNrOfParticles = m_cpuOutput[context->getSwapIndex()].previousNrOfParticles;
-		m_inputData.maxOutputVertices = m_outputVertexBufferSize;
+		m_inputData.maxOutputVertices = data.outputVertexBufferSize;
 		float elapsedTime = m_timer.getTimeSince<float>(m_startTime) - m_cpuOutput[context->getSwapIndex()].lastFrameTime;
 		m_inputData.frameTime = elapsedTime;
 		m_inputData.size = size;
@@ -178,7 +166,7 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		}
 
 		// Particles to add
-		unsigned int numPart = glm::min(glm::min((unsigned int)m_cpuOutput[context->getSwapIndex()].newParticles.size(), m_maxParticlesSpawnPerFrame), (unsigned int)(floor(m_outputVertexBufferSize / 6) - (m_cpuOutput[context->getSwapIndex()].previousNrOfParticles - numPartRem)));
+		unsigned int numPart = glm::min(glm::min((unsigned int)m_cpuOutput[context->getSwapIndex()].newParticles.size(), m_maxParticlesSpawnPerFrame), (unsigned int)(floor(data.outputVertexBufferSize / 6) - (m_cpuOutput[context->getSwapIndex()].previousNrOfParticles - numPartRem)));
 		m_inputData.numParticles = numPart;
 		for (unsigned int i = 0; i < numPart; i++) {
 			const NewParticleInfo* newParticle_i = &m_cpuOutput[context->getSwapIndex()].newParticles[i];
@@ -188,7 +176,7 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 			m_inputData.particles[i].spawnTime = m_cpuOutput[context->getSwapIndex()].lastFrameTime - newParticle_i->spawnTime;
 		}
 
-		m_particleShader->getPipeline()->setCBufferVar("inputBuffer", &m_inputData, sizeof(ComputeInput));
+		data.particleShader->getPipeline()->setCBufferVar("inputBuffer", &m_inputData, sizeof(ComputeInput));
 		//--------------------------------------
 
 		auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
@@ -198,11 +186,11 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 		uavDesc.Buffer.FirstElement = 0;
-		uavDesc.Buffer.NumElements = m_outputVertexBufferSize;
+		uavDesc.Buffer.NumElements = data.outputVertexBufferSize;
 		uavDesc.Buffer.StructureByteStride = 4 * 14; // TODO: replace with sizeof(Vertex)
-		context->getDevice()->CreateUnorderedAccessView(m_outputVertexBuffer->getBuffer(), nullptr, &uavDesc, cdh);
+		context->getDevice()->CreateUnorderedAccessView(data.outputVertexBuffer->getBuffer(), nullptr, &uavDesc, cdh);
 		// Transition to UAV access
-		DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		DX12Utils::SetResourceTransitionBarrier(cmdList, data.outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		//----Compute shader physics buffer----
 		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize();
@@ -210,43 +198,29 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 		uavDesc.Buffer.FirstElement = 0;
-		uavDesc.Buffer.NumElements = m_outputVertexBufferSize / 6;
-		uavDesc.Buffer.StructureByteStride = m_particlePhysicsSize;
-		context->getDevice()->CreateUnorderedAccessView(m_physicsBufferDefaultHeap[context->getSwapIndex()].Get(), nullptr, &uavDesc, cdh);
+		uavDesc.Buffer.NumElements = data.outputVertexBufferSize / 6;
+		uavDesc.Buffer.StructureByteStride = data.particlePhysicsSize;
+		context->getDevice()->CreateUnorderedAccessView(data.physicsBufferDefaultHeap[context->getSwapIndex()].Get(), nullptr, &uavDesc, cdh);
 		//-------------------------------------
 
-		m_dispatcher->dispatch(*m_particleShader, Shader::ComputeShaderInput(), 0, cmdList);
+		dispatcher.dispatch(*data.particleShader, Shader::ComputeShaderInput(), cmdList);
 
 		context->getComputeGPUDescriptorHeap()->getAndStepIndex(11);
 
 		// Transition to Cbuffer usage
-		DX12Utils::SetResourceTransitionBarrier(cmdList, m_outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+		DX12Utils::SetResourceTransitionBarrier(cmdList, data.outputVertexBuffer->getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 		//Sync cpu arrays with GPU
-		syncWithGPUUpdate(context->getSwapIndex());
+		syncWithGPUUpdate(context->getSwapIndex(), data.outputVertexBufferSize);
 
 		// Update nr of particles in this buffer and erase added and removed emitters from the queues
-		m_cpuOutput[context->getSwapIndex()].previousNrOfParticles = glm::min(m_cpuOutput[context->getSwapIndex()].previousNrOfParticles + numPart - numPartRem, m_outputVertexBufferSize / 6);
+		m_cpuOutput[context->getSwapIndex()].previousNrOfParticles = glm::min(m_cpuOutput[context->getSwapIndex()].previousNrOfParticles + numPart - numPartRem, data.outputVertexBufferSize / 6);
 
 		m_cpuOutput[context->getSwapIndex()].newParticles.erase(m_cpuOutput[context->getSwapIndex()].newParticles.begin(), m_cpuOutput[context->getSwapIndex()].newParticles.begin() + numPart);
 		m_cpuOutput[context->getSwapIndex()].toRemove.clear();
 	}
 }
 
-void ParticleEmitterComponent::submit() const {
-	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getParticleRenderer();
-	Renderer::RenderFlag flags = Renderer::MESH_DYNAMIC;
-	flags |= Renderer::IS_VISIBLE_ON_SCREEN;
-
-	renderer->submit(
-		m_model.get(),
-		glm::identity<glm::mat4>(),
-		flags,
-		1
-	);
-}
-
-void ParticleEmitterComponent::setTexture(std::string textureName) {
-	Application::getInstance()->getResourceManager().loadTexture(textureName);
-	m_model->getMesh(0)->getMaterial()->setAlbedoTexture(textureName);
+void ParticleEmitterComponent::setTexture(const std::string& textureName) {
+	m_textureName = textureName;
 }

@@ -35,8 +35,10 @@ public:
 		m_dataTypes.clear();
 	}
 
-	void addMessageType(Netcode::MessageType type) { 
-		m_dataTypes.push_back(type); 
+	void addMessageType(Netcode::MessageType type) {
+		if (!messageTypeAlreadyExists(type)) {
+			m_dataTypes.push_back(type); 
+		}
 	}
 
 	void removeMessageType(Netcode::MessageType type) {
@@ -68,6 +70,9 @@ public:
 	std::vector<Netcode::MessageType> m_dataTypes;
 
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this) + sizeof(Netcode::MessageType) * m_dataTypes.size();
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Text(std::string("m_id: " + std::to_string(m_id)).c_str());
 		ImGui::Text(std::string("m_entityType: " + (m_entityType == Netcode::EntityType::PLAYER_ENTITY) ? "PLAYER_ENTITY" : "MECHA_ENTITY").c_str());

@@ -86,6 +86,8 @@ void ImGuiHandler::addFonts() {
 
 
 	m_fonts["Beb20"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 20);
+	m_fonts["Beb24"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 24);
+	m_fonts["Beb27"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 27);
 	m_fonts["Beb30"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 30);
 	m_fonts["Beb40"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 40);
 	m_fonts["Beb50"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 50);

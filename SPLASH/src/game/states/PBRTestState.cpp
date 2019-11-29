@@ -68,8 +68,8 @@ PBRTestState::PBRTestState(StateStack& stack)
 	// Create systems for rendering
 	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<TransformComponent>>();
-	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem<TransformComponent>>();
+	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInActiveGameComponent>>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInActiveGameComponent>>();
 
 	// Create entity adder system
 	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
@@ -238,8 +238,10 @@ bool PBRTestState::fixedUpdate(float dt) {
 
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
-	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | "
-		+ Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
+#ifdef DEVELOPMENT
+	m_app->getWindow()->setWindowTitle("S.P.L.A.S.H.2.O | Development | "
+									   + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
+#endif
 
 	static float counter = 0.0f;
 	static float size = 1.0f;

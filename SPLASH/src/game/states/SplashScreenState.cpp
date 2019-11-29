@@ -16,6 +16,7 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 	m_input = Input::GetInstance();
 	m_app = Application::getInstance();
 
+	m_app->getResourceManager().loadTexture("splash_logo.tga");
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 }
 
@@ -109,6 +110,7 @@ bool SplashScreenState::loadModels(Application* app) {
 
 
 	textureThread.get();
+	rm->clearSceneData();
 	return true;
 }
 
@@ -207,6 +209,13 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/Clutter/ControlStation_Albedo.tga");
 	rm->loadTexture("pbr/Clutter/ControlStation_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/ControlStation_NM.tga");
+
+	rm->loadTexture("Icons/TorchLeft.tga");
+	rm->loadTexture("Icons/TorchThrow2.tga");
+	rm->loadTexture("Icons/PlayersLeft.tga");
+	rm->loadTexture("Icons/CantShootIcon1.tga");
+	rm->loadTexture("Icons/CantShootIcon2.tga");
+
 
 
 	return true;

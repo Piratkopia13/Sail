@@ -53,6 +53,19 @@ struct Player {
 	}
 };
 
+struct GameOnLanDescription {
+	std::string ip;
+	USHORT port;
+	std::string name;
+	unsigned char nPlayers;
+	unsigned char maxPlayers;
+	States::ID currentState;
+};
+
+struct Message {
+	Netcode::PlayerID senderID;
+	std::string content;
+};
 
 class NWrapper : public NetworkEventHandler {
 public:
@@ -64,9 +77,9 @@ public:
 
 	virtual void sendChatMsg(std::string msg) = 0;
 
-	void sendSerializedDataAllClients(std::string data);
-	void sendSerializedDataToHost(std::string data);
-	virtual void sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayerId) = 0;
+	void sendSerializedDataAllClients(const std::string& data);
+	void sendSerializedDataToHost(const std::string& data);
+	virtual void sendSerializedDataToClient(const std::string& data, Netcode::PlayerID PlayerId) = 0;
 
 	/*
 		Host Only
@@ -77,7 +90,7 @@ public:
 	virtual void setClientState(States::ID state, Netcode::PlayerID playerId = 255) {};
 	virtual void kickPlayer(Netcode::PlayerID playerId) {};
 	virtual void updateGameSettings(std::string s) {};
-	virtual void updateStateLoadStatus(States::ID state, char status);
+	virtual void updateStateLoadStatus(States::ID state, char status) = 0;
 
 	virtual void requestTeam(char team) {};
 	virtual void setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch = true) {};
@@ -108,6 +121,7 @@ protected:
 	TCP_CONNECTION_ID parseID(std::string& data);	//
 	std::string parseName(std::string& data);		//
 	Message processChatMessage(const char* data);
+	States::ID m_lastReportedState;
 
 private:
 	friend class NWrapperSingleton;

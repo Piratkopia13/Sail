@@ -20,6 +20,7 @@
 #include "Sail/entities/components/AudioComponent.h"
 #include "Sail/utils/Utils.h"
 #include "Sail/utils/SailImGui/SailImGui.h"
+#include "../Game.h"
 
 LobbyState::LobbyState(StateStack& stack)
 	: State(stack),
@@ -37,25 +38,19 @@ LobbyState::LobbyState(StateStack& stack)
 	m_imGuiHandler = m_app->getImGuiHandler();
 	m_settings = &m_app->getSettings();
 	m_optionsWindow.setPosition({ 300, 300 });
+	m_netInfo.showWindow(true);
 
-	m_textHeight = 52;
 	m_outerPadding = 15;
 
-	m_messageLimit = 14;		// Should be based on size of chatbox instead of fixed
-	m_messageCount = 0;
 	m_settingBotCount = new int;
 	*m_settingBotCount = 0;
 
-	m_messageSizeLimit = 50;
-	m_currentmessageIndex = 0;
-	m_currentmessage = SAIL_NEW char[m_messageSizeLimit] { 0 };
 
-	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_CHAT, this);
-	EventDispatcher::Instance().subscribe(Event::Type::TEXTINPUT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+	EventDispatcher::Instance().subscribe(Event::Type::SETTINGS_UPDATED, this);
 
 	m_ready = false;
 
@@ -99,41 +94,24 @@ LobbyState::LobbyState(StateStack& stack)
 	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
 
 	if (NWrapperSingleton::getInstance().isHost()) {
+		//NW
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 1);
 	}
 
 }
 
 LobbyState::~LobbyState() {
-	delete[] m_currentmessage;
 	delete m_settingBotCount;
 
-	EventDispatcher::Instance().unsubscribe(Event::Type::TEXTINPUT, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_CHAT, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::SETTINGS_UPDATED, this);
 }
 
 bool LobbyState::processInput(float dt) {
-	if (m_input->IsMouseButtonPressed(0)) {
-		m_chatFocus = false;
-	}
-
-	return false;
-}
-
-bool LobbyState::inputToChatLog(const MSG& msg) {
-	if (m_currentmessageIndex < m_messageSizeLimit && msg.wParam != KeyBinds::SEND_MESSAGE) {
-		// Add whichever button that was inputted to the current message
-		// --- OBS : doesn't account for capslock, etc.
-		m_currentmessage[m_currentmessageIndex++] = (char)msg.wParam;
-	}
-	if (msg.wParam == KeyBinds::SEND_MESSAGE && m_chatFocus == false) {
-		return true;
-	}
 	return false;
 }
 
@@ -151,10 +129,13 @@ bool LobbyState::update(float dt, float alpha) {
 		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 		m_network->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
 		m_settingsChanged = false;
+		std::string gamemode = m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().name;
+		std::string map = m_settings->defaultMaps[gamemode].getSelected().name;
+		NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
+		wrapper->setLobbyName(wrapper->getLobbyName().substr(0, wrapper->getLobbyName().find_first_of(";")) + ";" + gamemode + ";" + map);
 		m_timeSinceLastUpdate = 0.0f;
 	}
 	m_timeSinceLastUpdate += dt;
-
 	return false;
 }
 
@@ -166,8 +147,11 @@ bool LobbyState::render(float dt, float alpha) {
 
 bool LobbyState::renderImgui(float dt) {
 
+
+
+	//Keep all this
 	//ImGui::ShowDemoWindow();
-	static std::string font = "Beb30";
+	static std::string font = "Beb27";
 	//ImGui::PushFont(m_imGuiHandler->getFont(font));
 	//
 	//if (ImGui::Begin("IMGUISETTINGS")) {
@@ -194,6 +178,9 @@ bool LobbyState::renderImgui(float dt) {
 	m_size.y = m_app->getWindow()->getWindowHeight() - m_outerPadding * 2;
 	m_pos.x = m_app->getWindow()->getWindowWidth()*0.66f - m_outerPadding - ((m_size.x < m_minSize.x) ? m_minSize.x : m_size.x);
 	m_pos.y = m_outerPadding;
+#ifdef DEVELOPMENT
+	m_netInfo.renderWindow();
+#endif
 
 
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
@@ -202,9 +189,6 @@ bool LobbyState::renderImgui(float dt) {
 
 	// ------- player LIST ------- 
 	renderPlayerList();
-
-	// ------- CHAT LOG ------- 
-	renderChat();
 
 	// -------- SETTINGS ----------
 	if (m_windowToRender == 1) {
@@ -216,7 +200,6 @@ bool LobbyState::renderImgui(float dt) {
 		ImGui::SetNextWindowSize(m_size);
 		ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 
-		//ImGui::SetNextWindowSize(ImVec2(500, 500));
 		if (ImGui::Begin("##OptionsMenu", nullptr, m_backgroundOnlyflags)) {
 
 			ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
@@ -229,6 +212,7 @@ bool LobbyState::renderImgui(float dt) {
 	}
 
 	ImGui::PopFont();
+	m_app->getChatWindow()->renderChat(dt);
 
 	return false;
 }
@@ -236,14 +220,16 @@ bool LobbyState::renderImgui(float dt) {
 bool LobbyState::onEvent(const Event& event) {
 	State::onEvent(event);
 
+	
+
 	switch (event.type) {
 
-	case Event::Type::TEXTINPUT:			onMyTextInput((const TextInputEvent&)event); break;
-	case Event::Type::NETWORK_CHAT:			onRecievedText((const NetworkChatEvent&)event); break;
+
 	case Event::Type::NETWORK_JOINED:		onPlayerJoined((const NetworkJoinedEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE:	onPlayerTeamRequest((const NetworkPlayerRequestedTeamChange&)event); break;
 	case Event::Type::NETWORK_PLAYER_CHANGED_TEAM:	onPlayerTeamChanged((const NetworkPlayerChangedTeam&)event); break;
+	case Event::Type::SETTINGS_UPDATED:	onSettingsChanged(); break;
 
 	default:
 		break;
@@ -252,73 +238,29 @@ bool LobbyState::onEvent(const Event& event) {
 	return true;
 }
 
-void LobbyState::resetCurrentMessage() {
-	m_currentmessageIndex = 0;
-	for (size_t i = 0; i < m_messageSizeLimit; i++) {
-		m_currentmessage[i] = '\0';
-	}
-}
 
-std::string LobbyState::fetchMessage()
-{
-	std::string message = std::string(m_currentmessage);
 
-	// Reset currentMessage
-	m_currentmessageIndex = 0;
-	for (size_t i = 0; i < m_messageSizeLimit; i++) {
-		m_currentmessage[i] = '\0';
-	}
 
-	return message;
-}
 
-void LobbyState::addMessageToChat(const Message& message) {
-	// Replace '0: Blah blah message' --> 'Daniel: Blah blah message'
-	// Add sender to the text
-
-	std::string msg;
-	if (message.senderID != 255) {
-		Player* playa = NWrapperSingleton::getInstance().getPlayer(message.senderID);
-		msg = playa->name + ": ";
-	}
-	msg += message.content;
-	// Add message to chatlog
-	m_messages.push_back(msg);
-
-	// New messages replace old
-	if (m_messages.size() > m_messageLimit) {
-		m_messages.pop_front();
-	}
-}
-
-bool LobbyState::onRecievedText(const NetworkChatEvent& event) {
-	addMessageToChat(event.chatMessage);
-	return true;
-}
 
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	
 	if (NWrapperSingleton::getInstance().isHost()) {
-
-		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+		if (m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().value == 0.0f) {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)event.player.id, event.player.id);
+		}
+		else {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+		}
 
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
 	}
-	
-	Message message;
-	message.content = event.player.name + " joined the game!";
-	message.senderID = 255;
-	addMessageToChat(message);
 	return true;
 }
 
 bool LobbyState::onPlayerDisconnected(const NetworkDisconnectEvent& event) {
-	Message message;
-	message.content = event.player.name;
-	message.content += (event.reason == PlayerLeftReason::KICKED) ? " was kicked!" : " left the game!";
+	
 
-	message.senderID = 255;
-	addMessageToChat(message);
 	return true;
 }
 
@@ -332,25 +274,15 @@ bool LobbyState::onPlayerTeamRequest(const NetworkPlayerRequestedTeamChange& eve
 }
 
 bool LobbyState::onPlayerTeamChanged(const NetworkPlayerChangedTeam& event) {	
-	///PRINT MESSAGE
-	std::unordered_map<std::string, SettingStorage::Setting>& gamemodeSettings = m_settings->gameSettingsStatic["gamemode"];
-	SettingStorage::Setting& selectedGameTeams = m_settings->gameSettingsStatic["Teams"][gamemodeSettings["types"].getSelected().name];
+	
+	return true;
+}
 
-	Player* p = NWrapperSingleton::getInstance().getPlayer(event.playerID);
+bool LobbyState::onSettingsChanged() {
 
-	int currentlySelected = 0;
-	for (auto t : selectedGameTeams.options) {
-		if ((int)(t.value) == (int)(p->team)) {
-			break;
-		}
-		currentlySelected++;
+	if (!NWrapperSingleton::getInstance().isHost()) {
+		m_optionsWindow.updateMap();
 	}
-
-	Message message;
-	message.senderID = 255;
-	message.content = NWrapperSingleton::getInstance().getMyPlayerID() == event.playerID ? "You" : NWrapperSingleton::getInstance().getPlayer(event.playerID)->name;
-	message.content += " changed team to " + selectedGameTeams.options[currentlySelected].name;
-	addMessageToChat(message);
 
 	return true;
 }
@@ -373,9 +305,9 @@ void LobbyState::renderPlayerList() {
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
 	
 	static float x[3] = {
-		ImGui::GetWindowContentRegionWidth() * 0.5f,
-		ImGui::GetWindowContentRegionWidth() * 0.84f,
-		0
+		ImGui::GetWindowContentRegionWidth() * 0.3f,
+		ImGui::GetWindowContentRegionWidth() * 0.7f,
+		ImGui::GetWindowContentRegionWidth() * 0.88f,
 	};
 
 	if (ImGui::Begin("players in lobby:", NULL, flags)) {
@@ -384,21 +316,36 @@ void LobbyState::renderPlayerList() {
 		ImGui::Separator();
 		ImGui::Text("Player"); 
 		ImGui::SameLine(x[0]);
-
+		
 		ImGui::Text("Team"); 
 		ImGui::SameLine(x[1]);
+
+		ImGui::Text("Color");
+		ImGui::SameLine(x[2]);
 
 		ImGui::Text("Ready"); 
 		ImGui::Separator();
 
 		//(windowSize.x) * 0.42f
 		std::unordered_map<std::string, SettingStorage::Setting>& gamemodeSettings = m_settings->gameSettingsStatic["gamemode"];
-
+		unsigned int type = (unsigned int)(int)gamemodeSettings["types"].getSelected().value;
 		SettingStorage::Setting& selectedGameTeams = m_settings->gameSettingsStatic["Teams"][gamemodeSettings["types"].getSelected().name];
 		unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
 		for (auto currentplayer : NWrapperSingleton::getInstance().getPlayers()) {			
 			ImGui::BeginGroup();
+			//std::string uniqueID = "##"+currentplayer.name + currentplayer.team;
+			int index = m_settings->teamColorIndex((int)currentplayer.team);
+			glm::vec4 temp(m_settings->getColor(index), 1);
+
+			ImVec4 col(
+				temp.x,
+				temp.y,
+				temp.z,
+				temp.a
+			);
+			ImGui::PushStyleColor(ImGuiCol_Text, col);
 			ImGui::Text(std::string(currentplayer.name + std::string((currentplayer.id == myID) ? "*" : "")).c_str());
+			ImGui::PopStyleColor();
 			ImGui::SameLine(x[0]);
 			// TEAM
 			if (currentplayer.id == myID || myID == HOST_ID) {
@@ -421,9 +368,30 @@ void LobbyState::renderPlayerList() {
 
 						if (ImGui::Selectable(name.c_str(), selectedTeam == (char)key.value)) {
 							if (currentplayer.id == myID) {
-								NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeam(key.value);
+								if (type == 0) {
+									if (key.value == -1.0f) {
+										NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeam(key.value);
+									}
+									else {
+										NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeam((char)currentplayer.id);
+									}
+								}
+								else {
+									NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeam(key.value);
+								}
 							} else {
-								NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(key.value, currentplayer.id);						
+								if (type == 0) {
+									if (key.value == -1.0f) {
+										NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(key.value, currentplayer.id);
+									}
+									else {
+										NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(currentplayer.id, currentplayer.id);
+									}
+								}
+								else {
+									NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(key.value, currentplayer.id);
+								}
+													
 							}
 						}
 					}
@@ -442,7 +410,70 @@ void LobbyState::renderPlayerList() {
 
 				ImGui::Text(s.c_str());
 			}
+
+			//Color
 			ImGui::SameLine(x[1]);
+			//Keep
+			/*if (currentplayer.id == myID || myID == HOST_ID) {*/
+			if (myID == HOST_ID) {
+				std::string unique = "##ColorLABEL" + std::to_string(currentplayer.id);
+				int team = (int)currentplayer.team;
+				int index = m_settings->teamColorIndex(team);
+				m_settings->gameSettingsStatic["team"+std::to_string(index)]["color"];
+				glm::vec4 temp(m_settings->getColor(index), 1);
+
+				ImVec4 col(
+					temp.x,
+					temp.y,
+					temp.z,
+					temp.a
+				);
+				ImGui::PushStyleColor(ImGuiCol_Text, col);
+
+				ImGui::SetNextItemWidth(27);
+				if (ImGui::BeginCombo(unique.c_str(), std::string("##"+m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().name).c_str())) {
+					ImGui::PopStyleColor();
+					for (auto const& key : m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].options) {
+						std::string name = key.name + unique;
+						col = ImVec4(
+							m_settings->gameSettingsDynamic["Color"+std::to_string((int)key.value)]["r"].value,
+							m_settings->gameSettingsDynamic["Color"+std::to_string((int)key.value)]["g"].value,
+							m_settings->gameSettingsDynamic["Color"+std::to_string((int)key.value)]["b"].value,
+							1
+						);
+						ImGui::PushStyleColor(ImGuiCol_Text, col);
+						if (ImGui::Selectable(name.c_str(), index == (char)key.value)) {
+							if (currentplayer.id == myID) {
+								m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected((int)key.value);
+
+								m_settingsChanged = true;
+							}
+							else {
+								m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected((int)key.value);
+								SAIL_LOG(std::to_string(key.value));
+
+								m_settingsChanged = true;
+							}
+						}
+						ImGui::PopStyleColor();
+					}
+					ImGui::EndCombo();
+				}
+				else {
+					ImGui::PopStyleColor();
+				}
+			}
+			else {
+				std::string s = m_settings->gameSettingsStatic["team" + std::to_string(index)]["color"].getSelected().name;
+
+				
+				ImGui::PushStyleColor(ImGuiCol_Text, col);
+				ImGui::Text(s.c_str());
+				ImGui::PopStyleColor();
+			}
+
+
+			ImGui::SameLine(x[2]);
 
 			// READY 
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
@@ -461,10 +492,11 @@ void LobbyState::renderPlayerList() {
 				ImGui::EndPopup();
 			}
 			
+			//KEEP THIS FOR NOW
 			//ImGui::OpenPopupOnItemClick(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str(), 1);
-
-			if (ImGui::IsItemHovered())
-				ImGui::SetTooltip("First group hovered");
+			//if (ImGui::IsItemHovered()) {
+				//ImGui::SetTooltip("First group hovered");
+			// }
 			ImGui::Separator(); 
 		}
 	}
@@ -484,7 +516,6 @@ void LobbyState::renderGameSettings() {
 	settingsFlags |= ImGuiWindowFlags_NoSavedSettings;
 
 
-	// Uncomment when we actually have game settings
 	ImGui::SetNextWindowPos(m_pos);
 	ImGui::SetNextWindowSize(m_size);
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
@@ -494,65 +525,10 @@ void LobbyState::renderGameSettings() {
 		ImGui::PopFont();
 		ImGui::Separator();
 
-
-		m_optionsWindow.renderGameOptions();
+		if (m_optionsWindow.renderGameOptions()) {
+			m_settingsChanged = true;
+		}
 	}
-	ImGui::End();
-}
-
-void LobbyState::renderChat() {
-	ImGuiWindowFlags chatFlags = ImGuiWindowFlags_NoCollapse;
-	chatFlags |= ImGuiWindowFlags_NoResize;
-	chatFlags |= ImGuiWindowFlags_NoMove;
-	chatFlags |= ImGuiWindowFlags_NoNav;
-	chatFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
-	chatFlags |= ImGuiWindowFlags_NoTitleBar;
-	chatFlags |= ImGuiWindowFlags_AlwaysAutoResize;
-	chatFlags |= ImGuiWindowFlags_NoSavedSettings;
-	chatFlags |= ImGuiWindowFlags_NoFocusOnAppearing;
-	chatFlags |= ImGuiWindowFlags_NoInputs;
-
-	// ------- message BOX ------- 
-	ImGui::SetNextWindowPos(ImVec2(
-		m_outerPadding,
-		m_screenHeight - (m_outerPadding + m_textHeight)
-	));
-	ImGui::Begin(
-		"Write Here",
-		NULL,
-		chatFlags
-	);
-
-	if (m_firstFrame) {
-		m_firstFrame = false;
-		m_chatFocus = false;
-	}
-	ImGui::Text("Enter message:");
-	if (ImGui::InputText("", m_currentmessage, m_messageSizeLimit, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_EnterReturnsTrue)) {
-		m_chatFocus = false;
-	}
-	ImGui::End();
-
-	// ------- CHAT LOG ------- 
-	ImGui::SetNextWindowSize(ImVec2(
-		400,
-		300
-	));
-	ImGui::SetNextWindowPos(ImVec2(
-		m_outerPadding,
-		m_screenHeight - (300 + m_outerPadding)
-	));
-
-	// Render message history
-	ImGui::Begin("Chat Log", NULL, chatFlags);
-	ImGui::SameLine();
-	ImGui::BeginChild("messages");
-	for (auto currentmessage : m_messages) {
-		ImGui::Text(
-			currentmessage.c_str()
-		);
-	}
-	ImGui::EndChild();
 	ImGui::End();
 }
 
@@ -635,21 +611,17 @@ void LobbyState::renderMenu() {
 			}
 
 			if (SailImGui::TextButton((allReady) ? "Start" : "Force start")) {
-				// Queue a removal of LobbyState, then a push of gamestate
-				NWrapperSingleton::getInstance().stopUDP();
-				//m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(*m_settingBotCount, m_teamSelection));
-				
 				auto& stat = m_app->getSettings().gameSettingsStatic;
 				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 
 				//TODO: ONLY DO THIS IF GAMEMODE IS FFA
 				int teamID = 0;
-				for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
-					if (p.team != -1) {
-						NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(teamID % 12, p.id, false);
-						teamID++;
-					}
-				}
+				//for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+				//	if (p.team != -1) {
+				//		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(teamID % 12, p.id, false);
+				//		teamID++;
+				//	}
+				//}
 
 				m_network->updateGameSettings(m_app->getSettings().serialize(stat, dynamic));
 				m_network->setClientState(States::Game);

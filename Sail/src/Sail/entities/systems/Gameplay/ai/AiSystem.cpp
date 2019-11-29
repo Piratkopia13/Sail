@@ -71,9 +71,10 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		glm::vec3 pos(x_cur * padding + offsetX, offsetY, z_cur * padding + offsetZ);
 
 		bool blocked = false;
-		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(pos);
+		BoundingBox* bb= e->getComponent<BoundingBoxComponent>()->getBoundingBox();
+		bb->setPosition(pos);
 		std::vector<Octree::CollisionInfo> vec;
-		m_octree->getCollisions(e.get(), &vec);
+		m_octree->getCollisions(e.get(), bb, &vec);
 
 		for (Octree::CollisionInfo& info : vec ) {
 			int j = ( info.entity->getName().compare("Map_") );
@@ -129,6 +130,13 @@ NodeSystem* AiSystem::getNodeSystem() {
 	return m_nodeSystem.get();
 }
 
+#ifdef DEVELOPMENT
+unsigned int AiSystem::getByteSize() const {
+	unsigned int size = sizeof(*this);
+	size += m_nodeSystem->getByteSize();
+	return size;
+}
+#endif
 
 void AiSystem::aiUpdateFunc(Entity* e, const float dt) {
 	e->getComponent<FSMComponent>()->update(dt, e);

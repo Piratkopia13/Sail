@@ -4,6 +4,7 @@
 
 class DX12GBufferRenderer;
 class DX12RaytracingRenderer;
+class DXRBase;
 
 class DX12HybridRaytracerRenderer : public Renderer {
 public:
@@ -12,7 +13,7 @@ public:
 
 	virtual void begin(Camera* camera) override;
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID, bool castShadows) override;
-	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags);
+	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags, int group) override;
 
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;
 	virtual void submitWaterPoint(const glm::vec3& pos) override;
@@ -24,6 +25,7 @@ public:
 	virtual bool checkIfOnWater(const glm::vec3& pos) override;
 
 	DX12GBufferRenderer* getGBufferRenderer() const;
+	DXRBase* getDXRBase();
 
 private:
 	std::unique_ptr<DX12GBufferRenderer> m_rendererGbuffer;

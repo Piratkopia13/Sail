@@ -28,10 +28,13 @@ void CandleReignitionSystem::update(float dt) {
 		if (e->hasComponent<LocalOwnerComponent>()) {
 
 			auto candle = e->getComponent<CandleComponent>();
-			if (!candle->isLit) {
+			
+			if (candle->userReignition || e->getParent()->getComponent<SanityComponent>()->sanity <= 0) {
 				candle->downTime += dt;
+				// Play the re-ignition sound
+				e->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
 
-				if (candle->downTime >= m_candleForceRespawnTimer || candle->userReignition) {
+				if (candle->downTime >= m_candleForceRespawnTimer) {
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::IGNITE_CANDLE,
 						SAIL_NEW Netcode::MessageIgniteCandle{
@@ -45,13 +48,19 @@ void CandleReignitionSystem::update(float dt) {
 	}
 }
 
+#ifdef DEVELOPMENT
+unsigned int CandleReignitionSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
+
 bool CandleReignitionSystem::onEvent(const Event& event) {
 	auto onIgniteCandle = [&](const IgniteCandleEvent& e) {
 		Entity* candle = nullptr;
 
 		// Find the candle with the correct ID
 		for (auto candleEntity : entities) {
-			if (candleEntity->getComponent<NetworkReceiverComponent>()->m_id == e.netCompID) {
+			if (auto nrc = candleEntity->getComponent<NetworkReceiverComponent>(); nrc && nrc->m_id == e.netCompID) {
 				candle = candleEntity;
 				break;
 			}

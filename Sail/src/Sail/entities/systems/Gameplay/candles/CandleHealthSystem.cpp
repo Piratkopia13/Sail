@@ -12,12 +12,16 @@ CandleHealthSystem::CandleHealthSystem() {
 	registerComponent<NetworkSenderComponent>(false, true, false);
 	registerComponent<LightComponent>(true, true, true);
 	registerComponent<AudioComponent>(false, true, true);
+	registerComponent<RenderInActiveGameComponent>(true, false, false); // Don't include replay candles in this system
+
 
 	EventDispatcher::Instance().subscribe(Event::Type::WATER_HIT_PLAYER, this);
+	EventDispatcher::Instance().subscribe(Event::Type::TORCH_EXTINGUISHED, this);
 }
 
 CandleHealthSystem::~CandleHealthSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::WATER_HIT_PLAYER, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::TORCH_EXTINGUISHED, this);
 }
 
 void CandleHealthSystem::update(float dt) {
@@ -25,6 +29,7 @@ void CandleHealthSystem::update(float dt) {
 
 	// The number of living candles, representing living players
 	size_t livingCandles = entities.size();
+	GameDataTracker::getInstance().setPlayersLeft(livingCandles);
 
 	for (auto e : entities) {
 		auto candle = e->getComponent<CandleComponent>();
@@ -32,7 +37,12 @@ void CandleHealthSystem::update(float dt) {
 
 		// Scale fire particles with health
 		auto particles = e->getComponent<ParticleEmitterComponent>();
-		particles->spawnRate = 0.01f * (MAX_HEALTH / candle->health);
+		if (candle->health <= 0.f) {
+			particles->spawnRate = 1000000.0f;
+		}
+		else {
+			particles->spawnRate = 0.01f * (MAX_HEALTH / glm::max(candle->health, 1.f));
+		}
 
 #pragma region HOST_ONLY_STUFF
 		if (isHost && candle->isLit) {
@@ -55,28 +65,41 @@ void CandleHealthSystem::update(float dt) {
 			} else { // If candle used to be lit but has lost all its health
 				candle->wasJustExtinguished = true;
 
-				// Candle has lost all its health so extinguish it
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::EXTINGUISH_CANDLE,
-					SAIL_NEW Netcode::MessageExtinguishCandle{
-						e->getComponent<NetworkReceiverComponent>()->m_id,
-						candle->wasHitByPlayerID
-					},
-					false // Host extinguishes candle later in this function so don't send to ourself
-				);
+				if (candle->respawns < m_maxNumRespawns) {
+					// Candle has lost all its health so extinguish it
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::EXTINGUISH_CANDLE,
+						SAIL_NEW Netcode::MessageExtinguishCandle{
+							e->getComponent<NetworkReceiverComponent>()->m_id,
+							candle->wasHitByPlayerID
+						},
+						true
+					);
 
-				// If the player has no more respawns kill them
-				if (candle->respawns >= m_maxNumRespawns) {
+					// If the player has no more respawns kill them
+				} else {
+
+					if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candle->wasHitByPlayerID != candle->playerEntityID) {
+						
+					}
+
 					livingCandles--;
 
 					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 						Netcode::MessageType::PLAYER_DIED,
 						SAIL_NEW Netcode::MessagePlayerDied{
 							e->getParent()->getComponent<NetworkReceiverComponent>()->m_id,
-							candle->wasHitByPlayerID
+							candle->wasHitByEntity
 						},
 						true
 					);
+
+					if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candle->wasHitByPlayerID != candle->playerEntityID) {
+						GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
+
+					}
+					GameDataTracker::getInstance().logDeath(e->getComponent<NetworkReceiverComponent>()->m_id >> 18);
+
 
 					// Save the placement for the player who lost
 					GameDataTracker::getInstance().logPlacement(
@@ -106,33 +129,19 @@ void CandleHealthSystem::update(float dt) {
 		}
 #pragma endregion
 
+		// Flicker effect for the torches
+		static float clockLightModifier = 0;
+		clockLightModifier += dt * (rand() % 100 / 100.0f);
 
-		// Everyone does this
-		if (candle->wasJustExtinguished) {
-			candle->health = 0.0f;
-			candle->isLit = false;
-			candle->wasJustExtinguished = false; // reset for the next tick
-
-			if (candle->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START) {
-				GameDataTracker::getInstance().logEnemyKilled(candle->wasHitByPlayerID);
-			}
-
-			else if (candle->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
-				e->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
-			}
-		
-			// Play the reignition sound if the player has any candles left
-			if (candle->respawns < m_maxNumRespawns) {
-				auto playerEntity = e->getParent();
-				playerEntity->getComponent<AudioComponent>()->m_sounds[Audio::RE_IGNITE_CANDLE].isPlaying = true;
-			}
-		}
+		//						Sine wave function                    +        random variance
+		float r = (sinf(clockLightModifier * 50.0f) * 0.075f + 0.55f) + (rand() % 10 - 5) / 50.0f;
+		LightComponent* lc = e->getComponent<LightComponent>();
+		lc->defaultColor = glm::vec3(r + 0.05f, (r - 0.05f) * 0.5f, (r - 0.1f) * 0.25f);
+		// save this line for further possible further testing in future
+		//light->getPointLight().setAttenuation(0.0f, 0.0f, r );
 
 		// COLOR/INTENSITY
 		float tempHealthRatio = (std::fmaxf(candle->health, 0.f) / MAX_HEALTH);
-
-		LightComponent* lc = e->getComponent<LightComponent>();
-
 		lc->getPointLight().setColor(tempHealthRatio * lc->defaultColor);
 	}
 }
@@ -155,25 +164,78 @@ bool CandleHealthSystem::onEvent(const Event& event) {
 		Entity* candle = findCandleFromParentID(e.netCompID);
 
 		if (!candle) {
-			Logger::Warning("CandleHealthSystem::onWaterHitPlayer: no matching entity found");
+			SAIL_LOG_WARNING("CandleHealthSystem::onWaterHitPlayer: no matching entity found");
 			return;
 		}
 
 		// Damage the candle
 		// TODO: Replace 10.0f with game settings damage
-		if (e.senderID == Netcode::MESSAGE_SPRINKLER_ID) {
-			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::PLAYER, e.senderID);
+		if (e.hitterID == Netcode::SPRINKLER_COMP_ID) {
+			candle->getComponent<CandleComponent>()->hitWithWater(1.0f, CandleComponent::DamageSource::SPRINKLER, e.hitterID);
+		} else {
+			int dmg = candle->getComponent<CandleComponent>()->hitWithWater(7.0f, CandleComponent::DamageSource::PLAYER, e.hitterID);
+			if (dmg > 0) {
+				GameDataTracker::getInstance().logDamageDone(e.hitterID>>18, dmg);
+				GameDataTracker::getInstance().logDamageTaken(candle->getComponent<NetworkReceiverComponent>()->m_id>>18, dmg);
+			}
 		}
-		else {
-			candle->getComponent<CandleComponent>()->hitWithWater(10.0f, CandleComponent::DamageSource::PLAYER, e.senderID);
+	};
 
+	auto onTorchExtinguished = [=] (const TorchExtinguishedEvent& e) {
+		for (auto torchE : entities) {
+			if (torchE->getComponent<NetworkReceiverComponent>()->m_id == e.netIDextinguished) {
+				auto candleC = torchE->getComponent<CandleComponent>();
+				candleC->health = 0.0f;
+				candleC->isLit = false;
+				candleC->wasJustExtinguished = false; // reset for the next tick
+
+				if (torchE->hasComponent<LocalOwnerComponent>()) {
+					GameDataTracker::getInstance().reduceTorchesLeft();
+				}
+
+				if (candleC->wasHitByPlayerID < Netcode::NONE_PLAYER_ID_START && candleC->wasHitByPlayerID != candleC->playerEntityID) {
+					GameDataTracker::getInstance().logEnemyKilled(candleC->wasHitByPlayerID);
+
+				} else if (candleC->wasHitByPlayerID == Netcode::MESSAGE_INSANITY_ID) {
+					torchE->getParent()->getComponent<AudioComponent>()->m_sounds[Audio::INSANITY_SCREAM].isPlaying = true;
+				}
+				GameDataTracker::getInstance().logDeath(torchE->getComponent<NetworkReceiverComponent>()->m_id >> 18);
+			}
 		}
 	};
 
 	switch (event.type) {
 	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
+	case Event::Type::TORCH_EXTINGUISHED: onTorchExtinguished((const TorchExtinguishedEvent&)event); break;	
 	default: break;
 	}
 
 	return true;
 }
+
+const int CandleHealthSystem::getMaxNumberOfRespawns() {
+	return m_maxNumRespawns;
+}
+
+//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+int CandleHealthSystem::getNumLivingEntites() {
+	int i = 0;
+	//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+	for (auto& e : entities) {
+		//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+		TransformComponent* tc = e->getComponent<TransformComponent>();
+		//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+		if (e->getComponent<CandleComponent>()->isAlive && tc && tc->getRenderMatrix()[3].y > -1) {
+			//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+			i++;
+		}
+	}
+	//UGLIY AS FIX FOR EXTERNAL TEST!!!!!!!!!!!!!
+	return i;
+}
+
+#ifdef DEVELOPMENT
+unsigned int CandleHealthSystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif

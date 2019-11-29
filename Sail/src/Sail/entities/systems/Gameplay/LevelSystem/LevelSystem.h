@@ -11,6 +11,7 @@ struct Rect {
 	int sizex;
 	int sizey;
 	int doors = 0;
+	bool isCloning = false;
 };
 struct Clutter {
 	float posx;
@@ -81,6 +82,12 @@ public:
 	const int getRoomID(int posX, int posY);
 	const RoomInfo getRoomInfo(int ID);
 
+	int *** getTiles();
+
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
+
 	int xsize;
 	int ysize;
 	int*** tileArr; //0 is tileID, 1 is typeID, 2 is door
@@ -100,6 +107,7 @@ public:
 	int tileOffset;
 
 	std::vector<glm::vec3> spawnPoints;
+	std::vector<glm::vec3> extraSpawnPoints;
 private:
 	std::queue<Rect> chunks;
 	std::queue<Rect> blocks;
@@ -119,8 +127,8 @@ private:
 	bool splitDirection(bool ns);
 	void addSpawnPoints();
 	void addDoors();
-	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, float tileSize,float tileHeight, int tileOffset, int i, int j, Model* bb);
-	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, float tileSize,float tileHeight, float tileOffset, int i, int j, Model* bb);
+	void addMapModel(Direction dir, int typeID, int doors, const std::vector<Model*>& tileModels, int i, int j, Model* bb);
+	void addTile(int tileId, int typeId, int doors,const std::vector<Model*>& tileModels, int i, int j, Model* bb);
 	bool hasDoor(Direction dir, int doors);
 	void generateClutter();
 };

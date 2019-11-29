@@ -101,8 +101,6 @@ void AudioSystem::initialize() {
 	m_audioEngine->loadSound("sanity/heart_secondbeat4.wav");
 	m_audioEngine->loadSound("sanity/heart_secondbeat5.wav");
 	m_audioEngine->loadSound("sanity/heart_secondbeat6.wav");
-	m_audioEngine->loadSound("sanity/insanity_ambiance.wav");
-	m_audioEngine->loadSound("sanity/insanity_breathing.wav");
 	m_audioEngine->loadSound("sanity/insanity_scream.wav");
 	m_audioEngine->loadSound("sanity/insanity_violin1.wav");
 	m_audioEngine->loadSound("sanity/insanity_violin2.wav");
@@ -152,6 +150,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 	if (!m_hasOutputDevices) {	// Only run audiosystem if there are outputdevices on the computer
 		return;
 	}
+
+
+	
 	for (auto e : entities) {
 		auto audioC = e->getComponent<AudioComponent>();
 
@@ -162,42 +163,39 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			Audio::SoundInfo_General* soundGeneral;
 			Audio::SoundInfo_Unique* soundUnique;
 
+			
 			for (int soundTypeIndex = 0; soundTypeIndex < Audio::SoundType::COUNT; soundTypeIndex++) {
 				soundGeneral = &audioC->m_sounds[soundTypeIndex];
 
+				// Deal with all sounds & streams except death sound
+				if (soundTypeIndex == Audio::SoundType::DEATH || soundTypeIndex == Audio::SoundType::INSANITY_SCREAM) {
+					continue;
+				}
+
 				soundPoolSize = audioData.m_soundsUnique[soundTypeIndex].size();
 				if (soundPoolSize > 0) {
-
+					
 					if (soundGeneral->isPlaying) {
 
 						// Starts a new sound from relevant pool of sounds IF NOT ALREADY PLAYING
 						if (!soundGeneral->hasStartedPlaying) {
 
-							if (soundPoolSize > 1) {
-								randomSoundIndex = rand() % soundPoolSize;
-								if (randomSoundIndex == soundGeneral->prevRandomNum) {
-									randomSoundIndex++;
-									randomSoundIndex = (randomSoundIndex % soundPoolSize);
-								}
-								soundGeneral->prevRandomNum = randomSoundIndex;
-							}
-							else {
-								randomSoundIndex = 0;
-							}
+							randomSoundIndex = randomASoundIndex(soundPoolSize, soundGeneral);
 
-							// To make the code easier to read
 							soundUnique = &audioData.m_soundsUnique[soundTypeIndex].at(randomSoundIndex);
 							soundGeneral->volume = soundUnique->volume;
+							soundGeneral->hasStartedPlaying = true;
+							soundGeneral->durationElapsed = 0.0f;
+							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
 
+				
+							// To make the code easier to read
 							soundGeneral->soundID = m_audioEngine->beginSound(
 								soundUnique->fileName,
 								soundGeneral->effect,
 								soundGeneral->frequency,
 								soundGeneral->volume
 							);
-							soundGeneral->hasStartedPlaying = true;
-							soundGeneral->durationElapsed = 0.0f;
-							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
 							m_audioEngine->startSpecificSound(soundGeneral->soundID, soundUnique->volume);
 						}
 
@@ -207,46 +205,43 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
 								soundGeneral->positionalOffset, alpha
 							);
-
 							m_audioEngine->setSoundVolume(soundGeneral->soundID, soundGeneral->volume);
-
+							
 							if (soundGeneral->effect == Audio::EffectType::PROJECTILE_LOWPASS) {
 								updateProjectileLowPass(soundGeneral);
 							}
 
 							soundGeneral->durationElapsed += dt;
-						}
-						else {
+						} else {
 							soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
-							m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+							
 							soundGeneral->hasStartedPlaying = false;
 
 							soundGeneral->isPlaying = !soundGeneral->playOnce;
 						}
-						// If the sound should no longer be playing stop it and reset its timer
-					}
+					} 
 					else if (soundGeneral->hasStartedPlaying) {
-						m_audioEngine->stopSpecificSound(soundGeneral->soundID);
+						
 						soundGeneral->hasStartedPlaying = false;
 						soundGeneral->durationElapsed = 0.0f;
 					}
 				}
 			}
+
+			// Deal with death sound (Fixes LOUD deathsound issue)
+			dealWithDeathSound(audioC, dt);
+			dealwithInsanitySound(audioC, dt);
 		}
 
 		// - - - S T R E A M I N G  --------------------------------------------------------------------
 		{
 			// Deal with requests
+			if (audioC->m_streamingRequests.size() > 0)
 			for (m_i = audioC->m_streamingRequests.begin(); m_i != audioC->m_streamingRequests.end();) {
-
 				// If the request wants to start
 				if (m_i->second.startTRUE_stopFALSE == true) {
-					// Start playing stream
 					startPlayingRequestedStream(e, audioC);
-				}
-				// If the request wants to stop
-				else {
-					// Stop playing stream
+				} else { // If the request wants to stop
 					stopPlayingRequestedStream(e, audioC);
 				}
 			}
@@ -257,7 +252,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			// Per currently streaming sound
 			for (m_k = audioC->m_currentlyStreaming.begin(); m_k != audioC->m_currentlyStreaming.end();) {
 				// Update its position in the world
-				updateStreamPosition(e, cam, alpha);
+				if (m_k->second.isPositionalAudio) {
+					updateStreamPosition(e, cam, alpha);
+				}
 				// Update volume if it has changed
 				if (m_k->second.prevVolume != m_k->second.volume) {
 					m_k->second.prevVolume = m_k->second.volume;
@@ -268,10 +265,40 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 			}
 		}
 	}
+
+#ifdef DEVELOPMENT
+	/* Uncomment it if you want to try to fix something audiowise. */
+	//m_audioEngine->logDebugData();
+#endif
 }
 
 void AudioSystem::stop() {
+	m_audioEngine->pause_unpause_AllStreams(false);
 	m_audioEngine->stopAllStreams();
+	m_audioEngine->pauseAllSounds();
+
+	for (auto e : entities) {
+		auto audioC = e->getComponent<AudioComponent>();
+
+		audioC->m_currentlyStreaming.clear();
+		audioC->m_streamingRequests.clear();
+	}
+}
+int AudioSystem::randomASoundIndex(int soundPoolSize, Audio::SoundInfo_General* soundGeneral) {
+	int randomSoundIndex = -1;
+
+	if (soundPoolSize > 1) {
+		randomSoundIndex = rand() % soundPoolSize;
+		if (randomSoundIndex == soundGeneral->prevRandomNum) {
+			randomSoundIndex++;
+			randomSoundIndex = (randomSoundIndex % soundPoolSize);
+		}
+		soundGeneral->prevRandomNum = randomSoundIndex;
+	} else {
+		randomSoundIndex = 0;
+	}
+
+	return randomSoundIndex;
 }
 
 void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC) {
@@ -289,8 +316,7 @@ void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC)
 
 	if (streamIndex == -1) {
 		SAIL_LOG_ERROR("Too many sounds already streaming; failed to stream another one!");
-	}
-	else {
+	} else {
 		Application::getInstance()->pushJobToThreadPool(
 			[this, filename, streamIndex, volume, isPositionalAudio, isLooping, audioC](int id) {
 				return m_audioEngine->streamSound(filename, streamIndex, volume, isPositionalAudio, isLooping, audioC);
@@ -340,6 +366,99 @@ void AudioSystem::updateStreamVolume() {
 
 void AudioSystem::updateProjectileLowPass(Audio::SoundInfo_General* general) {
 	m_audioEngine->updateProjectileLowPass(general->frequency, general->soundID);
+}
+
+void AudioSystem::dealWithDeathSound(AudioComponent* audioC, float dt) {
+	Audio::SoundInfo_General* soundGeneral = &audioC->m_sounds[Audio::SoundType::DEATH];
+	if (soundGeneral->isPlaying) {
+		int soundPoolSize = audioData.m_soundsUnique[Audio::SoundType::DEATH].size();
+
+		if (soundPoolSize > 0) {
+			if (!soundGeneral->hasStartedPlaying) {
+
+				int randomSoundIndex = randomASoundIndex(
+					soundPoolSize,
+					soundGeneral
+				);
+
+				Audio::SoundInfo_Unique* soundUnique = &audioData.m_soundsUnique[Audio::SoundType::DEATH].at(randomSoundIndex);
+				soundGeneral->volume = soundUnique->volume;
+				soundGeneral->hasStartedPlaying = true;
+				soundGeneral->durationElapsed = 0.0f;
+				soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
+
+				m_audioEngine->startDeathSound(
+					soundUnique->fileName,
+					soundGeneral->volume
+				);
+				soundGeneral->playOnce = true;
+			}
+			// Update the sound with the current positions if it's playing.
+			if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
+
+				m_audioEngine->updateDeathvolume(soundGeneral->volume);
+				soundGeneral->durationElapsed += dt;
+			}
+			else {
+				soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
+
+				soundGeneral->hasStartedPlaying = false;
+
+				soundGeneral->isPlaying = !soundGeneral->playOnce;
+			}
+		}
+	}
+	else if (soundGeneral->hasStartedPlaying) {
+		soundGeneral->hasStartedPlaying = false;
+		soundGeneral->durationElapsed = 0.0f;
+	}
+}
+
+void AudioSystem::dealwithInsanitySound(AudioComponent* audioC, float dt) {
+	Audio::SoundInfo_General* soundGeneral = &audioC->m_sounds[Audio::SoundType::INSANITY_SCREAM];
+	if (soundGeneral->isPlaying) {
+		int soundPoolSize = audioData.m_soundsUnique[Audio::SoundType::INSANITY_SCREAM].size();
+
+		if (soundPoolSize > 0) {
+			if (!soundGeneral->hasStartedPlaying) {
+
+				int randomSoundIndex = randomASoundIndex(
+					soundPoolSize,
+					soundGeneral
+				);
+
+				Audio::SoundInfo_Unique* soundUnique = &audioData.m_soundsUnique[Audio::SoundType::INSANITY_SCREAM].at(randomSoundIndex);
+				soundGeneral->volume = soundUnique->volume;
+				soundGeneral->hasStartedPlaying = true;
+				soundGeneral->durationElapsed = 0.0f;
+				soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
+
+				m_audioEngine->startInsanitySound(
+					soundUnique->fileName,
+					soundGeneral->volume
+				);
+				soundGeneral->playOnce = true;
+			}
+
+			// Update the sound with the current positions if it's playing
+			if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
+
+				m_audioEngine->updateInsanityVolume(soundGeneral->volume);
+				soundGeneral->durationElapsed += dt;
+			}
+			else {
+				soundGeneral->durationElapsed = 0.0f; // Reset the sound effect to its beginning
+
+				soundGeneral->hasStartedPlaying = false;
+
+				soundGeneral->isPlaying = !soundGeneral->playOnce;
+			}
+		}
+	}
+	else if (soundGeneral->hasStartedPlaying) {
+		soundGeneral->hasStartedPlaying = false;
+		soundGeneral->durationElapsed = 0.0f;
+	}
 }
 
 void AudioSystem::hotFixAmbiance(Entity* e, AudioComponent* audioC) {
@@ -398,29 +517,36 @@ bool AudioSystem::onEvent(const Event& event) {
 				? Audio::SoundType::WATER_IMPACT_MY_CANDLE 
 				: Audio::SoundType::WATER_IMPACT_ENEMY_CANDLE);
 
-			//player->getComponent<AudioComponent>()->m_sounds[soundIndex].isPlaying = true;
-			//player->getComponent<AudioComponent>()->m_sounds[soundIndex].playOnce = true;
+			player->getComponent<AudioComponent>()->m_sounds[soundIndex].isPlaying = true;
+			player->getComponent<AudioComponent>()->m_sounds[soundIndex].playOnce = true;
 		}
 	};
 
 	auto onPlayerDied = [](const PlayerDiedEvent& e) {
 		// Play kill sound if the player was the one who shot
-		if (e.shooterID == NWrapperSingleton::getInstance().getMyPlayerID()) {
-			auto& killSound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::KILLING_BLOW];
-			killSound.isPlaying = true;
-			killSound.playOnce = true;
+		if (Netcode::getComponentOwner(e.killerID) == NWrapperSingleton::getInstance().getMyPlayerID()) {
+			if (auto* audioComp = e.myPlayer->getComponent<AudioComponent>()) {
+				auto& killSound = audioComp->m_sounds[Audio::SoundType::KILLING_BLOW];
+				killSound.isPlaying = true;
+				killSound.playOnce = true;
+			}
 		}
 
 		//TODO: Find out why death sound is high as fuck!
-		else if (e.shooterID == Netcode::MESSAGE_INSANITY_ID) {
-			auto& insanitySound = e.myPlayer->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::INSANITY_SCREAM];
-			insanitySound.isPlaying = true;
-			insanitySound.playOnce = true;
+		else if (e.killerID == Netcode::INSANITY_COMP_ID) {
+			if (auto* audioComp = e.myPlayer->getComponent<AudioComponent>()) {
+				auto& insanitySound = audioComp->m_sounds[Audio::SoundType::INSANITY_SCREAM];
+				insanitySound.isPlaying = true;
+				insanitySound.playOnce = true;
+			}
 		} else {
 			// Play death sound
-			//auto& deathSound = e.killed->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::DEATH];
-			//deathSound.isPlaying = true;
-			//deathSound.playOnce = true;
+			if (auto* audioComp = e.killed->getComponent<AudioComponent>()) {
+				auto& deathSound = audioComp->m_sounds[Audio::SoundType::DEATH];
+				deathSound.isPlaying = true;
+				deathSound.playOnce = true;
+			}
+			
 		}
 	};
 
@@ -444,9 +570,12 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onStartShooting = [=](const StartShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].playOnce = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].frequency = e.lowPassFrequency;
+			Audio::SoundInfo_General* soundGeneralStart = &player->getComponent<AudioComponent>()->m_sounds[
+				Audio::SoundType::SHOOT_START
+			];
+			soundGeneralStart->playOnce = true;
+			soundGeneralStart->isPlaying = true;
+			soundGeneralStart->frequency = e.lowPassFrequency;
 		} else {
 			SAIL_LOG_WARNING("AudioSystem : started shooting but no matching entity found");
 		}
@@ -454,10 +583,13 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onLoopShooting = [=](const LoopShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
+			Audio::SoundInfo_General* soundGeneralLoop = &player->getComponent<AudioComponent>()->m_sounds[
+				Audio::SoundType::SHOOT_LOOP
+			];
 			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].frequency = e.lowPassFrequency;
+			soundGeneralLoop->isPlaying = true;
+			soundGeneralLoop->playOnce = true;
+			soundGeneralLoop->frequency = e.lowPassFrequency;
 		}
 		else {
 			SAIL_LOG_WARNING("AudioSystem : looped shooting but no matching entity found");
@@ -466,10 +598,22 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	auto onStopShooting = [=](const StopShootingEvent& e) {
 		if (auto player = findFromID(e.netCompID); player) {
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = false;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].playOnce = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].isPlaying = true;
-			player->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_END].frequency = e.lowPassFrequency;
+			// Force stop the loop sound since it continues playing when it should not.
+			Audio::SoundInfo_General* soundGeneralLoop = &player->getComponent<AudioComponent>()->m_sounds[
+				Audio::SoundType::SHOOT_LOOP
+			];
+			m_audioEngine->stopSpecificSound(soundGeneralLoop->soundID);
+			Audio::SoundInfo_General* soundGeneralStart = &player->getComponent<AudioComponent>()->m_sounds[
+				Audio::SoundType::SHOOT_START
+			];
+			m_audioEngine->stopSpecificSound(soundGeneralStart->soundID);
+			Audio::SoundInfo_General* soundGeneralEnd = &player->getComponent<AudioComponent>()->m_sounds[
+				Audio::SoundType::SHOOT_END
+			];
+			soundGeneralEnd->isPlaying = false;
+			soundGeneralEnd->playOnce = true;
+			soundGeneralEnd->isPlaying = true;
+			soundGeneralEnd->frequency = e.lowPassFrequency;
 		} else {
 			SAIL_LOG_WARNING("AudioSystem : stopped shooting but no matching entity found");
 		}
@@ -522,7 +666,23 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	switch (event.type) {
 	case Event::Type::WATER_HIT_PLAYER: onWaterHitPlayer((const WaterHitPlayerEvent&)event); break;
-	case Event::Type::PLAYER_DEATH: onPlayerDied((const PlayerDiedEvent&)event); break;
+	case Event::Type::PLAYER_DEATH: 
+		for (auto& entity : entities) {
+			AudioComponent* ac = entity->getComponent<AudioComponent>();
+			for (auto& sound : ac->m_sounds) {
+				sound.isPlaying = false;
+			}
+			// Stop all streams EXCEPT for 'lab ambiance'
+			auto& iterator = ac->m_currentlyStreaming.begin();
+			while (iterator != ac->m_currentlyStreaming.end()) {
+				if ((*iterator).first != "res/sounds/ambient/ambiance_lab.xwb") {
+					ac->streamSoundRequest_HELPERFUNC((*iterator).first, false, 1.0f, false, false);
+				}
+				iterator++;
+			}
+		}
+		onPlayerDied((const PlayerDiedEvent&)event); 
+		break;
 	case Event::Type::PLAYER_JUMPED: onPlayerJumped((const PlayerJumpedEvent&)event); break;
 	case Event::Type::PLAYER_LANDED: onPlayerLanded((const PlayerLandedEvent&)event); break;
 	case Event::Type::START_SHOOTING: onStartShooting((const StartShootingEvent&)event); break;
@@ -537,3 +697,11 @@ bool AudioSystem::onEvent(const Event& event) {
 
 	return true;
 }
+
+#ifdef DEVELOPMENT
+unsigned int AudioSystem::getByteSize() const {
+	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
+	size += m_audioEngine->getByteSize();
+	return size;
+}
+#endif

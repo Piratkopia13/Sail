@@ -37,7 +37,6 @@ void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, 
 		
 	// Init all textures - this needs to be done on ONE thread
 	// TODO: optimize!
-	int meshIndex = 0;
 	for (auto& renderCommand : commandQueue) {
 		auto& vbuffer = static_cast<DX12VertexBuffer&>(renderCommand.model.mesh->getVertexBuffer());
 		vbuffer.init(cmdList.Get());
@@ -45,9 +44,8 @@ void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, 
 			continue;
 		}
 		auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(0));
-		if (tex && !tex->hasBeenInitialized()) {
-			tex->initBuffers(cmdList.Get(), meshIndex);
-			meshIndex++;
+		if (tex) {
+			tex->initBuffers(cmdList.Get());
 		}
 	}
 
@@ -57,15 +55,13 @@ void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, 
 	// Bind the descriptor heap that will contain all SRVs for this frame
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
 	
-	meshIndex = 0;
 	for (auto& command : commandQueue) {
 		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.model.mesh->getMaterial()->getShader()->getPipeline());
 
 		shaderPipeline->checkBufferSizes(commandQueue.size()); //Temp fix to expand constant buffers if the scene contain to many objects
-		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
+		shaderPipeline->bind(cmdList.Get());
 
-		static_cast<DX12Mesh*>(command.model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);
-		meshIndex++;
+		command.model.mesh->draw(*this, cmdList.Get());
 	}
 
 	// TODO: Bind text texture
@@ -76,7 +72,7 @@ void DX12ScreenSpaceRenderer::present(PostProcessPipeline* postProcessPipeline, 
 	// Close command list
 	cmdList->Close();
 
-	m_context->executeCommandLists({m_command.list.Get()});
+	m_context->getDirectQueue()->executeCommandLists({m_command.list.Get()});
 }
 
 bool DX12ScreenSpaceRenderer::onEvent(const Event& event) {

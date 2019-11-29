@@ -17,16 +17,16 @@ public:
 
 #ifdef DEVELOPMENT
 	const std::map<TCP_CONNECTION_ID, unsigned char>& getConnectionMap();
+#endif // DEVELOPMENT
 	const std::string& getServerDescription();
 	const std::string& getLobbyName();
-#endif // DEVELOPMENT
 
 
 private:
 	std::map<TCP_CONNECTION_ID, Netcode::PlayerID> m_connectionsMap;
-	unsigned char m_IdDistribution = 0;
 	std::string m_lobbyName = "";
 	std::string m_serverDescription = "";
+	std::deque<Netcode::PlayerID> m_unusedPlayerIds;
 
 	void sendChatMsg(std::string msg);
 
@@ -38,7 +38,7 @@ private:
 	void updateClientName(TCP_CONNECTION_ID tcp_id, Netcode::PlayerID playerId, std::string& name);
 
 
-	void sendSerializedDataToClient(std::string data, Netcode::PlayerID PlayeriD);
+	void sendSerializedDataToClient(const std::string& data, Netcode::PlayerID PlayeriD) override;
 	/*
 		This will request clients to enter a new state. GameState, EndGameState etc.
 		id == 0 will send to all
@@ -49,5 +49,7 @@ private:
 
 	virtual void requestTeam(char team);
 	virtual void setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch = true);
+
+	virtual void updateStateLoadStatus(States::ID state, char status) override;
 
 };

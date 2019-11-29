@@ -52,7 +52,7 @@ MenuState::MenuState(StateStack& stack)
 	m_outerPadding = 35;
 	m_menuWidth = 700.0f;
 	m_usePercentage = true;
-	m_percentage = 0.35f;
+	m_percentage = 0.45f;
 
 	m_pos = ImVec2(0, 0);
 	m_size = ImVec2(0, 0);
@@ -101,9 +101,16 @@ bool MenuState::render(float dt, float alpha) {
 }
 
 bool MenuState::renderImgui(float dt) {
+
+	// Showcasing imgui texture rendering - remove when everyone who needs to know how this works knows how this works.
+	auto* imguiHandler = Application::getInstance()->getImGuiHandler();
+
+
+
+
 	
-	//Keep
 #ifdef DEVELOPMENT
+	//Keep
 	ImGui::ShowDemoWindow();
 #endif
 if (m_usePercentage) {
@@ -117,7 +124,7 @@ if (m_usePercentage) {
 
 	
 
-	static std::string font = "Beb30";
+	static std::string font = "Beb24";
 
 #ifdef DEVELOPMENT
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
@@ -149,7 +156,14 @@ if (m_usePercentage) {
 
 	renderMenu();
 
+	ImVec4 col(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+	col.w = 0.9;
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, col);
+
+	// NOT YET IMPLEMENTED
 	renderSingleplayer();
+
+
 	if (m_windowToRender == 1) {
 		renderLobbyCreator();
 	}
@@ -168,8 +182,15 @@ if (m_usePercentage) {
 	if (m_joiningLobby) {
 		renderJoiningLobby();
 	}
+	ImGui::PopStyleColor();
 
-
+	if (ImGui::Begin("##LOGOWINDOW", nullptr, m_standaloneButtonflags)) {
+		static ImVec2 z(3.7, 1.0);
+		Texture& logo = m_app->getResourceManager().getTexture("splash_logo.tga");
+		ImGui::Image(imguiHandler->getTextureID(&logo), ImVec2(m_app->getWindow()->getWindowWidth() *0.4f, (m_app->getWindow()->getWindowWidth()*0.4f) / z.x));
+		ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth()*0.5f - ImGui::GetWindowSize().x*0.5f, 0));
+	}
+	ImGui::End();
 
 	ImGui::PopFont();
 
@@ -199,28 +220,21 @@ const std::string MenuState::loadPlayerName(const std::string& file) {
 
 bool MenuState::onLanHostFound(const NetworkLanHostFoundEvent& event) {
 	// Get IP (as int) then convert into char*
-	ULONG ip_as_int = event.ip;
-	Network::ip_int_to_ip_string(ip_as_int, m_ipBuffer, m_ipBufferSize);
-	std::string ip_as_string(m_ipBuffer);
-
-	// Get Port as well
-	USHORT hostPort = event.hostPort;
-	ip_as_string += ":";
-	ip_as_string.append(std::to_string(hostPort));
+	std::string serverIdentifier = event.gameDescription.ip + ":" + std::to_string(event.gameDescription.port);
 
 	// Check if it is already logged.	
 	bool alreadyExists = false;
 	for (auto& lobby : m_foundLobbies) {
-		if (lobby.ip == ip_as_string) {
+		if (lobby.serverIdentifier == serverIdentifier) {
 			alreadyExists = true;
-			lobby.description = event.desc;
+			lobby.gameDescription = event.gameDescription;
 			lobby.resetDuration();
 		}
 	}
 	// If not...
 	if (alreadyExists == false) {
 		// ...log it.
-		m_foundLobbies.push_back(FoundLobby{ ip_as_string, event.desc });
+		m_foundLobbies.push_back(FoundLobby{ event.gameDescription, serverIdentifier });
 	}
 
 	return false;
@@ -247,7 +261,7 @@ void MenuState::removeDeadLobbies() {
 		index = 0;
 
 		for (auto& lobby : m_foundLobbies) {
-			if (lobbyToRemove.ip == lobby.ip) {
+			if (lobbyToRemove.serverIdentifier == lobby.serverIdentifier) {
 				m_foundLobbies.erase(m_foundLobbies.begin()+index);
 				break;
 			}
@@ -351,7 +365,11 @@ void MenuState::renderMenu() {
 		if (m_windowToRender == 4) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 		}
-		if (SailImGui::TextButton((m_windowToRender == 4) ? ">Profile" : "Profile")) {
+
+		std::string profileText = (m_windowToRender == 4 ? ">Profile" : "Profile");
+		profileText += " (" + m_network->getMyPlayerName() + ")";
+
+		if (SailImGui::TextButton(profileText.c_str())){
 			if (m_windowToRender != 4) {
 				m_windowToRender = 4;
 				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
@@ -402,7 +420,7 @@ void MenuState::renderLobbyCreator() {
 
 
 		strncpy_s(buf, lobbyName.c_str(), lobbyName.size());
-		ImGui::Text("name: ");
+		ImGui::Text("Lobby Name: ");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX());
 		ImGui::InputTextWithHint("##lobbyName", std::string(name + "'s lobby").c_str(), buf, 40);
@@ -413,13 +431,13 @@ void MenuState::renderLobbyCreator() {
 
 
 			if (m_optionsWindow.renderGameOptions()) {
-
+			
 			}
 
 
 
-			ImGui::EndChild();
 		}
+		ImGui::EndChild();
 
 
 
@@ -433,7 +451,10 @@ void MenuState::renderLobbyCreator() {
 				if (lobbyName == "") {
 					lobbyName = NWrapperSingleton::getInstance().getMyPlayer().name + "'s lobby";
 				}
-				wrapper->setLobbyName(lobbyName.c_str());
+
+				std::string gamemode = m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().name;
+				std::string map = m_settings->defaultMaps[gamemode].getSelected().name;
+				wrapper->setLobbyName(lobbyName+";"+gamemode+";"+map);
 
 				this->requestStackPop();
 				this->requestStackPush(States::HostLobby);
@@ -442,6 +463,7 @@ void MenuState::renderLobbyCreator() {
 
 	}
 	ImGui::End();
+	
 
 }
 
@@ -481,14 +503,26 @@ void MenuState::renderServerBrowser() {
 		// DISPLAY LOBBIES
 		static int selected = -1;
 #ifdef DEVELOPMENT
-		ImGui::Text(std::to_string(selected).c_str());
+		//KEEP
+		//ImGui::Text(std::to_string(selected).c_str());
 #endif
 		if (ImGui::BeginChild("Lobbies", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
 			// Per hosted game
-			ImGui::Columns(2, "testColumns", false);
-			ImGui::SetColumnOffset(1,ImGui::GetWindowContentRegionWidth()-100);
+
+			static float p[4] = { 0.24,0.46,0.65,0.4};
+#ifdef DEVELOPMENT
+			ImGui::SliderFloat4("asd", &p[0], 0.0f, 1.0f);
+#endif
+			ImGui::Columns(5, "serverbrowserColumns", false);
+			ImGui::SetColumnOffset(1,ImGui::GetWindowContentRegionWidth() * p[0]);
+			ImGui::SetColumnOffset(2,ImGui::GetWindowContentRegionWidth() * p[1]);
+			ImGui::SetColumnOffset(3,ImGui::GetWindowContentRegionWidth() * p[2]);
+			ImGui::SetColumnOffset(4,ImGui::GetWindowContentRegionWidth()-100);
 			ImGui::Separator();
 			ImGui::Text("Lobby"); ImGui::NextColumn();
+			ImGui::Text("gamemode"); ImGui::NextColumn();
+			ImGui::Text("map"); ImGui::NextColumn();
+			ImGui::Text("Status"); ImGui::NextColumn();
 			ImGui::Text("Players"); ImGui::NextColumn();
 			ImGui::Separator();
 
@@ -498,30 +532,48 @@ void MenuState::renderServerBrowser() {
 			}
 			for (auto& lobby : m_foundLobbies) {
 				// List as a button
-				std::string fullText = lobby.description;
-				std::string lobbyName = "";
-				std::string playerCount = "N/A";
-				// GET LOBBY NAME AND PLAYERCOUNT AS SEPARATE STRINGS
-				if (fullText == "") {
-					lobbyName = lobby.ip;
-				}
-				else {
-					int p0 = fullText.find_last_of("(");
-					int p1 = fullText.find_last_of(")");
-					lobbyName = fullText.substr(0, p0 - 1);
-					playerCount = fullText.substr(p0 + 1, p1 - p0 - 1);
+
+				int first = lobby.gameDescription.name.find_first_of(";");
+				int last = lobby.gameDescription.name.find_last_of(";");
+
+				std::string lobbyName = lobby.gameDescription.name.substr(0,first);
+				std::string map = lobby.gameDescription.name.substr(last+1, std::string::npos);
+				std::string gamemode = lobby.gameDescription.name.substr(first + 1, last - first-1);
+
+				std::string playerCount = (lobby.gameDescription.maxPlayers > 0) ? std::to_string(lobby.gameDescription.nPlayers) + " / " + std::to_string(lobby.gameDescription.maxPlayers) : "N/A";
+
+
+
+				std::string statusString = "Unknown";
+
+				if (lobby.gameDescription.currentState == States::Lobby) {
+					statusString = "In Lobby";
+				} else if (lobby.gameDescription.currentState == States::Game) {
+					statusString = "In Game";
+				} else if (lobby.gameDescription.currentState == States::EndGame) {
+					statusString = "Endgame";
 				}
 
+				// GET LOBBY NAME AND PLAYERCOUNT AS SEPARATE STRINGS
+				if (lobbyName == "") {
+					lobbyName = lobby.serverIdentifier;
+				}
 
 				if (ImGui::Selectable(lobbyName.c_str(), selected == index, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns)) {
 
 					selected = (index == selected ? -1 : index);
 					if (ImGui::IsMouseDoubleClicked(0)) {
 						// If pressed then join
-						joinLobby(lobby.ip);
+						joinLobby(lobby.serverIdentifier);
 					}
 				}
 				ImGui::NextColumn();
+				ImGui::Text(gamemode.c_str()); ImGui::NextColumn();
+				ImGui::Text(map.c_str()); ImGui::NextColumn();
+				ImGui::Text(statusString.c_str()); ImGui::NextColumn();
+
+
+
 				ImGui::Text(playerCount.c_str()); ImGui::NextColumn();
 				index++;
 			}
@@ -537,7 +589,7 @@ void MenuState::renderServerBrowser() {
 		}
 		// If pressed then join
 		if (ImGui::Button("Join##browser") && selected > -1) {
-			joinLobby(m_foundLobbies[selected].ip);
+			joinLobby(m_foundLobbies[selected].serverIdentifier);
 		}
 		if (selected == -1) {
 			ImGui::PopStyleVar();
@@ -574,9 +626,21 @@ void MenuState::renderProfile() {
 		ImGui::SameLine();
 		static char buf[101] = "";
 		strncpy_s(buf, name.c_str(), name.size());
-		ImGui::InputText("##name", buf, MAX_NAME_LENGTH);
-		name = buf;
-		NWrapperSingleton::getInstance().setPlayerName(name.c_str());
+		if (ImGui::InputText("##name", buf, MAX_NAME_LENGTH, ImGuiInputTextFlags_EnterReturnsTrue)) {
+			name = buf;
+			while (name.find("%") != std::string::npos) {
+				name = name.erase(name.find("%"), 1);
+			}
+
+			if (name == "") {
+				name = "Hans";
+			}
+
+			NWrapperSingleton::getInstance().setPlayerName(name.c_str());
+		}
+		else {
+			name = buf;
+		}
 
 
 
@@ -662,7 +726,6 @@ void MenuState::startSinglePlayer() {
 			NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 		}
 		NWrapperSingleton::getInstance().stopUDP();
-		//m_app->getStateStorage().setLobbyToGameData(LobbyToGameData(0));
 
 		auto& map = m_app->getSettings().gameSettingsDynamic["map"];
 

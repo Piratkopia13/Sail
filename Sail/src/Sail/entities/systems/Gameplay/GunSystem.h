@@ -3,6 +3,7 @@
 
 class GameDataTracker;
 class GunComponent;
+class Octree;
 
 class GunSystem final : public BaseComponentSystem {
 public:
@@ -10,9 +11,11 @@ public:
 	~GunSystem();
 
 	void update(float dt) override;
+	void setOctree(Octree* octree);
 
-
-
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
 private:
 	GameDataTracker* m_gameDataTracker = nullptr;
 
@@ -20,6 +23,7 @@ private:
 	bool m_shotStart = true;
 	bool m_isLoopingShootSound = false;
 	bool m_endSound = false;
+	Octree* m_octree;
 
 	void alterProjectileSpeed(GunComponent* gun);
 

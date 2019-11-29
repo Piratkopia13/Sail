@@ -3,10 +3,10 @@
 #include "Sail/netcode/NetcodeTypes.h"
 
 struct WaterHitPlayerEvent : public Event {
-	WaterHitPlayerEvent(Netcode::ComponentID _netCompID, Netcode::PlayerID _senderID)
+	WaterHitPlayerEvent(Netcode::ComponentID _netCompID, Netcode::ComponentID _hitterID)
 		: Event(Event::Type::WATER_HIT_PLAYER)
 		, netCompID(_netCompID)
-		, senderID(_senderID) {}
+		, hitterID(_hitterID) {}
 	const Netcode::ComponentID netCompID;
-	const Netcode::PlayerID senderID;
+	const Netcode::ComponentID hitterID;
 };

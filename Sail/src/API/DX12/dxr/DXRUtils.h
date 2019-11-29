@@ -18,8 +18,8 @@ namespace DXRUtils {
 		void setMaxRecursionDepth(UINT depth);
 
 		ID3D12StateObject* build(ID3D12Device5* device);
-
 	private:
+
 		DXILShaderCompiler m_dxilCompiler;
 
 		D3D12_STATE_SUBOBJECT m_start[100];

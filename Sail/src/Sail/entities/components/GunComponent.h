@@ -40,9 +40,12 @@ public:
 	bool firingContinuously = false;
 	GunState state = GunState::STANDBY;
 #ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
 	void imguiRender(Entity** selected) {
 		ImGui::Columns(2);
-		if (ImGui::DragFloat("##aspeeed", &projectileSpeed, 0.1f)) {
+		if (ImGui::DragFloat("##aspeeed", &baseProjectileSpeed, 0.1f)) {
 		}ImGui::NextColumn();
 		ImGui::Text("Speed"); 
 		ImGui::Columns(1);

@@ -23,40 +23,44 @@ SanitySystem::~SanitySystem() {
 }
 
 void SanitySystem::update(float dt) {
-	bool isHost = NWrapperSingleton::getInstance().isHost();
+	const bool isHost = NWrapperSingleton::getInstance().isHost();
 	
-	//Only let host controll sanity for all players.
+
+	//Only let host control sanity for all players.
 	if (!isHost) {
 		return;
 	}
 
 	for (auto& e : entities) {
-		SanityComponent* ic = e->getComponent<SanityComponent>();
-		TransformComponent* tc = e->getComponent<TransformComponent>();
+		SanityComponent* sanityComp = e->getComponent<SanityComponent>();
+		TransformComponent* playerTransformComp = e->getComponent<TransformComponent>();
 		
-		CandleComponent* cc = nullptr;
-		TransformComponent* c_tc = nullptr;
-		Entity* candle_entity = nullptr;
+		CandleComponent* candleComp = nullptr;
+		TransformComponent* candleTransformComp = nullptr;
+		Entity* candleEntity = nullptr;
 
 		for (auto& child : e->getChildEntities()) {
-			if ((cc = child->getComponent<CandleComponent>()) && (c_tc = child->getComponent<TransformComponent>())) {
-				candle_entity = child;
+			if (!child->isAboutToBeDestroyed() && child->hasComponent<CandleComponent>()) {
+				candleComp = child->getComponent<CandleComponent>();
+				candleTransformComp = child->getComponent<TransformComponent>();
+				candleEntity = child;
 				break;
 			}
 		}
 
-		if (candle_entity) {
+		if (candleEntity) {
 			float dist;
-			if (cc->isCarried && cc->isLit) {
+			if (candleComp->isCarried && candleComp->isLit) {
 				dist = -12;
-			} else {
-				dist = glm::distance(tc->getTranslation(), c_tc->getTranslation());
+			}
+			else {
+				dist = glm::min(glm::distance(playerTransformComp->getTranslation(), candleTransformComp->getTranslation()), 25.f);
 			}
 
-			ic->sanity -= (dist - 1) * dt * 0.5;
-			ic->sanity = std::clamp(ic->sanity, m_minSanity, m_maxSanity);
-			if (ic->sanity <= 0) {
-				cc->kill(CandleComponent::DamageSource::INSANE, Netcode::MESSAGE_INSANITY_ID);
+			sanityComp->sanity -= (dist - 1) * dt * 0.5f;
+			sanityComp->sanity = std::clamp(sanityComp->sanity, m_minSanity, m_maxSanity);
+			if (sanityComp->sanity <= 0) {
+				candleComp->kill(CandleComponent::DamageSource::INSANE, Netcode::INSANITY_COMP_ID);
 			}
 		}
 	}
@@ -66,15 +70,16 @@ void SanitySystem::updateSanityNetworked(Netcode::ComponentID id, float sanity) 
 	bool found = false;
 
 	for (auto& e : entities) {
-		NetworkReceiverComponent* nc = nullptr;
-		SanityComponent* ic = nullptr;
+		NetworkReceiverComponent* networkReceiverComp = nullptr;
+		SanityComponent* sanityComp = nullptr;
 
-		if (nc = e->getComponent<NetworkReceiverComponent>()) {
-			if (nc->m_id == id) {
+		if (e->hasComponent<NetworkReceiverComponent>()) {
+			networkReceiverComp = e->getComponent<NetworkReceiverComponent>();
+			if (networkReceiverComp->m_id == id) {
 				found = true;
 
-				if (ic = e->getComponent<SanityComponent>()) {
-					ic->sanity = sanity;
+				if (sanityComp = e->getComponent<SanityComponent>()) {
+					sanityComp->sanity = sanity;
 				} else {
 					SAIL_LOG_WARNING("Tried to update sanity on an entity without a sanityComponent!\n");
 				}
@@ -90,6 +95,12 @@ void SanitySystem::updateSanityNetworked(Netcode::ComponentID id, float sanity) 
 #endif
 
 }
+
+#ifdef DEVELOPMENT
+unsigned int SanitySystem::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
 
 bool SanitySystem::onEvent(const Event& event) {
     switch(event.type) {                                                                             

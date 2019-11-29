@@ -1,6 +1,11 @@
 #pragma once
 
 #include "Sail/states/State.h"
+#include "Sail/utils/SailImGui/SailImGui.h"
+
+struct NetworkJoinedEvent;
+class Application;
+class ImGuiHandler;
 
 class EndGameState final : public State {
 public:
@@ -19,7 +24,28 @@ public:
 	// Sends events to the state
 	bool onEvent(const Event& event) override;
 
+	bool onPlayerJoined(const NetworkJoinedEvent& event);
+
 private:
 	void updatePerTickComponentSystems(float dt);
 	void updatePerFrameComponentSystems(float dt, float alpha);
+
+	void renderMenu();
+	void renderScore();
+	void renderPersonalStats();
+	void renderFunStats();
+	void renderWinners();
+
+private:
+
+	Application* m_app;
+	ImGuiHandler* m_imguiHandler;
+
+	ImGuiWindowFlags m_standaloneButtonflags;
+	ImGuiWindowFlags m_backgroundOnlyflags;
+
+	float m_padding;
+
+
+
 };

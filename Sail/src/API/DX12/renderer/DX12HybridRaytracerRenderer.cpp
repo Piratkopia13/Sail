@@ -28,11 +28,11 @@ void DX12HybridRaytracerRenderer::submit(Mesh* mesh, const glm::mat4& modelMatri
 	}
 }
 
-void DX12HybridRaytracerRenderer::submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags) {
+void DX12HybridRaytracerRenderer::submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags, int group) {
 	if (flags & RenderFlag::IS_VISIBLE_ON_SCREEN) {
-		m_rendererGbuffer->submitMetaball(type, material, pos, flags);
+		m_rendererGbuffer->submitMetaball(type, material, pos, flags, group);
 	}
-	m_rendererRaytrace->submitMetaball(type, material, pos, flags);
+	m_rendererRaytrace->submitMetaball(type, material, pos, flags, group);
 }
 
 void DX12HybridRaytracerRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {
@@ -75,4 +75,8 @@ bool DX12HybridRaytracerRenderer::checkIfOnWater(const glm::vec3& pos) {
 
 DX12GBufferRenderer* DX12HybridRaytracerRenderer::getGBufferRenderer() const {
 	return m_rendererGbuffer.get();
+}
+
+DXRBase* DX12HybridRaytracerRenderer::getDXRBase() {
+	return m_rendererRaytrace->getDXRBase();;
 }

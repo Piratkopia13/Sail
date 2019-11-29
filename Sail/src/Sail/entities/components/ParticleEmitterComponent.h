@@ -10,10 +10,12 @@
 
 class DX12VertexBuffer;
 class ParticleComputeShader;
-class ID3D12GraphicsCommandList4;
+struct ID3D12GraphicsCommandList4;
 
 class ParticleEmitterComponent : public Component<ParticleEmitterComponent> {
 public:
+	friend class ParticleSystem;
+
 	ParticleEmitterComponent();
 	~ParticleEmitterComponent();
 
@@ -28,32 +30,52 @@ public:
 	float spawnRate;
 	float spawnTimer;
 
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		/* TODO: Fix component size */
+		unsigned int size = sizeof(*this);
+		size += sizeof(CPUOutput);
+		size += sizeof(NewParticleInfo) * m_cpuOutput->newParticles.size();
+		size += sizeof(unsigned int) * m_cpuOutput->toRemove.size();
+		size += sizeof(float) * m_particleLife->size();
+		//size += m_model->getByteSize(); // Stored in ParticleSystem
+		return size;
+	}
+#endif
+
+	struct EmitterData {
+		std::unique_ptr<ParticleComputeShader> particleShader;
+
+		DX12VertexBuffer* outputVertexBuffer;
+		unsigned int outputVertexBufferSize;
+
+		wComPtr<ID3D12Resource>* physicsBufferDefaultHeap;
+		int particlePhysicsSize;
+
+		std::unique_ptr<Model> model;
+		bool isDead = false;
+		unsigned int framesDead = 0;
+	};
+
 private:
 	void init();
+	void syncWithGPUUpdate(unsigned int swapBufferIndex, unsigned int outputVertexBufferSize);
 
-	void syncWithGPUUpdate(unsigned int swapBufferIndex);
+	// Used in ParticleSystem
+	bool hasBeenCreatedInSystem();
+	void setAsCreatedInSystem();
+	const std::string& getTextureName() const;
 
 public:
 	void spawnParticles(int particlesToSpawn);
 
 	void updateTimers(float dt);
-	void updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm::vec3& cameraPos);
+	void updateOnGPU(ID3D12GraphicsCommandList4* cmdList, const glm::vec3& cameraPos, EmitterData& data, ComputeShaderDispatcher& dispatcher);
 
-	void submit() const;
-
-	void setTexture(std::string textureName);
+	void setTexture(const std::string& textureName);
 
 private:
-	std::unique_ptr<ComputeShaderDispatcher> m_dispatcher;
-	std::unique_ptr < ParticleComputeShader> m_particleShader;
-
-	DX12VertexBuffer* m_outputVertexBuffer;
-	unsigned int m_outputVertexBufferSize;
-
-	wComPtr<ID3D12Resource>* m_physicsBufferDefaultHeap;
-	int m_particlePhysicsSize;
-
-	std::unique_ptr<Model> m_model;
+	bool m_hasBeenCreatedInSystem;
 
 	Timer m_timer;
 	INT64 m_startTime;
@@ -61,7 +83,7 @@ private:
 	int m_gpuUpdates;
 
 	std::vector<float>* m_particleLife;
-
+	std::string m_textureName;
 
 	struct NewParticleInfo {
 		glm::vec3 pos;

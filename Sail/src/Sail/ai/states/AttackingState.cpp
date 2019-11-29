@@ -10,7 +10,7 @@
 #include "../Physics/Intersection.h"
 
 AttackingState::AttackingState() {
-	m_distToHost = INFINITY;
+	m_distToHost = 9999999.0f;
 }
 
 AttackingState::~AttackingState() {}

@@ -18,7 +18,7 @@ bool Intersection::AabbWithAabb(const glm::vec3& aabb1Pos, const glm::vec3& aabb
 }
 
 bool Intersection::AabbWithAabb(const glm::vec3& aabb1Pos, const glm::vec3& aabb1HalfSize, const glm::vec3& aabb2Pos, const glm::vec3& aabb2HalfSize, glm::vec3* intersectionAxis, float* intersectionDepth) {
-	*intersectionDepth = INFINITY;
+	*intersectionDepth = 9999999.0f;
 
 	float tempDepth;
 	for (int i = 0; i < 3; i++) {
@@ -87,7 +87,7 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aabbPos, const glm::vec3& a
 
 bool Intersection::AabbWithTriangle(const glm::vec3& aabbPos, const glm::vec3& aabbHalfSize, const glm::vec3& triPos1, const glm::vec3& triPos2, const glm::vec3& triPos3, glm::vec3* intersectionAxis, float* intersectionDepth) {
 	//This version sets the intersection axis for the smallest collision and the intersection depth along that axis.
-	float depth = INFINITY;
+	float depth = 9999999.0f;
 	glm::vec3 tempIntersectionAxis;
 
 	//Calculate normal for triangle

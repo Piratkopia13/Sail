@@ -4,23 +4,25 @@
 #include <string>
 #include <list>
 #include "Sail/utils/SailImGui/OptionsWindow.h"
+#include "Sail/utils/SailImGui/NetworkInfoWindow.h"
 
 struct Player;
 class NWrapper;
-class TextInputEvent;
+struct TextInputEvent;
 class AudioComponent;
 
+struct ChatSent;
 struct NetworkChatEvent;
 struct NetworkJoinedEvent;
 struct NetworkDisconnectEvent;
 struct NetworkPlayerChangedTeam;
 struct NetworkPlayerRequestedTeamChange;
 
-struct Message {
-	Netcode::PlayerID senderID;
-	std::string content;
-};
 #define HOST_ID 0
+
+
+
+
 
 class LobbyState : public State {
 public:
@@ -42,34 +44,20 @@ protected:
 	Input* m_input = nullptr;
 	NWrapper* m_network = nullptr;
 	SettingStorage* m_settings;
-	char* m_currentmessage = nullptr;
 	int* m_settingBotCount = nullptr;
-	std::list<std::string> m_messages;
 
-	// Front-End Functions
-	bool inputToChatLog(const MSG& msg);
-	void resetCurrentMessage();
-
-	std::string fetchMessage();
-	void addMessageToChat(const Message& message);
 	virtual bool onEvent(const Event& event) override;
 
 private:
 	ImGuiHandler* m_imGuiHandler;
 	OptionsWindow m_optionsWindow;
+	NetworkInfoWindow m_netInfo;
 	bool m_ready;
 	// LobbyAudio
 	Entity* m_lobbyAudio = nullptr;
 
-	// Back-end variables
-	unsigned int m_currentmessageIndex;
-	unsigned int m_messageSizeLimit;
-	unsigned int m_messageCount;
-	unsigned int m_messageLimit;
-	bool m_firstFrame = true;	// Used solely for ImGui
-	bool m_chatFocus = true;	// Used solely for ImGui
 	unsigned int m_tempID = 0; // used as id counter until id's are gotten through network shit.
-
+	
 	// Render ImGui Stuff --------- WILL BE REPLACED BY OTHER GRAPHICS.
 	bool m_settingsChanged;
 	float m_timeSinceLastUpdate;
@@ -80,14 +68,12 @@ private:
 
 	int m_windowToRender;
 	unsigned int m_outerPadding;
-	unsigned int m_screenWidth;
-	unsigned int m_screenHeight;
-	unsigned int m_textHeight;
 
 	bool m_renderGameSettings;
 	bool m_renderApplicationSettings;
 
-
+	float m_screenWidth;
+	float m_screenHeight;
 
 	float m_menuWidth;
 	ImVec2 m_minSize;
@@ -98,15 +84,13 @@ private:
 	bool m_usePercentage;
 
 
-	virtual bool onMyTextInput(const TextInputEvent& event) = 0;
-	bool onRecievedText(const NetworkChatEvent& event);
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
 	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
 	bool onPlayerTeamRequest(const NetworkPlayerRequestedTeamChange& event);
 	bool onPlayerTeamChanged(const NetworkPlayerChangedTeam& event);
+	bool onSettingsChanged();
 
 	void renderPlayerList();
 	void renderGameSettings();		// Currently empty
-	void renderChat();
 	void renderMenu();
 };

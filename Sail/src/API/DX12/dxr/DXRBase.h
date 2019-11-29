@@ -27,19 +27,30 @@ public:
 		float distToCamera;
 	};
 
+	struct MetaballGroup {
+		int index;
+		int gpuGroupStartOffset; //offset in gpu structured buffer for metaball positions
+		std::vector<DXRBase::Metaball> balls;
+		float averageDistToCamera;
+		D3D12_RAYTRACING_AABB aabb;
+	};
+
 	DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs);
 	~DXRBase();
 
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 
-	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
+	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList, const std::vector<DXRBase::MetaballGroup*>& metaballGroups);
+
+	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	bool checkWaterAtWorldPosition(const glm::vec3& position);
 	void updateWaterData();
 	void dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTexture* outputBloomTexture, ID3D12GraphicsCommandList4* cmdList);
 	void simulateWater(float dt);
+
+	void rebuildWater();
 
 	void resetWater();
 	void reloadShaders();
@@ -98,9 +109,10 @@ private:
 	void createEmptyLocalRootSignature();
 
 	void initMetaballBuffers();
-	void updateMetaballpositions(const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb);
+	void updateMetaballpositions(const std::vector<DXRBase::MetaballGroup*>& metaballGroups);
 
 	void initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle);
+	void addMetaballGroupAABB(int index);
 
 private:
 	DX12API* m_context;
@@ -115,6 +127,8 @@ private:
 	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_decalCB;
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
+	std::vector<std::unordered_map<int, InstanceList>> m_bottomBuffers_Metaballs;
+
 	std::vector<AccelerationStructureBuffers> m_DXR_TopBuffer;
 
 	wComPtr<ID3D12StateObject> m_rtPipelineState;
@@ -150,7 +164,6 @@ private:
 	std::vector<MeshHandles> m_rtMeshHandles[2];
 	// Metaballs
 	std::vector<ID3D12Resource1*> m_metaballPositions_srv;
-	UINT m_metaballsToRender;
 	// Decals
 	UINT m_decalsToRender;
 
@@ -171,14 +184,18 @@ private:
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureEmpty;
 
 	// Metaball Stuff
-	std::vector<ID3D12Resource1*> m_aabb_desc_resource; // m_aabb_desc uploaded to GPU
+	std::map<int, std::vector<ID3D12Resource1*>> m_aabb_desc_resources; // m_aabb_descs uploaded to GPU
 
 	// Water voxel grid stuff
 	std::unique_ptr<ShaderComponent::DX12StructuredBuffer> m_waterStructuredBuffer;
 	std::unordered_map<unsigned int, unsigned int> m_waterDeltas; // Changed water voxels over the last 2 frames
-	unsigned int m_waterDataCPU[WATER_ARR_SIZE];
-	bool m_updateWater[WATER_ARR_SIZE];
+	unsigned int* m_waterDataCPU;
+	bool* m_updateWater;
 	bool m_waterChanged;
+	glm::vec3 m_waterArrSizes;
+	unsigned int m_waterArrSize;
+	glm::vec3 m_mapSize;
+	glm::vec3 m_mapStart;
 
 	int m_currWaterZChunk;
 	int m_maxWaterZChunk;
