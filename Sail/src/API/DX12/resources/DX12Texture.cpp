@@ -99,6 +99,11 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	});
 
 	m_isInitialized = true;
+
+
+	SAIL_LOG("Uploaded " + m_textureData.getFileName() + " to VRAM");
+
+	EventDispatcher::Instance().emit(TextureUploadedToGPUEvent(m_textureData.getFileName()));
 }
 
 bool DX12Texture::hasBeenInitialized() const {

@@ -3,6 +3,7 @@
 #include "Sail/api/Renderer.h"
 #include "../DX12API.h"
 
+class DX12Texture;
 class DX12RenderableTexture;
 class PostProcessPipeline;
 
@@ -33,6 +34,8 @@ private:
 	DX12RenderableTexture* m_gbufferTextures[NUM_GBUFFERS];
 	DX12API::Command m_command[MAX_RECORD_THREADS];
 	DX12API::Command m_computeCommand;
+
+	std::vector<DX12Texture*> m_texturesToUpload;
 
 	void recordCommands(PostProcessPipeline* postProcessPipeline, const int threadID, const int frameIndex, const int start, const int nCommands, unsigned int oobMax, int nThreads);
 };

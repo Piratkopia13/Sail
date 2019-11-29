@@ -161,6 +161,18 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 #else
 	if (threadID == 0) {
 
+		// Upload queued textures
+		for (size_t i = 0; i < m_texturesToUpload.size(); i++) {
+			auto* dx12Tex = m_texturesToUpload[i];
+
+			if (dx12Tex && !dx12Tex->hasBeenInitialized()) {
+				dx12Tex->initBuffers(cmdList.Get());
+			}
+		}
+		// Empty queue
+		m_texturesToUpload.clear();
+
+
 		// Init all vbuffers and textures - this needs to be done on ONE thread
 		// TODO: optimize!
 		for (auto& renderCommand : commandQueue) {
@@ -266,7 +278,9 @@ bool DX12GBufferRenderer::onEvent(const Event& event) {
 		auto dx12Tex = static_cast<DX12Texture*>(e.texture);
 
 		if (dx12Tex && !dx12Tex->hasBeenInitialized()) {
-			auto frameIndex = m_context->getFrameIndex();
+			m_texturesToUpload.push_back(dx12Tex);
+			
+			/*auto frameIndex = m_context->getFrameIndex();
 
 			constexpr int mainThreadIndex = 0;	// Assuming the main thread can be used
 			auto cmdAlloc = m_command[mainThreadIndex].allocators[frameIndex];
@@ -283,11 +297,7 @@ bool DX12GBufferRenderer::onEvent(const Event& event) {
 
 			m_context->waitForGPU();
 			// FENCE STATUS COMPROMISED ?
-			// THREAD SAFE ?
-
-			SAIL_LOG("Uploaded " + e.fileName + " to VRAM");
-
-			EventDispatcher::Instance().emit(TextureUploadedToGPUEvent(e.fileName));
+			// THREAD SAFE ?*/
 		}
 	};
 
