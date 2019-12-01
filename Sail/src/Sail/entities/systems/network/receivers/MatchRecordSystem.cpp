@@ -37,13 +37,19 @@ void MatchRecordSystem::initRecording() {
 	recorded.write((char*)&settings[0], len);
 }
 
-void MatchRecordSystem::initReplay() {
+bool MatchRecordSystem::initReplay(std::string replayName) {	
+	replayName = "replays/" + replayName + ".txt";
+	
 	if (status) {
 		recorded.close();
 		replay.close();
 	}
 	status = 2;
-	replay = std::ifstream("Nisse.txt"/*time2*/, std::ofstream::binary);
+	replay = std::ifstream(replayName, std::ofstream::binary);
+
+	if (!replay.is_open()) {
+		return false;
+	}
 
 	unsigned np;
 	unsigned strLen;
@@ -74,16 +80,18 @@ void MatchRecordSystem::initReplay() {
 	replay.read(&settings[0], strLen);
 
 	Application::getInstance()->getSettings().deSerialize(settings, Application::getInstance()->getSettings().gameSettingsStatic, Application::getInstance()->getSettings().gameSettingsDynamic);
+	return true;
 }
 
-void MatchRecordSystem::recordPackage(const std::string& data) {
-	unsigned np = 1;
+void MatchRecordSystem::recordPackages(std::queue<std::string> data) {
+	unsigned np = data.size();
 	recorded.write((char*)& np, sizeof(np));
 
 	for (size_t i = 0; i < np; i++) {
-		unsigned pl = (unsigned)data.length();
+		unsigned pl = (unsigned)data.front().length();
 		recorded.write((char*)& pl, sizeof(pl));
-		recorded.write((char*)&data[0], pl);
+		recorded.write((char*)&data.front()[0], pl);
+		data.pop();
 	}
 }
 
@@ -91,6 +99,9 @@ void MatchRecordSystem::replayPackages(std::queue<std::string>& data) {
 	unsigned np;
 	replay.read((char*)&np, sizeof(np));
 	for (size_t i = 0; i < np; i++) {
+		if (replay.eof()) {
+			return;
+		}
 		unsigned pl;
 		std::string package;
 		replay.read((char*)&pl, sizeof(pl));

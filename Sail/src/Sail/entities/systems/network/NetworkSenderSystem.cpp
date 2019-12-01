@@ -158,15 +158,13 @@ void NetworkSenderSystem::update() {
 	// -+-+-+-+-+-+-+-+ send the serialized archive over the network -+-+-+-+-+-+-+-+ 
 	std::string binaryDataToSendToOthers = osToOthers.str();
 	if (NWrapperSingleton::getInstance().isHost()) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryDataToSendToOthers);
-
+		m_HOSTONLY_dataToForward.push(binaryDataToSendToOthers);
 		MatchRecordSystem* mrs = NWrapperSingleton::getInstance().recordSystem;
 		if (mrs) {
 			if (mrs->status == 1) {
-				mrs->recordPackage(binaryDataToSendToOthers);
+				mrs->recordPackages(m_HOSTONLY_dataToForward);
 			}
 		}
-
 		// Host doesn't get their messages sent back to them so we need to send them to the killCamReceiverSystem from here
 		m_killCamSystem->handleIncomingData(binaryDataToSendToOthers);
 	} else {
@@ -184,8 +182,7 @@ void NetworkSenderSystem::update() {
 	std::scoped_lock lock(m_forwardBufferLock);
 	// The host forwards all the incoming messages they have to all the clients
 	while (!m_HOSTONLY_dataToForward.empty()) {
-		std::string dataFromClient = m_HOSTONLY_dataToForward.front();
-
+		std::string& dataFromClient = m_HOSTONLY_dataToForward.front();
 
 		// This if statement shouldn't be needed since m_dataToForwardToClients will be empty unless you're the host
 		if (NWrapperSingleton::getInstance().isHost()) {

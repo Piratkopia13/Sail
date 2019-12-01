@@ -34,6 +34,10 @@ NWrapperSingleton::NWrapperSingleton() {
 }
 
 bool NWrapperSingleton::host(int port) {
+	if (recordSystem) {
+		delete recordSystem;
+		recordSystem = nullptr;
+	}
 	this->initialize(true);
 
 	if (m_isHost) {
@@ -48,6 +52,10 @@ bool NWrapperSingleton::host(int port) {
 }
 
 bool NWrapperSingleton::connectToIP(char* adress) {
+	if (recordSystem) {
+		delete recordSystem;
+		recordSystem = nullptr;
+	}
 	this->initialize(false);
 
 	if (!m_isHost) {

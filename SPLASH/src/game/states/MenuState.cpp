@@ -166,15 +166,14 @@ if (m_usePercentage) {
 
 	if (m_windowToRender == 1) {
 		renderLobbyCreator();
-	}
-	if (m_windowToRender == 2) {
+	} else if (m_windowToRender == 2) {
 		renderServerBrowser();
-	}
-	if (m_windowToRender == 3) {
+	} else if (m_windowToRender == 3) {
 		renderOptions();
-	}
-	if (m_windowToRender == 4) {
+	} else if (m_windowToRender == 4) {
 		renderProfile();
+	} else if (m_windowToRender == 5) {
+		renderReplays();
 	}
 #ifdef DEVELOPMENT
 	renderDebug();
@@ -382,6 +381,27 @@ void MenuState::renderMenu() {
 		if (m_windowToRender == 4) {
 			ImGui::PopStyleColor();
 		}
+
+		////////////////////////////////////
+		if (m_windowToRender == 5) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+		}
+
+		std::string replayText = (m_windowToRender == 4 ? ">Replay" : "Replay");
+
+		if (SailImGui::TextButton(replayText.c_str())) {
+			if (m_windowToRender != 5) {
+				m_windowToRender = 5;
+				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+			} else {
+				m_windowToRender = 0;
+				ImGui::PopStyleColor();
+			}
+		}
+		if (m_windowToRender == 5) {
+			ImGui::PopStyleColor();
+		}
+		///////////////////////////////////
 #ifdef DEVELOPMENT
 		if (SailImGui::TextButton("Pause  #dev")) {
 			this->requestStackPush(States::InGameMenu);
@@ -716,6 +736,114 @@ void MenuState::renderOptions() {
 		m_optionsWindow.renderWindow();
 	}
 	ImGui::End();
+}
+void MenuState::renderReplays() {
+	// Display open lobbies
+	const static std::string windowName = "Saved Replays";
+	static std::string replayName = "";
+
+	ImGui::SetNextWindowPos(m_pos);
+	ImGui::SetNextWindowSize(m_size);
+	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
+	if (ImGui::Begin("##SAVED_REPLAYS", nullptr, m_backgroundOnlyflags)) {
+		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		SailImGui::HeaderText(windowName.c_str());
+		ImGui::PopFont();
+		ImGui::Separator();
+		// DISPLAY LOBBIES
+		static int selected = -1;
+		std::vector<std::string> replays;
+		replays.push_back("Nisse");
+
+		if (ImGui::BeginChild("Replays", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
+			// Per hosted game
+
+			static float p[4] = { 0.24,0.46,0.65,0.4 };
+#ifdef DEVELOPMENT
+			ImGui::SliderFloat4("asd", &p[0], 0.0f, 1.0f);
+#endif
+			ImGui::Columns(5, "replaybrowserColumns", false);
+			ImGui::SetColumnOffset(1, ImGui::GetWindowContentRegionWidth() * p[0]);
+			ImGui::SetColumnOffset(2, ImGui::GetWindowContentRegionWidth() * p[1]);
+			ImGui::SetColumnOffset(3, ImGui::GetWindowContentRegionWidth() * p[2]);
+			ImGui::SetColumnOffset(4, ImGui::GetWindowContentRegionWidth() - 100);
+			ImGui::Separator();
+			ImGui::Text("Name"); ImGui::NextColumn();
+			ImGui::Text("gamemode"); ImGui::NextColumn();
+			ImGui::Text("map"); ImGui::NextColumn();
+			ImGui::Text("Status"); ImGui::NextColumn();
+			ImGui::Text("Players"); ImGui::NextColumn();
+			ImGui::Separator();
+
+			int index = 0;
+			int maxReplays = replays.size();
+			if (selected >= maxReplays) {
+				selected = -1;
+			}
+
+
+			for (auto& replay : replays) {
+				// List as a button
+				if (ImGui::Selectable(replay.c_str(), selected == index, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns)) {
+
+					selected = (index == selected ? -1 : index);
+					if (ImGui::IsMouseDoubleClicked(0)) {
+						prepareReplay(replay);
+					}
+				}
+				ImGui::NextColumn();
+				ImGui::Text("1"); ImGui::NextColumn();
+				ImGui::Text("2"); ImGui::NextColumn();
+				ImGui::Text("3"); ImGui::NextColumn();
+				ImGui::Text("4"); ImGui::NextColumn();
+				index++;
+			}
+		}
+		ImGui::EndChild();
+
+		// DISPLAY JOIN BUTTON
+		ImGui::NewLine();
+		ImGui::SameLine(ImGui::GetWindowWidth() - 100);
+		if (selected == -1) {
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.3f);
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+		}
+		// If pressed then join
+		if (ImGui::Button("Enter##browser") && selected > -1) {
+			prepareReplay(replays[selected]);
+		}
+		if (selected == -1) {
+			ImGui::PopStyleVar();
+			ImGui::PopItemFlag();
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::Text("Enter Selected Replay");
+			ImGui::EndTooltip();
+		}
+
+	}
+	ImGui::End();
+}
+void MenuState::prepareReplay(std::string replayName) {
+	MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+	if (m_network->host()) {
+		if (mrs) {
+			delete mrs;
+		}
+		mrs = new MatchRecordSystem();
+		if (mrs->initReplay(replayName)) {
+			NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
+			std::string lobbyName = NWrapperSingleton::getInstance().getMyPlayer().name + "'s replay lobby";
+			
+			std::string gamemode = "Replay";
+			std::string map = "Custom";
+			wrapper->setLobbyName(lobbyName + ";" + gamemode + ";" + map);
+
+			this->requestStackPop();
+			this->requestStackPush(States::HostLobby);
+		}
+	}
 }
 #ifdef DEVELOPMENT
 void MenuState::startSinglePlayer() {

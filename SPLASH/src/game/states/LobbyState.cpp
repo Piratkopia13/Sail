@@ -609,8 +609,12 @@ void LobbyState::renderMenu() {
 				auto& stat = m_app->getSettings().gameSettingsStatic;
 				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 
-				MatchRecordSystem* mrs = NWrapperSingleton::getInstance().recordSystem;
-				if (mrs && mrs->status == 0) {
+				MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+				if (!mrs || mrs->status != 2) {
+					if (mrs) {
+						delete mrs;
+					}
+					mrs = new MatchRecordSystem();
 					mrs->initRecording();
 				}
 

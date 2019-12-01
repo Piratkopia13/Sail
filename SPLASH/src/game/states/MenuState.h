@@ -95,7 +95,9 @@ private:
 	void renderProfile();
 	void renderJoiningLobby();
 	void renderOptions();
+	void renderReplays();
 
+	void prepareReplay(std::string replayName);
 #ifdef DEVELOPMENT
 	void startSinglePlayer();
 #endif

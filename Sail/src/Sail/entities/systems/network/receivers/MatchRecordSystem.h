@@ -9,11 +9,11 @@ public:
 	~MatchRecordSystem();
 
 	void initRecording();
-	void initReplay();
+	bool initReplay(std::string replayName);
 
 	int status = 0;
 
-	void recordPackage(const std::string& data);
+	void recordPackages(std::queue<std::string> data);
 	void replayPackages(std::queue<std::string>& data);
 
 private:

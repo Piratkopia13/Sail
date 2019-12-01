@@ -8,23 +8,18 @@
 LobbyHostState::LobbyHostState(StateStack& stack)
 	: LobbyState(stack) {
 
-	NWrapperSingleton::getInstance().setPlayerID(HOST_ID); 
-	NWrapperSingleton::getInstance().startUDP();
-
-	MatchRecordSystem*& recordSystem = NWrapperSingleton::getInstance().recordSystem;
-	m_isHost = true;
-
-	if (!recordSystem) {
-		recordSystem = new MatchRecordSystem();
-		recordSystem->status = 0;
-	} else if (recordSystem->status == 1) {
-		recordSystem = new MatchRecordSystem();
-		recordSystem->initReplay();
-	} else {
-		delete recordSystem;
-		recordSystem = nullptr;
+	MatchRecordSystem* mrs = NWrapperSingleton::getInstance().recordSystem;
+	if (!(mrs && mrs->status == 2)) {
+		NWrapperSingleton::getInstance().setPlayerID(HOST_ID); 
+		NWrapperSingleton::getInstance().startUDP();
 	}
 
+	m_isHost = true;
+
+	if (!mrs) {
+		mrs = new MatchRecordSystem();
+		mrs->status = 0;
+	}
 
 }
 
