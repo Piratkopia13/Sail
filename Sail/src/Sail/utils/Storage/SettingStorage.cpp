@@ -131,7 +131,11 @@ void SettingStorage::setMap(const int mode, const int index, const int playerCou
 		//DEATHMATCH
 		case 0:
 			switch (index) {
+#ifdef DEBUG
+			case -1:	setMapValues(2, 2, float(rand() % 100) / 100.0f, rand() % 300000); break;
+#else
 			case -1:	setMapValues(rand() % 30, rand() % 30, float(rand()%100)/100.0f, rand() % 300000); break;
+#endif // DEBUG
 			case 0:		setMapValues(6,		6,		0.85f,		12397);		break;
 			case 1:		setMapValues(10,	10,		0.85f,		34590);		break;
 			case 2:		setMapValues(7,		7,		0.85f,		345912);	break;

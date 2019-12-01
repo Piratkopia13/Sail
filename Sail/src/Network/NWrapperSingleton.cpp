@@ -62,7 +62,7 @@ bool NWrapperSingleton::connectToIP(char* adress) {
 }
 
 bool NWrapperSingleton::isHost() {
-	return m_isHost;
+	return m_isHost && !(recordSystem && recordSystem->status == 2);
 }
 
 NWrapper* NWrapperSingleton::getNetworkWrapper() {
@@ -90,7 +90,7 @@ void NWrapperSingleton::resetPlayerList() {
 }
 
 bool NWrapperSingleton::playerJoined(const Player& player, bool dispatchEvent) {
-	Player newPlayer(player.id, player.name.c_str());	// This will fix currupt string size.
+	Player newPlayer(player.id, player.name.c_str(), player.team);	// This will fix currupt string size.
 
 	m_players.push_back(newPlayer);
 	if (dispatchEvent) {

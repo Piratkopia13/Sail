@@ -160,6 +160,13 @@ void NetworkSenderSystem::update() {
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryDataToSendToOthers);
 
+		MatchRecordSystem* mrs = NWrapperSingleton::getInstance().recordSystem;
+		if (mrs) {
+			if (mrs->status == 1) {
+				mrs->recordPackage(binaryDataToSendToOthers);
+			}
+		}
+
 		// Host doesn't get their messages sent back to them so we need to send them to the killCamReceiverSystem from here
 		m_killCamSystem->handleIncomingData(binaryDataToSendToOthers);
 	} else {

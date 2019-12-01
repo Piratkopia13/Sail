@@ -3,6 +3,7 @@
 
 #include "NWrapperHost.h"
 #include "NWrapperClient.h"
+#include "Sail/entities/systems/network/receivers/MatchRecordSystem.h"
 
 class NetworkSenderSystem;
 
@@ -21,7 +22,6 @@ struct NetworkSenderEvent {
 		}
 	}
 };
-
 
 class NWrapperSingleton : public NetworkEventHandler {
 public:
@@ -64,7 +64,9 @@ public:
 	unsigned char getPlayerLimit();
 	size_t averagePacketSizeSinceLastCheck();
 
+	MatchRecordSystem* recordSystem = nullptr;
 private:
+
 	// Specifically for One-Time-Events during the gamestate
 	NetworkSenderSystem* NSS = nullptr;
 private:

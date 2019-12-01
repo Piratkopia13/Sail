@@ -93,11 +93,6 @@ LobbyState::LobbyState(StateStack& stack)
 	//m_lobbyAudio->addComponent<AudioComponent>();
 	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
 
-	if (NWrapperSingleton::getInstance().isHost()) {
-		//NW
-		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 1);
-	}
-
 }
 
 LobbyState::~LobbyState() {
@@ -348,7 +343,7 @@ void LobbyState::renderPlayerList() {
 			ImGui::PopStyleColor();
 			ImGui::SameLine(x[0]);
 			// TEAM
-			if (currentplayer.id == myID || myID == HOST_ID) {
+			if (currentplayer.id == myID || m_isHost) {
 				char selectedTeam = NWrapperSingleton::getInstance().getPlayer(currentplayer.id)->team;
 				std::string unique = "##LABEL" + std::to_string(currentplayer.id);
 
@@ -415,7 +410,7 @@ void LobbyState::renderPlayerList() {
 			ImGui::SameLine(x[1]);
 			//Keep
 			/*if (currentplayer.id == myID || myID == HOST_ID) {*/
-			if (myID == HOST_ID) {
+			if (m_isHost) {
 				std::string unique = "##ColorLABEL" + std::to_string(currentplayer.id);
 				int team = (int)currentplayer.team;
 				int index = m_settings->teamColorIndex(team);
@@ -602,7 +597,7 @@ void LobbyState::renderMenu() {
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.9f, 0.3f, 1));
 
 		
-		if (NWrapperSingleton::getInstance().isHost()) {
+		if (m_isHost) {
 			bool allReady = true;
 			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
 				if (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1) {
@@ -613,6 +608,11 @@ void LobbyState::renderMenu() {
 			if (SailImGui::TextButton((allReady) ? "Start" : "Force start")) {
 				auto& stat = m_app->getSettings().gameSettingsStatic;
 				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+
+				MatchRecordSystem* mrs = NWrapperSingleton::getInstance().recordSystem;
+				if (mrs && mrs->status == 0) {
+					mrs->initRecording();
+				}
 
 				//TODO: ONLY DO THIS IF GAMEMODE IS FFA
 				int teamID = 0;

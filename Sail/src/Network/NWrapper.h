@@ -38,8 +38,8 @@ struct Player {
 	bool justJoined = true;
 	StateStatus lastStateStatus;
 
-	Player(Netcode::PlayerID setID = HOST_ID, std::string setName = "Hans")
-		: name(setName), id(setID)
+	Player(Netcode::PlayerID setID = HOST_ID, std::string setName = "Hans", char team = -1)
+		: name(setName), id(setID), team(team)
 	{
 		name.reserve(MAX_NAME_LENGTH);
 	}
