@@ -7,6 +7,14 @@ static int temp_replay_counter = 0;
 MatchRecordSystem::MatchRecordSystem() {
 	auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	auto time2 = std::ctime(&time);
+
+	if (!std::filesystem::exists(REPLAY_TEMP_PATH)) {
+		std::error_code err;
+		if (!std::filesystem::create_directories(REPLAY_TEMP_PATH, err)) {
+			SAIL_LOG_WARNING(err.message());
+			return;
+		}
+	}
 }
 
 MatchRecordSystem::~MatchRecordSystem() {
@@ -116,12 +124,17 @@ void MatchRecordSystem::replayPackages(std::queue<std::string>& data) {
 
 void MatchRecordSystem::CleanOldReplays() {
 	temp_replay_counter = 0;
-
-	for (std::filesystem::path file : std::filesystem::directory_iterator(REPLAY_TEMP_PATH)) {
+	std::error_code err;
+	for (std::filesystem::path file : std::filesystem::directory_iterator(REPLAY_TEMP_PATH, err)) {
 		if (file.extension() == REPLAY_EXTENSION) {
-			if (!std::filesystem::remove(file)) {
+			if (!std::filesystem::remove(file, err)) {
 				SAIL_LOG_WARNING("Could not remove old replay: " + file.string());
 			}
 		}
 	}
+
+	if (err.value() != 0) {
+		SAIL_LOG_WARNING(err.message());	
+	}
+
 }

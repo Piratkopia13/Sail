@@ -802,9 +802,10 @@ void MenuState::renderReplays() {
 				if (ImGui::Button("Save")) {
 					std::string name(replayNameBuf);
 					if (name.length() > 2){
-						if(!std::filesystem::exists(std::string(REPLAY_PATH) + "/" + replayNameBuf + REPLAY_EXTENSION)) {
-							if (std::filesystem::copy_file(replay, std::string(REPLAY_PATH) + "/" + replayNameBuf + REPLAY_EXTENSION)) {
-								if (!std::filesystem::remove(replay)) {
+						std::error_code err;
+						if(!std::filesystem::exists(std::string(REPLAY_PATH) + "/" + replayNameBuf + REPLAY_EXTENSION, err)) {
+							if (std::filesystem::copy_file(replay, std::string(REPLAY_PATH) + "/" + replayNameBuf + REPLAY_EXTENSION, err)) {
+								if (!std::filesystem::remove(replay, err)) {
 									SAIL_LOG_WARNING("Error saving replay: Save succeded but old copy could not be removed.");
 								}
 							} else {
@@ -812,6 +813,10 @@ void MenuState::renderReplays() {
 							}
 						} else {
 							SAIL_LOG_WARNING("Could not save replay: name already exist.");
+						}
+
+						if (err.value() != 0) {
+							SAIL_LOG_WARNING("Error saving replay: " + err.message());
 						}
 					} else {
 						SAIL_LOG_WARNING("Could not save replay: name to short.");
@@ -891,18 +896,38 @@ void MenuState::prepareReplay(std::string replayName) {
 	}
 }
 void MenuState::updateSavedReplays() {
+	
+	std::error_code err;
+	if (!std::filesystem::exists(REPLAY_TEMP_PATH, err)) {
+		std::filesystem::create_directories(REPLAY_TEMP_PATH, err);
+	}
+
+	if (err.value() != 0) {
+		SAIL_LOG_WARNING("Could not create replay path: " + err.message());
+		return;
+	}
+
 	m_unsavedReplaysFound.clear();
-	for (auto& file : std::filesystem::directory_iterator(REPLAY_TEMP_PATH)) {
+	for (auto& file : std::filesystem::directory_iterator(REPLAY_TEMP_PATH, err)) {
 		if (file.path().extension().string() == REPLAY_EXTENSION) {
 			m_unsavedReplaysFound.push_back(file);
 		}
 	}
 
+	if (err.value() != 0) {
+		SAIL_LOG_WARNING("Could not list unsaved replay path: " + err.message());
+	}
+
 	m_replaysFound.clear();
-	for (auto& file : std::filesystem::directory_iterator(REPLAY_PATH)) {
+	for (auto& file : std::filesystem::directory_iterator(REPLAY_PATH, err)) {
 		if (file.path().extension().string() == REPLAY_EXTENSION) {
 			m_replaysFound.push_back(file);
 		}
+	}
+
+	if (err.value() != 0) {
+		SAIL_LOG_WARNING("Could not list saved replay path: " + err.message());
+		return;
 	}
 }
 
