@@ -411,7 +411,7 @@ void LobbyState::renderPlayerList() {
 			ImGui::SameLine(x[1]);
 			//Keep
 			/*if (currentplayer.id == myID || myID == HOST_ID) {*/
-			if (currentplayer.id == HOST_ID) {
+			if (myID == HOST_ID) {
 				std::string unique = "##ColorLABEL" + std::to_string(currentplayer.id);
 				int team = (int)currentplayer.team;
 				int index = m_settings->teamColorIndex(team);
@@ -474,7 +474,7 @@ void LobbyState::renderPlayerList() {
 			// READY 
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-			bool asd = currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0;
+			bool asd = (currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0) || currentplayer.lastStateStatus.status == -1;
 			ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd); 
 			ImGui::PopItemFlag();
 			ImGui::PopStyleVar();
@@ -601,7 +601,7 @@ void LobbyState::renderMenu() {
 		if (m_isHost) {
 			bool allReady = true;
 			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
-				if (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1) {
+				if ((p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1) && p.lastStateStatus.status != -1) {
 					allReady = false;
 				}
 			}
