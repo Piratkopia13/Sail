@@ -286,6 +286,12 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_KILLCAM, this);
+
+	MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+	if (mrs) {
+		delete mrs;
+		mrs = nullptr;
+	}
 }
 
 // Process input for the state

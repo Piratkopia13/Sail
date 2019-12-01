@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "MatchRecordSystem.h"
 #include "Network/NWrapperSingleton.h"
+#include <filesystem>
+static int temp_replay_counter = 0;
 
 MatchRecordSystem::MatchRecordSystem() {
 	auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -17,7 +19,8 @@ void MatchRecordSystem::initRecording() {
 		replay.close();
 	}
 	status = 1;
-	recorded = std::ofstream("Nisse.txt"/*time2*/, std::ofstream::binary);
+	std::string path = std::string(REPLAY_TEMP_PATH) + "/LastSessionGame#" + std::to_string(temp_replay_counter++) + REPLAY_EXTENSION;
+	recorded = std::ofstream(path, std::ofstream::binary);
 
 	const std::list<Player>& players = NWrapperSingleton::getInstance().getPlayers();
 	unsigned len;
@@ -38,7 +41,7 @@ void MatchRecordSystem::initRecording() {
 }
 
 bool MatchRecordSystem::initReplay(std::string replayName) {	
-	replayName = "replays/" + replayName + ".txt";
+	//replayName = std::string(REPLAY_PATH) + "/" + replayName + std::string(REPLAY_EXTENSION);
 	
 	if (status) {
 		recorded.close();
@@ -108,5 +111,17 @@ void MatchRecordSystem::replayPackages(std::queue<std::string>& data) {
 		package.resize(pl);
 		replay.read(&package[0], pl);
 		data.push(package);
+	}
+}
+
+void MatchRecordSystem::CleanOldReplays() {
+	temp_replay_counter = 0;
+
+	for (std::filesystem::path file : std::filesystem::directory_iterator(REPLAY_TEMP_PATH)) {
+		if (file.extension() == REPLAY_EXTENSION) {
+			if (!std::filesystem::remove(file)) {
+				SAIL_LOG_WARNING("Could not remove old replay: " + file.string());
+			}
+		}
 	}
 }

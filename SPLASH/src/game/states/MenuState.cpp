@@ -59,6 +59,8 @@ MenuState::MenuState(StateStack& stack)
 	m_minSize = ImVec2(435, 500);
 	m_maxSize = ImVec2(1000, 1000);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_LAN_HOST_FOUND, this);
+
+	updateSavedReplays();
 }
 
 MenuState::~MenuState() {
@@ -390,6 +392,7 @@ void MenuState::renderMenu() {
 		std::string replayText = (m_windowToRender == 5 ? ">Replay" : "Replay");
 
 		if (SailImGui::TextButton(replayText.c_str())) {
+			updateSavedReplays();
 			if (m_windowToRender != 5) {
 				m_windowToRender = 5;
 				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
@@ -436,9 +439,6 @@ void MenuState::renderLobbyCreator() {
 		ImGui::PopFont();
 		ImGui::Separator();
 
-
-
-
 		strncpy_s(buf, lobbyName.c_str(), lobbyName.size());
 		ImGui::Text("Lobby Name: ");
 		ImGui::SameLine();
@@ -475,6 +475,8 @@ void MenuState::renderLobbyCreator() {
 				std::string gamemode = m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().name;
 				std::string map = m_settings->defaultMaps[gamemode].getSelected().name;
 				wrapper->setLobbyName(lobbyName+";"+gamemode+";"+map);
+
+				MatchRecordSystem::CleanOldReplays();
 
 				this->requestStackPop();
 				this->requestStackPush(States::HostLobby);
@@ -751,9 +753,8 @@ void MenuState::renderReplays() {
 		ImGui::PopFont();
 		ImGui::Separator();
 		// DISPLAY LOBBIES
-		static int selected = -1;
-		std::vector<std::string> replays;
-		replays.push_back("Nisse");
+		static int unsaved_selected = -1;
+		static int saved_selected = -1;
 
 		if (ImGui::BeginChild("Replays", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
 			// Per hosted game
@@ -762,66 +763,106 @@ void MenuState::renderReplays() {
 #ifdef DEVELOPMENT
 			ImGui::SliderFloat4("asd", &p[0], 0.0f, 1.0f);
 #endif
-			ImGui::Columns(5, "replaybrowserColumns", false);
-			ImGui::SetColumnOffset(1, ImGui::GetWindowContentRegionWidth() * p[0]);
-			ImGui::SetColumnOffset(2, ImGui::GetWindowContentRegionWidth() * p[1]);
-			ImGui::SetColumnOffset(3, ImGui::GetWindowContentRegionWidth() * p[2]);
-			ImGui::SetColumnOffset(4, ImGui::GetWindowContentRegionWidth() - 100);
+			ImGui::Columns(1);
+			ImGui::PushFont(m_imGuiHandler->getFont("Beb20"));
+			SailImGui::HeaderText("Recent Unsaved Games");
+			ImGui::PopFont();
+
 			ImGui::Separator();
+			ImGui::Columns(4, "replaybrowserColumns1", false);
 			ImGui::Text("Name"); ImGui::NextColumn();
-			ImGui::Text("gamemode"); ImGui::NextColumn();
-			ImGui::Text("map"); ImGui::NextColumn();
-			ImGui::Text("Status"); ImGui::NextColumn();
-			ImGui::Text("Players"); ImGui::NextColumn();
+			ImGui::Text("Gamemode"); ImGui::NextColumn();
+			ImGui::Text("Map"); ImGui::NextColumn(); ImGui::NextColumn();
 			ImGui::Separator();
 
-			int index = 0;
-			int maxReplays = replays.size();
-			if (selected >= maxReplays) {
-				selected = -1;
+			int index1 = 0;
+			int maxUnsavedReplays = m_unsavedReplaysFound.size();
+			if (unsaved_selected >= maxUnsavedReplays) {
+				unsaved_selected = -1;
 			}
 
+			static char replayNameBuf[40] = {0};
+			for (auto& replay : m_unsavedReplaysFound) {
+				std::string name = replay.filename().replace_extension("").string();
 
-			for (auto& replay : replays) {
 				// List as a button
-				if (ImGui::Selectable(replay.c_str(), selected == index, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns)) {
+				if (ImGui::Selectable(name.c_str(), unsaved_selected == index1, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap)) {
+					unsaved_selected = (index1 == unsaved_selected ? -1 : index1);
+					saved_selected = -1;
 
-					selected = (index == selected ? -1 : index);
 					if (ImGui::IsMouseDoubleClicked(0)) {
-						prepareReplay(replay);
+						prepareReplay(replay.string());
 					}
 				}
 				ImGui::NextColumn();
-				ImGui::Text("1"); ImGui::NextColumn();
-				ImGui::Text("2"); ImGui::NextColumn();
-				ImGui::Text("3"); ImGui::NextColumn();
-				ImGui::Text("4"); ImGui::NextColumn();
-				index++;
+				ImGui::Text("Deathmatch"); ImGui::NextColumn();
+				ImGui::Text("Custom"); ImGui::NextColumn();
+				ImGui::InputTextWithHint((std::string("##replayName") + replay.string()).c_str(),std::string("New Name").c_str(), replayNameBuf, 40);
+				ImGui::SameLine();
+				if (ImGui::Button("Save")) {
+					std::string name(replayNameBuf);
+					if (name.length() > 2){
+						if(!std::filesystem::exists(std::string(REPLAY_PATH) + "/" + replayNameBuf + REPLAY_EXTENSION)) {
+							if (std::filesystem::copy_file(replay, std::string(REPLAY_PATH) + "/" + replayNameBuf + REPLAY_EXTENSION)) {
+								if (!std::filesystem::remove(replay)) {
+									SAIL_LOG_WARNING("Error saving replay: Save succeded but old copy could not be removed.");
+								}
+							} else {
+								SAIL_LOG_WARNING("Could not save replay: Copy Failed.");
+							}
+						} else {
+							SAIL_LOG_WARNING("Could not save replay: name already exist.");
+						}
+					} else {
+						SAIL_LOG_WARNING("Could not save replay: name to short.");
+					}
+
+					updateSavedReplays();
+				}
+				ImGui::NextColumn();
+				index1++;
+			}
+
+
+			ImGui::Columns(1);
+			ImGui::PushFont(m_imGuiHandler->getFont("Beb20"));
+			SailImGui::HeaderText("Saved Games");
+			ImGui::PopFont();
+
+			ImGui::Columns(4, "replaybrowserColumns", false);
+			ImGui::Separator();
+			ImGui::Text("Name"); ImGui::NextColumn();
+			ImGui::Text("Gamemode"); ImGui::NextColumn();
+			ImGui::Text("Map"); ImGui::NextColumn();
+			ImGui::Text("Players"); ImGui::NextColumn();
+			ImGui::Separator();
+
+			int index2 = 0;
+			int maxReplays = m_replaysFound.size();
+			if (saved_selected >= maxReplays) {
+				saved_selected = -1;
+			}
+
+			for (auto& replay : m_replaysFound) {
+				std::string name = replay.filename().replace_extension("").string();
+
+				// List as a button
+				if (ImGui::Selectable(name.c_str(), saved_selected == index2, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns)) {
+
+					unsaved_selected = -1;
+					saved_selected = (index2 == saved_selected ? -1 : index2);
+					if (ImGui::IsMouseDoubleClicked(0)) {
+						prepareReplay(replay.string());
+					}
+				}
+				ImGui::NextColumn();
+				ImGui::Text("Deathmatch"); ImGui::NextColumn();
+				ImGui::Text("Custom"); ImGui::NextColumn();
+				ImGui::Text("unknown"); ImGui::NextColumn();
+				index2++;
 			}
 		}
 		ImGui::EndChild();
-
-		// DISPLAY JOIN BUTTON
-		ImGui::NewLine();
-		ImGui::SameLine(ImGui::GetWindowWidth() - 100);
-		if (selected == -1) {
-			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.3f);
-			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-		}
-		// If pressed then join
-		if (ImGui::Button("Enter##browser") && selected > -1) {
-			prepareReplay(replays[selected]);
-		}
-		if (selected == -1) {
-			ImGui::PopStyleVar();
-			ImGui::PopItemFlag();
-		}
-		if (ImGui::IsItemHovered()) {
-			ImGui::BeginTooltip();
-			ImGui::Text("Enter Selected Replay");
-			ImGui::EndTooltip();
-		}
-
 	}
 	ImGui::End();
 }
@@ -849,6 +890,22 @@ void MenuState::prepareReplay(std::string replayName) {
 		}
 	}
 }
+void MenuState::updateSavedReplays() {
+	m_unsavedReplaysFound.clear();
+	for (auto& file : std::filesystem::directory_iterator(REPLAY_TEMP_PATH)) {
+		if (file.path().extension().string() == REPLAY_EXTENSION) {
+			m_unsavedReplaysFound.push_back(file);
+		}
+	}
+
+	m_replaysFound.clear();
+	for (auto& file : std::filesystem::directory_iterator(REPLAY_PATH)) {
+		if (file.path().extension().string() == REPLAY_EXTENSION) {
+			m_replaysFound.push_back(file);
+		}
+	}
+}
+
 #ifdef DEVELOPMENT
 void MenuState::startSinglePlayer() {
 

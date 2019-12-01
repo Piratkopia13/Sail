@@ -7,9 +7,9 @@
 #include <list>
 #include <ctime>
 #include "Sail/utils/SailImGui/OptionsWindow.h"
+#include <filesystem>
 
 class NetworkLanHostFoundEvent;
-
 
 class MenuState final : public State {
 public:
@@ -69,6 +69,8 @@ private:
 	double udpCounter = 0;
 	std::vector<FoundLobby> m_foundLobbies;
 	std::vector<std::string> m_newfoundLobbies;
+	std::vector<std::filesystem::path> m_replaysFound;
+	std::vector<std::filesystem::path> m_unsavedReplaysFound;
 
 	void renderDebug();
 
@@ -98,6 +100,8 @@ private:
 	void renderReplays();
 
 	void prepareReplay(std::string replayName);
+	void updateSavedReplays();
+
 #ifdef DEVELOPMENT
 	void startSinglePlayer();
 #endif

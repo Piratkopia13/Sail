@@ -3,9 +3,14 @@
 #include <chrono>
 #include <ctime>    
 
+constexpr char REPLAY_PATH[] = "replays";
+constexpr char REPLAY_TEMP_PATH[] = "replays/temp";
+constexpr char REPLAY_EXTENSION[] = ".SPLASH";
+
+
 class MatchRecordSystem {
 public:
-	MatchRecordSystem();
+	MatchRecordSystem(); 
 	~MatchRecordSystem();
 
 	void initRecording();
@@ -16,6 +21,7 @@ public:
 	void recordPackages(std::queue<std::string> data);
 	void replayPackages(std::queue<std::string>& data);
 
+	static void CleanOldReplays();
 private:
 	std::ofstream recorded;
 	std::ifstream replay;
