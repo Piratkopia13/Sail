@@ -387,7 +387,7 @@ void MenuState::renderMenu() {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 		}
 
-		std::string replayText = (m_windowToRender == 4 ? ">Replay" : "Replay");
+		std::string replayText = (m_windowToRender == 5 ? ">Replay" : "Replay");
 
 		if (SailImGui::TextButton(replayText.c_str())) {
 			if (m_windowToRender != 5) {
