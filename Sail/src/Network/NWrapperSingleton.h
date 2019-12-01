@@ -29,6 +29,7 @@ public:
 
 	// Initializes NetworkWrapper as NetworkWrapperHost
 	bool host(int port = 54000);
+	void setPlayerLimit(Netcode::PlayerID maxPlayers);
 	// Initializes NetworkWrapper as NetworkWrapperClient
 	bool connectToIP(char* = "127.0.0.1:54000");
 	bool isHost();
@@ -65,7 +66,12 @@ public:
 	size_t averagePacketSizeSinceLastCheck();
 
 	MatchRecordSystem* recordSystem = nullptr;
+
+	Netcode::PlayerID reservePlayerID();
+	void freePlayerID(Netcode::PlayerID id);
+
 private:
+	std::deque<Netcode::PlayerID> m_unusedPlayerIds;
 
 	// Specifically for One-Time-Events during the gamestate
 	NetworkSenderSystem* NSS = nullptr;

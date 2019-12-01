@@ -233,23 +233,24 @@ bool LobbyState::onEvent(const Event& event) {
 	return true;
 }
 
-
-
-
-
-
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	
-	if (NWrapperSingleton::getInstance().isHost()) {
-		if (m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().value == 0.0f) {
-			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)event.player.id, event.player.id);
-		}
-		else {
-			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+	if (m_isHost) {
+		MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+		if (!(mrs && mrs->status == 2)) {
+			if (m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().value == 0.0f) {
+				NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)event.player.id, event.player.id);
+			}
+			else {
+				NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+			}
+		} else {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)-1, event.player.id);
 		}
 
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
 	}
+
 	return true;
 }
 
@@ -343,7 +344,7 @@ void LobbyState::renderPlayerList() {
 			ImGui::PopStyleColor();
 			ImGui::SameLine(x[0]);
 			// TEAM
-			if (currentplayer.id == myID || m_isHost) {
+			if (currentplayer.id == myID || myID == HOST_ID) {
 				char selectedTeam = NWrapperSingleton::getInstance().getPlayer(currentplayer.id)->team;
 				std::string unique = "##LABEL" + std::to_string(currentplayer.id);
 
@@ -410,7 +411,7 @@ void LobbyState::renderPlayerList() {
 			ImGui::SameLine(x[1]);
 			//Keep
 			/*if (currentplayer.id == myID || myID == HOST_ID) {*/
-			if (m_isHost) {
+			if (currentplayer.id == HOST_ID) {
 				std::string unique = "##ColorLABEL" + std::to_string(currentplayer.id);
 				int team = (int)currentplayer.team;
 				int index = m_settings->teamColorIndex(team);
@@ -479,7 +480,7 @@ void LobbyState::renderPlayerList() {
 			ImGui::PopStyleVar();
 			ImGui::EndGroup();
 			if (ImGui::BeginPopupContextItem(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str())) {
-				if (NWrapperSingleton::getInstance().isHost()) {
+				if (m_isHost && currentplayer.lastStateStatus.status != -1) {
 					if (ImGui::Button("KICK")) {
 						NWrapperSingleton::getInstance().getNetworkWrapper()->kickPlayer(currentplayer.id);
 					}

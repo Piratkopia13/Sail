@@ -46,7 +46,6 @@ void NetworkReceiverSystem::stop() {
 	m_netSendSysPtr = nullptr;
 }
 
-
 void NetworkReceiverSystem::init(Netcode::PlayerID player, NetworkSenderSystem* NSS) {
 	initBase(player);
 	m_netSendSysPtr = NSS;
@@ -56,7 +55,6 @@ void NetworkReceiverSystem::pushDataToBuffer(const std::string& data) {
 	std::lock_guard<std::mutex> lock(m_bufferLock);
 	m_incomingDataBuffer.push(data);
 }
-
 
 void NetworkReceiverSystem::update(float dt) {
 	std::lock_guard<std::mutex> lock(m_bufferLock);
@@ -68,6 +66,7 @@ void NetworkReceiverSystem::update(float dt) {
 				m_incomingDataBuffer.pop();
 			}
 			mrs->replayPackages(m_incomingDataBuffer);
+			m_netSendSysPtr->setDataBuffer(m_incomingDataBuffer);
 		}
 	}
 	processData(dt, m_incomingDataBuffer);

@@ -38,6 +38,12 @@ bool NWrapperSingleton::host(int port) {
 		delete recordSystem;
 		recordSystem = nullptr;
 	}
+
+	m_unusedPlayerIds.clear();
+	for (Netcode::PlayerID id = 1; id < m_playerLimit; id++) {
+		m_unusedPlayerIds.push_back(id);
+	}
+
 	this->initialize(true);
 
 	if (m_isHost) {
@@ -49,6 +55,10 @@ bool NWrapperSingleton::host(int port) {
 	}
 
 	return false;
+}
+
+void NWrapperSingleton::setPlayerLimit(Netcode::PlayerID maxPlayers) {
+	m_playerLimit = maxPlayers;
 }
 
 bool NWrapperSingleton::connectToIP(char* adress) {
@@ -100,10 +110,18 @@ void NWrapperSingleton::resetPlayerList() {
 bool NWrapperSingleton::playerJoined(const Player& player, bool dispatchEvent) {
 	Player newPlayer(player.id, player.name.c_str(), player.team);	// This will fix currupt string size.
 
+	for (size_t i = 0; i < m_unusedPlayerIds.size(); i++) {
+		if (m_unusedPlayerIds.at(i) == player.id) {
+			m_unusedPlayerIds.erase(m_unusedPlayerIds.begin() + i);
+			break;
+		}
+	}
+
 	m_players.push_back(newPlayer);
 	if (dispatchEvent) {
 		EventDispatcher::Instance().emit(NetworkJoinedEvent(player));
 	}
+
 	return true;
 
 }
@@ -204,6 +222,21 @@ size_t NWrapperSingleton::averagePacketSizeSinceLastCheck() {
 		average = m_network->averagePacketSizeSinceLastCheck();
 	}
 	return average;
+}
+
+Netcode::PlayerID NWrapperSingleton::reservePlayerID() {
+	
+	if (m_unusedPlayerIds.empty()) {
+		return 255;
+	}
+	Netcode::PlayerID id = m_unusedPlayerIds.front();
+	m_unusedPlayerIds.pop_front();
+	
+	return id;
+}
+
+void NWrapperSingleton::freePlayerID(Netcode::PlayerID id) {
+	m_unusedPlayerIds.push_back(id);
 }
 
 void NWrapperSingleton::initialize(bool asHost) {

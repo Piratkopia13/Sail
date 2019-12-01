@@ -826,7 +826,11 @@ void MenuState::renderReplays() {
 	ImGui::End();
 }
 void MenuState::prepareReplay(std::string replayName) {
-	MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+
+	NWrapperSingleton& network = NWrapperSingleton::getInstance();
+	network.setPlayerLimit(24);//allow more players when replay is active so we can have 12 spectators spectateing a game recorded with 12 players.
+
+	MatchRecordSystem*& mrs = network.recordSystem;
 	if (m_network->host()) {
 		if (mrs) {
 			delete mrs;

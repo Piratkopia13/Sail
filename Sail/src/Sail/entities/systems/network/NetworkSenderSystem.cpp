@@ -185,7 +185,8 @@ void NetworkSenderSystem::update() {
 		std::string& dataFromClient = m_HOSTONLY_dataToForward.front();
 
 		// This if statement shouldn't be needed since m_dataToForwardToClients will be empty unless you're the host
-		if (NWrapperSingleton::getInstance().isHost()) {
+		MatchRecordSystem* mrs = NWrapperSingleton::getInstance().recordSystem;
+		if (NWrapperSingleton::getInstance().isHost() || (mrs && mrs->status == 2)) {
 			NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(dataFromClient);
 		}
 		m_HOSTONLY_dataToForward.pop();
@@ -217,6 +218,10 @@ void NetworkSenderSystem::queueEvent(NetworkSenderEvent* event) {
 void NetworkSenderSystem::pushDataToBuffer(const std::string& data) {
 	std::lock_guard<std::mutex> lock(m_forwardBufferLock);
 	m_HOSTONLY_dataToForward.push(data);
+}
+
+void NetworkSenderSystem::setDataBuffer(const std::queue<std::string>& data) {
+	m_HOSTONLY_dataToForward = data;
 }
 
 #ifdef DEVELOPMENT

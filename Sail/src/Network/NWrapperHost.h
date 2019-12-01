@@ -26,7 +26,6 @@ private:
 	std::map<TCP_CONNECTION_ID, Netcode::PlayerID> m_connectionsMap;
 	std::string m_lobbyName = "";
 	std::string m_serverDescription = "";
-	std::deque<Netcode::PlayerID> m_unusedPlayerIds;
 
 	void sendChatMsg(std::string msg);
 
