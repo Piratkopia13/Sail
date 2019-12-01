@@ -466,6 +466,7 @@ void MenuState::renderLobbyCreator() {
 			if (m_network->host()) {
 				// Update server description after host added himself to the player list.
 				NWrapperSingleton::getInstance().getMyPlayer().id = HOST_ID;
+				NWrapperSingleton::getInstance().getMyPlayer().team = 0;
 				NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 				NWrapperHost* wrapper = static_cast<NWrapperHost*>(NWrapperSingleton::getInstance().getNetworkWrapper());
 				if (lobbyName == "") {
@@ -936,6 +937,7 @@ void MenuState::startSinglePlayer() {
 
 	if (m_network->host()) {
 		NWrapperSingleton::getInstance().setPlayerID(HOST_ID);
+		NWrapperSingleton::getInstance().getMyPlayer().team = 0;
 		if (NWrapperSingleton::getInstance().getPlayers().size() == 0) {
 			NWrapperSingleton::getInstance().playerJoined(NWrapperSingleton::getInstance().getMyPlayer());
 		}
