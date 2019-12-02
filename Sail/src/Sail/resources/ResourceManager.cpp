@@ -303,8 +303,8 @@ void ResourceManager::logRemainingTextures() const {
 }
 
 unsigned int ResourceManager::calculateTextureByteSize() const {
-	std::unique_lock<std::mutex> lock(m_textureDatasMutex);
-
+	// No lock needed since this is only called from this class,
+	// and only from places where the lock has already been set
 	unsigned int size = 0;
 	for (auto& textureData : m_textureDatas) {
 		size += textureData.second->getByteSize();
