@@ -256,8 +256,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 					updateStreamPosition(e, cam, alpha);
 				}
 				// Update volume if it has changed
-				if (m_k->second.prevVolume != (m_k->second.volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value)) {
-					m_k->second.prevVolume = (m_k->second.volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
+				if (m_k->second.prevVolume != m_k->second.volume) {
+					m_k->second.prevVolume = m_k->second.volume;
 					updateStreamVolume();
 				}
 
@@ -304,7 +304,7 @@ int AudioSystem::randomASoundIndex(int soundPoolSize, Audio::SoundInfo_General* 
 void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC) {
 
 	std::string filename = m_i->first;
-	float volume = (m_i->second.volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
+	float volume = m_i->second.volume;
 	bool isPositionalAudio = m_i->second.isPositionalAudio;
 	bool isLooping = m_i->second.isLooping;
 	int streamIndex = m_audioEngine->getAvailableStreamIndex();
@@ -360,7 +360,6 @@ void AudioSystem::updateStreamPosition(Entity* e, Camera& cam, float alpha) {
 }
 
 void AudioSystem::updateStreamVolume() {
-
 	m_audioEngine->setStreamVolume(m_k->second.streamIndex, (m_k->second.volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value));
 }
 

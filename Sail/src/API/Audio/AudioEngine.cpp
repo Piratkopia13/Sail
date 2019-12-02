@@ -524,6 +524,8 @@ void AudioEngine::setSoundVolume(int index, float value) {
 }
 
 void AudioEngine::setStreamVolume(int index, float value) {
+	Logger::Log("INTERNAL" + std::to_string(Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value));
+
 	if (this->checkStreamIndex(index)) {
 		if (m_stream[index].sourceVoice != nullptr) {
 			m_stream[index].sourceVoice->SetVolume(value);
@@ -634,7 +636,7 @@ HRESULT AudioEngine::initXAudio2() {
 	UINT32 flags = XAUDIO2_1024_QUANTUM;
 
 #ifdef DEVELOPMENT
-	flags |= XAUDIO2_DEBUG_ENGINE;
+	//flags |= XAUDIO2_DEBUG_ENGINE;
 #endif
 
 	HRESULT hr = XAudio2Create(&m_xAudio2, flags);
@@ -655,7 +657,7 @@ HRESULT AudioEngine::initXAudio2() {
 
 #if DEVELOPMENT
 	// Activate debug layer if we're in development
-	activateDebugLayer();
+	//activateDebugLayer();
 #endif
 
 	return hr;
@@ -946,8 +948,8 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 					}
 
 					m_stream[myIndex].sourceVoice->Start();
-					if (currentVolume < VOL_THIRD) {
-						currentVolume += 0.1f;
+					if (currentVolume < volume) {
+						currentVolume += (0.1f * volume);
 						m_stream[myIndex].sourceVoice->SetVolume(currentVolume);
 					}
 
