@@ -76,6 +76,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Clutter/Microscope.fbx");
 	rm->loadModel("Clutter/CloningVats.fbx");
 	rm->loadModel("Clutter/ControlStation.fbx");
+	rm->loadModel("CleaningBot.fbx");
 
 
 	//LEAVE THIS FOR A MULTITHREADED FUTURE
@@ -216,7 +217,21 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("Icons/CantShootIcon1.tga");
 	rm->loadTexture("Icons/CantShootIcon2.tga");
 
+	rm->loadTexture("pbr/Character/CleaningBot_Albedo.tga");
+	rm->loadTexture("pbr/Character/CleaningBot_NM.tga");
 
+
+
+
+
+
+
+
+
+
+
+
+	rm->loadTexture("pbr/Character/CleaningBot_MRAO.tga");
 
 	return true;
 }
