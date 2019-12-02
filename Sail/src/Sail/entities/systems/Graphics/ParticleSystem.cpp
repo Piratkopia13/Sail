@@ -117,7 +117,7 @@ void ParticleSystem::submitAll() const {
 void ParticleSystem::initEmitter(Entity* owner, ParticleEmitterComponent* component) {
 	ParticleEmitterComponent::EmitterData& emitter = m_emitters.insert({owner, ParticleEmitterComponent::EmitterData()}).first->second;
 	
-	emitter.particleShader = std::make_unique<ParticleComputeShader>();
+	emitter.particleShader = &Application::getInstance()->getResourceManager().getShaderSet<ParticleComputeShader>();
 	auto& gbufferShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	auto& inputLayout = gbufferShader.getPipeline()->getInputLayout();
 
@@ -136,6 +136,10 @@ void ParticleSystem::initEmitter(Entity* owner, ParticleEmitterComponent* compon
 		emitter.physicsBufferDefaultHeap[i].Attach(DX12Utils::CreateBuffer(context->getDevice(), emitter.outputVertexBufferSize / 6 * emitter.particlePhysicsSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps));
 		emitter.physicsBufferDefaultHeap[i]->SetName(L"Particle Physics Default Resource Heap");
 	}
+
+	emitter.inputConstantBufferSize = (12 * 312 + 312 + 11) * 4;
+	void* scrapData = malloc(emitter.inputConstantBufferSize);
+	emitter.inputConstantBuffer = std::make_unique<ShaderComponent::DX12ConstantBuffer>(scrapData, emitter.inputConstantBufferSize, ShaderComponent::CS, 0);
 
 	component->setAsCreatedInSystem();
 }

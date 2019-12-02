@@ -9,6 +9,9 @@
 #include "Sail/utils/Timer.h"
 
 class DX12VertexBuffer;
+namespace ShaderComponent {
+	class DX12ConstantBuffer;
+};
 class ParticleComputeShader;
 struct ID3D12GraphicsCommandList4;
 
@@ -46,13 +49,16 @@ public:
 #endif
 
 	struct EmitterData {
-		std::unique_ptr<ParticleComputeShader> particleShader;
+		ParticleComputeShader* particleShader;
 
 		DX12VertexBuffer* outputVertexBuffer;
 		unsigned int outputVertexBufferSize;
 
 		wComPtr<ID3D12Resource>* physicsBufferDefaultHeap;
 		int particlePhysicsSize;
+
+		std::unique_ptr<ShaderComponent::DX12ConstantBuffer> inputConstantBuffer;
+		unsigned int inputConstantBufferSize;
 
 		std::unique_ptr<Model> model;
 		bool isDead = false;

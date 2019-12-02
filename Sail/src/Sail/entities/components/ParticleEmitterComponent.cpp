@@ -3,6 +3,7 @@
 
 #include "Sail/Application.h"
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
+#include "API/DX12/shader/DX12ConstantBuffer.h"
 #include "API/DX12/DX12Utils.h"
 #include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/resources/DescriptorHeap.h"
@@ -178,7 +179,8 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 			m_inputData.particles[i].spawnTime = m_cpuOutput[context->getSwapIndex()].lastFrameTime - newParticle_i->spawnTime;
 		}
 
-		data.particleShader->getPipeline()->setCBufferVar("inputBuffer", &m_inputData, sizeof(ComputeInput));
+		data.inputConstantBuffer->updateData_new(&m_inputData, sizeof(ComputeInput), 0);
+		data.inputConstantBuffer->bind_new(cmdList, 0, true);
 		//--------------------------------------
 
 		auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();

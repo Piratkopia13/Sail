@@ -7,7 +7,7 @@ struct Particle{
 	float spawnTime;
 };
 
-struct ParticleInput{ // Size of this type is hardcoded in ShaderPipeline.cpp - change this if struct changes
+struct ParticleInput{ // Size of this type is hardcoded in ShaderPipeline.cpp and ParticleSystem.cpp (initEmitter()) - change this if struct changes
 	Particle particles[312];
 	uint4 toRemove[312/4];
 	float3 cameraPos;
@@ -20,7 +20,7 @@ struct ParticleInput{ // Size of this type is hardcoded in ShaderPipeline.cpp - 
 	uint2 atlasSize; // How many sprites in each dimension the texture atlas contains, set to 1x1 for no animation
 };
 
-cbuffer CSInputBuffer : register(b0) {
+cbuffer CSInputBuffer : register(b0) : SAIL_IGNORE {
 	ParticleInput inputBuffer;
 }
 
