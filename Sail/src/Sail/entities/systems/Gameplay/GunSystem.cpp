@@ -8,6 +8,7 @@
 #include "Sail/entities/components/GunComponent.h"
 #include "Sail/entities/components/NetworkSenderComponent.h"
 #include "Sail/entities/components/MovementComponent.h"
+#include "Sail/entities/components/PowerUpComponent.h"
 
 #include "Sail/utils/GameDataTracker.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
@@ -26,6 +27,7 @@ GunSystem::GunSystem() : BaseComponentSystem() {
 	registerComponent<MovementComponent>(true, true, false);
 	registerComponent<NetworkSenderComponent>(false, true, true);
 	registerComponent<NetworkReceiverComponent>(true, true, false);
+	registerComponent<PowerUpComponent>(false, true, false);
 
 	m_gameDataTracker = &GameDataTracker::getInstance();
 }
@@ -41,13 +43,23 @@ void GunSystem::setOctree(Octree* octree) {
 void GunSystem::update(float dt) {
 	for (auto& e : entities) {
 		GunComponent* gun = e->getComponent<GunComponent>();
-		
+		PowerUpComponent* powC = e->getComponent<PowerUpComponent>();
 		// Gun is firing and is not overloaded
 		if (gun->firing && gun->gunOverloadTimer <= 0) {
 			// SHOOT
 			if (gun->projectileSpawnTimer <= 0.f) {
 					// Determine projectileSpeed based on how long the gun has been firing continuously
+				if (powC) {
+					if (powC->powerUps[PowerUpComponent::PowerUps::POWERWASH].time > 0) {
+						gun->projectileSpeed = gun->baseProjectileSpeed * 2;
+					}
+					else {
+						alterProjectileSpeed(gun);
+					}
+				}
+				else {
 					alterProjectileSpeed(gun);
+				}
 
 					m_gameDataTracker->logWeaponFired();
 					fireGun(e, gun);
@@ -94,7 +106,7 @@ void GunSystem::alterProjectileSpeed(GunComponent* gun) {
 	gun->projectileSpeed = gun->baseProjectileSpeed + (gun->projectileSpeedRange * (gun->gunOverloadvalue/gun->gunOverloadThreshold));
 }
 
-void GunSystem::fireGun(Entity* e, GunComponent* gun) {
+void GunSystem::fireGun(Entity* e, GunComponent* gun, PowerUpComponent* powC) {
 	gun->projectileSpawnTimer = gun->m_projectileSpawnCooldown;
 
 	// If this is the first shot in this "burst" of projectiles...
@@ -117,14 +129,24 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 	Netcode::PlayerID myPlayerID = Netcode::getComponentOwner(e->getComponent<NetworkSenderComponent>()->m_id);
 
 	// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
-	for (int i = 0; i < 2; i++) {
-		constexpr float randomSpread = 0.05;
+	
+	constexpr float randomSpread = 0.05;
+	unsigned int number = 2;
+	if (powC) {
+		if (powC->powerUps[PowerUpComponent::PowerUps::SHOWER].time > 0.0f) {
+			number = 7;
+		}
+	}
+
+	for (unsigned int i = 0; i < number; i++) {
+
+		
 		const glm::vec3 velocity = gun->direction * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity;
 		glm::vec3 randPos;
 
-		randPos.r = Utils::rnd() * randomSpread * 2 - randomSpread;
-		randPos.g = Utils::rnd() * randomSpread * 2 - randomSpread;
-		randPos.b = Utils::rnd() * randomSpread * 2 - randomSpread;
+		randPos.r = (Utils::rnd() * randomSpread * 2 - randomSpread) * (number > 2 ? 20 : 2);
+		randPos.g = (Utils::rnd() * randomSpread * 2 - randomSpread) * (number > 2 ? 20 : 2);
+		randPos.b = (Utils::rnd() * randomSpread * 2 - randomSpread) * (number > 2 ? 20 : 2);
 
 		randPos += glm::normalize(velocity) * (Utils::rnd() * randomSpread * 2 - randomSpread) * 5.0f;
 
@@ -149,6 +171,7 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun) {
 			);
 		}
 	}
+	
 }
 
 void GunSystem::overloadGun(Entity* e, GunComponent* gun) {

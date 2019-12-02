@@ -125,6 +125,9 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<RealTimeComponent>();
 	myPlayer->addComponent<ThrowingComponent>();
 	myPlayer->addComponent<RenderInActiveGameComponent>();
+	myPlayer->addComponent<PowerUpComponent>();
+
+
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 

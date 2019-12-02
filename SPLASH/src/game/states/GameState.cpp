@@ -490,6 +490,7 @@ bool GameState::processInput(float dt) {
 void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
 	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem<RenderInActiveGameComponent>>();
+	m_componentSystems.powerUpUpdateSystem = ECS::Instance()->createSystem<PowerUpUpdateSystem>();
 
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
@@ -987,7 +988,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.speedLimitSystem->update();
 	m_componentSystems.collisionSystem->update(dt);
 	m_componentSystems.movementPostCollisionSystem->update(dt);
-
+	m_componentSystems.powerUpUpdateSystem->update(dt);
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.projectileSystem);
