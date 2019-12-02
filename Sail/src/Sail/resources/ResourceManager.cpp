@@ -65,7 +65,6 @@ bool ResourceManager::hasAudioData(const std::string& filename) {
 
 void ResourceManager::loadTextureData(const std::string& filename) {
 	std::unique_lock<std::mutex> lock(m_textureDatasMutex);
-
 	auto inserted = m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename) });
 	if (inserted.second) {
 		m_byteSize[RMDataType::Textures] = calculateTextureByteSize();

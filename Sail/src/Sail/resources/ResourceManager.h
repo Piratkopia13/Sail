@@ -154,6 +154,8 @@ private:
 	std::unique_ptr<AssimpLoader> m_assimpLoader;
 	std::unique_ptr<FBXLoader> m_fbxLoader;
 	Shader* m_defaultShader;
+
+	std::vector<std::string> m_loadedTextures;
 };
 
 template <typename T>
