@@ -554,8 +554,9 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTextu
 void DXRBase::resetWater() {
 	// TODO: make faster by updates the whole buffer at once
 	for (unsigned int i = 0; i < m_waterArrSize; i++) {
-		m_waterDataCPU[i] = m_waterDeltas[i] = 0;
+		m_waterDataCPU[i] = 0;
 	}
+	m_waterDeltas.clear();
 	m_waterChanged = true;
 }
 
