@@ -168,6 +168,7 @@ GameState::GameState(StateStack& stack)
 	// Level Creation
 
 	createLevel(shader, boundingBoxModel);
+	m_componentSystems.aiSystem->initNodeSystem(m_octree);
 
 	// Player creation
 	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
@@ -202,29 +203,17 @@ GameState::GameState(StateStack& stack)
 	
 	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
 	m_componentSystems.networkReceiverSystem->setGameState(this);
-	
-
-	// Bots creation
-	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
 
 #ifdef _PERFORMANCE_TEST
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 
 #endif
-
-
+	
 #ifdef _DEBUG
 	// Candle1 holds all lights you can place in debug...
 	m_componentSystems.lightListSystem->setDebugLightListEntity("Map_Candle1");
 #endif
-
-/*	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
-#ifdef _DEBUG_NODESYSTEM
-	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader);
-#else
-	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
-#endif*/
 
 	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
 	m_ambiance->addComponent<AudioComponent>();
@@ -515,7 +504,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
 
-	//m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();

@@ -18,6 +18,12 @@
 #include "../../Physics/Intersection.h"
 #include "../../Physics/Physics.h"
 
+#include "Sail/graphics/geometry/factory/CubeModel.h"
+#include "Sail/graphics/shader/dxr/GBufferOutShader.h"
+#include "Sail/graphics/shader/dxr/GBufferWireframe.h"
+
+#include "Sail/utils/Storage/SettingStorage.h"
+
 #include <glm/gtx/vector_angle.hpp>
 
 
@@ -29,23 +35,23 @@ AiSystem::AiSystem() {
 	registerComponent<FSMComponent>(true, true, true);
 
 	m_nodeSystem = std::make_unique<NodeSystem>();
+
 	m_timeBetweenPathUpdate = 0.5f;
 }
 
 AiSystem::~AiSystem() {}
 
+void AiSystem::initNodeSystem(Octree* octree) {
 #ifdef _DEBUG_NODESYSTEM
-void AiSystem::initNodeSystem(Model* bbModel, Octree* octree, Shader* shader) {
-	m_nodeSystem->setDebugModelAndScene(shader);
-	initNodeSystem(bbModel, octree);
-}
+	m_nodeSystem->setDebugModelAndScene(&Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>());
 #endif
-
-void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	m_octree = octree;
-
-	float realXMax = MapComponent::xsize * MapComponent::tileSize;
-	float realZMax = MapComponent::ysize * MapComponent::tileSize;
+	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
+	float sizeX = Application::getInstance()->getSettings().gameSettingsDynamic["map"]["sizeX"].value;
+	float sizeZ = Application::getInstance()->getSettings().gameSettingsDynamic["map"]["sizeY"].value;
+	float tileSize = Application::getInstance()->getSettings().gameSettingsDynamic["map"]["tileSize"].value;
+	float realXMax = sizeX * tileSize;
+	float realZMax = sizeZ * tileSize;
 	float realSize = realZMax * realXMax;
 	float nodeSize = 0.5f;
 	float nodePadding = nodeSize;
@@ -57,8 +63,8 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	int currZ = 0;
 
 	// Currently needed cause map doesn't start creation from (0,0)
-	float startOffsetX = -MapComponent::tileSize / 2.f;
-	float startOffsetZ = -MapComponent::tileSize / 2.f;
+	float startOffsetX = -tileSize / 2.f + nodeSize;
+	float startOffsetZ = -tileSize / 2.f + nodeSize;
 	float startOffsetY = 0.f;
 	//bool* walkable = SAIL_NEW bool[size];
 
@@ -67,7 +73,7 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 	float collisionBoxHeight = 0.9f;
 	float collisionBoxHalfHeight = collisionBoxHeight / 2.f;
 	//e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, collisionBoxHalfHeight, 0.7f));
-	e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(nodeSize / 2.f, collisionBoxHalfHeight, nodeSize / 2.f));
+	e->addComponent<BoundingBoxComponent>(nodeSystemCube.get())->getBoundingBox()->setHalfSize(glm::vec3(nodeSize / 2.f, collisionBoxHalfHeight, nodeSize / 2.f));
 
 
 	/*Nodesystem*/
@@ -95,18 +101,20 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		bool blocked = false;
 		Octree::RayIntersectionInfo tempInfo;
 		glm::vec3 down(0.f, -1.f, 0.f);
-		m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + collisionBoxHalfHeight, nodePos.z), down, &tempInfo, nullptr, 0.01f);
+		m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + collisionBoxHalfHeight, nodePos.z), down, &tempInfo, e.get(), 0.01f);
 		if (tempInfo.closestHitIndex != -1) {
 			float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].shape->getNormal(), -down);
 			// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
 			bool isFloor = (floorCheckVal < 0.1f) ? true : false;
 			if (!isFloor) {
 				blocked = true;
+				SAIL_LOG(std::to_string(i) + "'s floor has too high angle.");
 			} else {
 				// Update the height of the node position
 				nodePos.y = nodePos.y + (collisionBoxHalfHeight - tempInfo.closestHit);
 			}
 		} else {
+			SAIL_LOG(std::to_string(i) + " has no floor.");
 			blocked = true;
 		}
 
@@ -119,13 +127,14 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 		//bbPos.z -= nodeSize;
 		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(bbPos);
 		std::vector < Octree::CollisionInfo> vec;
-		m_octree->getCollisions(e.get(), &vec);
+		m_octree->getCollisions(e.get(), e->getComponent<BoundingBoxComponent>()->getBoundingBox(), &vec);
 
 		for (Octree::CollisionInfo& info : vec) {
 			int j = (info.entity->getName().compare("Map_") || info.entity->getName().compare("Clu"));
 			if (j >= 0) {
 				//Not walkable
 
+				SAIL_LOG(std::to_string(i) + " is blocked by something.");
 				blocked = true;
 				break;
 			}
@@ -174,7 +183,6 @@ void AiSystem::initNodeSystem(Model* bbModel, Octree* octree) {
 			n.erase(it + toRemove[i]);
 		}
 	}
-
 
 	e->queueDestruction();
 

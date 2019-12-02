@@ -4,7 +4,7 @@
 #include <list>
 
 //Keep this define in case debugging is needed
-//#define _DEBUG_NODESYSTEM
+#define _DEBUG_NODESYSTEM
 
 #ifdef _DEBUG_NODESYSTEM
 #include "Sail/entities/Entity.h"

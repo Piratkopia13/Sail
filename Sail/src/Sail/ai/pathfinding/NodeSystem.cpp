@@ -26,13 +26,16 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 
 #ifdef _DEBUG_NODESYSTEM
 	for ( int i = 0; i < m_nodeEntities.size(); i++ ) {
-		ECS::Instance()->destroyEntity(m_nodeEntities[i]);
+		ECS::Instance()->queueDestructionOfEntity(m_nodeEntities[i].get());
 	}
 	m_nodeEntities.clear();
 	int currNodeEntity = 0;
 	for ( int i = 0; i < m_nodes.size(); i++ ) {
 		m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
 		m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position)->setScale(0.5f);
+		m_nodeEntities[currNodeEntity]->addComponent<RealTimeComponent>();
+		m_nodeEntities[currNodeEntity]->addComponent<CullingComponent>();
+		m_nodeEntities[currNodeEntity]->addComponent<RenderInActiveGameComponent>();
 		if (m_nodes[i].blocked) {
 			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_blockedNodeModel);
 		} else {
@@ -46,7 +49,10 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 			pos += glm::normalize(dir) * glm::length(dir) * 0.5f;
 			m_nodeEntities.push_back(ECS::Instance()->createEntity("Connection " + std::to_string(i)));
 			m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(pos)->setScale(0.25f);
-			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_connectionModel);
+			m_nodeEntities[currNodeEntity]->addComponent<RealTimeComponent>();
+			m_nodeEntities[currNodeEntity]->addComponent<ModelComponent>(m_connectionModel);
+			m_nodeEntities[currNodeEntity]->addComponent<CullingComponent>();
+			m_nodeEntities[currNodeEntity++]->addComponent<RenderInActiveGameComponent>();
 		}
 	}
 #endif
@@ -95,17 +101,21 @@ const std::vector<NodeSystem::Node>& NodeSystem::getNodes() const {
 
 #ifdef _DEBUG_NODESYSTEM
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
-	m_nodeModel = &Application::getInstance()->getResourceManager().getModel("sphere.fbx", shader);
+	m_nodeModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", shader);
 	m_nodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 	m_nodeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
+	m_nodeModel->setCastShadows(false);
 
 	m_blockedNodeModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", shader);
 	m_blockedNodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 	m_blockedNodeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 0.f, 0.f, 1.f));
+	m_blockedNodeModel->setCastShadows(false);
+
 
 	m_connectionModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", shader);
 	m_connectionModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 	m_connectionModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 1.f, 1.f, 1.f));
+	m_connectionModel->setCastShadows(false);
 
 }
 #endif

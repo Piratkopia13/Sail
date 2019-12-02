@@ -22,10 +22,7 @@ public:
 	AiSystem();
 	~AiSystem();
 
-	void initNodeSystem(Model* bbModel, Octree* octree);
-#ifdef _DEBUG_NODESYSTEM
-	void initNodeSystem(Model* bbModel, Octree* octree, Shader* shader);
-#endif
+	void initNodeSystem(Octree* octree);
 
 	/*
 		Adds an entity to the system
@@ -57,5 +54,4 @@ private:
 	std::unique_ptr<NodeSystem> m_nodeSystem;
 
 	Octree* m_octree;
-
 };
