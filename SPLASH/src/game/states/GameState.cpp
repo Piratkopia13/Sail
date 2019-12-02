@@ -229,7 +229,6 @@ GameState::GameState(StateStack& stack)
 	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
 	m_ambiance->addComponent<AudioComponent>();
 	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-	Logger::Log(std::to_string(Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value));
 	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value, false, true);
 
 
@@ -332,7 +331,6 @@ bool GameState::processInput(float dt) {
 	// Unpause Game
 	if (m_readyRestartAmbiance) {
 		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(false);
-		Logger::Log(std::to_string(Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value));
 		this->m_ambiance->getComponent<AudioComponent>()->streamSetVolume_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 		m_readyRestartAmbiance = false;
 	}
