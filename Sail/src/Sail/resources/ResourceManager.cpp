@@ -273,6 +273,12 @@ const unsigned int ResourceManager::getGenericByteSize() const {
 void ResourceManager::uploadFinishedTextures(ID3D12GraphicsCommandList4* cmdList) {
 	std::scoped_lock doubleLock(m_finishedTexturesMutex, m_textureDatasMutex);
 
+	// Don't do anything if there are no textures to upload
+	if (m_finishedTextures.empty()) {
+		return;
+	}
+
+	// Upload and remove textures
 	for (auto* tex : m_finishedTextures) {
 		auto* dx12Tex = static_cast<DX12Texture*>(tex);
 		dx12Tex->initBuffers(cmdList);
@@ -281,6 +287,12 @@ void ResourceManager::uploadFinishedTextures(ID3D12GraphicsCommandList4* cmdList
 		m_textureDatas.erase(filename);
 	}
 	m_finishedTextures.clear();
+
+	// Reset map (very small amount of RAM)
+	if (m_textureDatas.empty()) {
+		m_textureDatas.clear();
+		m_textureDatas = std::map<std::string, std::unique_ptr<TextureData>>();
+	}
 
 	m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
 }
