@@ -99,7 +99,6 @@ bool KillCamReceiverSystem::startMyKillCam() {
 			}
 
 			// Put torches where they were at that point in time
-			//for (Netcode::ComponentID& notHolding : m_notHoldingTorches[m_currentReadInd]) {
 			for (Netcode::ComponentID& notHolding : m_notHoldingTorches[m_myKillCamData.readIndex]) {
 				if (compID == notHolding) {
 					setCandleState(compID, false);
@@ -591,7 +590,6 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 
 	auto onTorchNotHeld = [&](const TorchNotHeldEvent& e) {
 		if (!m_hasStarted) {
-			// TODO: make prettier
 			m_notHoldingTorches[m_replayData.writeIndex].push_back(e.netCompID);
 		}
 	};
