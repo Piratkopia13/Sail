@@ -602,8 +602,9 @@ void LobbyState::renderMenu() {
 		
 		if (NWrapperSingleton::getInstance().isHost()) {
 			bool allReady = true;
+			const unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
 			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
-				if (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1) {
+				if (p.id != myID &&  (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1)) {
 					allReady = false;
 				}
 			}
