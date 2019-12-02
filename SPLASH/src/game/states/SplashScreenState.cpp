@@ -16,7 +16,7 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 	m_input = Input::GetInstance();
 	m_app = Application::getInstance();
 
-	m_app->getResourceManager().loadTexture("splash_logo.tga");
+	m_app->getResourceManager().loadTexture("splash_logo_smaller.tga");
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 }
 
