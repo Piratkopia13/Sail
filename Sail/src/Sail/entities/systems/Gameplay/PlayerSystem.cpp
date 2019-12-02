@@ -105,7 +105,7 @@ bool PlayerSystem::onEvent(const Event& event) {
 				Netcode::getComponentOwner(e.killerID) != myPlayerID);
 
 			if (wasKilledByAnotherPlayer) {
-				EventDispatcher::Instance().emit(ToggleKillCamEvent(true, Netcode::getComponentOwner(e.killerID)));
+				EventDispatcher::Instance().emit(StartKillCamEvent(e.killerID, myPlayerID, false));
 			}
 		} else {
 			e.killed->addComponent<LifeTimeComponent>(LIFETIME_AFTER_DEATH);

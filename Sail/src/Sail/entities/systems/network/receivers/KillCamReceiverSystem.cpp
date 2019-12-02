@@ -39,6 +39,7 @@ KillCamReceiverSystem::KillCamReceiverSystem() : ReceiverBase() {
 	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
 	EventDispatcher::Instance().subscribe(Event::Type::TOGGLE_SLOW_MOTION, this);
 	EventDispatcher::Instance().subscribe(Event::Type::TORCH_NOT_HELD, this);
+	EventDispatcher::Instance().subscribe(Event::Type::START_KILLCAM, this);
 
 }
 
@@ -46,6 +47,7 @@ KillCamReceiverSystem::~KillCamReceiverSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_SLOW_MOTION, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::TORCH_NOT_HELD, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::START_KILLCAM, this);
 
 	stop();
 }
@@ -60,7 +62,6 @@ void KillCamReceiverSystem::stop() {
 
 	m_slowMotionState = SlowMotionSetting::DISABLE;
 	m_hasStarted      = false;
-	m_idOfKiller      = Netcode::UNINITIALIZED;
 	m_idOfKillingProjectile = Netcode::UNINITIALIZED;
 	m_killerPlayer = nullptr;
 	m_killerProjectile = nullptr;
@@ -71,10 +72,12 @@ void KillCamReceiverSystem::stop() {
 	m_killerHeadPos = { 0,0,0 };
 }
 
-bool KillCamReceiverSystem::startMyKillCam() {
+bool KillCamReceiverSystem::startKillCam() {
 	// Only play kill cam if we were actually killed by a player
 	if (m_idOfKillingProjectile == Netcode::UNINITIALIZED) {
-		EventDispatcher::Instance().emit(ToggleKillCamEvent(false));
+		// TODO: STOP KILLCAM EVENT
+		//EventDispatcher::Instance().emit(StartKillCamEvent(false));
+		EventDispatcher::Instance().emit(StopKillCamEvent());
 		return false;
 	}
 
@@ -94,8 +97,6 @@ bool KillCamReceiverSystem::startMyKillCam() {
 			if (killerID == Netcode::getComponentOwner(compID)) {
 				e->addComponent<KillerComponent>();
 				m_killerPlayer = e;
-
-				SAIL_LOG("I was killed by: " + NWrapperSingleton::getInstance().getPlayer(killerID)->name);
 			}
 
 			// Put torches where they were at that point in time
@@ -110,6 +111,20 @@ bool KillCamReceiverSystem::startMyKillCam() {
 
 	return true;
 }
+
+void KillCamReceiverSystem::stopMyKillCam() {
+	m_slowMotionState = SlowMotionSetting::DISABLE;
+	m_hasStarted = false;
+	m_idOfKillingProjectile = Netcode::UNINITIALIZED;
+	m_killerPlayer = nullptr;
+	m_killerProjectile = nullptr;
+	m_trackingProjectile = false;
+	Memory::SafeDelete(m_cam);
+
+	m_projectilePos = { 0,0,0 };
+	m_killerHeadPos = { 0,0,0 };
+}
+
 
 void KillCamReceiverSystem::init(Netcode::PlayerID player, Camera* cam) {
 	initBase(player);
@@ -187,7 +202,7 @@ void KillCamReceiverSystem::processReplayData(float dt) {
 	// Add the entities to all relevant systems so that they for example will have their animations updated
 	if (!m_hasStarted) {
 		// Only play kill cam if we were actually killed by a player
-		if (!startMyKillCam()) {
+		if (!startKillCam()) {
 			return;
 		}
 	}
@@ -201,7 +216,10 @@ void KillCamReceiverSystem::processReplayData(float dt) {
 	// If we've reached the end of the killcam we should end it
 	if (data->readIndex == data->writeIndex) {
 		data->clear();
-		EventDispatcher::Instance().emit(ToggleKillCamEvent(false));
+		
+		// TODO: STOP KILLCAM EVENT
+		//EventDispatcher::Instance().emit(StartKillCamEvent(false));
+		EventDispatcher::Instance().emit(StopKillCamEvent());
 	}
 }
 
@@ -235,10 +253,6 @@ void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 		
 		if (entityID == m_idOfKillingProjectile) {
 			m_killerProjectile = nullptr;
-		}
-
-		if (entityID == m_idOfKiller) {
-			m_killerPlayer = nullptr;
 		}
 
 		return;
@@ -569,19 +583,57 @@ Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) cons
 
 bool KillCamReceiverSystem::onEvent(const Event& event) {
 
-	auto onPlayerDeath = [&](const PlayerDiedEvent& e) {
-		if (Netcode::getComponentOwner(e.netIDofKilled) == m_playerID) {
-			const bool wasKilledByAnotherPlayer = (
-				e.killerID != Netcode::UNINITIALIZED && 
-				e.killerID != Netcode::INSANITY_COMP_ID && 
-				e.killerID != Netcode::SPRINKLER_COMP_ID &&
-				Netcode::getComponentOwner(e.killerID) != m_playerID);
 
-			// KillCam will only activate if we were killed by a player
-			if (wasKilledByAnotherPlayer) {
-				m_idOfKillingProjectile = e.killerID;
-			}
+	// TODO: remove onPlayerDeath
+	auto onPlayerDeath = [&](const PlayerDiedEvent& e) {
+		//if (Netcode::getComponentOwner(e.netIDofKilled) == m_playerID) {
+		//	const bool wasKilledByAnotherPlayer = (
+		//		e.killerID != Netcode::UNINITIALIZED && 
+		//		e.killerID != Netcode::INSANITY_COMP_ID && 
+		//		e.killerID != Netcode::SPRINKLER_COMP_ID &&
+		//		Netcode::getComponentOwner(e.killerID) != m_playerID);
+
+		//	// KillCam will only activate if we were killed by a player
+		//	if (wasKilledByAnotherPlayer) {
+		//		m_idOfKillingProjectile = e.killerID;
+		//	}
+		//}
+	};
+
+	auto onStartKillCam = [&](const StartKillCamEvent& e) {
+		if (m_finalKillCam) { return; } // Ignore this event if we're already in the final killcam
+
+		stopMyKillCam();
+
+		const Netcode::PlayerID killerID = Netcode::getComponentOwner(e.killingProjectile);
+
+		const bool wasKilledByAnotherPlayer = (
+			killerID != Netcode::UNINITIALIZED &&
+			killerID != Netcode::INSANITY_COMP_ID &&
+			killerID != Netcode::SPRINKLER_COMP_ID &&
+			Netcode::getComponentOwner(killerID) != e.deadPlayer);
+
+		if (wasKilledByAnotherPlayer) {
+			m_idOfKillingProjectile = e.killingProjectile;
 		}
+
+		m_finalKillCam = e.finalKillCam;
+		
+
+		startKillCam();
+
+		//if (Netcode::getComponentOwner(e.netIDofKilled) == m_playerID) {
+		//	const bool wasKilledByAnotherPlayer = (
+		//		e.killerID != Netcode::UNINITIALIZED &&
+		//		e.killerID != Netcode::INSANITY_COMP_ID &&
+		//		e.killerID != Netcode::SPRINKLER_COMP_ID &&
+		//		Netcode::getComponentOwner(e.killerID) != m_playerID);
+
+		//	// KillCam will only activate if we were killed by a player
+		//	if (wasKilledByAnotherPlayer) {
+		//		m_idOfKillingProjectile = e.killerID;
+		//	}
+		//}
 	};
 
 	auto onToggleSlowMotion = [&](const ToggleSlowMotionReplayEvent& e) {
@@ -598,6 +650,8 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 	case Event::Type::PLAYER_DEATH:       onPlayerDeath((const PlayerDiedEvent&)event); break;
 	case Event::Type::TOGGLE_SLOW_MOTION: onToggleSlowMotion((const ToggleSlowMotionReplayEvent&)event); break;
 	case Event::Type::TORCH_NOT_HELD:     onTorchNotHeld((const TorchNotHeldEvent&)event); break;
+	case Event::Type::START_KILLCAM:      onStartKillCam((const StartKillCamEvent&)event); break;
+
 	default: break;
 	}
 

@@ -32,7 +32,9 @@ public:
 	void updatePerFrame(float dt, float alpha);
 	void stop() override;
 
-	bool startMyKillCam();
+	// TODO: make private
+	bool startKillCam();
+	void stopMyKillCam();
 
 	void prepareUpdate();
 	void processReplayData(float dt);
@@ -160,7 +162,6 @@ private:
 	size_t m_killCamTickCounter = 0; // Counts ticks in the range [ 0, SLOW_MO_MULTIPLIER )
 
 	Netcode::ComponentID m_idOfKillingProjectile = Netcode::UNINITIALIZED;
-	Netcode::ComponentID m_idOfKiller = Netcode::UNINITIALIZED;
 
 	Entity* m_killerPlayer     = nullptr;
 	Entity* m_killerProjectile = nullptr;

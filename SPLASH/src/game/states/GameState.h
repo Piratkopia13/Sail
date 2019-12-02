@@ -41,7 +41,8 @@ private:
 	bool onPlayerDropped(const NetworkDroppedEvent& event);
 	void onPlayerStateStatusChanged(const NetworkUpdateStateLoadStatus& event);
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
-	void onToggleKillCam(const ToggleKillCamEvent& event);
+	void onStartKillCam(const StartKillCamEvent& event);
+	void onStopKillCam(const StopKillCamEvent& event);
 
 	void shutDownGameState();
 
@@ -106,7 +107,7 @@ private:
 	bool m_wasDropped = false;
 
 	bool m_isInKillCamMode = false;
-	std::string m_wasKilledBy = {};
+	std::string m_killCamText = {};
 
 #ifdef _PERFORMANCE_TEST
 	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);
