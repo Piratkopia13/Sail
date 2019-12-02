@@ -980,9 +980,8 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			m_stream[myIndex].sourceVoice->Stop();
 		}
 	}
-	//
+
 	// Clean up
-	//
 	if (m_stream[myIndex].sourceVoice != nullptr) {
 		m_stream[myIndex].sourceVoice->Stop();
 		m_stream[myIndex].sourceVoice->DestroyVoice();
