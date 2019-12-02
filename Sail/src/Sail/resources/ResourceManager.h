@@ -114,6 +114,7 @@ public:
 #endif
 
 	void logRemainingTextures() const;
+	void printLoadedTexturesToFile() const;
 
 private:
 	unsigned int calculateTextureByteSize() const;
@@ -156,6 +157,7 @@ private:
 	Shader* m_defaultShader;
 
 	std::vector<std::string> m_loadedTextures;
+	mutable bool m_hasLogged = false;
 };
 
 template <typename T>

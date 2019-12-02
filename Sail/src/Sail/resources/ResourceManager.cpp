@@ -8,6 +8,9 @@
 // But "needed" for filling a command list with finished textures
 #include "API/DX12/resources/DX12Texture.h"
 
+#include <iostream>
+#include <fstream>
+
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
 
@@ -89,6 +92,8 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 
 void ResourceManager::loadTexture(const std::string& filename) {
 	auto inserted = m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename)) });
+
+	m_loadedTextures.push_back(filename);
 
 	if (inserted.second) {
 		// Queue upload to GPU
@@ -311,6 +316,23 @@ void ResourceManager::logRemainingTextures() const {
 	for (auto& textureData : m_textureDatas) {
 		SAIL_LOG(textureData.first + " still in CPU");
 	}
+}
+
+void ResourceManager::printLoadedTexturesToFile() const {
+	if (m_hasLogged) {
+		return;
+	}
+
+	std::ofstream file;
+	file.open("LoadedTextures.txt");
+	
+	for (auto& texture : m_loadedTextures) {
+		file << texture + "\n";
+	}
+
+	file.close();
+
+	m_hasLogged = true;
 }
 
 unsigned int ResourceManager::calculateTextureByteSize() const {
