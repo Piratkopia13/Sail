@@ -49,6 +49,7 @@ static const uint MESH_HAS_METALNESS_ROUGHNESS_AO_TEX	= 	1 << 3;
 #define INSTANCE_MASK_METABALLS 0x01
 #define INSTANCE_MASK_CAST_SHADOWS 0x02
 
+#ifdef ENABLE_SOFT_SHADOWS
 struct RayPayload {
 	float4 albedoOne;
 	float4 albedoTwo;
@@ -62,6 +63,13 @@ struct RayPayload {
 	uint recursionDepth;
 	float closestTvalue;
 };
+#else
+struct RayPayload {
+	float4 color;
+	uint recursionDepth;
+	float closestTvalue;
+};
+#endif
 
 struct ShadowRayPayload {
 	bool isHit;

@@ -7,7 +7,7 @@ Texture2D<float4> sys_brdfLUT 						: register(t5);
 // Gbuffer inputs/outputs
 RWTexture2D<float4> gbuffer_normals 				: register(u0);
 RWTexture2D<float4> gbuffer_albedo 				    : register(u1);
-RWTexture2D<float4> gbuffer_texMetalnessRoughnessAO : register(u2);
+RWTexture2D<float4> gbuffer_metalnessRoughnessAO 	: register(u2);
 Texture2D<float2>   gbuffer_motionVectors			: register(t10);
 Texture2D<float>    gbuffer_depth 					: register(t11);
 
@@ -142,6 +142,14 @@ void rayGen() {
 	// Use G-Buffers to calculate/get world position, normal and texture coordinates for this screen pixel
 	// G-Buffers contain data in world space
 	float3 worldNormal = gbuffer_normals[launchIndex].rgb * 2.f - 1.f;
+	float4 albedoColor = gbuffer_albedo[launchIndex];
+	albedoColor = pow(albedoColor, 2.2f); // SRGB
+
+	float4 metalnessRoughnessAO = gbuffer_metalnessRoughnessAO[launchIndex];
+	float metalness = metalnessRoughnessAO.r;
+	float roughness = metalnessRoughnessAO.g;
+	float ao = metalnessRoughnessAO.b;
+	float emissivness = pow(1 - metalnessRoughnessAO.a, 2);
 
 	// ---------------------------------------------------
 	// --- Calculate world position from depth texture ---
@@ -164,9 +172,25 @@ void rayGen() {
 	float3 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition).xyz;
 	// ---------------------------------------------------
 
+#ifndef ENABLE_SOFT_SHADOWS
+	// Hard shadows
+	RayPayload payload;
+	payload.recursionDepth = 1;
+	payload.closestTvalue = 0;
+	payload.color = float4(0,0,0,0);
+	if (worldNormal.x == -1 && worldNormal.y == -1) {
+		// Bounding boxes dont need shading
+		lOutputPositionsOne[launchIndex] = float4(albedoColor.rgb, 1.0f);
+		return;
+	} else {
+		shade(worldPosition, worldNormal, albedoColor.rgb, emissivness, metalness, roughness, ao, payload);
+	}
+
+#else
+
 	// Material
 	float3 albedoOne = gbuffer_albedo[launchIndex].rgb;
-	float4 mrao = gbuffer_texMetalnessRoughnessAO[launchIndex];
+	float4 mrao = gbuffer_metalnessRoughnessAO[launchIndex];
 	float metalnessOne = mrao.r;
 	float roughnessOne = mrao.g;
 	float aoOne = mrao.b;
@@ -381,13 +405,15 @@ void rayGen() {
 	// Overwrite gbuffers
 	gbuffer_albedo[launchIndex] = float4(albedoOne, 1.0f);
 	gbuffer_normals[launchIndex] = float4(worldNormal * 0.5f + 0.5f, 1.0f);
-	gbuffer_texMetalnessRoughnessAO[launchIndex] = float4(metalnessOne, roughnessOne, aoOne, emissivenessOne);
+	gbuffer_metalnessRoughnessAO[launchIndex] = float4(metalnessOne, roughnessOne, aoOne, emissivenessOne);
 	// Write outputs
 	lOutputAlbedo[launchIndex] = float4(albedoTwo, 1.0f);
 	lOutputNormals[launchIndex] = float4(worldNormalTwo * 0.5f + 0.5f, 1.0f);
 	lOutputMetalnessRoughnessAO[launchIndex] = float4(metalnessTwo, roughnessTwo, aoTwo, emissivenessTwo);
 	lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
 	lOutputPositionsTwo[launchIndex] = float4(worldPositionTwo, 1.0f);
+
+#endif
 }
 
 [shader("miss")]
