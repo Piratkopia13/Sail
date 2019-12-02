@@ -524,8 +524,6 @@ void AudioEngine::setSoundVolume(int index, float value) {
 }
 
 void AudioEngine::setStreamVolume(int index, float value) {
-	Logger::Log("INTERNAL" + std::to_string(Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value));
-
 	if (this->checkStreamIndex(index)) {
 		if (m_stream[index].sourceVoice != nullptr) {
 			m_stream[index].sourceVoice->SetVolume(value);
