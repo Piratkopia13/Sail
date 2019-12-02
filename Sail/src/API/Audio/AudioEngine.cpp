@@ -27,6 +27,8 @@
 
 #include <thread>
 
+#include "Sail/utils/Storage/SettingStorage.h"
+
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfuuid")

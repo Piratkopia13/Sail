@@ -183,7 +183,7 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 							randomSoundIndex = randomASoundIndex(soundPoolSize, soundGeneral);
 
 							soundUnique = &audioData.m_soundsUnique[soundTypeIndex].at(randomSoundIndex);
-							soundGeneral->volume = soundUnique->volume;
+							soundGeneral->volume = (soundUnique->volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 							soundGeneral->hasStartedPlaying = true;
 							soundGeneral->durationElapsed = 0.0f;
 							soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
@@ -194,9 +194,9 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 								soundUnique->fileName,
 								soundGeneral->effect,
 								soundGeneral->frequency,
-								soundGeneral->volume
+								(soundGeneral->volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value)
 							);
-							m_audioEngine->startSpecificSound(soundGeneral->soundID, soundUnique->volume);
+							m_audioEngine->startSpecificSound(soundGeneral->soundID, (soundUnique->volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value));
 						}
 
 						// Update the sound with the current positions if it's playing
@@ -205,7 +205,7 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 								soundGeneral->soundID, cam, *e->getComponent<TransformComponent>(),
 								soundGeneral->positionalOffset, alpha
 							);
-							m_audioEngine->setSoundVolume(soundGeneral->soundID, soundGeneral->volume);
+							m_audioEngine->setSoundVolume(soundGeneral->soundID, (soundGeneral->volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value));
 							
 							if (soundGeneral->effect == Audio::EffectType::PROJECTILE_LOWPASS) {
 								updateProjectileLowPass(soundGeneral);
@@ -256,8 +256,8 @@ void AudioSystem::update(Camera& cam, float dt, float alpha) {
 					updateStreamPosition(e, cam, alpha);
 				}
 				// Update volume if it has changed
-				if (m_k->second.prevVolume != m_k->second.volume) {
-					m_k->second.prevVolume = m_k->second.volume;
+				if (m_k->second.prevVolume != (m_k->second.volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value)) {
+					m_k->second.prevVolume = (m_k->second.volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 					updateStreamVolume();
 				}
 
@@ -304,7 +304,7 @@ int AudioSystem::randomASoundIndex(int soundPoolSize, Audio::SoundInfo_General* 
 void AudioSystem::startPlayingRequestedStream(Entity* e, AudioComponent* audioC) {
 
 	std::string filename = m_i->first;
-	float volume = m_i->second.volume;
+	float volume = (m_i->second.volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 	bool isPositionalAudio = m_i->second.isPositionalAudio;
 	bool isLooping = m_i->second.isLooping;
 	int streamIndex = m_audioEngine->getAvailableStreamIndex();
@@ -361,7 +361,7 @@ void AudioSystem::updateStreamPosition(Entity* e, Camera& cam, float alpha) {
 
 void AudioSystem::updateStreamVolume() {
 
-	m_audioEngine->setStreamVolume(m_k->second.streamIndex, m_k->second.volume);
+	m_audioEngine->setStreamVolume(m_k->second.streamIndex, (m_k->second.volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value));
 }
 
 void AudioSystem::updateProjectileLowPass(Audio::SoundInfo_General* general) {
@@ -382,21 +382,21 @@ void AudioSystem::dealWithDeathSound(AudioComponent* audioC, float dt) {
 				);
 
 				Audio::SoundInfo_Unique* soundUnique = &audioData.m_soundsUnique[Audio::SoundType::DEATH].at(randomSoundIndex);
-				soundGeneral->volume = soundUnique->volume;
+				soundGeneral->volume = (soundUnique->volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 				soundGeneral->hasStartedPlaying = true;
 				soundGeneral->durationElapsed = 0.0f;
 				soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
 
 				m_audioEngine->startDeathSound(
 					soundUnique->fileName,
-					soundGeneral->volume
+					(soundGeneral->volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value)
 				);
 				soundGeneral->playOnce = true;
 			}
 			// Update the sound with the current positions if it's playing.
 			if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
 
-				m_audioEngine->updateDeathvolume(soundGeneral->volume);
+				m_audioEngine->updateDeathvolume(soundGeneral->volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 				soundGeneral->durationElapsed += dt;
 			}
 			else {
@@ -428,14 +428,14 @@ void AudioSystem::dealwithInsanitySound(AudioComponent* audioC, float dt) {
 				);
 
 				Audio::SoundInfo_Unique* soundUnique = &audioData.m_soundsUnique[Audio::SoundType::INSANITY_SCREAM].at(randomSoundIndex);
-				soundGeneral->volume = soundUnique->volume;
+				soundGeneral->volume = (soundUnique->volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 				soundGeneral->hasStartedPlaying = true;
 				soundGeneral->durationElapsed = 0.0f;
 				soundGeneral->currentSoundsLength = soundUnique->soundEffectLength;
 
 				m_audioEngine->startInsanitySound(
 					soundUnique->fileName,
-					soundGeneral->volume
+					(soundGeneral->volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value)
 				);
 				soundGeneral->playOnce = true;
 			}
@@ -443,7 +443,7 @@ void AudioSystem::dealwithInsanitySound(AudioComponent* audioC, float dt) {
 			// Update the sound with the current positions if it's playing
 			if (soundGeneral->durationElapsed < soundGeneral->currentSoundsLength) {
 
-				m_audioEngine->updateInsanityVolume(soundGeneral->volume);
+				m_audioEngine->updateInsanityVolume(soundGeneral->volume * Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 				soundGeneral->durationElapsed += dt;
 			}
 			else {
