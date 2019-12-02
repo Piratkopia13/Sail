@@ -99,11 +99,6 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	});
 
 	m_isInitialized = true;
-
-
-	SAIL_LOG("Uploaded " + m_textureData.getFileName() + " to VRAM");
-
-	EventDispatcher::Instance().emit(TextureUploadedToGPUEvent(m_textureData.getFileName()));
 }
 
 bool DX12Texture::hasBeenInitialized() const {
@@ -112,6 +107,10 @@ bool DX12Texture::hasBeenInitialized() const {
 
 ID3D12Resource1* DX12Texture::getResource() const {
 	return textureDefaultBuffers[0].Get();
+}
+
+const std::string& DX12Texture::getFilename() const {
+	return m_textureData.getFileName();
 }
 
 void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {

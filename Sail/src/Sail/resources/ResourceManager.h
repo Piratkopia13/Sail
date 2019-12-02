@@ -9,14 +9,14 @@
 #include "loaders/AssimpLoader.h"
 #include "loaders/FBXLoader.h"
 
-#include "Sail/events/EventReceiver.h"
-
 //class DeferredGeometryShader;
 class ShaderPipeline;
 class Shader;
 //class SoundManager;
 
-class ResourceManager final : public EventReceiver {
+struct ID3D12GraphicsCommandList4;
+
+class ResourceManager final {
 public:
 	ResourceManager();
 	~ResourceManager();
@@ -107,10 +107,13 @@ public:
 	// SoundManager
 	//SoundManager* getSoundManager();
 
+	void uploadFinishedTextures(ID3D12GraphicsCommandList4* cmdList);
+	
+#ifdef DEVELOPMENT
 	void unloadTextures();
-	void logRemainingTextures() const;
+#endif
 
-	bool onEvent(const Event& event) override;
+	void logRemainingTextures() const;
 
 private:
 	unsigned int calculateTextureByteSize() const;
@@ -143,6 +146,10 @@ private:
 	// SoundManager containing all sounds
 	//std::unique_ptr<SoundManager> m_soundManager;
 
+	// Used when uploading textures to VRAM
+	std::mutex m_finishedTexturesMutex;
+	mutable std::mutex m_textureDatasMutex;
+	std::vector<Texture*> m_finishedTextures;
 
 	std::unique_ptr<AssimpLoader> m_assimpLoader;
 	std::unique_ptr<FBXLoader> m_fbxLoader;

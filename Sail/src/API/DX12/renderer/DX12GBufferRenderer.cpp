@@ -23,7 +23,6 @@
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
-	EventDispatcher::Instance().subscribe(Event::Type::TEXTURE_LOADED_TO_RAM, this);
 
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
@@ -48,7 +47,6 @@ DX12GBufferRenderer::~DX12GBufferRenderer() {
 		delete m_gbufferTextures[i];
 	}
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::TEXTURE_LOADED_TO_RAM, this);
 }
 
 void DX12GBufferRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
@@ -162,15 +160,7 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	if (threadID == 0) {
 
 		// Upload queued textures
-		for (size_t i = 0; i < m_texturesToUpload.size(); i++) {
-			auto* dx12Tex = m_texturesToUpload[i];
-
-			if (dx12Tex && !dx12Tex->hasBeenInitialized()) {
-				dx12Tex->initBuffers(cmdList.Get());
-			}
-		}
-		// Empty queue
-		m_texturesToUpload.clear();
+		Application::getInstance()->getResourceManager().uploadFinishedTextures(cmdList.Get());
 
 
 		// Init all vbuffers and textures - this needs to be done on ONE thread
@@ -178,12 +168,12 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		for (auto& renderCommand : commandQueue) {
 			auto& vbuffer = static_cast<DX12VertexBuffer&>(renderCommand.model.mesh->getVertexBuffer());
 			vbuffer.init(cmdList.Get());
-			for (int i = 0; i < 3; i++) {
+			/*for (int i = 0; i < 3; i++) {
 				auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
 				if (tex) {
 					tex->initBuffers(cmdList.Get());
 				}
-			}
+			}*/
 		}
 
 		// Transition output textures to render target
@@ -274,36 +264,8 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 }
 
 bool DX12GBufferRenderer::onEvent(const Event& event) {
-	auto onTextureLoadedToRAM = [&](const TextureLoadedToRAMEvent& e) {
-		auto dx12Tex = static_cast<DX12Texture*>(e.texture);
-
-		if (dx12Tex && !dx12Tex->hasBeenInitialized()) {
-			m_texturesToUpload.push_back(dx12Tex);
-			
-			/*auto frameIndex = m_context->getFrameIndex();
-
-			constexpr int mainThreadIndex = 0;	// Assuming the main thread can be used
-			auto cmdAlloc = m_command[mainThreadIndex].allocators[frameIndex];
-			auto cmdList = m_command[mainThreadIndex].list;
-
-			cmdAlloc->Reset();
-			cmdList->Reset(cmdAlloc.Get(), nullptr);
-
-			dx12Tex->initBuffers(cmdList.Get());
-
-			cmdList->Close();
-
-			m_context->getDirectQueue()->executeCommandLists({ cmdList.Get() });
-
-			m_context->waitForGPU();
-			// FENCE STATUS COMPROMISED ?
-			// THREAD SAFE ?*/
-		}
-	};
-
 	switch (event.type) {
 	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
-	case Event::Type::TEXTURE_LOADED_TO_RAM: onTextureLoadedToRAM((const TextureLoadedToRAMEvent&)event); break;
 	default: break;
 	}
 	return true;

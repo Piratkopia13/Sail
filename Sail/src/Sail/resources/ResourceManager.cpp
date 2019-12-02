@@ -3,7 +3,10 @@
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/api/Mesh.h"
-#include "Sail/events/Events.h"
+
+// Horrible, I know
+// But "needed" for filling a command list with finished textures
+#include "API/DX12/resources/DX12Texture.h"
 
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
@@ -15,14 +18,11 @@ ResourceManager::ResourceManager() {
 	}
 	m_byteSize[RMDataType::Generic] += sizeof(*this);
 	m_defaultShader = nullptr;
-
-	EventDispatcher::Instance().subscribe(Event::Type::TEXTURE_UPLOADED_TO_GPU, this);
 }
 ResourceManager::~ResourceManager() {
 	for (auto it : m_shaderSets) {
 		delete it.second;
 	}
-	EventDispatcher::Instance().unsubscribe(Event::Type::TEXTURE_UPLOADED_TO_GPU, this);
 }
 
 //
@@ -64,12 +64,15 @@ bool ResourceManager::hasAudioData(const std::string& filename) {
 //
 
 void ResourceManager::loadTextureData(const std::string& filename) {
+	std::unique_lock<std::mutex> lock(m_textureDatasMutex);
+
 	auto inserted = m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename) });
 	if (inserted.second) {
 		m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
 	}
 }
 TextureData& ResourceManager::getTextureData(const std::string& filename) {
+	std::unique_lock<std::mutex> lock(m_textureDatasMutex);
 	auto pos = m_textureDatas.find(filename);
 	if (pos == m_textureDatas.end())
 		SAIL_LOG_ERROR("Tried to access a resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadTextureData(\"filename\") before accessing it.");
@@ -77,6 +80,7 @@ TextureData& ResourceManager::getTextureData(const std::string& filename) {
 	return *pos->second;
 }
 bool ResourceManager::hasTextureData(const std::string& filename) {
+	std::unique_lock<std::mutex> lock(m_textureDatasMutex);
 	return m_textureDatas.find(filename) != m_textureDatas.end();
 }
 
@@ -86,10 +90,12 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 
 void ResourceManager::loadTexture(const std::string& filename) {
 	auto inserted = m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename)) });
+
 	if (inserted.second) {
-		// Upload to GPU immediately
-		SAIL_LOG("Loaded " + filename + " to RAM");
-		EventDispatcher::Instance().emit(TextureLoadedToRAMEvent(inserted.first->second.get(), filename));
+		// Queue upload to GPU
+
+		std::unique_lock<std::mutex> lockFinished(m_finishedTexturesMutex);
+		m_finishedTextures.push_back(inserted.first->second.get());
 	}
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
@@ -264,33 +270,41 @@ const unsigned int ResourceManager::getGenericByteSize() const {
 	return m_byteSize[RMDataType::Generic];
 }
 
+void ResourceManager::uploadFinishedTextures(ID3D12GraphicsCommandList4* cmdList) {
+	std::scoped_lock doubleLock(m_finishedTexturesMutex, m_textureDatasMutex);
+
+	for (auto* tex : m_finishedTextures) {
+		auto* dx12Tex = static_cast<DX12Texture*>(tex);
+		dx12Tex->initBuffers(cmdList);
+		
+		const std::string& filename = dx12Tex->getFilename();
+		m_textureDatas.erase(filename);
+	}
+	m_finishedTextures.clear();
+
+	m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
+}
+
+#ifdef DEVELOPMENT
 void ResourceManager::unloadTextures() {
+	std::unique_lock<std::mutex> lockData(m_textureDatasMutex);
 	m_textureDatas.clear();
 	m_textureDatas = std::map<std::string, std::unique_ptr<TextureData>>();
 	m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
 }
+#endif
 
 void ResourceManager::logRemainingTextures() const {
+	std::unique_lock<std::mutex> lock(m_textureDatasMutex);
+	
 	for (auto& textureData : m_textureDatas) {
 		SAIL_LOG(textureData.first + " still in CPU");
 	}
 }
 
-bool ResourceManager::onEvent(const Event& event) {
-	auto onTextureUploadedToGPU = [&](const TextureUploadedToGPUEvent& e) {
-		SAIL_LOG("Removed " + e.fileName + " from RAM");
-		m_textureDatas.erase(e.fileName);
-		m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
-	};
-
-	switch (event.type) {
-	case Event::Type::TEXTURE_UPLOADED_TO_GPU: onTextureUploadedToGPU((const TextureUploadedToGPUEvent&)event); break;
-	default: break;
-	}
-	return true;
-}
-
 unsigned int ResourceManager::calculateTextureByteSize() const {
+	std::unique_lock<std::mutex> lock(m_textureDatasMutex);
+
 	unsigned int size = 0;
 	for (auto& textureData : m_textureDatas) {
 		size += textureData.second->getByteSize();
