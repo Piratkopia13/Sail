@@ -75,7 +75,6 @@ bool KillCamReceiverSystem::startMyKillCam() {
 	// Only play kill cam if we were actually killed by a player
 	if (m_idOfKillingProjectile == Netcode::UNINITIALIZED) {
 		EventDispatcher::Instance().emit(ToggleKillCamEvent(false));
-		SAIL_LOG("Not killed by other player");
 		return false;
 	}
 
@@ -109,8 +108,6 @@ bool KillCamReceiverSystem::startMyKillCam() {
 		}
 	}
 	m_hasStarted = true;
-
-	SAIL_LOG("My killcam started");
 
 	return true;
 }
@@ -202,12 +199,8 @@ void KillCamReceiverSystem::processReplayData(float dt) {
 	data->prepareRead();
 	processData(dt, data->getTickData(), false);
 
-	SAIL_LOG("WRITE: " + std::to_string(data->writeIndex));
-	SAIL_LOG("READ: " + std::to_string(data->readIndex));
-
 	// If we've reached the end of the killcam we should end it
 	if (data->readIndex == data->writeIndex) {
-		SAIL_LOG("My killcam ended");
 		data->clear();
 		EventDispatcher::Instance().emit(ToggleKillCamEvent(false));
 	}
