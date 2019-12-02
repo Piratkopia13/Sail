@@ -48,10 +48,11 @@ public:
 
 	// Models
 	void addModel(const std::string& modelName, Model* model);
-	void loadModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
+	bool loadModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
 	Model& getModel(const std::string& filename, Shader* shader = nullptr, const ImporterType type = SAIL_FBXSDK);
 	Model& getModelCopy(const std::string& filename, Shader* shader = nullptr);
 	bool hasModel(const std::string& filename);
+	void clearSceneData();
 
 	// Animations
 	void loadAnimationStack(const std::string& fileName, const ImporterType type = SAIL_FBXSDK);
@@ -83,33 +84,51 @@ public:
 		std::string name = typeid(T).name();
 		auto it = m_shaderSets.find(name);
 		if (it == m_shaderSets.end()) {
-			Logger::Log("Cannot reload shader " + name + " since it is not loaded in the first place.");
+			SAIL_LOG("Cannot reload shader " + name + " since it is not loaded in the first place.");
 			return;
 		}
 		T* shader = dynamic_cast<T*>(it->second);
 		shader->~T();
 		shader = new (shader) T();
-		Logger::Log("Reloaded shader " + name);
+		SAIL_LOG("Reloaded shader " + name);
 	}
 
 
 	const unsigned int numberOfModels() const;
 	const unsigned int numberOfTextures() const;
+	const unsigned int getByteSize() const;
+	const unsigned int getModelByteSize() const;
+	const unsigned int getAnimationsByteSize() const;
+	const unsigned int getAudioByteSize() const;
+	const unsigned int getTextureByteSize() const;
+	const unsigned int getGenericByteSize() const;
 	// SoundManager
 	//SoundManager* getSoundManager();
 
 private:
 	const std::string getSuitableName(const std::string& name);
 
+	enum RMDataType {
+		Models = 0,
+		Animations,
+		Audio,
+		Textures,
+		Generic
+	};
+	unsigned int m_byteSize[5];
+
 private:
 	// Audio files/data mapped to their filenames
 	std::map<std::string, std::unique_ptr<AudioData>> m_audioDataAll;
 	// Textures mapped to their filenames
+	
 	std::map<std::string, std::unique_ptr<TextureData>> m_textureDatas;
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
 	// Models mapped to their filenames
 	//std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
+	std::mutex m_modelMutex;
 	std::map < std::string, std::unique_ptr<Model>> m_models;
+	std::mutex m_animationMutex;
 	std::map < std::string, std::unique_ptr<AnimationStack>> m_animationStacks;
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, Shader*> m_shaderSets;

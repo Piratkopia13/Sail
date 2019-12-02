@@ -47,4 +47,11 @@ public:
 
 	glm::vec3 posTarget;
 	glm::vec3 lastTargetPos;
+
+public:
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this) + sizeof(NodeSystem::Node) * currPath.size();
+	}
+#endif
 };

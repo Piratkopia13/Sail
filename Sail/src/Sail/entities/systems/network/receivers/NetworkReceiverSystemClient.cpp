@@ -1,31 +1,27 @@
 #include "pch.h"
 #include "NetworkReceiverSystemClient.h"
 
-#include "Network/NWrapperSingleton.h"
+//#include "Network/NWrapperSingleton.h"
 #include "../SPLASH/src/game/states/GameState.h"
 
-NetworkReceiverSystemClient::NetworkReceiverSystemClient() {
+NetworkReceiverSystemClient::NetworkReceiverSystemClient() 
+{}
 
-}
-
-NetworkReceiverSystemClient::~NetworkReceiverSystemClient() {
-
-}
+NetworkReceiverSystemClient::~NetworkReceiverSystemClient() 
+{}
 
 
-void NetworkReceiverSystemClient::mergeHostsStats() {
-}
-void NetworkReceiverSystemClient::handleIncomingData(std::string data) {
+void NetworkReceiverSystemClient::handleIncomingData(const std::string& data) {
 	pushDataToBuffer(data);
 }
 
-void NetworkReceiverSystemClient::endMatch() {
+void NetworkReceiverSystemClient::endGame() {
 	m_gameStatePtr->requestStackClear();
 	m_gameStatePtr->requestStackPush(States::EndGame);
 }
 
-void NetworkReceiverSystemClient::endMatchAfterTimer(float dt) {
-}
 
-void NetworkReceiverSystemClient::prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) {
-}
+// HOST ONLY FUNCTIONS
+void NetworkReceiverSystemClient::endMatchAfterTimer(const float dt) {}
+void NetworkReceiverSystemClient::mergeHostsStats() {}
+void NetworkReceiverSystemClient::prepareEndScreen(const Netcode::PlayerID sender, const EndScreenInfo& info) {}

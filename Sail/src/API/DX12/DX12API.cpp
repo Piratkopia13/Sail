@@ -5,6 +5,8 @@
 #include "resources/DescriptorHeap.h"
 #include "Sail/Application.h"
 #include <iomanip>
+#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/types/NewFrameEvent.h"
 
 const UINT DX12API::NUM_SWAP_BUFFERS = 3;
 const UINT DX12API::NUM_GPU_BUFFERS = 2;
@@ -277,6 +279,12 @@ void DX12API::createGlobalRootSignature() {
 	rootParam[GlobalRootParam::CBV_DIFFUSE_TINT].Descriptor = rootDesc1_0;
 	rootParam[GlobalRootParam::CBV_DIFFUSE_TINT].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+	rootParam[GlobalRootParam::CBV_TEAM_COLOR].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	rootParam[GlobalRootParam::CBV_TEAM_COLOR].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParam[GlobalRootParam::CBV_TEAM_COLOR].Constants.Num32BitValues = 3;
+	rootParam[GlobalRootParam::CBV_TEAM_COLOR].Constants.ShaderRegister = 1;
+	rootParam[GlobalRootParam::CBV_TEAM_COLOR].Constants.RegisterSpace = 1;
+
 	rootParam[GlobalRootParam::CBV_CAMERA].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParam[GlobalRootParam::CBV_CAMERA].Descriptor = rootDesc2_0;
 	rootParam[GlobalRootParam::CBV_CAMERA].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -444,6 +452,7 @@ void DX12API::nextFrame() {
 		getMainGPUDescriptorHeap()->setIndex(0);
 		getComputeGPUDescriptorHeap()->setIndex(0);
 	}
+	EventDispatcher::Instance().emit(NewFrameEvent());
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {
@@ -613,7 +622,7 @@ UINT DX12API::getRootIndexFromRegister(const std::string& reg) const {
 	if (it != m_globalRootSignatureRegisters.end()) {
 		return it->second;
 	}
-	Logger::Error("Tried to get root index from a slot that is not bound in the global root signature!");
+	SAIL_LOG_ERROR("Tried to get root index from a slot that is not bound in the global root signature!");
 	return -1;
 }
 
@@ -701,21 +710,6 @@ void DX12API::initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type, LPCWSTR na
 	cmd.list->Close();
 }
 
-void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists, D3D12_COMMAND_LIST_TYPE type) const {
-	// Command lists needs to be closed before sent to this method
-	if (type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
-		m_directCommandQueue->get()->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
-	} else if (type == D3D12_COMMAND_LIST_TYPE_COMPUTE) {
-		m_computeCommandQueue->get()->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
-	} else {
-		Logger::Error("Cannot execute CommandLists of type " + std::to_string(type));
-	}
-}
-
-void DX12API::executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) const {
-	m_directCommandQueue->get()->ExecuteCommandLists(nLists, cmdLists);
-}
-
 void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
 	cmdList->OMSetRenderTargets(1, &m_currentRenderTargetCDH, true, &m_dsvDescHandle);
 
@@ -733,12 +727,13 @@ void DX12API::prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const {
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 }
 
-bool DX12API::onResize(WindowResizeEvent& event) {
-	if (event.isMinimized()) {
-		Logger::Log("minimized!");
+bool DX12API::onResize(const WindowResizeEvent& event) {
+	if (event.isMinimized) {
+		SAIL_LOG("minimized!");
 	}
-	resizeBuffers(event.getWidth(), event.getHeight());
-	Logger::Log("dx12 resize ran");
+	waitForGPU();
+	resizeBuffers(event.width, event.height);
+	SAIL_LOG("dx12 resize ran");
 	return true;
 }
 
@@ -869,9 +864,37 @@ UINT64 DX12API::CommandQueue::getCurrentFenceValue() const {
 	return sFenceValue;
 }
 
+UINT64 DX12API::CommandQueue::getCompletedFenceValue() const {
+	return sFence->GetCompletedValue();
+}
+
 void DX12API::CommandQueue::reset() {
 	m_commandQueue.Reset();
 	if (sFence) {
 		sFence.Reset();
 	}
+}
+
+void DX12API::CommandQueue::scheduleSignal(std::function<void(UINT64)> func) {
+	m_queuedSignals.emplace_back(func);
+}
+
+void DX12API::CommandQueue::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) {
+	// Command lists needs to be closed before sent to this method
+	m_commandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
+	// Signal and return fence values to scheduled lambdas
+	for (auto& func : m_queuedSignals) {
+		func(this->signal());
+	}
+	m_queuedSignals.clear();
+}
+
+void DX12API::CommandQueue::executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) {
+	// Command lists needs to be closed before sent to this method
+	m_commandQueue->ExecuteCommandLists(nLists, cmdLists);
+	// Signal and return fence values to scheduled lambdas
+	for (auto& func : m_queuedSignals) {
+		func(this->signal());
+	}
+	m_queuedSignals.clear();
 }

@@ -2,17 +2,19 @@
 #include "NWrapperClient.h"
 #include "Network/NetworkModule.hpp"
 
+#include "Sail/events/EventDispatcher.h"
 
-#include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
-#include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
+#include "Sail/../Network/NWrapperSingleton.h"
 #include "../../SPLASH/src/game/events/NetworkChatEvent.h"
-#include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
 #include "../../SPLASH/src/game/events/NetworkNameEvent.h"
 #include "../../SPLASH/src/game/events/NetworkDroppedEvent.h"
-#include "../../SPLASH/src/game/events/NetworkStartGameEvent.h"
 #include "../../SPLASH/src/game/events/NetworkSerializedPackageEvent.h"
+#include "../../SPLASH/src/game/events/SettingsEvent.h"
 #include "../../SPLASH/src/game/states/LobbyState.h"
-#include "../../SPLASH/src/game/events/NetworkBackToLobby.h"
+#include "../../SPLASH/src/game/events/SettingsEvent.h"
+#include "Sail/events/types/NetworkUpdateStateLoadStatus.h"
+#include "Sail/events/types/NetworkPlayerChangedTeam.h"
+
 
 bool NWrapperClient::host(int port) {
 	// A client does not host, do nothing.
@@ -57,8 +59,11 @@ bool NWrapperClient::connectToIP(char* adress) {
 }
 
 void NWrapperClient::sendChatMsg(std::string msg) {
-	msg = std::string("m") + msg;
-	m_network->send(msg.c_str(), msg.length() + 1);
+	std::string data;
+	data += ML_CHAT;
+	data += NWrapperSingleton::getInstance().getMyPlayer().id;
+	data += msg;
+	m_network->send(data.c_str(), data.length() + 1);
 }
 
 void NWrapperClient::playerJoined(TCP_CONNECTION_ID id) {
@@ -66,9 +71,8 @@ void NWrapperClient::playerJoined(TCP_CONNECTION_ID id) {
 }
 
 void NWrapperClient::playerDisconnected(TCP_CONNECTION_ID id_) {
-	// My connection to host was lost :(
-	
-	m_app->dispatchEvent(NetworkDroppedEvent());
+	// My connection to host was lost :(	
+	EventDispatcher::Instance().emit(NetworkDroppedEvent());
 }
 
 void NWrapperClient::playerReconnected(TCP_CONNECTION_ID id) {
@@ -78,68 +82,76 @@ void NWrapperClient::playerReconnected(TCP_CONNECTION_ID id) {
 void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 	// These will be assigned in the switch case.
 	unsigned char userID;
-	char charAsInt[4] = { 0 };
 	std::list<Player> playerList;	// Only used in 'w'-case but needs to be initialized up here
-	Player currentPlayer{};	// 
-	int charCounter = 0;			//
-	std::string id_string = "";				//
-	std::string remnants = "";				//
-	unsigned int id_number = 0;			//
-	std::string id = "";			// used in 'm'
+	Player currentPlayer{};
+	int charCounter = 0;
+	std::string id_string = "";	
+	std::string remnants = "";
+	unsigned int id_number = 0;	
+	std::string id = "";
 	std::string remnants_m = "";
 	unsigned char id_question;
 	Message processedMessage;
 	std::string dataString;
+	bool isSpectator = false;
 
 	switch (nEvent.data->Message.rawMsg[0]) {
-	case 'm':
+	case ML_CHAT:
 		// Client received a chat message from the host...
 		// Parse and process into Message struct
-		processedMessage = processChatMessage((std::string)nEvent.data->Message.rawMsg);
+		processedMessage = processChatMessage(&nEvent.data->Message.rawMsg[1]);
 
 		// Dispatch Message to lobby.
-		Application::getInstance()->dispatchEvent(NetworkChatEvent(processedMessage));
+		EventDispatcher::Instance().emit(NetworkChatEvent(processedMessage));
 
 		break;
 
-	case 'd':
+	case ML_DISCONNECT:
 		// A player disconnected from the host...
-		// Get the user ID from the event data.
-		userID = this->decompressDCMessage(std::string(nEvent.data->Message.rawMsg));
-
-		// Dispatch the ID to lobby
-		Application::getInstance()->dispatchEvent(NetworkDisconnectEvent(userID));
-		break;
-
-	case 'j':
-		// A player joined the host...
-		// Get the user ID from the event data.
-		for (int i = 0; i < 4; i++) {
-			charAsInt[i] = nEvent.data->Message.rawMsg[1 + i];
-		}
-		userID = reinterpret_cast<int&>(charAsInt);
-
-		// Dispatch ID to lobby where the ID will be used to join the player
-		Application::getInstance()->dispatchEvent(NetworkJoinedEvent(Player{ userID, "who?" }));
-		break;
-
-	case '?':
-		// The host is giving us an ID and asking what our name is...
-		// Parse the ID from the message
-		id_question = nEvent.data->Message.rawMsg[1];
-
-		// Dispatch ID to lobby where my chosen name will be replied back.
-		Application::getInstance()->dispatchEvent(NetworkNameEvent(std::to_string(id_question)));
-		break;
-
-	case 't':
+		// Get the user ID from the event data.		
 	{
-		char seed = nEvent.data->Message.rawMsg[1];
-		NWrapperSingleton::getInstance().setSeed(seed);
-		Application::getInstance()->dispatchEvent(NetworkStartGameEvent());
+		userID = nEvent.data->Message.rawMsg[1];
+		PlayerLeftReason reason = (PlayerLeftReason)nEvent.data->Message.rawMsg[2];
+		NWrapperSingleton::getInstance().playerLeft(userID, true, reason);
+	}
+		break;
+	case ML_JOIN:
+		currentPlayer.id = (unsigned char)nEvent.data->Message.rawMsg[1];
+		currentPlayer.name = &nEvent.data->Message.rawMsg[2];
+		NWrapperSingleton::getInstance().playerJoined(currentPlayer);
+		break;
+	case ML_NAME_REQUEST:
+		id_question = (unsigned char)nEvent.data->Message.rawMsg[1]; //My player ID that the host just have given me.
+		NWrapperSingleton::getInstance().getMyPlayer().id = id_question;
+		sendMyNameToHost();
+
+		break;
+	case ML_UPDATE_STATE_LOAD_STATUS:
+	{
+		Netcode::PlayerID playerID = (Netcode::PlayerID)nEvent.data->Message.rawMsg[1];
+		States::ID state = (States::ID)nEvent.data->Message.rawMsg[2];
+		char status = nEvent.data->Message.rawMsg[3];
+
+		if (playerID == NWrapperSingleton::getInstance().getMyPlayerID()) {
+			break;
+		}
+
+		Player* player = NWrapperSingleton::getInstance().getPlayer(playerID);
+		player->lastStateStatus.state = state;
+		player->lastStateStatus.status = status;
+
+		EventDispatcher::Instance().emit(NetworkUpdateStateLoadStatus(state, playerID, status));
+	}
+		break;
+	case ML_CHANGE_STATE:
+	{
+		States::ID stateID = (States::ID)(nEvent.data->Message.rawMsg[1]);
+
+		EventDispatcher::Instance().emit(NetworkChangeStateEvent(stateID));
+
 	}
 	break;
-	case 'w':
+	case ML_WELCOME:
 		// The host has sent us a welcome-package with a list of the players in the game...
 		// Parse the welcome-package into a list of players
 		remnants = nEvent.data->Message.rawMsg;
@@ -153,38 +165,76 @@ void NWrapperClient::decodeMessage(NetworkEvent nEvent) {
 			}
 		}
 
-		// Dispatch the list up to the lobby.
-		if (playerList.size() > 0) {
-			Application::getInstance()->dispatchEvent(NetworkWelcomeEvent(playerList));
-		}
+		updatePlayerList(playerList);
 
 		break;
-	case 's': // Serialized data, remove first character and send the rest to be deserialized
+	case ML_SERIALIZED: // Serialized data, remove first character and send the rest to be deserialized
 		dataString = std::string(nEvent.data->Message.rawMsg, nEvent.data->Message.sizeOfMsg);
 		dataString.erase(0, 1); // remove the s
 
 		// Send the serialized stringData as an event to the networkSystem which parses it.
-		Application::getInstance()->dispatchEvent(NetworkSerializedPackageEvent(dataString));
+		EventDispatcher::Instance().emit(NetworkSerializedPackageEvent(dataString));
 		break;
 
-	case 'z':
-		Application::getInstance()->dispatchEvent(NetworkBackToLobby());
+	case ML_UPDATE_SETTINGS:
+	{
+		auto& stat = m_app->getSettings().gameSettingsStatic;
+		auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+		m_app->getSettings().deSerialize(std::string(&nEvent.data->Message.rawMsg[1]), stat, dynamic);
+		EventDispatcher::Instance().emit(SettingsUpdatedEvent());
+	}
 		break;
+	case ML_TEAM_REQUEST:
+	{
+		char team = nEvent.data->Message.rawMsg[1];
+		Netcode::PlayerID playerID = nEvent.data->Message.rawMsg[2];
+		bool dispatch = nEvent.data->Message.rawMsg[3];
 
+		Player* p = NWrapperSingleton::getInstance().getPlayer(playerID);
+		if(p){
+			p->team = team;
+			if (dispatch) {
+				EventDispatcher::Instance().emit(NetworkPlayerChangedTeam(p->id));
+			}
+		}
+	}
+		break;
 	default:
 		break;
 	}
 }
 
-unsigned int NWrapperClient::decompressDCMessage(std::string messageData) {
-	unsigned char userID;
-	char charAsInt[4] = { 0 };
-
-	for (int i = 0; i < 4; i++) {
-		charAsInt[i] = messageData[1 + i];
-	}
-	userID = reinterpret_cast<int&>(charAsInt);
-
-	return userID;
+void NWrapperClient::sendMyNameToHost() {
+	// Save the ID which the host has blessed us with
+	std::string message;
+	message += ML_NAME_REQUEST;
+	message += NWrapperSingleton::getInstance().getMyPlayerName().c_str();
+	sendMsg(message.c_str(), message.length() + 1);
 }
 
+void NWrapperClient::updatePlayerList(std::list<Player>& playerList) {
+	if (playerList.size() >= 2) {
+		NWrapperSingleton::getInstance().resetPlayerList();
+
+		for (auto currentPlayer : playerList) {
+			NWrapperSingleton::getInstance().playerJoined(currentPlayer);
+		}
+	}
+}
+
+void NWrapperClient::requestTeam(char team) {
+	char msg[] = { ML_TEAM_REQUEST, team, ML_NULL };
+	sendMsg(msg, sizeof(msg));
+}
+
+void NWrapperClient::updateStateLoadStatus(States::ID state, char status) {
+	m_lastReportedState = state;
+
+	Player* myPlayer = NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID());
+	myPlayer->lastStateStatus.state = state;
+	myPlayer->lastStateStatus.status = status;
+
+	char msg[] = { ML_UPDATE_STATE_LOAD_STATUS, NWrapperSingleton::getInstance().getMyPlayerID(), state, status, ML_NULL };
+
+	sendMsg(msg, sizeof(msg));
+}

@@ -4,6 +4,7 @@
 #include <string>
 #include "../../graphics/geometry/Model.h"
 #include <map>
+#include <mutex>
 
 class AnimationStack;
 
@@ -48,6 +49,7 @@ private:
 private:
 	static FbxManager* s_manager;
 	static FbxIOSettings* s_ios;
+	void removeScene(const std::string& name);
 
 	struct SceneData {
 		~SceneData() { Memory::SafeDelete(model); Memory::SafeDelete(stack); }
@@ -62,6 +64,8 @@ private:
 		std::vector<std::vector<unsigned long>> cpToVertMap;
 	};
 
-	std::map<std::string, const FbxScene*> m_scenes;
+	std::mutex m_sceneMutex;
+	std::map<std::string, FbxScene*> m_scenes;
+	std::mutex m_sceneDataMutex;
 	std::map < std::string, SceneData> m_sceneData;
 };

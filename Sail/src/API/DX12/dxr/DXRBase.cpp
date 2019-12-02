@@ -7,14 +7,25 @@
 #include "API/DX12/resources/DX12Texture.h"
 #include "Sail/graphics/light/LightSetup.h"
 #include "../renderer/DX12GBufferRenderer.h"
-#include "Sail/entities/components/MapComponent.h"
-#include "../SPLASH/src/game/events/GameOverEvent.h"
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
+#include "../SPLASH/src/game/events/ResetWaterEvent.h"
+
+#include "Sail/events/EventDispatcher.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
 	: m_shaderFilename(shaderFilename)
 	, m_gbufferInputTextures(inputs)
 	, m_brdfLUTPath("pbr/brdfLUT.tga")
-	, m_waterChanged(false) {
+	, m_waterChanged(false)
+	, m_waterDataCPU(nullptr)
+	, m_updateWater(nullptr)
+	, m_mapSize(1.f)
+	, m_mapStart(1.f)
+{
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().subscribe(Event::Type::RESET_WATER, this);
+
 	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
 	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
 	m_decalTexPaths[2] = "pbr/water/Water_001_MAT.tga";*/
@@ -28,6 +39,7 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	// Only one TLAS is used for the whole scene
 	m_DXR_TopBuffer = m_context->createFrameResource<AccelerationStructureBuffers>();
 	m_bottomBuffers = m_context->createFrameResource<std::unordered_map<Mesh*, InstanceList>>();
+	m_bottomBuffers_Metaballs = m_context->createFrameResource<std::unordered_map<int, InstanceList>>();
 	m_rayGenShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_missShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_hitGroupShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
@@ -43,28 +55,24 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	createRaytracingPSO();
 	createInitialShaderResources();
 
-	m_aabb_desc_resource.reserve(DX12API::NUM_SWAP_BUFFERS);
-	for (size_t i = 0; i < DX12API::NUM_SWAP_BUFFERS; i++) {
-		m_aabb_desc_resource.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(D3D12_RAYTRACING_AABB), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
-		m_aabb_desc_resource.back()->SetName(L"Metaball AABB");
-	}
-
 	m_decalsToRender = 0;
-
-	// Init water "decals"
-	unsigned int numElements = WATER_ARR_SIZE;
-	unsigned int waterDataSize = sizeof(unsigned int) * numElements;
-	unsigned int* initData = new unsigned int[WATER_ARR_SIZE];
-	memset(initData, UINT_MAX, waterDataSize);
-	memset(m_waterDataCPU, UINT_MAX, waterDataSize);
-	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(initData, numElements, sizeof(unsigned int));
-	delete initData;
-
+	unsigned int initData = 0;
+	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(&initData, 1, sizeof(unsigned int));
+	m_waterArrSize = 1;
+	m_waterArrSizes = glm::vec3(1.f, 1.f, 1.f);
 }
 
 DXRBase::~DXRBase() {
+	Memory::SafeDeleteArr(m_waterDataCPU);
+	Memory::SafeDeleteArr(m_updateWater);
+
 	m_rtPipelineState->Release();
 	for (auto& blasList : m_bottomBuffers) {
+		for (auto& blas : blasList) {
+			blas.second.blas.release();
+		}
+	}
+	for (auto& blasList : m_bottomBuffers_Metaballs) {
 		for (auto& blas : blasList) {
 			blas.second.blas.release();
 		}
@@ -86,16 +94,21 @@ DXRBase::~DXRBase() {
 		resource->Release();
 	}
 
-	for (auto& resource : m_aabb_desc_resource) {
-		resource->Release();
+	for (auto& resource : m_aabb_desc_resources) {
+		for (auto& resource2 : resource.second) {
+			resource2->Release();
+		}
 	}
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::RESET_WATER, this);
 }
 
 void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
 	m_gbufferInputTextures = inputs;
 }
 
-void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList, const std::vector<DXRBase::MetaballGroup*>& metaballGroups) {
 
 	unsigned int frameIndex = m_context->getSwapIndex();
 	unsigned int totalNumInstances = 0;
@@ -107,74 +120,85 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 	// Clear old instance lists
 	for (auto& it : m_bottomBuffers[frameIndex]) {
-		it.second.instanceTransforms.clear();
+		it.second.instanceList.clear();
 	}
+	//Destroy Metaball BLAS and instance lists
+	for (auto& it : m_bottomBuffers_Metaballs[frameIndex]) {
+		it.second.instanceList.clear();
+		it.second.blas.release();
+	}
+	m_bottomBuffers_Metaballs[frameIndex].clear();
 
 	// Iterate all static meshes
 	for (auto& renderCommand : sceneGeometry) {
-		if (renderCommand.flags & Renderer::MESH_STATIC) {
-			Mesh* mesh = nullptr;
-			if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
-				mesh = renderCommand.model.mesh;
-			} else {
-				int i = 1;
-			}
-
-			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
-			// If mesh does not have a BLAS
-			if (searchResult == m_bottomBuffers[frameIndex].end()) {
-				if (mesh == nullptr) {
-					int i = 0;
-				}
-
-				createBLAS(renderCommand, flagFastTrace, cmdList);
-			} else {
-				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
-					Logger::Warning("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
-					// Destroy old blas
-					searchResult->second.blas.release();
-					m_bottomBuffers[frameIndex].erase(searchResult);
-					// Create new one
+		if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
+			if (renderCommand.flags & Renderer::MESH_STATIC) {
+				Mesh* mesh = renderCommand.model.mesh;			
+				auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
+				// If mesh does not have a BLAS
+				if (searchResult == m_bottomBuffers[frameIndex].end()) {
 					createBLAS(renderCommand, flagFastTrace, cmdList);
 				} else {
-					// Mesh already has a BLAS - add transform to instance list
-					searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
+					if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
+						SAIL_LOG_WARNING("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
+						// Destroy old blas
+						searchResult->second.blas.release();
+						m_bottomBuffers[frameIndex].erase(searchResult);
+						// Create new one
+						createBLAS(renderCommand, flagFastTrace, cmdList);
+					} else {
+						// Mesh already has a BLAS - add transform to instance list
+						searchResult->second.instanceList.emplace_back(PerInstance{(glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID , renderCommand.castShadows});
+					}
 				}
+				totalNumInstances++;
 			}
-
-			totalNumInstances++;
 		}
 	}
 
 	// Iterate all dynamic meshes
 	for (auto& renderCommand : sceneGeometry) {
-		if (renderCommand.flags & Renderer::MESH_DYNAMIC) {
-			Mesh* mesh = nullptr;
-			if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
-				mesh = renderCommand.model.mesh;
-			}
-
-			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
-			auto flags = flagNone;
-			if (renderCommand.flags & Renderer::MESH_HERO) {
-				flags = flagFastTrace | flagAllowUpdate;
-			} else {
-				flags = flagFastBuild | flagAllowUpdate;
-			}
-
-			// If mesh does not have a BLAS or was first built as STATIC
-			if (searchResult == m_bottomBuffers[frameIndex].end() || !searchResult->second.blas.allowUpdate) {
-				createBLAS(renderCommand, flags, cmdList);
-			} else {
-				if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
-					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
+		if (renderCommand.type == Renderer::RENDER_COMMAND_TYPE_MODEL) {
+			if (renderCommand.flags & Renderer::MESH_DYNAMIC) {
+				Mesh* mesh = renderCommand.model.mesh;
+		
+				auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
+				auto flags = flagNone;
+				if (renderCommand.flags & Renderer::MESH_HERO) {
+					flags = flagFastTrace | flagAllowUpdate;
+				} else {
+					flags = flagFastBuild | flagAllowUpdate;
 				}
-				// Add transform to instance list
-				searchResult->second.instanceTransforms.emplace_back(renderCommand.transform);
-			}
 
-			totalNumInstances++;
+				// If mesh does not have a BLAS or was first built as STATIC
+				if (searchResult == m_bottomBuffers[frameIndex].end() || !searchResult->second.blas.allowUpdate) {
+					createBLAS(renderCommand, flags, cmdList);
+				} else {
+					if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
+						createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
+					}
+					// Add transform to instance list
+					searchResult->second.instanceList.emplace_back(PerInstance{ (glm::mat3x4)renderCommand.transform, (char)renderCommand.teamColorID , renderCommand.castShadows});
+				}
+
+				totalNumInstances++;
+			}
 		}
+	}
+
+	// Iterate all metaball groups
+	for (auto& group : metaballGroups) {
+
+		Renderer::RenderCommand cmd;
+		cmd.transform = glm::identity<glm::mat4>();
+		cmd.transform = glm::transpose(cmd.transform);
+		cmd.type = Renderer::RenderCommandType::RENDER_COMMAND_TYPE_NON_MODEL_METABALL;
+		cmd.castShadows = true;
+		cmd.teamColorID = 0;
+		cmd.metaball.gpuGroupIndex = group->index;
+
+		createBLAS(cmd, flagFastTrace, cmdList);
+		totalNumInstances++;
 	}
 
 	// Destroy BLASes that are no longer part of the scene
@@ -204,9 +228,9 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb, const glm::vec3& mapSize, const glm::vec3& mapStart) {
-	m_metaballsToRender = (metaballs.size() < MAX_NUM_METABALLS) ? (UINT)metaballs.size() : (UINT)MAX_NUM_METABALLS;
-	updateMetaballpositions(metaballs, m_next_metaball_aabb);
+void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping) {
+
+	updateMetaballpositions(metaballGroups);
 
 	DXRShaderCommon::SceneCBuffer newData = {};
 	newData.viewToWorld = glm::inverse(cam.getViewMatrix());
@@ -216,13 +240,30 @@ void DXRBase::updateSceneData(Camera& cam, LightSetup& lights, const std::vector
 	newData.cameraPosition = cam.getPosition();
 	newData.cameraDirection = cam.getDirection();
 	newData.projectionToWorld = glm::inverse(cam.getViewProjection());
-	newData.nMetaballs = m_metaballsToRender;
+	newData.nMetaballGroups = metaballGroups.size();
+
+	for (auto& group : metaballGroups) {
+		newData.metaballGroup[group->index].start = group->gpuGroupStartOffset;
+		newData.metaballGroup[group->index].size = group->balls.size();
+	}
+
 	newData.nDecals = m_decalsToRender;
-	newData.mapSize = mapSize;
-	newData.mapStart = mapStart;
+	newData.doTonemapping = doToneMapping;
+	newData.waterArraySize = m_waterArrSizes;
+	newData.mapSize = m_mapSize;
+	newData.mapStart = m_mapStart;
+
+	int nTeams = teamColors.size();
+	for (int i = 0; i < nTeams && i < NUM_TEAM_COLORS; i++) {
+		newData.teamColors[i] = glm::vec4(teamColors[i], 1.0f);
+	}
 
 	auto& plData = lights.getPointLightsData();
 	memcpy(newData.pointLights, plData.pLights, sizeof(plData));
+
+	auto& slData = lights.getSpotLightsData();
+	memcpy(newData.spotLights, slData.sLights, sizeof(slData));
+
 	m_sceneCB->updateData(&newData, sizeof(newData));
 }
 
@@ -235,47 +276,79 @@ void DXRBase::updateDecalData(DXRShaderCommon::DecalData* decals, size_t size) {
 }
 
 void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
-	static auto mapSize = glm::vec3(MapComponent::xsize, 1.0f, MapComponent::ysize) * (float)MapComponent::tileSize;
-	static auto mapStart = -glm::vec3(MapComponent::tileSize / 2.0f);
-	static const glm::vec3 arrSize(WATER_GRID_X - 1, WATER_GRID_Y - 1, WATER_GRID_Z - 1);
+	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
 
-	glm::vec3 floatInd = ((position - mapStart) / mapSize) * arrSize;
-	int index = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
+	// Convert position to index, stored as floats
+	glm::vec3 floatInd = ((position - mapStart) / mapSize) * m_waterArrSizes;
+	// Convert triple-number index to a single index value
+	int quarterIndex = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
+	// Convert triple-number (float) to triple-number (int)
 	glm::i32vec3 ind = floor(floatInd);
-	int i = Utils::to1D(ind, arrSize.x, arrSize.y);
+	// Convert to final 1-D index
+	int arrIndex = Utils::to1D(ind, m_waterArrSizes.x, m_waterArrSizes.y);
 
 	// Ignore water points that are outside the map
-	if (i >= 0 && i <= WATER_ARR_SIZE - 1) {
-		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 0);
-		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 1);
-		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 2);
-		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[i], 3);
+	if (arrIndex >= 0 && arrIndex <= m_waterArrSize - 1) {
+		// Make sure to update this water
+		m_updateWater[arrIndex] = true;
+		uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
+		uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
+		uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 2);
+		uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 3);
 
-		switch (index) {
+		switch (quarterIndex) {
 		case 0:
-			m_waterDeltas[i] = Utils::packQuarterFloat(0, up1, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(std::min(255U, up0 + std::rand() % 50U + 50U), up1, up2, up3);
 			break;
 		case 1:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, 0, up2, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, std::min(255U, up1 + std::rand() % 50U + 50U), up2, up3);
 			break;
 		case 2:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, 0, up3);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, std::min(255U, up2 + std::rand() % 50U + 50U), up3);
 			break;
 		case 3:
-			m_waterDeltas[i] = Utils::packQuarterFloat(up0, up1, up2, 0);
+			m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, up2, std::min(255U, up3 + std::rand() % 50U + 50U));
 			break;
 		}
 
-		m_waterDataCPU[i] = m_waterDeltas[i];
+		m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
 		m_waterChanged = true;
 	}
 }
 
+bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
+	bool returnValue = false;
+
+	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
+
+	// Convert position to index, stored as floats
+	glm::vec3 floatInd = ((position - mapStart) / mapSize) * m_waterArrSizes;
+	// Convert triple-number (float) to triple-number (int)
+	glm::i32vec3 ind = floor(floatInd);
+	// Convert to final 1-D index
+	int arrIndex = Utils::to1D(ind, m_waterArrSizes.x, m_waterArrSizes.y);
+
+	// Ignore water points that are outside the map
+	if (arrIndex >= 0 && arrIndex <= m_waterArrSize - 1) {
+		returnValue = m_waterDataCPU[arrIndex] != 0;
+	}
+
+	return returnValue;
+}
+
 void DXRBase::updateWaterData() {
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["watersimulation"].getSelected().value) {
+		simulateWater(Application::getInstance()->getDelta());
+	}
+
 	for (auto& pair : m_waterDeltas) {
 		unsigned int offset = sizeof(float) * pair.first;
 		unsigned int& data = pair.second;
-		m_waterStructuredBuffer->updateData(&data, 1, 0, offset);
+		m_waterStructuredBuffer->updateData_new(&data, 1, 0, offset);
 	}
 
 	// Reset every other frame because of double buffering
@@ -285,55 +358,157 @@ void DXRBase::updateWaterData() {
 	m_waterChanged = false;
 }
 
-void DXRBase::updateMetaballpositions(const std::vector<Metaball>& metaballs, const D3D12_RAYTRACING_AABB& m_next_metaball_aabb) {
-	if (m_metaballsToRender == 0) {
-		return;
+void DXRBase::simulateWater(float dt) {
+	for (unsigned int z = 0; z < m_waterArrSizes.z; z++) {
+		for (unsigned int y = 1; y < m_waterArrSizes.y; y++) {
+			for (unsigned int x = 0; x < m_waterArrSizes.x; x++) {
+				auto arrIndex = Utils::to1D(glm::i32vec3(x, y, z), m_waterArrSizes.x, m_waterArrSizes.y);
+				if (m_updateWater[arrIndex]) {
+					unsigned int arrIndexBelow = arrIndex - m_waterArrSizes.x;
+
+					bool change = false;
+					uint32_t vals[8];
+					bool keepUpdating = false;
+					for (unsigned int quarterIndex = 0; quarterIndex < 4; quarterIndex++) {
+						int quarterVal = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], quarterIndex);
+						uint32_t belowQuarterVal = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndexBelow], quarterIndex);
+
+						// Below
+						int deltaVal = 0;
+
+						deltaVal = static_cast<int>(7.f * ((float)(quarterVal) / 255.f) + 1.f);
+
+						if (quarterVal < 21) {
+							deltaVal = quarterVal;
+						}
+						quarterVal -= deltaVal;
+						if (quarterVal > 0) {
+							keepUpdating = true;
+						}
+						vals[quarterIndex] = static_cast<uint32_t>(quarterVal);
+						belowQuarterVal += deltaVal;
+						if (belowQuarterVal > 100U) {
+							m_updateWater[arrIndexBelow] = true;
+						}
+						vals[quarterIndex + 4] = std::min(belowQuarterVal, 255U);
+					}
+
+					if (!keepUpdating) {
+						m_updateWater[arrIndex] = false;
+					}
+
+					m_waterDeltas[arrIndex] = Utils::packQuarterFloat(vals[0], vals[1], vals[2], vals[3]);
+					m_waterDeltas[arrIndexBelow] = Utils::packQuarterFloat(vals[4], vals[5], vals[6], vals[7]);
+					m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
+					m_waterDataCPU[arrIndexBelow] = m_waterDeltas[arrIndexBelow];
+					m_waterChanged = true;
+				}
+			}
+		}
 	}
-	void* pMappedData;
-	ID3D12Resource1* res;
-
-	//UPDATE AABB
-	res = m_aabb_desc_resource[m_context->getSwapIndex()];
-
-	res->Map(0, nullptr, &pMappedData);
-	memcpy(pMappedData, &m_next_metaball_aabb, sizeof(D3D12_RAYTRACING_AABB));
-	res->Unmap(0, nullptr);
-
-	//UPDATE METABALLS
-
-	res = m_metaballPositions_srv[m_context->getSwapIndex()];
-
- 	HRESULT hr =  res->Map(0, nullptr, &pMappedData);
-	if (FAILED(hr)) {
-		_com_error err(hr);
-		std::cout << err.ErrorMessage() << std::endl;
-
-		hr = m_context->getDevice()->GetDeviceRemovedReason();
-		_com_error err2(hr);
-		std::cout << err2.ErrorMessage() << std::endl;
-
-		return;
-	}
-	int offset = 0;
-	int offsetInc = sizeof(metaballs[0].pos);
-	for (size_t i = 0; i < m_metaballsToRender; i++) {;
-		memcpy(static_cast<char*>(pMappedData) + offset, &metaballs[i].pos, offsetInc);
-		offset += offsetInc;
-	}
-	res->Unmap(0, nullptr);
 }
 
-void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::rebuildWater() {
+	// Get some map settings
+	auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	m_mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	m_mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
+	auto tileSize = mapSettings["tileSize"].value;
+	float mapSizeX = mapSettings["sizeX"].value * tileSize;
+	float mapSizeZ = mapSettings["sizeY"].value * tileSize;
+
+	// Water voxel apperance setting, increase to improve water resolution
+	const float voxelCellsPerWorldUnit = 5.f;
+	// How many values are packed into each X, don't change this
+	const int valuesPerX = 4;
+
+	m_waterArrSizes.x = glm::floor(mapSizeX * voxelCellsPerWorldUnit / valuesPerX);
+	m_waterArrSizes.y = 37;
+	m_waterArrSizes.z = glm::floor(mapSizeZ * voxelCellsPerWorldUnit);
+	
+	m_waterArrSize = m_waterArrSizes.x * m_waterArrSizes.y * m_waterArrSizes.z;
+
+	// Init water "decals"
+	unsigned int numElements = m_waterArrSize;
+	Memory::SafeDeleteArr(m_waterDataCPU);
+	Memory::SafeDeleteArr(m_updateWater);
+	m_waterDataCPU = SAIL_NEW unsigned int[numElements];
+	m_updateWater = SAIL_NEW bool[numElements];
+	memset(m_waterDataCPU, 0, sizeof(unsigned int) * numElements);
+	memset(m_updateWater, 0, sizeof(bool) * numElements);
+	// Recreate sbuffer to resize it
+	m_waterStructuredBuffer = std::make_unique<ShaderComponent::DX12StructuredBuffer>(m_waterDataCPU, numElements, sizeof(unsigned int));
+	// Stop any current changes
+	m_waterDeltas.clear();
+
+	// Reset simulation data
+	m_currWaterZChunk = 0;
+	m_maxWaterZChunk = 5;
+	m_waterZChunkSize = m_waterArrSizes.z / m_maxWaterZChunk;
+}
+
+void DXRBase::updateMetaballpositions(const std::vector<DXRBase::MetaballGroup*>& metaballGroups) {
+	if (metaballGroups.empty()) {
+		return;
+	}
+
+	HRESULT hr;
+
+	void* pAabbMappedData;
+	ID3D12Resource1* aabb_res;
+
+	void* pPosMappedData;
+	ID3D12Resource1* pos_res = m_metaballPositions_srv[m_context->getSwapIndex()];
+ 	hr = pos_res->Map(0, nullptr, &pPosMappedData);
+	DX12Utils::checkDeviceRemovalReason(m_context->getDevice(), hr);
+
+	int metaballIndex = 0;
+	int metaballOffsetBytes = 0;
+
+	int offsetInc = sizeof(Metaball::pos);
+	int bufferMaxSize = sizeof(Metaball::pos) * MAX_NUM_METABALLS;
+	
+	for (auto group : metaballGroups) {
+		metaballOffsetBytes = group->gpuGroupStartOffset * offsetInc;
+
+		if (!m_aabb_desc_resources.count(group->index)) {
+			addMetaballGroupAABB(group->index);
+		}
+
+		//UPDATE AABB
+		aabb_res = m_aabb_desc_resources[group->index][m_context->getSwapIndex()];
+		hr = aabb_res->Map(0, nullptr, &pAabbMappedData);
+		DX12Utils::checkDeviceRemovalReason(m_context->getDevice(), hr);
+
+		memcpy(pAabbMappedData, &group->aabb, sizeof(D3D12_RAYTRACING_AABB));
+		aabb_res->Unmap(0, nullptr); 
+		 
+		//UPDATE METABALLS
+		const std::vector<Metaball>& metaballs = group->balls;
+		
+		size_t size = metaballs.size();
+
+		for (size_t i = 0; i < size && metaballOffsetBytes < bufferMaxSize; i++) {;
+			memcpy(static_cast<char*>(pPosMappedData) + metaballOffsetBytes, &metaballs[i].pos, offsetInc);
+			metaballOffsetBytes += offsetInc;
+		}		
+	}
+	pos_res->Unmap(0, nullptr);
+}
+
+void DXRBase::dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTexture* outputBloomTexture, ID3D12GraphicsCommandList4* cmdList) {
 
 	assert(m_gbufferInputTextures); // Input textures not set!
 	
 	unsigned int frameIndex = m_context->getSwapIndex();
 
-	// Copy output texture srv to beginning of heap
-	outputTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
-	D3D12_CPU_DESCRIPTOR_HANDLE outputTexHandle;
-	outputTexHandle.ptr = m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_heapIncr * frameIndex;
-	m_context->getDevice()->CopyDescriptorsSimple(1, outputTexHandle, outputTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	auto copyDescriptor = [&](DX12RenderableTexture* texture, D3D12_CPU_DESCRIPTOR_HANDLE* cdh) {
+		// Copy output texture uav to heap
+		texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+		m_context->getDevice()->CopyDescriptorsSimple(1, cdh[frameIndex], texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	};
+	copyDescriptor(outputTexture, m_rtOutputTextureUavCPUHandles);
+	copyDescriptor(outputBloomTexture, m_rtOutputBloomTextureUavCPUHandles);
 
 	//Set constant buffer descriptor heap
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_rtDescriptorHeap.Get() };
@@ -378,8 +553,8 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 
 void DXRBase::resetWater() {
 	// TODO: make faster by updates the whole buffer at once
-	for (unsigned int i = 0; i < WATER_ARR_SIZE; i++) {
-		m_waterDataCPU[i] = m_waterDeltas[i] = UINT_MAX;
+	for (unsigned int i = 0; i < m_waterArrSize; i++) {
+		m_waterDataCPU[i] = m_waterDeltas[i] = 0;
 	}
 	m_waterChanged = true;
 }
@@ -390,20 +565,23 @@ void DXRBase::reloadShaders() {
 	createRaytracingPSO();
 }
 
-bool DXRBase::onEvent(Event& event) {
-	auto onResize = [&](WindowResizeEvent& event) {
+bool DXRBase::onEvent(const Event& event) {
+	auto onResize = [&](const WindowResizeEvent& event) {
 		// Window changed size, resize output UAV
 		createInitialShaderResources(true);
 		return true;
 	};
 
-	auto onGameOver = [&](GameOverEvent& event) {
+	auto onResetWater = [&](const ResetWaterEvent& event) {
 		resetWater();
 		return true;
 	};
 
-	EventHandler::dispatch<WindowResizeEvent>(event, onResize);
-	EventHandler::dispatch<GameOverEvent>(event, onGameOver);
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	case Event::Type::RESET_WATER: onResetWater((const ResetWaterEvent&)event); break;
+	default: break;
+	}
 	return true;
 }
 
@@ -445,22 +623,25 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 	unsigned int blasIndex = 0;
 	unsigned int instanceID = 0;
-	unsigned int instanceID_metaballs = 0;
+
 	for (auto& it : m_bottomBuffers[frameIndex]) {
 		auto& instanceList = it.second;
-		for (auto& transform : instanceList.instanceTransforms) {
-			if (it.first == nullptr) {
-				pInstanceDesc->InstanceID = instanceID_metaballs++;	// exposed to the shader via InstanceID() - currently same for all instances of same material
-				pInstanceDesc->InstanceMask = 0x01;
-			} else {
-				pInstanceDesc->InstanceID = blasIndex;
-				pInstanceDesc->InstanceMask = 0xFF &~ 0x01;
+		for (auto& instance : instanceList.instanceList) {
+
+#ifdef DEVELOPMENT
+			if (blasIndex >= 1 << 10) {
+				SAIL_LOG_WARNING("BlasIndex is to high and will interfere with team color index.");
 			}
+#endif
+			pInstanceDesc->InstanceID = blasIndex | (instance.teamColorIndex << 10);
+			UINT shadowMask = (instance.castShadows) ? INSTANCE_MASK_CAST_SHADOWS : 0;
+			pInstanceDesc->InstanceMask = INSTANCE_MASK_DEFAULT | shadowMask;
+			
 			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
 			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
-			memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
+			memcpy(pInstanceDesc->Transform, &instance.transform, sizeof(pInstanceDesc->Transform));
 
 			pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
 
@@ -468,6 +649,26 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 		}
 		blasIndex++;
 	}
+
+	//Metaballs
+	for (auto& it : m_bottomBuffers_Metaballs[frameIndex]) {
+		auto& instanceList = it.second;
+		for (auto& instance : instanceList.instanceList) {
+			pInstanceDesc->InstanceID = it.first;								// exposed to the shader via InstanceID() - currently same for all instances of same material
+			pInstanceDesc->InstanceMask = INSTANCE_MASK_METABALLS;
+			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
+																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
+			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+
+			memcpy(pInstanceDesc->Transform, &instance.transform, sizeof(pInstanceDesc->Transform));
+
+			pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
+
+			pInstanceDesc++;
+		}
+		blasIndex++;
+	}
+
 	// Unmap
 	m_DXR_TopBuffer[frameIndex].instanceDesc->Unmap(0, nullptr);
 
@@ -497,7 +698,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
 
 	InstanceList instance;
-	instance.instanceTransforms.emplace_back(renderCommand.transform);
+	instance.instanceList.emplace_back(PerInstance{ renderCommand.transform , (char)renderCommand.teamColorID, renderCommand.castShadows});
 	AccelerationStructureBuffers& bottomBuffer = instance.blas;
 	if (performInplaceUpdate) {
 		bottomBuffer = *sourceBufferForUpdate;
@@ -526,12 +727,12 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 			geomDesc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
 			geomDesc.Triangles.IndexCount = UINT(mesh->getNumIndices());
 		}
-	} else {
+	} else if(renderCommand.type == Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL){
 		//No mesh included. Use AABB from GPU memmory (m_aabb_desc_resource) and set type to PROCEDURAL_PRIMITIVE.
 		geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
 		geomDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
 		geomDesc.AABBs.AABBCount = 1;
-		geomDesc.AABBs.AABBs.StartAddress = m_aabb_desc_resource[m_context->getSwapIndex()]->GetGPUVirtualAddress();
+		geomDesc.AABBs.AABBs.StartAddress = m_aabb_desc_resources[renderCommand.metaball.gpuGroupIndex][m_context->getSwapIndex()]->GetGPUVirtualAddress();
 		geomDesc.AABBs.AABBs.StrideInBytes = 0;
 	}
 
@@ -577,7 +778,11 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 
 	if (!performInplaceUpdate) {
 		// Insert BLAS into buttom buffer map
-		m_bottomBuffers[frameIndex].insert({ mesh, instance });
+		if (renderCommand.type == Renderer::RenderCommandType::RENDER_COMMAND_TYPE_MODEL) {
+			m_bottomBuffers[frameIndex].insert({ mesh, instance });
+		} else if (renderCommand.type == Renderer::RenderCommandType::RENDER_COMMAND_TYPE_NON_MODEL_METABALL) {
+			m_bottomBuffers_Metaballs[frameIndex].insert({ renderCommand.metaball.gpuGroupIndex, instance });
+		}
 	}
 }
 
@@ -605,15 +810,22 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_rtDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
-		// The first two slots in the heap will be used for the output UAV
-		m_rtOutputTextureUavGPUHandles[0] = gpuHandle;
-		cpuHandle.ptr += m_heapIncr;
-		gpuHandle.ptr += m_heapIncr;
-		m_usedDescriptors++;
-		m_rtOutputTextureUavGPUHandles[1] = gpuHandle;
-		cpuHandle.ptr += m_heapIncr;
-		gpuHandle.ptr += m_heapIncr;
-		m_usedDescriptors++;
+		auto storeHandle = [&](D3D12_CPU_DESCRIPTOR_HANDLE* cdh, D3D12_GPU_DESCRIPTOR_HANDLE* gdh) {
+			gdh[0] = gpuHandle;
+			cdh[0] = cpuHandle;
+			cpuHandle.ptr += m_heapIncr;
+			gpuHandle.ptr += m_heapIncr;
+			m_usedDescriptors++;
+			gdh[1] = gpuHandle;
+			cdh[1] = cpuHandle;
+			cpuHandle.ptr += m_heapIncr;
+			gpuHandle.ptr += m_heapIncr;
+			m_usedDescriptors++;
+		};
+
+		// The first slots in the heap will be used for the output UAV
+		storeHandle(m_rtOutputTextureUavCPUHandles, m_rtOutputTextureUavGPUHandles);
+		storeHandle(m_rtOutputBloomTextureUavCPUHandles, m_rtOutputBloomTextureUavGPUHandles);
 
 		// Next slot is used for the brdfLUT
 		m_rtBrdfLUTGPUHandle = gpuHandle;
@@ -700,25 +912,23 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 
 	// Make sure brdfLut texture has been initialized
 	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
-	if (!brdfLutTex.hasBeenInitialized()) {
-		brdfLutTex.initBuffers(cmdList, 0);
-	}
+	brdfLutTex.initBuffers(cmdList);
 
 	// Make sure decal textures has been initialized
 	{
 		auto& decalTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[0]));
 		if (!decalTex.hasBeenInitialized()) {
-			decalTex.initBuffers(cmdList, 0);
+			decalTex.initBuffers(cmdList);
 			decalTex.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
 		auto& decalTex1 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[1]));
 		if (!decalTex1.hasBeenInitialized()) {
-			decalTex1.initBuffers(cmdList, 0);
+			decalTex1.initBuffers(cmdList);
 			decalTex1.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
 		auto& decalTex2 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[2]));
 		if (!decalTex2.hasBeenInitialized()) {
-			decalTex2.initBuffers(cmdList, 0);
+			decalTex2.initBuffers(cmdList);
 			decalTex2.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		}
 	}
@@ -754,7 +964,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 				if (hasTexture) {
 					// Make sure textures have initialized / uploaded their data to its default buffer
 					if (!texture->hasBeenInitialized()) {
-						texture->initBuffers(cmdList, textureNum * blasIndex);
+						texture->initBuffers(cmdList);
 					}
 
 						// Copy SRV to DXR heap
@@ -823,6 +1033,7 @@ void DXRBase::updateShaderTables() {
 		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_rtPipelineState.Get(), 64U);
 		tableBuilder.addShader(m_rayGenName);
 		tableBuilder.addDescriptor(m_rtOutputTextureUavGPUHandles[frameIndex].ptr);
+		tableBuilder.addDescriptor(m_rtOutputBloomTextureUavGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_gbufferStartGPUHandles[frameIndex].ptr);
 		tableBuilder.addDescriptor(m_decalTexGPUHandles.ptr);
 		tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr);
@@ -851,54 +1062,57 @@ void DXRBase::updateShaderTables() {
 			m_hitGroupShaderTable[frameIndex].Resource.Reset();
 		}
 
-		DXRUtils::ShaderTableBuilder tableBuilder((UINT)m_bottomBuffers[frameIndex].size() * 2U /* * 2 for shadow rays (all NULL) */, m_rtPipelineState.Get(), 64U);
+		UINT nInstances = ((UINT)m_bottomBuffers[frameIndex].size() + (UINT)m_bottomBuffers_Metaballs[frameIndex].size()) * 2U; /* * 2 for shadow rays (all NULL) */
+		DXRUtils::ShaderTableBuilder tableBuilder(nInstances, m_rtPipelineState.Get(), 64U);
 
 		unsigned int blasIndex = 0;
+
 		for (auto& it : m_bottomBuffers[frameIndex]) {
 			auto& instanceList = it.second;
 			Mesh* mesh = it.first;
 
-			if (!mesh) {
-				tableBuilder.addShader(m_hitGroupMetaBallName);//Set the shadergroup to use
-				m_localSignatureHitGroup_metaball->doInOrder([&](const std::string& parameterName) {
-					if (parameterName == "MeshCBuffer") {
-						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB->getBuffer()->GetGPUVirtualAddress();
-						tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
+			tableBuilder.addShader(m_hitGroupTriangleName);//Set the shadergroup to use
+			m_localSignatureHitGroup_mesh->doInOrder([&](const std::string& parameterName) {
+				if (parameterName == "VertexBuffer") {
+					tableBuilder.addDescriptor(m_rtMeshHandles[frameIndex][blasIndex].vertexBufferHandle, blasIndex * 2);
+				} else if (parameterName == "IndexBuffer") {
+					D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
+					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[frameIndex][blasIndex].indexBufferHandle : nullAddr, blasIndex * 2);
+				} else if (parameterName == "MeshCBuffer") {
+					D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB->getBuffer()->GetGPUVirtualAddress();
+					tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
+				} else if (parameterName == "Textures") {
+					// Three textures
+					for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+						tableBuilder.addDescriptor(m_rtMeshHandles[frameIndex][blasIndex].textureHandles[textureNum].ptr, blasIndex * 2);
 					}
-					else if (parameterName == "MetaballPositions") {
-						D3D12_GPU_VIRTUAL_ADDRESS metaballHandle = m_metaballPositions_srv[frameIndex]->GetGPUVirtualAddress();
-						tableBuilder.addDescriptor(metaballHandle, blasIndex * 2);
-					}
-					else if (parameterName == "sys_brdfLUT") {
-						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
-					} else {
-						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
-					}
-					});
-			} else {
-				tableBuilder.addShader(m_hitGroupTriangleName);//Set the shadergroup to use
-				m_localSignatureHitGroup_mesh->doInOrder([&](const std::string& parameterName) {
-					if (parameterName == "VertexBuffer") {
-						tableBuilder.addDescriptor(m_rtMeshHandles[frameIndex][blasIndex].vertexBufferHandle, blasIndex * 2);
-					} else if (parameterName == "IndexBuffer") {
-						D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
-						tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_rtMeshHandles[frameIndex][blasIndex].indexBufferHandle : nullAddr, blasIndex * 2);
-					} else if (parameterName == "MeshCBuffer") {
-						D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB->getBuffer()->GetGPUVirtualAddress();
-						tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
-					} else if (parameterName == "Textures") {
-						// Three textures
-						for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-							tableBuilder.addDescriptor(m_rtMeshHandles[frameIndex][blasIndex].textureHandles[textureNum].ptr, blasIndex * 2);
-						}
-					} else if (parameterName == "sys_brdfLUT") {
-						tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
-					} else {
-						Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
-					}
+				} else if (parameterName == "sys_brdfLUT") {
+					tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
+				} else {
+					SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
+				}
 
-					});
-			}
+			});
+			
+			tableBuilder.addShader(L"NULL");
+			blasIndex++;
+		}
+
+		for (auto& it : m_bottomBuffers_Metaballs[frameIndex]) {
+			tableBuilder.addShader(m_hitGroupMetaBallName);//Set the shadergroup to use
+			m_localSignatureHitGroup_metaball->doInOrder([&](const std::string& parameterName) {
+				if (parameterName == "MeshCBuffer") {
+					D3D12_GPU_VIRTUAL_ADDRESS meshCBHandle = m_meshCB->getBuffer()->GetGPUVirtualAddress();
+					tableBuilder.addDescriptor(meshCBHandle, blasIndex * 2);
+				} else if (parameterName == "MetaballPositions") {
+					D3D12_GPU_VIRTUAL_ADDRESS metaballHandle = m_metaballPositions_srv[frameIndex]->GetGPUVirtualAddress();
+					tableBuilder.addDescriptor(metaballHandle, blasIndex * 2);
+				} else if (parameterName == "sys_brdfLUT") {
+					tableBuilder.addDescriptor(m_rtBrdfLUTGPUHandle.ptr, blasIndex * 2);
+				} else {
+					SAIL_LOG_ERROR("Unhandled root signature parameter! (" + parameterName + ")");
+				}
+			});
 
 			tableBuilder.addShader(L"NULL");
 			blasIndex++;
@@ -945,6 +1159,7 @@ void DXRBase::createDXRGlobalRootSignature() {
 void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
+	m_localSignatureRayGen->addDescriptorTable("OutputBloomUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 0U, DX12GBufferRenderer::NUM_GBUFFERS + 1);
 	m_localSignatureRayGen->addDescriptorTable("gbufferInputTextures", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10 + DX12GBufferRenderer::NUM_GBUFFERS + 1, 0U, 3U);
 	m_localSignatureRayGen->addDescriptorTable("sys_brdfLUT", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5);
@@ -1007,6 +1222,16 @@ void DXRBase::initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCR
 	cpuHandle->ptr += m_heapIncr * 3;
 	gpuHandle->ptr += m_heapIncr * 3;
 	m_usedDescriptors += 3;
+}
+
+void DXRBase::addMetaballGroupAABB(int index) {
+	std::vector<ID3D12Resource1*> & aabbRes = m_aabb_desc_resources[index];
+
+	aabbRes.reserve(DX12API::NUM_GPU_BUFFERS);
+	for (size_t i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
+		aabbRes.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(D3D12_RAYTRACING_AABB), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
+		aabbRes.back()->SetName(L"Metaball Group AABB");
+	}
 }
 
 void DXRBase::createEmptyLocalRootSignature() {

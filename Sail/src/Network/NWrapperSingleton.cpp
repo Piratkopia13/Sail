@@ -5,11 +5,17 @@
 #include "Sail.h"
 #include "../../SPLASH/src/game/events/NetworkLanHostFoundEvent.h"
 #include "Sail/entities/systems/network/NetworkSenderSystem.h"
+#include "Sail/events/EventDispatcher.h"
+
+#include "../../SPLASH/src/game/events/NetworkJoinedEvent.h"
+#include "../../SPLASH/src/game/events/NetworkDisconnectEvent.h"
+#include "../../SPLASH/src/game/events/NetworkWelcomeEvent.h"
+#include "../../SPLASH/src/game/events/NetworkNameEvent.h"
 
 NWrapperSingleton::~NWrapperSingleton() {
 	if (m_isInitialized && m_wrapper != nullptr) {
 		delete m_wrapper;
-		
+
 	}
 
 	Memory::SafeDelete(m_network);
@@ -25,8 +31,6 @@ NWrapperSingleton::NWrapperSingleton() {
 	m_network->initialize();
 
 	m_playerLimit = 12;
-	m_playerCount = 0;
-
 }
 
 bool NWrapperSingleton::host(int port) {
@@ -45,7 +49,7 @@ bool NWrapperSingleton::host(int port) {
 
 bool NWrapperSingleton::connectToIP(char* adress) {
 	this->initialize(false);
-	
+
 	if (!m_isHost) {
 		if (m_wrapper->connectToIP(adress) == true) {
 			return true;
@@ -53,7 +57,7 @@ bool NWrapperSingleton::connectToIP(char* adress) {
 			resetWrapper();
 		}
 	}
-	
+
 	return false;
 }
 
@@ -69,7 +73,7 @@ void NWrapperSingleton::searchForLobbies() {
 	m_network->searchHostsOnLan();
 }
 
-void NWrapperSingleton::checkFoundPackages() {
+void NWrapperSingleton::checkForPackages() {
 	m_network->checkForPackages(*this);
 }
 
@@ -77,36 +81,42 @@ void NWrapperSingleton::stopUDP() {
 	m_network->stopUDP();
 }
 
-void NWrapperSingleton::startUDP(){
+void NWrapperSingleton::startUDP() {
 	m_network->startUDP();
 }
 
-void NWrapperSingleton::resetPlayerList()
-{
+void NWrapperSingleton::resetPlayerList() {
 	m_players.clear();
-	m_playerCount = 0;
 }
 
-bool NWrapperSingleton::playerJoined(Player& player) {
-	player.name = player.name.c_str(); // This will fix currupt string size.
-	if (m_playerCount < m_playerLimit) {
-		m_players.push_back(player);
-		m_playerCount++;
+bool NWrapperSingleton::playerJoined(const Player& player, bool dispatchEvent) {
+	Player newPlayer(player.id, player.name.c_str());	// This will fix currupt string size.
+
+	m_players.push_back(newPlayer);
+	if (dispatchEvent) {
+		EventDispatcher::Instance().emit(NetworkJoinedEvent(player));
 	}
-	return false;
+	return true;
+
 }
 
-bool NWrapperSingleton::playerLeft(Netcode::PlayerID& id) {
+bool NWrapperSingleton::playerLeft(Netcode::PlayerID& id, bool dispatchEvent, PlayerLeftReason reason) {
 	// Linear search to get target 'player' struct, then erase that from the list
 	Player* toBeRemoved = nullptr;
 	int pos = 0;
 	for (auto playerIt : m_players) {
 		if (playerIt.id == id) {
 			toBeRemoved = &playerIt;
+			if (dispatchEvent) {
+				EventDispatcher::Instance().emit(NetworkDisconnectEvent(playerIt, reason));
+			}
 			m_players.remove(*toBeRemoved);
+
 			return true;
 		}
 	}
+
+	SAIL_LOG_WARNING("PlayerLeft was called with a none existing playerID");
 
 	return false;
 }
@@ -115,13 +125,12 @@ Player& NWrapperSingleton::getMyPlayer() {
 	return m_me;
 }
 
-Player* NWrapperSingleton::getPlayer(Netcode::PlayerID& id) {
+Player* NWrapperSingleton::getPlayer(const Netcode::PlayerID id) {
 	Player* foundPlayer = nullptr;
 	for (Player& player : m_players) {
 		if (player.id == id) {
 			foundPlayer = &player;
 			break;
-			//return foundPlayer;
 		}
 	}
 
@@ -162,20 +171,31 @@ void NWrapperSingleton::setNSS(NetworkSenderSystem* NSS_) {
 }
 
 void NWrapperSingleton::queueGameStateNetworkSenderEvent(Netcode::MessageType type, Netcode::MessageData* data, bool alsoSendToSelf) {
-	if (type < Netcode::MessageType::CREATE_NETWORKED_ENTITY || Netcode::MessageType::COUNT < type) {
-		Logger::Error("TRIED TO QUEUE AN INVALID EVENT: (" + std::to_string((int)type) + ")");
+	if (type < Netcode::MessageType::DESTROY_ENTITY || Netcode::MessageType::COUNT < type) {
+		SAIL_LOG_ERROR("TRIED TO QUEUE AN INVALID EVENT: (" + std::to_string((int)type) + ")");
 	}
 
 	// Cleaning is handled by the NSS later on.
 	NetworkSenderEvent* e = SAIL_NEW NetworkSenderEvent;
 	e->type = type;
+
 	e->data = data;
 	e->alsoSendToSelf = alsoSendToSelf;
 
 	NSS->queueEvent(e);
+}
 
-	// TODO: forward event to receiverSystem as serialized data
+unsigned char NWrapperSingleton::getPlayerLimit() {
+	return m_playerLimit;
+}
 
+
+size_t NWrapperSingleton::averagePacketSizeSinceLastCheck() {
+	size_t average = 0;
+	if (m_network) {
+		average = m_network->averagePacketSizeSinceLastCheck();
+	}
+	return average;
 }
 
 void NWrapperSingleton::initialize(bool asHost) {
@@ -185,8 +205,7 @@ void NWrapperSingleton::initialize(bool asHost) {
 		if (asHost) {
 			m_isHost = true;
 			m_wrapper = SAIL_NEW NWrapperHost(m_network);
-		}
-		else {
+		} else {
 			m_isHost = false;
 			m_wrapper = SAIL_NEW NWrapperClient(m_network);
 		}
@@ -198,6 +217,7 @@ void NWrapperSingleton::resetWrapper() {
 	m_isInitialized = false;
 	m_isHost = false;
 	delete this->m_wrapper;
+	this->m_wrapper = nullptr;
 }
 
 void NWrapperSingleton::resetNetwork() {
@@ -207,11 +227,28 @@ void NWrapperSingleton::resetNetwork() {
 
 void NWrapperSingleton::handleNetworkEvents(NetworkEvent nEvent) {
 	if (nEvent.eventType == NETWORK_EVENT_TYPE::HOST_ON_LAN_FOUND) {
-		NetworkLanHostFoundEvent event0(
-			nEvent.data->HostFoundOnLanData.ip_full,
-			nEvent.data->HostFoundOnLanData.hostPort,
-			nEvent.data->HostFoundOnLanData.description
-		);
-		Application::getInstance()->dispatchEvent(event0);
+		GameOnLanDescription gameDescription;
+		char ip[16];
+		Network::ip_int_to_ip_string(nEvent.data->HostFoundOnLanData.ip_full, ip, sizeof(ip));
+		gameDescription.ip = std::string(ip);
+		gameDescription.port = nEvent.data->HostFoundOnLanData.hostPort;
+
+		if (std::string(nEvent.data->HostFoundOnLanData.description) != "") {
+			gameDescription.nPlayers = nEvent.data->HostFoundOnLanData.description[0];
+			gameDescription.maxPlayers = nEvent.data->HostFoundOnLanData.description[1];
+			gameDescription.currentState = (States::ID)nEvent.data->HostFoundOnLanData.description[2];
+			gameDescription.name = &nEvent.data->HostFoundOnLanData.description[3];
+		} else {
+			gameDescription.nPlayers = 0;
+			gameDescription.maxPlayers = 0;
+			gameDescription.currentState = States::None;
+			gameDescription.name = "";
+		}
+
+		EventDispatcher::Instance().emit(NetworkLanHostFoundEvent(gameDescription));
+	}
+
+	if (m_wrapper) {
+		m_wrapper->handleNetworkEvents(nEvent);
 	}
 }

@@ -31,6 +31,7 @@ namespace GlobalRootParam {
 	enum Slot {
 		CBV_TRANSFORM = 0,
 		CBV_DIFFUSE_TINT,
+		CBV_TEAM_COLOR,
 		CBV_CAMERA,
 		DT_SRV_0TO9_UAV_10TO20,
 		SRV_GENERAL10,
@@ -58,12 +59,17 @@ public:
 		bool waitOnCPU(UINT64 fenceValue, HANDLE eventHandle) const;
 		ID3D12CommandQueue* get() const;
 		UINT64 getCurrentFenceValue() const;
+		UINT64 getCompletedFenceValue() const;
 		void reset();
+		void scheduleSignal(std::function<void(UINT64)> func);
+		void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists);
+		void executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists);
 	private:
 		DX12API* m_context;
 		wComPtr<ID3D12CommandQueue> m_commandQueue;
 		static UINT64 sFenceValue;
 		static wComPtr<ID3D12Fence1> sFence;
+		std::vector<std::function<void(UINT64)>> m_queuedSignals;
 	};
 
 public:
@@ -93,7 +99,7 @@ public:
 	virtual unsigned int getMemoryUsage() const override;
 	virtual unsigned int getMemoryBudget() const override;
 	virtual void toggleFullscreen() override;
-	virtual bool onResize(WindowResizeEvent& event) override;
+	virtual bool onResize(const WindowResizeEvent& event) override;
 
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;
@@ -119,8 +125,6 @@ public:
 #endif
 
 	void initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT, LPCWSTR name = L"Unnamed Commmand list or allocator object");
-	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT) const;
-	void executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) const;
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;

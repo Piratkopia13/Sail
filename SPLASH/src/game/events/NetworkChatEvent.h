@@ -1,24 +1,13 @@
 #pragma once
 
-#include "../../../../Sail/src/Sail/events/Event.h"
-#include "../states/LobbyState.h"
+#include "Sail/events/Event.h"
+#include "Network/NWrapper.h"
 
-class NetworkChatEvent : public Event{
-public:
-	NetworkChatEvent(Message chatMessage)
-		: Event(Event::NETWORK_CHAT) 
-		, m_chatMessage(chatMessage)
-	{
+struct NetworkChatEvent : public Event{
+	NetworkChatEvent(const Message& _chatMessage)
+		: Event(Event::Type::NETWORK_CHAT)
+		, chatMessage(_chatMessage) { }
+	~NetworkChatEvent() = default;
 
-	}
-	~NetworkChatEvent() {}
-
-	inline Message getMessage() const { return m_chatMessage; };
-
-	static Type GetStaticType() {
-		return Event::NETWORK_CHAT;
-	}
-
-private:
-	Message m_chatMessage;
+	const Message chatMessage;
 };

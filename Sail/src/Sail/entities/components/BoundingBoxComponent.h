@@ -27,6 +27,15 @@ public:
 		return &m_transform;
 	}
 
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+//	void imguiRender() {
+//		
+//	}
+#endif
+
 private:
 	Model* m_wireframe = nullptr;
 	BoundingBox m_boundingBox;

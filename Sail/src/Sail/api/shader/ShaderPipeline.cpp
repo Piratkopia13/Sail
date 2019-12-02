@@ -18,6 +18,10 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, filename(filename)
 	, wireframe(false)
 	, cullMode(GraphicsAPI::Culling::NO_CULLING)
+	, numRenderTargets(1)
+	, enableDepth(true)
+	, enableDepthWrite(true)
+	, blendMode(GraphicsAPI::NO_BLENDING)
 {
 	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
 }
@@ -30,7 +34,7 @@ void ShaderPipeline::compile() {
 	std::string filepath = DEFAULT_SHADER_LOCATION + filename;
 	std::string source = Utils::readFile(filepath);
 	if (source == "")
-		Logger::Error("Shader file is empty or does not exist: " + filename);
+		SAIL_LOG_ERROR("Shader file is empty or does not exist: " + filename);
 	parse(source);
 
 	if (parsedData.hasVS) {
@@ -90,7 +94,7 @@ void ShaderPipeline::parse(const std::string& source) {
 	if (source.find("CSMain") != std::string::npos) { parsedData.hasCS = true; }
 
 	if (!parsedData.hasVS && !parsedData.hasPS && !parsedData.hasGS && !parsedData.hasDS && !parsedData.hasHS && !parsedData.hasCS) {
-		Logger::Error("No main function found in shader. The main function(s) needs to be named VSMain, PSMain, GSMain, DSMain, HSMain or CSMain");
+		SAIL_LOG_ERROR("No main function found in shader. The main function(s) needs to be named VSMain, PSMain, GSMain, DSMain, HSMain or CSMain");
 		assert(false);
 	}
 
@@ -145,7 +149,12 @@ void ShaderPipeline::parse(const std::string& source) {
 	// Process all structured buffers (used in some compute shaders)
 	src = cleanSource.c_str();
 	while (src = findToken("StructuredBuffer", src)) {
-		parseStructuredBuffer(src);
+		char* rwCheck = (char*)(src - 18);
+		bool isRW = false;
+		if (rwCheck >= cleanSource.c_str() && rwCheck[0] == 'R' && rwCheck[1] == 'W') {
+			isRW = true;
+		}
+		parseStructuredBuffer(src, isRW);
 	}
 
 }
@@ -162,7 +171,7 @@ void ShaderPipeline::parseCBuffer(const std::string& source) {
 	src = findToken("{", src); // Place ptr on same line as starting bracket
 	src = nextLine(src);
 
-	//Logger::Log("Slot: " + std::to_string(registerSlot));
+	//SAIL_LOG("Slot: " + std::to_string(registerSlot));
 
 	UINT size = 0;
 	std::vector<ShaderCBuffer::CBufferVariable> vars;
@@ -178,8 +187,8 @@ void ShaderPipeline::parseCBuffer(const std::string& source) {
 		vars.push_back({name, size});
 		size += getSizeOfType(type);
 
-		/*Logger::Log("Type: " + type);
-		Logger::Log("Name: " + name);*/
+		/*SAIL_LOG("Type: " + type);
+		SAIL_LOG("Name: " + name);*/
 	}
 
 	// Memory align to 16 bytes
@@ -191,7 +200,7 @@ void ShaderPipeline::parseCBuffer(const std::string& source) {
 	parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot);
 	free(initData);
 
-	//Logger::Log(src);
+	//SAIL_LOG(src);
 }
 
 void ShaderPipeline::parseSampler(const char* source) {
@@ -241,10 +250,22 @@ void ShaderPipeline::parseRWTexture(const char* source) {
 		slot = 0; // No slot specified, use 0 as default
 	}
 
-	parsedData.renderableTextures.emplace_back(ShaderResource(name, slot));
+	// Get texture format from source, if specified
+	Texture::FORMAT format = Texture::R8G8B8A8;
+	const char* newLine = strchr(source, '\n');
+	size_t lineLength = newLine - source;
+	char* lineCopy = (char*)malloc(lineLength + 1);
+	memset(lineCopy, '\0', lineLength + 1);
+	strncpy_s(lineCopy, lineLength + 1, source, lineLength);
+	if (strstr(lineCopy, "SAIL_RGBA16_FLOAT")) {
+		format = Texture::R16G16B16A16_FLOAT;
+	}
+	free(lineCopy);
+
+	parsedData.renderableTextures.emplace_back(ShaderResource(name, slot), format);
 }
 
-void ShaderPipeline::parseStructuredBuffer(const char* source) {
+void ShaderPipeline::parseStructuredBuffer(const char* source, bool isRW) {
 	// TODO: use type for something (or remove it)
 	UINT tokenSize = 0;
 	std::string type = nextTokenAsType(source, tokenSize);
@@ -266,7 +287,7 @@ void ShaderPipeline::parseStructuredBuffer(const char* source) {
 
 	void* initData = malloc(size);
 	memset(initData, 0, size);
-	parsedData.structuredBuffers.emplace_back(name, initData, size, numElements, stride, bindShader, slot);
+	parsedData.structuredBuffers.emplace_back(name, initData, size, numElements, stride, bindShader, slot, isRW);
 	free(initData);
 }
 
@@ -278,7 +299,7 @@ std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSi
 	}
 	bool isArray = name[name.size() - 1] == ']';
 	if (!allowArray && isArray) {
-		Logger::Error("Shader resource with name \"" + name + "\" is of unsupported type - array");
+		SAIL_LOG_ERROR("Shader resource with name \"" + name + "\" is of unsupported type - array");
 	}
 	if (isArray) {
 		// remove [asd] part from the name
@@ -306,7 +327,7 @@ ShaderComponent::BIND_SHADER ShaderPipeline::getBindShaderFromName(const std::st
 	if (startsWith(name.c_str(), "DS")) { return ShaderComponent::DS; }
 	if (startsWith(name.c_str(), "HS")) { return ShaderComponent::HS; }
 	if (startsWith(name.c_str(), "CS")) { return ShaderComponent::CS; }
-	Logger::Warning("Shader resource with name \"" + name + "\" not starting with VS/PS etc, using VS as default in shader: \"" + filename + "\"");
+	SAIL_LOG_WARNING("Shader resource with name \"" + name + "\" not starting with VS/PS etc, using VS as default in shader: \"" + filename + "\"");
 	return ShaderComponent::VS; // Default to binding to VertexShader
 }
 
@@ -320,6 +341,22 @@ void ShaderPipeline::setWireframe(bool wireframeState) {
 
 void ShaderPipeline::setCullMode(GraphicsAPI::Culling newCullMode) {
 	cullMode = newCullMode;
+}
+
+void ShaderPipeline::setNumRenderTargets(unsigned int numRenderTargets) {
+	this->numRenderTargets = numRenderTargets;
+}
+
+void ShaderPipeline::enableDepthStencil(bool enable) {
+	this->enableDepth = enable;
+}
+
+void ShaderPipeline::enableDepthWriting(bool enable) {
+	this->enableDepthWrite = enable;
+}
+
+void ShaderPipeline::setBlending(GraphicsAPI::Blending blendMode) {
+	this->blendMode = blendMode;
 }
 
 InputLayout& ShaderPipeline::getInputLayout() {
@@ -340,7 +377,7 @@ RenderableTexture* ShaderPipeline::getRenderableTexture(const std::string& name)
 			return it.renderableTexture.get();
 		}
 	}
-	Logger::Error("Tried to get a RenderableTexture named \"" + name + "\" which does not exist in the ShaderPipeline.");
+	SAIL_LOG_ERROR("Tried to get a RenderableTexture named \"" + name + "\" which does not exist in the ShaderPipeline.");
 	return nullptr;
 }
 
@@ -348,7 +385,7 @@ RenderableTexture* ShaderPipeline::getRenderableTexture(const std::string& name)
 void ShaderPipeline::setCBufferVar(const std::string& name, const void* data, UINT size) {
 	bool success = trySetCBufferVar(name, data, size);
 	if (!success) {
-		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
+		SAIL_LOG_WARNING("Tried to set CBuffer variable that did not exist (" + name + ")");
 	}
 }
 
@@ -365,18 +402,18 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 	return false;
 }
 
-void ShaderPipeline::setStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex) {
-	bool success = trySetStructBufferVar(name, data, numElements, meshIndex);
+void ShaderPipeline::setStructBufferVar(const std::string& name, const void* data, UINT numElements) {
+	bool success = trySetStructBufferVar(name, data, numElements);
 	if (!success) {
-		Logger::Warning("Tried to set StructuredBuffer variable that did not exist (" + name + ")");
+		SAIL_LOG_WARNING("Tried to set StructuredBuffer variable that did not exist (" + name + ")");
 	}
 }
 
-bool ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT numElements, int meshIndex) {
+bool ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT numElements) {
 	for (auto& it : parsedData.structuredBuffers) {
 		if (it.name == name) {
 			ShaderComponent::StructuredBuffer& sbuffer = *it.sBuffer.get();
-			sbuffer.updateData(data, numElements, meshIndex);
+			sbuffer.updateData(data, numElements);
 			return true;
 		}
 	}
@@ -388,7 +425,7 @@ UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "uint") { return 4; }
 	if (typeName == "bool") { return 4; }
 	if (typeName == "float") { return 4; }
-	if (typeName == "float2") { return 4 * 2; }
+	if (typeName == "float2" || typeName == "int2" || typeName == "uint2") { return 4 * 2; }
 	if (typeName == "float3") { return 4 * 3; }
 	if (typeName == "float4") { return 4 * 4; }
 	if (typeName == "float3x3") { return 4 * 3 * 3; }
@@ -402,8 +439,9 @@ UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "DeferredDirLightData") { return 32; }
 	if (typeName == "Vertex") { return 4 * 14; }
 	if (typeName == "VertConnections") { return 4 + 4*5 + 4*5; }
+	if (typeName == "ParticleInput") { return (12 * 312 + 312 + 9) * 4; }
 
-	Logger::Error("Found shader variable type with unknown size (" + typeName + ")");
+	SAIL_LOG_ERROR("Found shader variable type with unknown size (" + typeName + ")");
 	return 0;
 }
 
@@ -412,6 +450,6 @@ UINT ShaderPipeline::findSlotFromName(const std::string& name, const std::vector
 		if (resource.name == name)
 			return resource.slot;
 	}
-	Logger::Error("Could not find shader resource named \"" + name + "\"");
+	SAIL_LOG_ERROR("Could not find shader resource named \"" + name + "\"");
 	return -1;
 }

@@ -7,48 +7,98 @@
 #include <queue>
 #include "Sail/entities/Entity.h"
 
+/*
+	Skeleton joints indices
+
+	0  : Hips
+	1  : Spine
+	2  : Spine1
+	3  : Spine2
+	4  : Neck
+	5  : Head
+	6  : HeadTop_End
+	7  : LeftShoulder
+	8  : LeftArm
+	9  : LeftForeArm
+	10 : LeftHand
+	11 : LeftHandThumb1
+	12 : LeftHandThumb2
+	13 : LeftHandThumb3
+	14 : LeftHandThumb4
+	15 : LeftHandIndex1
+	16 : LeftHandIndex2
+	17 : LeftHandIndex3
+	18 : LeftHandIndex4
+	19 : RightShoulder
+	20 : RightArm
+	21 : RightForeArm
+	22 : RightHand
+	23 : RightHandThumb1
+	24 : RightHandThumb2
+	25 : RightHandThumb3
+	26 : RightHandThumb4
+	27 : RightHandIndex1
+	28 : RightHandIndex2
+	29 : RightHandIndex3
+	30 : RightHandIndex4
+	31 : LeftUpLeg
+	32 : LeftLeg
+	33 : LeftFoot
+	34 : LeftToeBase
+	35 : LeftToe_End
+	36 : RightUpLeg
+	37 : RightLeg
+	38 : RightFoot
+	39 : RightToeBase
+	40 : RightToe_End
+*/
+
+
 class AnimationComponent : public Component<AnimationComponent> {
 public:
-	//SAIL_COMPONENT 
-	AnimationComponent(AnimationStack* animationStack) :
-		animationTime(0),
-		animationIndex(0),
-		animationSpeed(1.0f),
-		animationName(""),
-		currentAnimation(nullptr),
-		nextAnimation(nullptr),
-		currentTransition(nullptr),
-		blending(false),
-		dataSize(0),
-		transformSize(0),
-		computeUpdate(true),
-		animationW(0.0f), //TODO: REMOVE
-		m_stack(animationStack),
-		rightHandEntity(nullptr),
-		leftHandEntity(nullptr)
+	class Transition {
+	public:
+		Transition() {
+			to = nullptr;
+			transitionTime = 1.0f;
+			transpiredTime = 0.0f;
+			waitForEnd = true;
+			done = true;
+			toIndex = 51020130;
+		}
+		Transition(Animation* _to, const float time = 1.0f, const bool wait = true) {
+			to = _to;
+			transitionTime = time;
+			transpiredTime = 0.0f;
+			waitForEnd = wait;
+			done = true;
+			toIndex = 51020130;
+		}
+		Animation* to;
+		float transitionTime;
+		float transpiredTime;
+		bool waitForEnd;
+		bool done;
+		unsigned int toIndex;
+	};
 
-	{
-		transformSize = m_stack->getAnimation(0)->getAnimationTransformSize(unsigned int(0));
-		transforms = SAIL_NEW glm::mat4[transformSize];
-	}
+public:
+	AnimationComponent(AnimationStack* animationStack);
+	~AnimationComponent();
 	
-
-
-
-	~AnimationComponent() {
-
-		Memory::SafeDeleteArr(data.indices);
-		Memory::SafeDeleteArr(data.positions);
-		Memory::SafeDeleteArr(data.normals);
-		Memory::SafeDeleteArr(data.bitangents);
-		Memory::SafeDeleteArr(data.colors);
-		Memory::SafeDeleteArr(data.tangents);
-		Memory::SafeDeleteArr(data.texCoords);
-		Memory::SafeDeleteArr(transforms);
-
+	void setAnimation(const unsigned int index, const bool allowTransitionWait = true);
+	void setAnimation(const std::string& name);
+	AnimationStack* getAnimationStack();
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		/* TODO: Fix component size */
+		return sizeof(*this);
 	}
+	void imguiRender(Entity** selected);
+#endif
+
+public:
 	unsigned int dataSize;
-	
 
 	bool computeUpdate;
 	float animationTime;
@@ -61,51 +111,33 @@ public:
 	unsigned int transformSize;
 	bool hasUpdated;
 	float animationW;	
-	
-	// -0.55, 1.03, 0.11
-	glm::mat4 rightHandPosition;
-	// 0.57, 1.03, 0.11
-	glm::mat4 leftHandPosition;
+	bool is_camFollowingHead;
+	bool updateDT;
 
-	glm::vec3 lPos;
-	glm::vec3 rPos;
-	
 	Entity* rightHandEntity;
 	Entity* leftHandEntity;
-	void setAnimation(const unsigned int index) {
-		animationIndex = index;
-		if (animationIndex > m_stack->getAnimationCount()) {
-			animationIndex = 0;
-		}
-		currentAnimation = m_stack->getAnimation(animationIndex);
-	};
-	void setAnimation(const std::string& name) {
-		animationIndex = m_stack->getAnimationIndex(name);
-		currentAnimation = m_stack->getAnimation(animationIndex);
-	}
 
-	class Transition {
-	public:
-		Transition(Animation* _to, const float time = 1.0f, const bool wait = true) {
-			to = _to;
-			transitionTime = time;
-			transpiredTime = 0.0f;
-			waitForEnd = wait;
-		}
-		Animation* to;
-		float transitionTime;
-		float transpiredTime;
-		bool waitForEnd;
-	};
-	std::queue<Transition> transitions;
-	Transition* currentTransition;
+	glm::mat4 rightHandPosition;	// -0.55, 1.03, 0.11
+	glm::mat4 leftHandPosition;		// 0.57, 1.03, 0.11
+	glm::mat4 headPositionMatrix;
+
+	glm::vec3 headPositionLocalCurrent;
+	glm::vec3 headPositionLocalDefault;
 
 	Mesh::Data data;
 	glm::mat4* transforms;
 
 	std::unique_ptr<VertexBuffer> tposeVBuffer;
 
-	AnimationStack* getAnimationStack() { return m_stack; };
+	Transition currentTransition;
+
+	// Used for upper body rotation
+	float pitch = 0.f;
+	float prevPitch = 0.f;
+
+	// For some reason needed
+	bool throwAnimationDone = false;
+
 private:
 	AnimationStack* m_stack;
 };

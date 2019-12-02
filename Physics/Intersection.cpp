@@ -18,7 +18,7 @@ bool Intersection::AabbWithAabb(const glm::vec3& aabb1Pos, const glm::vec3& aabb
 }
 
 bool Intersection::AabbWithAabb(const glm::vec3& aabb1Pos, const glm::vec3& aabb1HalfSize, const glm::vec3& aabb2Pos, const glm::vec3& aabb2HalfSize, glm::vec3* intersectionAxis, float* intersectionDepth) {
-	*intersectionDepth = INFINITY;
+	*intersectionDepth = 9999999.0f;
 
 	float tempDepth;
 	for (int i = 0; i < 3; i++) {
@@ -87,7 +87,7 @@ bool Intersection::AabbWithTriangle(const glm::vec3& aabbPos, const glm::vec3& a
 
 bool Intersection::AabbWithTriangle(const glm::vec3& aabbPos, const glm::vec3& aabbHalfSize, const glm::vec3& triPos1, const glm::vec3& triPos2, const glm::vec3& triPos3, glm::vec3* intersectionAxis, float* intersectionDepth) {
 	//This version sets the intersection axis for the smallest collision and the intersection depth along that axis.
-	float depth = INFINITY;
+	float depth = 9999999.0f;
 	glm::vec3 tempIntersectionAxis;
 
 	//Calculate normal for triangle
@@ -613,17 +613,38 @@ float Intersection::RayWithPaddedTriangle(const glm::vec3& rayStart, const glm::
 	if (glm::dot(triPos1 - rayStart, triangleNormal) < 0.0f) {
 		//Only check if triangle is facing ray start
 		if (padding != 0.0f) {
-			glm::vec3 middle = (triPos1 + triPos2 + triPos3) / 3.0f;
+			glm::vec3 oldV[3];
+			oldV[0] = triPos1;
+			oldV[1] = triPos2;
+			oldV[2] = triPos3;
 
-			glm::vec3 toRay = (rayStart + rayDir * glm::dot(middle - rayStart, rayDir)) - middle;
-			float distance = padding *0.7f;
+			glm::vec3 newV[3];
 
-			//Add padding
-			glm::vec3 newV1 = triPos1 + glm::normalize(toRay) * distance -rayDir * distance;
-			glm::vec3 newV2 = triPos2 + glm::normalize(toRay) * distance -rayDir * distance;
-			glm::vec3 newV3 = triPos3 + glm::normalize(toRay) * distance -rayDir * distance;
+			glm::vec3 normalPadding = triangleNormal * padding;
 
-			returnValue = RayWithTriangle(rayStart, rayDir, newV1, newV2, newV3);
+			glm::vec3 middle = ((oldV[0] + oldV[1] + oldV[2]) / 3.0f) + normalPadding;
+
+			for (int i = 0; i < 3; i++) {
+				newV[i] = oldV[i] + normalPadding;
+
+				float oldRayDist = glm::dot(rayDir, oldV[i] - rayStart);
+				float newRayDist = glm::dot(rayDir, newV[i] - rayStart);
+
+				glm::vec3 oldProjectionOnRayDir = rayStart + rayDir * oldRayDist;
+				glm::vec3 newProjectionOnRayDir = rayStart + rayDir * newRayDist;
+				float oldNormalDot = glm::dot(oldProjectionOnRayDir - oldV[i], triangleNormal);
+				float newNormalDot = glm::dot(newProjectionOnRayDir - newV[i], triangleNormal);
+
+				if ((std::signbit(oldNormalDot) != std::signbit(newNormalDot) && glm::dot(middle - newV[i], rayDir) > 0.0f) || std::signbit(oldRayDist) != std::signbit(newRayDist)) {
+					glm::vec3 toRayStart = rayStart - oldV[i];
+					float length = glm::min(glm::length(toRayStart), padding) - 0.001f;
+
+					newV[i] = oldV[i] + glm::normalize(toRayStart) * length;
+					//newV[i] = oldV[i];
+				}
+			}
+
+			returnValue = RayWithTriangle(rayStart, rayDir, newV[0], newV[1], newV[2]);
 		}
 		else {
 			returnValue = RayWithTriangle(rayStart, rayDir, triPos1, triPos2, triPos3);

@@ -7,30 +7,36 @@
 
 #include "../SPLASH/src/game/states/GameState.h"
 
-NetworkReceiverSystemHost::NetworkReceiverSystemHost() {
+NetworkReceiverSystemHost::NetworkReceiverSystemHost() 
+{}
 
-}
-
-NetworkReceiverSystemHost::~NetworkReceiverSystemHost() {
-
-}
+NetworkReceiverSystemHost::~NetworkReceiverSystemHost() 
+{}
 
 
-void NetworkReceiverSystemHost::handleIncomingData(std::string data) {
+void NetworkReceiverSystemHost::handleIncomingData(const std::string& data) {
 	pushDataToBuffer(data);
 
 	// The host will also save the data in the sender system so that it can be forwarded to all other clients
 	m_netSendSysPtr->pushDataToBuffer(data);
 }
 
-void NetworkReceiverSystemHost::endMatch() {
+#ifdef DEVELOPMENT
+unsigned int NetworkReceiverSystemHost::getByteSize() const {
+	return BaseComponentSystem::getByteSize() + sizeof(*this);
+}
+#endif
 
+void NetworkReceiverSystemHost::endGame() {
 	m_startEndGameTimer = true;
 }
 
-void NetworkReceiverSystemHost::endMatchAfterTimer(float dt) {
 
-	static float endGameClock;
+// HOST ONLY FUNCTIONS
+
+void NetworkReceiverSystemHost::endMatchAfterTimer(const float dt) {
+	static float endGameClock = 0.f;
+
 	if (m_startEndGameTimer) {
 		endGameClock += dt;
 	}
@@ -46,30 +52,30 @@ void NetworkReceiverSystemHost::endMatchAfterTimer(float dt) {
 
 		// Reset clock for next session
 		m_startEndGameTimer = false;
-		endGameClock = 0;
+		endGameClock = 0.f;
 	}
 }
 
-void NetworkReceiverSystemHost::prepareEndScreen(int bf, float dw, int jm, Netcode::PlayerID id) {
+void NetworkReceiverSystemHost::prepareEndScreen(const Netcode::PlayerID sender, const EndScreenInfo& info) {
 
 	GlobalTopStats* gts = &GameDataTracker::getInstance().getStatisticsGlobal();
 
 	// Process the data
-	if (bf > gts->bulletsFired) {
-		gts->bulletsFired = bf;
-		gts->bulletsFiredID = id;
+	if (info.bulletsFired > gts->bulletsFired) {
+		gts->bulletsFired = info.bulletsFired;
+		gts->bulletsFiredID = sender;
 	}
-	if (dw > gts->distanceWalked) {
-		gts->distanceWalked = dw;
-		gts->distanceWalkedID = id;
+	if (info.distanceWalked > gts->distanceWalked) {
+		gts->distanceWalked = info.distanceWalked;
+		gts->distanceWalkedID = sender;
 	}
-	if (jm > gts->jumpsMade) {
-		gts->jumpsMade = jm;
-		gts->jumpsMadeID = id;
+	if (info.jumpsMade > gts->jumpsMade) {
+		gts->jumpsMade = info.jumpsMade;
+		gts->jumpsMadeID = sender;
 	}
 
 	// Send data back in Netcode::MessageType::ENDGAME_STATS
-	endMatch(); // Starts the end game timer. Runs only for the host
+	endGame(); // Starts the end game timer. Runs only for the host
 
 }
 
@@ -90,4 +96,6 @@ void NetworkReceiverSystemHost::mergeHostsStats() {
 		gdt->getStatisticsGlobal().jumpsMade = gdt->getStatisticsLocal().jumpsMade;
 		gdt->getStatisticsGlobal().jumpsMadeID = id;
 	}
+
+	endGame();
 }

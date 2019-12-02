@@ -7,6 +7,7 @@
 #include "DX12StructuredBuffer.h"
 #include "../resources/DX12Texture.h"
 #include "../resources/DX12RenderableTexture.h"
+#include "Sail/events/EventDispatcher.h"
 
 std::unique_ptr<DXILShaderCompiler> DX12ShaderPipeline::m_dxilCompiler = nullptr;
 
@@ -15,12 +16,13 @@ ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 }
 
 DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
-	: ShaderPipeline(filename) 
-	, m_numRenderTargets(1)
-	, m_enableDepth(true)
-	, m_enableBlending(false)
+	: ShaderPipeline(filename)
 {
+	EventDispatcher::Instance().subscribe(Event::Type::NEW_FRAME, this);
 	m_context = Application::getInstance()->getAPI<DX12API>();
+
+	m_meshIndex[0].store(0);
+	m_meshIndex[1].store(0);
 
 	if (!m_dxilCompiler) {
 		m_dxilCompiler = std::make_unique<DXILShaderCompiler>();
@@ -29,26 +31,32 @@ DX12ShaderPipeline::DX12ShaderPipeline(const std::string& filename)
 }
 
 DX12ShaderPipeline::~DX12ShaderPipeline() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::NEW_FRAME, this);
 	m_context->waitForGPU();
 }
 
-/*[deprecated]*/
-void DX12ShaderPipeline::bind(void* cmdList) {
-	assert(false);/*[deprecated]*/
+bool DX12ShaderPipeline::onEvent(const Event& e) {
+	switch (e.type) {
+	case Event::Type::NEW_FRAME: newFrame();
+		break;
+	default:
+		break;
+	}
+	return true;
 }
 
-void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
+void DX12ShaderPipeline::bind(void* cmdList) {
 	if (!m_pipelineState)
-		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
+		SAIL_LOG_ERROR("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
 	for (auto& it : parsedData.cBuffers) {
 		auto* dxCBuffer = static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get());
-		dxCBuffer->bind_new(cmdList, meshIndex, csBlob != nullptr);
+		dxCBuffer->bind_new(cmdList, getMeshIndex(), csBlob != nullptr);
 	}
 	for (auto& it : parsedData.structuredBuffers) {
 		auto* dxSBuffer = static_cast<ShaderComponent::DX12StructuredBuffer*>(it.sBuffer.get());
-		dxSBuffer->bind_new(cmdList, meshIndex);
+		dxSBuffer->bind_new(cmdList, getMeshIndex());
 	}
 	for (auto& it : parsedData.samplers) {
 		it.sampler->bind();
@@ -70,6 +78,11 @@ void DX12ShaderPipeline::bind_new(void* cmdList, int meshIndex) {
 void DX12ShaderPipeline::dispatch(unsigned int threadGroupCountX, unsigned int threadGroupCountY, unsigned int threadGroupCountZ, void* cmdList) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	dxCmdList->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+}
+
+void DX12ShaderPipeline::instanceFinished() {
+	const auto swapIndex = m_context->getSwapIndex();
+	m_meshIndex[swapIndex].fetch_add(1, std::memory_order_relaxed);
 }
 
 void* DX12ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
@@ -121,24 +134,24 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 	ID3DBlob* pShaders = nullptr;
 	ID3DBlob* errorBlob = nullptr;
 	UINT flags = 0;
+	flags |= D3DCOMPILE_DEBUG; // TODO: move back into define below
 #if defined( DEBUG ) || defined( _DEBUG )
-	flags |= D3DCOMPILE_DEBUG;
 	flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 	flags |= D3DCOMPILE_ALL_RESOURCES_BOUND;
 #endif
 	HRESULT hr;
 	switch (shaderType) {
 	case ShaderComponent::VS:
-		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", flags, 0, &pShaders, &errorBlob);
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_1", flags, 0, &pShaders, &errorBlob);
 		break;
 	case ShaderComponent::GS:
-		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "GSMain", "gs_5_0", flags, 0, &pShaders, &errorBlob);
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "GSMain", "gs_5_1", flags, 0, &pShaders, &errorBlob);
 		break;
 	case ShaderComponent::PS:
-		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", flags, 0, &pShaders, &errorBlob);
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_1", flags, 0, &pShaders, &errorBlob);
 		break;
 	case ShaderComponent::CS:
-		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CSMain", "cs_5_0", flags, 0, &pShaders, &errorBlob);
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CSMain", "cs_5_1", flags, 0, &pShaders, &errorBlob);
 		break;
 	}
 
@@ -176,18 +189,15 @@ void DX12ShaderPipeline::setTexture2D(const std::string& name, RenderableTexture
 void DX12ShaderPipeline::setTexture2D(const std::string& name, Texture* texture, void* cmdList) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	DX12Texture* dxTexture = static_cast<DX12Texture*>(texture);
-	if (!dxTexture->hasBeenInitialized()) {
-		assert(false); // Is this used?
-		//dxTexture->initBuffers(dxCmdList);
-	}
-
+	dxTexture->initBuffers(dxCmdList);
+	
 	setDXTexture2D(dxTexture, dxCmdList);
 }
 
 void DX12ShaderPipeline::setDXTexture2D(DX12ATexture* dxTexture, ID3D12GraphicsCommandList4* dxCmdList) {
 	// Copy texture resource view to the gpu heap
 	if (csBlob) {
-		dxTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_GENERIC_READ);
+		dxTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		// Use compute heap
 		m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getComputeGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	} else {
@@ -199,31 +209,36 @@ void DX12ShaderPipeline::setDXTexture2D(DX12ATexture* dxTexture, ID3D12GraphicsC
 
 unsigned int DX12ShaderPipeline::setMaterial(PBRMaterial* material, void* cmdList) {
 	const PBRMaterial::PBRSettings& ps = material->getPBRSettings();
-	int nTextures = 0;
-	DX12Texture* textures[3];
+	int nTextures = 3;
+	DX12Texture* textures[3] = {nullptr};
 	if (ps.hasAlbedoTexture) {
-		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
-		nTextures++;
+		textures[0] = static_cast<DX12Texture*>(material->getTexture(0));
 	}
 	if (ps.hasNormalTexture) {
-		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
-		nTextures++;
+		textures[1] = static_cast<DX12Texture*>(material->getTexture(1));
 	}
 	if (ps.hasMetalnessRoughnessAOTexture) {
-		textures[nTextures] = static_cast<DX12Texture*>(material->getTexture(nTextures));
-		nTextures++;
+		textures[2] = static_cast<DX12Texture*>(material->getTexture(2));
+	}
+
+	// Quick fix to reduce heap usage
+	if (!ps.hasMetalnessRoughnessAOTexture && !ps.hasNormalTexture) {
+		nTextures = 1;
+	} else if (!ps.hasMetalnessRoughnessAOTexture) {
+		nTextures = 2;
 	}
 
 	unsigned int indexStart = m_context->getMainGPUDescriptorHeap()->getAndStepIndex(nTextures);
 	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_context->getMainGPUDescriptorHeap()->getCPUDescriptorHandleForIndex(indexStart);
 
 	for (int i = 0; i < nTextures; i++) {
-		if (!textures[i]->hasBeenInitialized()) {
-			textures[i]->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList), i);
-		}
+		if (textures[i]) {
+			auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+			textures[i]->initBuffers(dxCmdList);
 
-		textures[i]->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		m_context->getDevice()->CopyDescriptorsSimple(1, handle, textures[i]->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			textures[i]->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			m_context->getDevice()->CopyDescriptorsSimple(1, handle, textures[i]->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		}
 		handle.ptr += m_context->getMainGPUDescriptorHeap()->getDescriptorIncrementSize();
 	}
 
@@ -240,18 +255,12 @@ void DX12ShaderPipeline::checkBufferSizes(unsigned int nMeshes) {
 }
 
 // TODO: size isnt really needed, can be read from the byteOffset of the next var
-void DX12ShaderPipeline::setCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex) {
-	bool success = trySetCBufferVar_new(name, data, size, meshIndex);
-	if (!success)
-		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
-}
-
-bool DX12ShaderPipeline::trySetCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex) {
+bool DX12ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data, UINT size) {
 	for (auto& it : parsedData.cBuffers) {
 		for (auto& var : it.vars) {
 			if (var.name == name) {
 				ShaderComponent::DX12ConstantBuffer& cbuffer = static_cast<ShaderComponent::DX12ConstantBuffer&>(*it.cBuffer.get());
-				cbuffer.updateData_new(data, size, meshIndex, var.byteOffset);
+				cbuffer.updateData_new(data, size, getMeshIndex(), var.byteOffset);
 				return true;
 			}
 		}
@@ -259,16 +268,15 @@ bool DX12ShaderPipeline::trySetCBufferVar_new(const std::string& name, const voi
 	return false;
 }
 
-void DX12ShaderPipeline::setNumRenderTargets(unsigned int numRenderTargets) { 
-	m_numRenderTargets = numRenderTargets;
-}
-
-void DX12ShaderPipeline::enableDepthStencil(bool enable) {
-	m_enableDepth = enable;
-}
-
-void DX12ShaderPipeline::enableAlphaBlending(bool enable) {
-	m_enableBlending = enable;
+bool DX12ShaderPipeline::trySetStructBufferVar(const std::string& name, const void* data, UINT numElements) {
+	for (auto& it : parsedData.structuredBuffers) {
+		if (it.name == name) {
+			auto* sbuffer = static_cast<ShaderComponent::DX12StructuredBuffer*>(it.sBuffer.get());
+			sbuffer->updateData_new(data, numElements, getMeshIndex());
+			return true;
+		}
+	}
+	return false;
 }
 
 void DX12ShaderPipeline::compile() {
@@ -312,10 +320,10 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 	}
 
 	// Specify render target and depthstencil usage
-	for (unsigned int i = 0; i < m_numRenderTargets; i++) {
+	for (unsigned int i = 0; i < numRenderTargets; i++) {
 		gpsd.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	}
-	gpsd.NumRenderTargets = m_numRenderTargets;
+	gpsd.NumRenderTargets = numRenderTargets;
 
 	gpsd.SampleDesc.Count = 1;
 	gpsd.SampleDesc.Quality = 0;
@@ -339,39 +347,59 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 		gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 	}
 
-	//Specify blend descriptions.
+	// Specify blend descriptions.
 	D3D12_RENDER_TARGET_BLEND_DESC defaultRTdesc;
-	if (m_enableBlending) {
-		defaultRTdesc = {
-			true, false,
-			D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
-			D3D12_BLEND_ZERO, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
-			D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
-		};    
-		defaultRTdesc.BlendEnable = TRUE;
-		defaultRTdesc.SrcBlend = D3D12_BLEND_ONE;
-		defaultRTdesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-		defaultRTdesc.BlendOp = D3D12_BLEND_OP_ADD;
-		defaultRTdesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-		defaultRTdesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-		defaultRTdesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-		defaultRTdesc.RenderTargetWriteMask = 0x0f;
-	} else {
-		defaultRTdesc = {
+	defaultRTdesc = {
 			false, false,
 			D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
 			D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
 			D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
+	};
+
+	D3D12_RENDER_TARGET_BLEND_DESC customRTBlendDesc = defaultRTdesc;
+	if (blendMode == GraphicsAPI::ALPHA) {
+		customRTBlendDesc = {
+			true, false,
+			D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
+			D3D12_BLEND_ZERO, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
+			D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
 		};
+		customRTBlendDesc.BlendEnable = TRUE;
+		customRTBlendDesc.SrcBlend = D3D12_BLEND_ONE;
+		customRTBlendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+		customRTBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
+		customRTBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+		customRTBlendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+		customRTBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		customRTBlendDesc.RenderTargetWriteMask = 0x0f;
+	} else if (blendMode == GraphicsAPI::ADDITIVE) {
+		customRTBlendDesc = {
+			true, false,
+			D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
+			D3D12_BLEND_ZERO, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
+			D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
+		};
+		customRTBlendDesc.BlendEnable = TRUE;
+		customRTBlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+		customRTBlendDesc.DestBlend = D3D12_BLEND_ONE;
+		customRTBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
+		customRTBlendDesc.SrcBlendAlpha = D3D12_BLEND_SRC_ALPHA;
+		customRTBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
+		customRTBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		customRTBlendDesc.RenderTargetWriteMask = 0x0f;
 	}
-	for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+
+	for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) { // TODO: change 1 to variable
 		gpsd.BlendState.RenderTarget[i] = defaultRTdesc;
 	}
+	
+	gpsd.BlendState.IndependentBlendEnable = true;
+	gpsd.BlendState.RenderTarget[0] = customRTBlendDesc;
 
 	// Specify depth stencil state descriptor.
 	D3D12_DEPTH_STENCIL_DESC dsDesc{};
-	dsDesc.DepthEnable = m_enableDepth;
-	dsDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	dsDesc.DepthEnable = enableDepth;
+	dsDesc.DepthWriteMask = (enableDepthWrite) ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
 	dsDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
 	dsDesc.StencilEnable = FALSE;
 	dsDesc.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
@@ -398,6 +426,16 @@ void DX12ShaderPipeline::createComputePipelineState() {
 	cpsd.CS.BytecodeLength = csD3DBlob->GetBufferSize();
 
 	ThrowIfFailed(m_context->getDevice()->CreateComputePipelineState(&cpsd, IID_PPV_ARGS(&m_pipelineState)));
+}
+
+unsigned DX12ShaderPipeline::getMeshIndex() {
+	const auto swapIndex = m_context->getSwapIndex();
+	return m_meshIndex[swapIndex];
+}
+
+void DX12ShaderPipeline::newFrame() {
+	const auto swapIndex = m_context->getSwapIndex();
+	m_meshIndex[swapIndex].store(0);
 }
 
 void DX12ShaderPipeline::finish() {

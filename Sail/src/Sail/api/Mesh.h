@@ -61,11 +61,15 @@ public:
 
 public:
 	static Mesh* Create(Data& buildData, Shader* shader);
+	static Mesh* Create(unsigned int numVertices, Shader* shader);
 	Mesh(Data& buildData, Shader* shader);
+	Mesh(unsigned int numVertices, Shader* shader);
 	virtual ~Mesh();
 
 	virtual void draw(const Renderer& renderer, void* cmdList = nullptr) = 0;
 
+	// In bytes
+	unsigned int getByteSize() const;
 	const Data& getMeshData();
 
 	PBRMaterial* getMaterial();

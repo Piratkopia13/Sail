@@ -27,6 +27,9 @@ public:
 	float m_gunOverloadCooldown;
 
 	float projectileSpeed;
+	float baseProjectileSpeed;
+	float finalProjectileSpeed;
+	float projectileSpeedRange;
 
 	float gunOverloadvalue;
 	float gunOverloadThreshold;
@@ -36,7 +39,20 @@ public:
 	// Used to manage sound in gunsystem.
 	bool firingContinuously = false;
 	GunState state = GunState::STANDBY;
-
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+	void imguiRender(Entity** selected) {
+		ImGui::Columns(2);
+		if (ImGui::DragFloat("##aspeeed", &baseProjectileSpeed, 0.1f)) {
+		}ImGui::NextColumn();
+		ImGui::Text("Speed"); 
+		ImGui::Columns(1);
+		
+		
+	}
+#endif
 private:
 
 	float m_projectileSpawnLimit = .3f;

@@ -14,6 +14,8 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor)
 	float ka = 1.0f;
 	float ks = 1.0f;
 
+
+	//PointLights
 	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
 		PointLightInput p = CB_SceneData.pointLights[i];
 
@@ -46,21 +48,66 @@ float4 phongShade(float3 worldPosition, float3 worldNormal, float3 diffuseColor)
 		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor * p.color * attenuation;
 	}
 
+	//Spotlights
+	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+		SpotlightInput s = CB_SceneData.spotLights[i];
+
+		// Ignore point light if color is black
+		if (all(s.color == 0.0f) || s.angle == 0.0f) {
+			continue;
+		}
+
+		float3 hitToLight = s.position - worldPosition;
+		float distanceToLight = length(hitToLight);
+		float angle = dot(hitToLight, s.angle);
+
+		if (angle <= s.angle) {
+			continue;
+		}
+
+		// Dont do any shading if in shadow or light is black
+		if (Utils::rayHitAnything(worldPosition, normalize(hitToLight), distanceToLight)) {
+			continue;
+		}
+
+		float3 hitToCam = CB_SceneData.cameraPosition - worldPosition;
+
+		float diffuseCoefficient = saturate(dot(worldNormal, hitToLight));
+
+		float3 specularCoefficient = float3(0.f, 0.f, 0.f);
+		if (diffuseCoefficient > 0.f) {
+			float3 r = reflect(-hitToLight, worldNormal);
+			r = normalize(r);
+			specularCoefficient = pow(saturate(dot(normalize(hitToCam), r)), shininess) * specMap;
+		}
+
+		float attenuation = 1.f / (s.attConstant + s.attLinear * distanceToLight + s.attQuadratic * pow(distanceToLight, 2.f));
+
+		shadedColor += (kd * diffuseCoefficient + ks * specularCoefficient) * diffuseColor * s.color * attenuation;
+	}
+
+
 	float3 ambient = diffuseColor * ka * ambientCoefficient;
 
 	return float4(saturate(ambient + shadedColor), 1.0f);
 }
 
-void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metalness, float roughness, float ao, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.5f) {
+void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float emissivness, float metalness, float roughness, float ao, inout RayPayload payload, bool calledFromClosestHit = false, int reflectionBounces = 1, float reflectionAtt = 0.5f) {
 	// Ray direction for first ray when cast from GBuffer must be calculated using camera position
 	float3 rayDir = (calledFromClosestHit) ? WorldRayDirection() : worldPosition - CB_SceneData.cameraPosition;
+
+	float originalAo = ao;
 
 #ifdef WATER_ON_WALLS
 	// =================================================
 	//  Render pixel as water if close to a water point
 	// =================================================
 
-	static const float3 arrSize = int3(WATER_GRID_X, WATER_GRID_Y, WATER_GRID_Z) - 1;
+	float3 arrSize = (float3)CB_SceneData.waterArraySize;
+	arrSize.x = max(1, arrSize.x);
+	arrSize.y = max(1, arrSize.y);
+	arrSize.z = max(1, arrSize.z);
+	float3 waterArrSize = arrSize.x * arrSize.y * arrSize.z;
 	static const float cutoff = 0.2f;
 
 	float3 cellWorldSize = CB_SceneData.mapSize / arrSize;
@@ -85,7 +132,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 		for (int y = indMin.y; y <= indMax.y; y++) {
 			for (int x = indMin.x; x <= indMax.x; x++) {
 				int i = Utils::to1D(int3(x,y,z), arrSize.x, arrSize.y);
-				i = clamp(i, 0, floor(WATER_ARR_SIZE) - 1);
+				i = clamp(i, 0, floor(waterArrSize) - 1);
 				uint packedR = waterData[i];
 
 				uint start = (x == indMin.x) ? floor(((floatIndMin.x - floor(floatIndMin.x)) * 4.f) % 4) : 0;
@@ -94,8 +141,8 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 				[unroll]
 				for (uint index = start; index <= end; index++) {
 					uint up = Utils::unpackQuarterFloat(packedR, index);
-					if (up < 255) {
-						half r = (255.h - up) * 0.00392156863h; // That last wierd one is 1 / 255
+					if (up > 0) {
+						half r = up * 0.00392156863h; // That last wierd one is 1 / 255
 						// r = 1.0f;
 						float3 waterPointWorldPos = (float3(x*4+index,y,z) + 0.5f) * cellWorldSize + CB_SceneData.mapStart;
 
@@ -116,7 +163,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 
 	if (sum > 0.8f) {
 #ifdef WATER_DEBUG
-		payload.color = float4(1.0f, 0.f, 0.f, 1.0f);
+		payload.color = float4(0.0f, 1.f, 0.f, 1.0f);
 		return;
 #endif
 		float waterOpacity = clamp(sum / 1.f, 0.f, 0.8f);
@@ -124,7 +171,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 		// Shade as water
 
 		metalness = lerp(metalness, 1.0f, 			waterOpacity);
-		roughness = lerp(roughness, 0.01f, 			waterOpacity);
+		roughness = lerp(roughness, 0.0f, 			waterOpacity);
 		ao 		  = lerp(ao, 		0.5f, 			waterOpacity);
 		albedo 	  = lerp(albedo, 	albedo * 0.8f,  waterOpacity);
 
@@ -136,7 +183,7 @@ void shade(float3 worldPosition, float3 worldNormal, float3 albedo, float metaln
 		// ao = 0.5f;
 	}
 #endif
-	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, metalness, roughness, ao, payload);
+	payload.color = pbrShade(worldPosition, worldNormal, -rayDir, albedo, emissivness, metalness, roughness, ao, originalAo, payload);
 	// payload.color = float4(worldNormal * 0.5f + 0.5f, 1.0f);
 	// payload.color = phongShade(worldPosition, worldNormal, albedo);
 }

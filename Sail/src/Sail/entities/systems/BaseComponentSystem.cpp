@@ -73,7 +73,20 @@ void BaseComponentSystem::clearEntities() {
 size_t BaseComponentSystem::getNumEntities() {
 	return entities.size();
 }
-
+#ifdef DEVELOPMENT
+const std::vector<Entity*>& BaseComponentSystem::getEntities() const{
+	return entities;
+}
+void BaseComponentSystem::imguiPrint(Entity** selectedEntity) {
+}
+unsigned int BaseComponentSystem::getByteSize() const {
+	unsigned int size = entities.size() * sizeof(Entity*);
+	size += entitiesQueuedToAdd.size() * sizeof(Entity*);
+	size += entities_set.size() * sizeof(int);
+	size += entitiesQueuedToAdd_set.size() * sizeof(int);
+	return size;
+}
+#endif
 void BaseComponentSystem::addQueuedEntities() {
 	for (Entity* e : entitiesQueuedToAdd) {
 		entities_set.insert(e->getID());

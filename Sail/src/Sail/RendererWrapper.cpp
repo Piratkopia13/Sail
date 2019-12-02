@@ -3,7 +3,9 @@
 
 #include "api/Renderer.h"
 #include "graphics/postprocessing/PostProcessPipeline.h"
-#include "Sail/events/WindowResizeEvent.h"
+#include "API/DX12/renderer/DX12ParticleRenderer.h"
+#include "API/DX12/renderer/DX12GBufferRenderer.h"
+#include "API/DX12/renderer/DX12HybridRaytracerRenderer.h"
 
 RendererWrapper::RendererWrapper() {
 }
@@ -16,10 +18,11 @@ void RendererWrapper::initialize() {
 	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::HYBRID));
 	m_rendererScreenSpace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::SCREEN_SPACE));
 	m_currentRenderer = m_rendererRaytrace.get();
+	m_rendererParticles = std::unique_ptr<Renderer>(Renderer::Create(Renderer::PARTICLES));
 
 	m_postProcessPipeline = std::make_shared<PostProcessPipeline>();
 
-	m_doPostProcessing = false;
+	m_doPostProcessing = true;
 }
 
 /*
@@ -52,11 +55,19 @@ Renderer* RendererWrapper::getCurrentRenderer() {
 	return m_currentRenderer;
 }
 
+Renderer* RendererWrapper::getParticleRenderer() {
+	return m_rendererParticles.get();
+}
+
 PostProcessPipeline* RendererWrapper::getPostProcessPipeline() {
 	return m_postProcessPipeline.get();
 }
 
-bool RendererWrapper::onEvent(Event& event) {
+bool RendererWrapper::checkIfOnWater(const glm::vec3& worldPos) const {
+	return m_rendererRaytrace->checkIfOnWater(worldPos);
+}
+
+bool RendererWrapper::onEvent(const Event& event) {
 	if (m_rendererRaster) {
 		m_rendererRaster->onEvent(event);
 	}

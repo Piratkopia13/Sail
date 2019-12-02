@@ -2,6 +2,8 @@
 #include "Utils.h"
 #include "Sail/Application.h"
 
+#include <filesystem>
+
 std::string Utils::readFile(const std::string& filepath) {
 	std::ifstream t(filepath);
 	std::string str((std::istreambuf_iterator<char>(t)),
@@ -86,19 +88,6 @@ glm::vec2 Utils::getRotations(const glm::vec3& dir) {
 	float yaw = atan2(dir.z, dir.x != 0.f ? dir.x : 0.01f);
 	float pitch = asin(-dir.y);
 	return glm::vec2(pitch, yaw);
-}
-
-int Utils::to1D(const glm::i32vec3& ind, int xMax, int yMax) {
-	return ind.x + xMax * (ind.y + yMax * ind.z);
-}
-
-glm::i32vec3 Utils::to3D(int ind, int xMax, int yMax) {
-	glm::i32vec3 ind3d;
-	ind3d.z = ind / (xMax * yMax);
-	ind -= (ind3d.z * xMax * yMax);
-	ind3d.y = ind / xMax;
-	ind3d.x = ind % xMax;
-	return ind3d;
 }
 
 uint32_t Utils::packQuarterFloat(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
@@ -216,7 +205,7 @@ bool Utils::String::startsWith(const char* source, const std::string& prefix) {
 	return strncmp(source, prefix.c_str(), prefix.size()) == 0;
 }
 
-void Logger::Log(const std::string& msg) {
+void Logger::Log(const std::string& msg, const std::string& file, const std::string& line) {
 	HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	// Save currently set color
@@ -224,16 +213,20 @@ void Logger::Log(const std::string& msg) {
 	GetConsoleScreenBufferInfo(hstdout, &csbi);
 
 	SetConsoleTextAttribute(hstdout, 0x0F);
-	std::cout << "LOG: " << msg << std::endl;
+	std::string message = ("LOG: " + msg);
+#ifdef _DEBUG
+	message = std::filesystem::path(file).filename().string() + "@" + line + " - " + message;
+#endif
+	std::cout << message << std::endl;
 
 	// Revert color
 	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 
 	// Print to in-game console
-	Application::getInstance()->getConsole().addLog("LOG: " + msg);
+	Application::getInstance()->getConsole().addLog(message);
 }
 
-void Logger::Warning(const std::string& msg) {
+void Logger::Warning(const std::string& msg, const std::string& file, const std::string& line) {
 	HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	// Save currently set color
@@ -241,20 +234,24 @@ void Logger::Warning(const std::string& msg) {
 	GetConsoleScreenBufferInfo(hstdout, &csbi);
 
 	SetConsoleTextAttribute(hstdout, 0xE0);
-	std::cout << "WARNING: " << msg << std::endl;
+	std::string message = ("WARNING: " + msg);
+#ifdef _DEBUG
+	message = std::filesystem::path(file).filename().string() + "@" + line + " - " + message;
+#endif
+	std::cout << message << std::endl;
 
 	// Revert color
 	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 
 	// Print to in-game console
-	Application::getInstance()->getConsole().addLog("WARNING: " + msg, ConsoleCommands::WARNING_COLOR);
+	Application::getInstance()->getConsole().addLog(message, ConsoleCommands::WARNING_COLOR);
 
 #ifdef _SAIL_BREAK_ON_WARNING
 	__debugbreak();
 #endif
 }
 
-void Logger::Error(const std::string& msg) {
+void Logger::Error(const std::string& msg, const std::string& file, const std::string& line) {
 	HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	// Save currently set color
@@ -262,13 +259,17 @@ void Logger::Error(const std::string& msg) {
 	GetConsoleScreenBufferInfo(hstdout, &csbi);
 
 	SetConsoleTextAttribute(hstdout, 0xC0);
-	std::cout << "ERROR: " << msg << std::endl;
+	std::string message = ("ERROR: " + msg);
+#ifdef _DEBUG
+	message = std::filesystem::path(file).filename().string() + "@" + line + " - " + message;
+#endif
+	std::cout << message << std::endl;
 
 	// Revert color
 	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 
 	// Print to in-game console
-	Application::getInstance()->getConsole().addLog("ERROR: " + msg, ConsoleCommands::ERROR_COLOR);
+	Application::getInstance()->getConsole().addLog(message, ConsoleCommands::ERROR_COLOR);
 
 #ifdef _SAIL_BREAK_ON_ERROR
 	__debugbreak();

@@ -13,8 +13,12 @@
 #include "../resources/DX12Texture.h"
 #include "Sail/graphics/postprocessing/PostProcessPipeline.h"
 #include "API/DX12/resources/DX12RenderableTexture.h"
+#include "Sail/events/EventDispatcher.h"
 
 DX12ForwardRenderer::DX12ForwardRenderer() {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
 	Application* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 
@@ -23,15 +27,14 @@ DX12ForwardRenderer::DX12ForwardRenderer() {
 		m_context->initCommand(m_command[i], D3D12_COMMAND_LIST_TYPE_DIRECT, name.c_str());
 	}
 
-
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
-	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Forward renderer output renderable texture", true)));
+	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Forward renderer output renderable texture", Texture::R8G8B8A8, true)));
 	m_outputTexture->renameBuffer("Forward renderer output renderable texture");
 }
 
 DX12ForwardRenderer::~DX12ForwardRenderer() {
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, RenderableTexture* output) {
@@ -76,7 +79,7 @@ void DX12ForwardRenderer::present(PostProcessPipeline* postProcessPipeline, Rend
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 		commandlists[i] = m_command[i].list.Get();
 	}
-	m_context->executeCommandLists(commandlists, nThreadsToUse);
+	m_context->getDirectQueue()->executeCommandLists(commandlists, nThreadsToUse);
 #else
 	recordCommands(0, frameIndex, 0, count, count, 1);
 	m_context->executeCommandLists({ m_command[0].list.Get() });
@@ -105,16 +108,15 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		// TODO: fix
 		m_context->prepareToRender(cmdList.Get());
 		m_context->clear(cmdList.Get());
-		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Prep to render, and record. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
+		SAIL_LOG("ThreadID: " + std::to_string(threadID) + " - Prep to render, and record. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
 	} else if (threadID < nThreads - 1) {
-		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Recording Only. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
+		SAIL_LOG("ThreadID: " + std::to_string(threadID) + " - Recording Only. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
 	}
 #else
 	if (threadID == 0) {
 
 		// Init all textures - this needs to be done on ONE thread
 		// TODO: optimize!
-		int meshIndex = 0;
 		for (auto& renderCommand : commandQueue) {
 			for (int i = 0; i < 3; i++) {
 				if (renderCommand.type != RENDER_COMMAND_TYPE_MODEL) {
@@ -122,9 +124,8 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 				}
 
 				auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
-				if (tex && !tex->hasBeenInitialized()) {
-					tex->initBuffers(cmdList.Get(), meshIndex);
-					meshIndex++;
+				if (tex) {
+					tex->initBuffers(cmdList.Get());
 				}
 			}
 		}
@@ -157,10 +158,10 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 	//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 
 	// TODO: Sort meshes according to material
-	unsigned int meshIndex = start;
+	unsigned int commandIndex = start;
 	RenderCommand* command;
-	for (int i = 0; i < nCommands && meshIndex < oobMax; i++, meshIndex++ /*RenderCommand& command : commandQueue*/) {
-		command = &commandQueue[meshIndex];
+	for (int i = 0; i < nCommands && commandIndex < oobMax; i++, commandIndex++ /*RenderCommand& command : commandQueue*/) {
+		command = &commandQueue[commandIndex];
 		if (command->type != RENDER_COMMAND_TYPE_MODEL) {
 			continue;
 		}
@@ -168,23 +169,23 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command->model.mesh->getMaterial()->getShader()->getPipeline());
 
 		shaderPipeline->checkBufferSizes(oobMax); //Temp fix to expand constant buffers if the scene contain to many objects
-		shaderPipeline->bind_new(cmdList.Get(), meshIndex);
+		shaderPipeline->bind(cmdList.Get());
 
 		// Used in most shaders
-		shaderPipeline->trySetCBufferVar_new("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4), meshIndex);
-		shaderPipeline->trySetCBufferVar_new("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), meshIndex);
-		shaderPipeline->trySetCBufferVar_new("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4), meshIndex);
+		shaderPipeline->trySetCBufferVar("sys_mWorld", &glm::transpose(command->transform), sizeof(glm::mat4));
+		shaderPipeline->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
+		shaderPipeline->trySetCBufferVar("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4));
 
-		shaderPipeline->trySetCBufferVar_new("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), meshIndex);
+		shaderPipeline->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 
 		if (lightSetup) {
 			auto& dlData = lightSetup->getDirLightData();
 			auto& plData = lightSetup->getPointLightsData();
-			shaderPipeline->trySetCBufferVar_new("dirLight", &dlData, sizeof(dlData), meshIndex);
-			shaderPipeline->trySetCBufferVar_new("pointLights", &plData, sizeof(plData), meshIndex);
+			shaderPipeline->trySetCBufferVar("dirLight", &dlData, sizeof(dlData));
+			shaderPipeline->trySetCBufferVar("pointLights", &plData, sizeof(plData));
 		}
 
-		static_cast<DX12Mesh*>(command->model.mesh)->draw_new(*this, cmdList.Get(), meshIndex);
+		command->model.mesh->draw(*this, cmdList.Get());
 	}
 
 	// Lastly - transition back buffer to present
@@ -211,7 +212,7 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 			m_context->prepareToPresent(cmdList.Get());
 		}
 #ifdef DEBUG_MULTI_THREADED_COMMAND_RECORDING
-		Logger::Log("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
+		SAIL_LOG("ThreadID: " + std::to_string(threadID) + " - Record and prep to present. " + std::to_string(start) + " to " + std::to_string(start + nCommands));
 #endif // DEBUG_MULTI_THREADED_COMMAND_RECORDING
 	}
 #else
@@ -243,12 +244,15 @@ void DX12ForwardRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 
 }
 
-bool DX12ForwardRenderer::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&DX12ForwardRenderer::onResize));
+bool DX12ForwardRenderer::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 	return true;
 }
 
-bool DX12ForwardRenderer::onResize(WindowResizeEvent& event) {
-	m_outputTexture->resize(event.getWidth(), event.getHeight());
+bool DX12ForwardRenderer::onResize(const WindowResizeEvent& event) {
+	m_outputTexture->resize(event.width, event.height);
 	return true;
 }

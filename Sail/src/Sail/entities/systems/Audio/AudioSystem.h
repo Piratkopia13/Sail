@@ -1,13 +1,15 @@
 #pragma once
 
 #include "..//BaseComponentSystem.h"
+#include "Sail/events/EventReceiver.h"
 #include "AudioData.h"
 
 class AudioComponent;
 class AudioEngine;
 class Camera;
+struct XAUDIO2FX_REVERB_PARAMETERS;
 
-class AudioSystem final : public BaseComponentSystem {
+class AudioSystem final : public BaseComponentSystem, public EventReceiver {
 public:
 	AudioSystem();
 	~AudioSystem();
@@ -20,28 +22,34 @@ public:
 
 	bool hasUpdated = false;
 
+	bool onEvent(const Event& event) override;
+
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+#endif
 private:
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_i;
 	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_toBeDeleted;
-	std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_j;
-	std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_k;
-	std::list<std::pair<std::string, std::pair<int, bool>>>::iterator m_streamToBeDeleted;
-	std::string m_filename = "";
-	float m_volume = 1.0f;
-	bool m_isPositionalAudio;
-	bool m_isLooping;
-	int m_streamIndex = 0;
+	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_j;
+	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_k;
+	std::list<std::pair<std::string, Audio::StreamRequestInfo>>::iterator m_streamToBeDeleted;
 
 	bool m_hasOutputDevices = true;
-
 
 	AudioEngine* m_audioEngine;
 	int m_currStreamIndex = 0;
 
+	int randomASoundIndex(int soundPoolSize, Audio::SoundInfo_General* soundGeneral);
+
 	void startPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void stopPlayingRequestedStream(Entity* e, AudioComponent* audioC);
 	void updateStreamPosition(Entity* e, Camera& cam, float alpha);
+	void updateStreamVolume();
 
+	void updateProjectileLowPass(Audio::SoundInfo_General* general);
+
+	void dealWithDeathSound(AudioComponent* audioC, float dt);
+	void dealwithInsanitySound(AudioComponent* audioC, float dt);
 	void hotFixAmbiance(Entity* e, AudioComponent* audioC);
 };
 

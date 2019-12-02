@@ -17,7 +17,7 @@ NodeSystem::~NodeSystem() {
 void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections) {
 #ifdef _DEBUG_NODESYSTEM
 	if ( m_nodeModel == nullptr ) {
-		Logger::Error("Node model and scene need to be set in the node system during debug.");
+		SAIL_LOG_ERROR("Node model and scene need to be set in the node system during debug.");
 	}
 #endif
 
@@ -110,6 +110,18 @@ void NodeSystem::setDebugModelAndScene(Shader* shader) {
 }
 #endif
 
+#ifdef DEVELOPMENT
+unsigned int NodeSystem::getByteSize() const {
+	unsigned int size = sizeof(*this);
+	size += m_connections.size() * sizeof(std::vector<unsigned int>);
+	for (auto& vec : m_connections) {
+		size += vec.size() * sizeof(unsigned int);
+	}
+	size += m_nodes.size() * sizeof(NodeSystem::Node);
+	return size;
+}
+#endif
+
 std::vector<unsigned int> NodeSystem::BFS(const unsigned int from, const unsigned int to) {
 	std::list<unsigned int> queue;
 	std::vector<unsigned int> visited = std::vector<unsigned int>(m_connections.size());
@@ -141,7 +153,7 @@ std::vector<unsigned int> NodeSystem::BFS(const unsigned int from, const unsigne
 			currNode = traceBack[currNode];
 		}
 		else {
-			Logger::Warning("No path was found");
+			SAIL_LOG_WARNING("No path was found");
 			return std::vector<unsigned int>(0);
 		}
 	}

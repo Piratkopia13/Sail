@@ -32,10 +32,11 @@ namespace KeyBinds {
 	int REMOVE_OLDEST_LIGHT;
 	int LIGHT_CANDLE_1;
 	int LIGHT_CANDLE_2;
-	int TOGGLE_CANDLE_HELD;
+	int THROW_CHARGE;
 	int DISABLE_CURSOR;
 	int TOGGLE_SPHERE;
 	int TOGGLE_SUN;
+	int TOGGLE_ROOM_LIGHTS;
 
 	// Application
 	int ALT_KEY;
@@ -59,6 +60,10 @@ namespace KeyBinds {
 
 	// Debugging
 	int SPECTATOR_DEBUG;
+
+//#ifdef DEVELOPMENT
+	int START_KILLCAM;
+//#endif
 }
 
 void KeyBinds::init() {
@@ -72,9 +77,9 @@ void KeyBinds::init() {
 	MOVE_DOWN          = SAIL_KEY_CONTROL;
 	SPRINT             = SAIL_KEY_SHIFT;
 	SHOOT              = SAIL_MOUSE_LEFT_BUTTON;
-	TOGGLE_CANDLE_HELD = SAIL_KEY_F;
+	THROW_CHARGE	   = SAIL_KEY_F;
 	SPRAY              = SAIL_KEY_L;
-	LIGHT_CANDLE       = SAIL_KEY_J;
+	LIGHT_CANDLE       = SAIL_KEY_R;
 	SHOW_IN_GAME_MENU  = SAIL_KEY_ESCAPE;
 
 	// GameState
@@ -85,14 +90,15 @@ void KeyBinds::init() {
 	TOGGLE_AI_FOLLOWING   = SAIL_KEY_H;
 	SET_DIRECTIONAL_LIGHT = SAIL_KEY_G;
 	TOGGLE_CONSOLE        = SAIL_KEY_OEM_5;
-	TOGGLE_CONSOLE_US     = SAIL_KEY_OEM_3;
-	RELOAD_SHADER         = SAIL_KEY_R;
+	TOGGLE_CONSOLE_US     = SAIL_KEY_OEM_5; // SAIL_KEY_OEM_3 was original keybind
+	RELOAD_SHADER         = SAIL_KEY_F6;
 	REMOVE_OLDEST_LIGHT   = SAIL_KEY_X;
 	LIGHT_CANDLE_1        = SAIL_KEY_Z;
 	LIGHT_CANDLE_2        = SAIL_KEY_V;
 	DISABLE_CURSOR        = SAIL_MOUSE_RIGHT_BUTTON;
 	TOGGLE_SPHERE         = SAIL_KEY_C;
 	TOGGLE_SUN            = SAIL_KEY_P;
+	TOGGLE_ROOM_LIGHTS	  = SAIL_KEY_Q;
 
 	// Application
 	ALT_KEY = SAIL_KEY_MENU;		// Did not know what to call these binds
@@ -116,4 +122,8 @@ void KeyBinds::init() {
 
 	// Debugging
 	SPECTATOR_DEBUG = SAIL_KEY_M;
+
+//#ifdef DEVELOPMENT
+	START_KILLCAM = SAIL_KEY_K;
+//#endif
 }

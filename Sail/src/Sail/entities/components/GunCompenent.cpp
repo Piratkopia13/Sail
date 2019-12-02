@@ -2,15 +2,18 @@
 #include "GunComponent.h"
 
 GunComponent::GunComponent() {
-	 projectileSpawnTimer = 0.f;
-	 gunOverloadTimer = 0.f;
-	 m_projectileSpawnCooldown = 0.015f;
-	 m_gunOverloadCooldown = .00f;
+	projectileSpawnTimer = 0.f;
+	gunOverloadTimer = 0.f;
+	m_projectileSpawnCooldown = 0.015f;
+	m_gunOverloadCooldown = .00f;
 
-	 projectileSpeed = 10.f;
+	baseProjectileSpeed = 24.0f;
+	projectileSpeed = baseProjectileSpeed;
+	finalProjectileSpeed = 5.0f;
+	projectileSpeedRange = finalProjectileSpeed - baseProjectileSpeed;
 
-	 gunOverloadvalue = 0.f;
-	 gunOverloadThreshold = 1.0f;
+	gunOverloadvalue = 0.f;
+	gunOverloadThreshold = 3.0f;	// How many seconds of continual firing until complete fall-off
 
 	firing = false;
 }

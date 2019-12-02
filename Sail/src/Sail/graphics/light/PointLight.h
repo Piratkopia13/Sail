@@ -41,3 +41,18 @@ private:
 	size_t m_index;
 	float m_radius;
 };
+
+class SpotLight : public PointLight {
+	
+public:
+	SpotLight() : PointLight(), m_direction(glm::vec3(1.0f, 0.0f, 0.0f)), m_angle(0.5) {}
+	void setDirection(const glm::vec3& dir) { m_direction = dir; }
+	const glm::vec3& getDirection() const { return m_direction; }
+
+	void setAngle(const float angle) { m_angle = angle; }
+	float getAngle() const { return m_angle; }
+
+private:
+	glm::vec3 m_direction;
+	float m_angle;
+};

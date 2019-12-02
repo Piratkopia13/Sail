@@ -8,7 +8,7 @@
 #include "Sail/utils/Utils.h"
 
 SearchingState::SearchingState(NodeSystem* nodeSystem) : m_nodeSystem(nodeSystem) {
-	m_distToHost = INFINITY;
+	m_distToHost = 9999999.0f;
 	m_targetNode = 0;
 	m_searchingClock = 4.f;
 }

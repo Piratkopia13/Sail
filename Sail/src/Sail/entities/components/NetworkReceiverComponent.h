@@ -14,4 +14,14 @@ public:
 
 	Netcode::ComponentID m_id; // Same as the ID used by whoever is sending the information to this entity
 	Netcode::EntityType m_entityType;
+
+#ifdef DEVELOPMENT
+	const unsigned int getByteSize() const override {
+		return sizeof(*this);
+	}
+	void imguiRender(Entity** selected) {
+		ImGui::Text(std::string("m_id: " + std::to_string(m_id)).c_str());
+		ImGui::Text(std::string("m_entityType: " + (m_entityType == Netcode::EntityType::PLAYER_ENTITY) ? "PLAYER_ENTITY" : "OTHER_ENTITY").c_str());
+	}
+#endif
 };

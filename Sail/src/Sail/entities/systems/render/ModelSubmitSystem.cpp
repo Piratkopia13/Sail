@@ -1,21 +1,24 @@
 #include "pch.h"
 #include "ModelSubmitSystem.h"
 #include "..//..//components/ModelComponent.h"
+#include "..//..//components/RealTimeComponent.h"
 #include "..//..//components/TransformComponent.h"
 #include "..//..//components/CullingComponent.h"
+#include "..//..//components/RenderInActiveGameComponent.h"
+#include "..//..//components/RenderInReplayComponent.h"
 #include "..//..//..//Application.h"
 #include "..//..//Entity.h"
 
-ModelSubmitSystem::ModelSubmitSystem() {
+template <typename T>
+ModelSubmitSystem<T>::ModelSubmitSystem() {
 	registerComponent<ModelComponent>(true, true, false);
 	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<CullingComponent>(false, true, false);
+	registerComponent<T>(true, false, false);
 }
 
-ModelSubmitSystem::~ModelSubmitSystem() {
-}
-
-void ModelSubmitSystem::submitAll(const float alpha) {
+template <typename T>
+void ModelSubmitSystem<T>::submitAll(const float alpha) {
 	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
 	for (auto& e : entities) {
 		ModelComponent* model = e->getComponent<ModelComponent>();
@@ -27,6 +30,16 @@ void ModelSubmitSystem::submitAll(const float alpha) {
 		if ((!culling || (culling && culling->isVisible)) && model->renderToGBuffer) {
 			flags |= Renderer::IS_VISIBLE_ON_SCREEN;
 		}
-		renderer->submit(model->getModel(), transform->getRenderMatrix(alpha), flags);
+
+		renderer->submit(
+			model->getModel(), 
+			e->hasComponent<RealTimeComponent>() ? transform->getMatrixWithUpdate() : transform->getRenderMatrix(alpha), 
+			flags,
+			model->teamColorID
+		);
 	}
 }
+
+
+template class ModelSubmitSystem<RenderInActiveGameComponent>;
+template class ModelSubmitSystem<RenderInReplayComponent>;

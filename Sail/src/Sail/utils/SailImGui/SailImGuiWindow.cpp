@@ -2,7 +2,9 @@
 #include "SailImGuiWindow.h"
 
 SailImGuiWindow::SailImGuiWindow()
-	: m_isWindowOpen(false)
+	: m_isWindowOpen(false),
+	m_position(0,0),
+	m_size(0,0)
 { }
 
 SailImGuiWindow::SailImGuiWindow(bool showWindow)
@@ -22,6 +24,13 @@ void SailImGuiWindow::toggleWindow() {
 
 void SailImGuiWindow::showWindow(bool show) {
 	m_isWindowOpen = show;
+}
+
+void SailImGuiWindow::setPosition(const ImVec2& pos) {
+	m_position = pos;
+}
+void SailImGuiWindow::setSize(const ImVec2& size) {
+	m_size = size;
 }
 
 float SailImGuiWindow::EaseInOut(float time, float startValue, float endValue, float duration) {

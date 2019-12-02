@@ -5,14 +5,14 @@
 #include "DXILShaderCompiler.h"
 #include "../resources/DX12ATexture.h"
 
-class DX12ShaderPipeline : public ShaderPipeline {
+class DX12ShaderPipeline : public ShaderPipeline, public EventReceiver {
 public:
 	DX12ShaderPipeline(const std::string& filename);
 	~DX12ShaderPipeline();
 
-	/*[deprecated]. Not thread safe. Use bind_new().*/
+	bool onEvent(const Event& e) override;
+
 	virtual void bind(void* cmdList) override;
-	virtual void bind_new(void* cmdList, int meshIndex);
 
 	// Only used by compute shaders
 	virtual void dispatch(unsigned int threadGroupCountX, unsigned int threadGroupCountY, unsigned int threadGroupCountZ, void* cmdList = nullptr) override;
@@ -25,27 +25,28 @@ public:
 
 	void setDXTexture2D(DX12ATexture* dxTexture, ID3D12GraphicsCommandList4* dxCmdList);
 
-	void setCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex);
-	bool trySetCBufferVar_new(const std::string& name, const void* data, UINT size, int meshIndex);
+	virtual bool trySetCBufferVar(const std::string& name, const void* data, UINT size) override;
+	virtual bool trySetStructBufferVar(const std::string& name, const void* data, UINT numElements) override;
 
-	void setNumRenderTargets(unsigned int numRenderTargets);
-	void enableDepthStencil(bool enable);
-	void enableAlphaBlending(bool enable);
-
+	// Call this after each mesh/instance
+	// Internally updates meshIndex used to place multiple instances in a single cbuffer
+	void instanceFinished();
+	
 private:
 	void createGraphicsPipelineState();
 	void createComputePipelineState();
+	unsigned int getMeshIndex();
+	// Resets internal meshIndex
+	void newFrame();
 
 protected:
 	virtual void compile() override;
 	virtual void finish() override;
 
 private:
+	std::atomic_uint m_meshIndex[2];
 	DX12API* m_context;
 
 	static std::unique_ptr<DXILShaderCompiler> m_dxilCompiler; // Class Singleton
 	wComPtr<ID3D12PipelineState> m_pipelineState;
-	unsigned int m_numRenderTargets;
-	bool m_enableDepth;
-	bool m_enableBlending;
 };

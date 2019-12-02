@@ -3,6 +3,24 @@
 
 #include "Sail/utils/Utils.h"
 
+void DX12Utils::checkDeviceRemovalReason(ID3D12Device5* device, HRESULT hr) {
+#ifdef DEVELOPMENT
+	if (FAILED(hr)) {
+		SAIL_LOG_ERROR("Device Error message can be found in output!");
+		_com_error err(hr);
+		std::cout << err.ErrorMessage() << std::endl;
+		OutputDebugStringW(err.ErrorMessage());
+
+		hr = device->GetDeviceRemovedReason();
+		_com_error err2(hr);
+		std::cout << err2.ErrorMessage() << std::endl;
+		OutputDebugStringW(err2.ErrorMessage());
+
+		return;
+	}
+#endif // DEVELOPMENT
+}
+
 void DX12Utils::UpdateDefaultBufferData(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const void* data, UINT64 byteSize, UINT64 offset, ID3D12Resource1* defaultBuffer, ID3D12Resource1** uploadBuffer) {
 	// TODO: make this method useful
 

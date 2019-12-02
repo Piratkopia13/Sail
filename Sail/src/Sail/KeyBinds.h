@@ -13,7 +13,7 @@ namespace KeyBinds {
 	extern int MOVE_DOWN;
 	extern int SPRINT;
 	extern int SHOOT;
-	extern int TOGGLE_CANDLE_HELD;
+	extern int THROW_CHARGE;
 	extern int SPRAY;
 	extern int LIGHT_CANDLE;
 	extern int SHOW_IN_GAME_MENU;
@@ -34,6 +34,7 @@ namespace KeyBinds {
 	extern int DISABLE_CURSOR;
 	extern int TOGGLE_SPHERE;	// Collision
 	extern int TOGGLE_SUN;
+	extern int TOGGLE_ROOM_LIGHTS;
 
 	// Application
 	extern int ALT_KEY;
@@ -59,4 +60,9 @@ namespace KeyBinds {
 	// Keybinds used for debugging
 		// TODO: Move all debugging keybinds here
 	extern int SPECTATOR_DEBUG;
+
+//#ifdef DEVELOPMENT
+	extern int START_KILLCAM;
+//#endif
+
 };

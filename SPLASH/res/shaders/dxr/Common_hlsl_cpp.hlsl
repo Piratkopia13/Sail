@@ -19,6 +19,8 @@ typedef glm::vec3 float3;
 typedef glm::vec4 float4;
 typedef glm::mat3x3 float3x3;
 typedef glm::mat4x4 float4x4;
+typedef glm::u32vec2 uint2;
+typedef glm::u32vec3 uint3;
 typedef UINT32 uint;
 
 namespace DXRShaderCommon {
@@ -29,20 +31,21 @@ namespace DXRShaderCommon {
 #define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 12
+#define NUM_TEAM_COLORS 12
 #define MAX_NUM_METABALLS 500
+#define MAX_NUM_METABALL_GROUPS 16
 #define METABALL_RADIUS 0.12f
 #define MAX_DECALS 100
-
-#define WATER_GRID_X 350 / 4  // Should be approximately 5 per world unit
-#define WATER_GRID_Y 37
-#define WATER_GRID_Z 350
-#define WATER_ARR_SIZE (WATER_GRID_X * WATER_GRID_Y * WATER_GRID_Z)
 
 static const uint MESH_NO_FLAGS				 			= 	0;
 static const uint MESH_USE_INDICES 						= 	1 << 0;
 static const uint MESH_HAS_ALBEDO_TEX 					= 	1 << 1;
 static const uint MESH_HAS_NORMAL_TEX 					= 	1 << 2;
 static const uint MESH_HAS_METALNESS_ROUGHNESS_AO_TEX	= 	1 << 3;
+
+#define INSTANCE_MASK_DEFAULT 0xF0
+#define INSTANCE_MASK_METABALLS 0x01
+#define INSTANCE_MASK_CAST_SHADOWS 0x02
 
 struct RayPayload {
 	float4 color;
@@ -72,25 +75,49 @@ struct PointLightInput {
 	float2 padding2;
 };
 
+struct SpotlightInput {
+	float3 color;
+	float attConstant;
+	float3 position;
+	float attLinear;
+	float3 direction;
+	float attQuadratic;
+
+	float angle;
+	float padding1, padding2, padding3;
+};
+
+struct MetaballGroupData {
+	uint start;
+	uint size;
+	float padding1;
+	float padding2;
+};
+
 // Properties set once for the scene
 struct SceneCBuffer {
 	float4x4 projectionToWorld;
 	float4x4 viewToWorld;
 	float4x4 clipToView;
 	float3 cameraPosition;
-	float padding1;
+	bool doTonemapping;
 	float3 cameraDirection;
-	uint nMetaballs;
+	uint nMetaballGroups;
     uint nDecals;
 	float nearZ;
 	float farZ;
 	float padding2;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
+    SpotlightInput spotLights[NUM_POINT_LIGHTS];
+	float4 teamColors[NUM_TEAM_COLORS];
+	MetaballGroupData metaballGroup[MAX_NUM_METABALL_GROUPS];
 
 	// Water voxel data
 	float3 mapSize;
 	float padding3;
 	float3 mapStart;
+	float padding4;
+	uint3 waterArraySize;
 };
 
 // Properties set once per BLAS/Mesh

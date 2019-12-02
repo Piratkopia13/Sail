@@ -23,7 +23,7 @@ void DX12ComputeShaderDispatcher::begin(void* cmdList) {
 	dxCmdList->SetComputeRootSignature(m_context->getGlobalRootSignature());
 }
 
-Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& computeShader, Shader::ComputeShaderInput& input, int meshIndex, void* cmdList) {
+Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& computeShader, Shader::ComputeShaderInput& input, void* cmdList) {
 	assert(computeShader.getPipeline()->isComputeShader()); // Not a compute shader
 	auto* dxShaderPipeline = static_cast<DX12ShaderPipeline*>(computeShader.getPipeline());
 	
@@ -49,12 +49,14 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 		} else {
 			dxShaderPipeline->setTexture2D(tex.first, (Texture*)texture, dxCmdList);
 		}
-		// Skip the next 9 heap slots to match root signature layout
+	}
+	if (settings->numInputTextures > 0) {
+		// Skip the next x heap slots to match root signature layout
 		// TODO: read this from the root signature, currently it will crash if the root signature changes num srv descriptors
-		m_context->getComputeGPUDescriptorHeap()->getAndStepIndex(9);
+		m_context->getComputeGPUDescriptorHeap()->getAndStepIndex(10 - settings->numInputTextures);
 	}
 	// Bind output resources
-	dxShaderPipeline->bind_new(dxCmdList, meshIndex);
+	dxShaderPipeline->bind(dxCmdList);
 
 	assert(input.threadGroupCountX <= D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION && "There are too many x threads!!");
 	assert(input.threadGroupCountY <= D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION && "There are too many y threads!!");
@@ -62,6 +64,7 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 
 	dxShaderPipeline->dispatch(input.threadGroupCountX, input.threadGroupCountY, input.threadGroupCountZ, dxCmdList);
 
+	dxShaderPipeline->instanceFinished();
 
 	return *computeShader.getComputeOutput();
 }

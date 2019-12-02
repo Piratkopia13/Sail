@@ -2,13 +2,14 @@
 
 #include <memory>
 #include "StateIdentifiers.h"
-#include "../events/IEventListener.h"
+#include "../events/EventReceiver.h"
+#include "../events/types/NetworkChangeStateEvent.h"
 
 // Forward declare the StateStack
 class StateStack;
 
 // Base class for all states
-class State : public IEventListener {
+class State : public EventReceiver {
 
 	public:
 		typedef std::unique_ptr<State> Ptr;
@@ -30,9 +31,11 @@ class State : public IEventListener {
 		// Renders imgui used for debugging
 		virtual bool renderImguiDebug(float dt);
 		// Sends events to the state
-		virtual bool onEvent(Event& event) { return true; }
+		virtual bool onEvent(const Event& event) override;
 		// Called at the end of the frame to reset the state before it changes
 		virtual bool prepareStateChange() { return true; }
+
+		virtual void onHostStateChangeRequest(const NetworkChangeStateEvent&);
 //	protected:
 		// Request the push of a new state to the stack next update
 		void requestStackPush(States::ID stateID);

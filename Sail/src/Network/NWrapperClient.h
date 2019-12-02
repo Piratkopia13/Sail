@@ -10,6 +10,8 @@ public:
 	bool host(int port = 54000);
 	bool connectToIP(char* = "127.0.0.1:54000");
 
+	// Client can't send these messages
+	void sendSerializedDataToClient(const std::string& data, Netcode::PlayerID PlayerId) override {}
 private:
 	void sendChatMsg(std::string msg);
 
@@ -17,7 +19,11 @@ private:
 	void playerDisconnected(TCP_CONNECTION_ID id);
 	void playerReconnected(TCP_CONNECTION_ID id);
 	void decodeMessage(NetworkEvent nEvent);
+	void sendMyNameToHost();
+	void updatePlayerList(std::list<Player>& playerList);
 
-	// Deformatting Functions
-	unsigned int decompressDCMessage(std::string messageData);
+	virtual void requestTeam(char team);
+
+	virtual void updateStateLoadStatus(States::ID state, char status) override;
+
 };

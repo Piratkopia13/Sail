@@ -5,7 +5,7 @@ const unsigned int HOST_META_DESC_SIZE = MAX_PACKAGE_SIZE - 6;
 
 // The length of the string you get from archiving an int.
 // This is needed to know how many bytes to read to find the size of a message.
-constexpr int MSG_SIZE_STR_LEN = 1 + sizeof(int);
+constexpr size_t MSG_SIZE_STR_LEN = 1 + sizeof(size_t);
 
 //#define DEBUG_NETWORK
 
@@ -45,12 +45,12 @@ static_assert(sizeof(NetworkEventData) == MAX_PACKAGE_SIZE, "sizeof(NetworkEvent
 
 struct NetworkEvent {
 	NETWORK_EVENT_TYPE eventType;
-	TCP_CONNECTION_ID clientID;
+	TCP_CONNECTION_ID from_tcp_id;
 	NetworkEventData* data;
 
 	NetworkEvent() {
 		eventType = NETWORK_EVENT_TYPE::NETWORK_ERROR;
-		clientID = 0;
+		from_tcp_id = 0;
 		data = nullptr;
 	}
 };

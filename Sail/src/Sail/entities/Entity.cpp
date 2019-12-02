@@ -34,7 +34,8 @@ int Entity::getECSIndex() const {
 
 Entity::Entity(const std::string& name) 
 	: m_componentTypes(0x0),
-	m_name(name)
+	m_name(name),
+	m_parent(nullptr)
 {
 	m_id = s_id++;
 	m_ECSIndex = -1;
@@ -49,7 +50,11 @@ Entity::~Entity() {
 bool Entity::hasComponents(std::bitset<MAX_NUM_COMPONENTS_TYPES> componentTypes) const {
 	return (m_componentTypes & componentTypes) == componentTypes;
 }
-
+#ifdef DEVELOPMENT
+const BaseComponent::Ptr* Entity::getComponents() const {
+	return m_components;
+}
+#endif
 Entity* Entity::getParent() {
 	return m_parent;
 }
@@ -63,6 +68,22 @@ void Entity::queueDestruction() {
 	m_ecs->queueDestructionOfEntity(this);
 }
 
+void Entity::removeComponent(ComponentTypeID id) {
+	const ComponentTypeBitID bid = GetBIDofID(id);
+
+	if ((m_componentTypes & bid).any()) {
+		m_components[id].reset(nullptr);
+
+		// Set the component type bit to 0 if it was 1
+		std::bitset<MAX_NUM_COMPONENTS_TYPES> bits = 1;
+		bits <<= id;									// set a 1 to the type bit
+		bits = ~bits;									// set a 0 to the type bit and rest to 1
+		m_componentTypes = m_componentTypes & bits;		// keep the values of each not except the type bit which is now 0
+
+		// Remove this entity from systems which required the removed component
+		removeFromSystems();
+	}
+}
 
 // TODO: should only be able to be called on entities with m_destructionQueued == true
 void Entity::removeAllComponents() {
@@ -74,7 +95,7 @@ void Entity::removeAllComponents() {
 	removeFromSystems();
 }
 
-void Entity::addChildEntity(Entity::SPtr child) {
+void Entity::addChildEntity(Entity* child) {
 	m_children.push_back(child);
 	child->setParent(this);
 
@@ -87,7 +108,7 @@ void Entity::addChildEntity(Entity::SPtr child) {
 	}
 }
 
-void Entity::removeChildEntity(Entity::SPtr toRemove) {
+void Entity::removeChildEntity(Entity* toRemove) {
 	auto child = std::find(m_children.begin(), m_children.end(), toRemove);
 	( *child )->setParent(nullptr);
 	if ( ( *child )->hasComponent<TransformComponent>() ) {
@@ -121,7 +142,7 @@ void Entity::removeDeleteAllChildren() {
 	m_children.clear();
 }
 
-std::vector<Entity::SPtr>& Entity::getChildEntities() {
+std::vector<Entity*>& Entity::getChildEntities() {
 	return m_children;
 }
 

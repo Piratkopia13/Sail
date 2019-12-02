@@ -12,7 +12,7 @@ std::pair<std::string, void*> TestComputeShader::getComputeInputForIndex(Shader:
 	case 0:
 		return {"input", thisInput.inputTexture};
 	}
-	Logger::Error("Tried to get compute input from unknown index - " + std::to_string(index));
+	SAIL_LOG_ERROR("Tried to get compute input from unknown index - " + std::to_string(index));
 	return {"", nullptr};
 }
 
@@ -22,7 +22,7 @@ RenderableTexture* TestComputeShader::getComputeOutputForIndex(Shader::ComputeSh
 	case 0:
 		return thisOutput.outputTexture;
 	}
-	Logger::Error("Tried to get compute output from unknown index - " + std::to_string(index));
+	SAIL_LOG_ERROR("Tried to get compute output from unknown index - " + std::to_string(index));
 	return nullptr;
 }
 

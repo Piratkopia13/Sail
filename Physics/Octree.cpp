@@ -238,7 +238,7 @@ void Octree::getCollisionData(const BoundingBox* entityBoundingBox, Entity* mesh
 		outCollisionData->emplace_back();
 		outCollisionData->back().entity = meshEntity;
 		outCollisionData->back().shape = SAIL_NEW CollisionTriangle(v0, v1, v2, glm::normalize(glm::cross(glm::vec3(v0 - v1), glm::vec3(v0 - v2))));
-		//Logger::Log("Collision detected with " + meshEntity->getName());
+		//SAIL_LOG("Collision detected with " + meshEntity->getName());
 	}
 }
 
@@ -508,8 +508,8 @@ void Octree::update() {
 	pruneTreeRec(&m_baseNode);
 }
 
-void Octree::getCollisions(Entity* entity, std::vector<CollisionInfo>* outCollisionData, const bool doSimpleCollisions) {
-	getCollisionsRec(entity, entity->getComponent<BoundingBoxComponent>()->getBoundingBox(), &m_baseNode, outCollisionData, doSimpleCollisions);
+void Octree::getCollisions(Entity* entity, const BoundingBox* entityBoundingBox, std::vector<CollisionInfo>* outCollisionData, const bool doSimpleCollisions) {
+	getCollisionsRec(entity, entityBoundingBox, &m_baseNode, outCollisionData, doSimpleCollisions);
 }
 
 void Octree::getRayIntersection(const glm::vec3& rayStart, const glm::vec3& rayDir, RayIntersectionInfo* outIntersectionData, Entity* ignoreThis, float padding, const bool doSimpleIntersections) {

@@ -96,6 +96,13 @@ void Transform::setStartTranslation(const glm::vec3& translation) {
 	m_hasChanged |= 1;
 }
 
+void Transform::setCenter(const glm::vec3& center) {
+	m_center = center;
+	m_matNeedsUpdate = true;
+	m_hasChanged |= 2;
+	treeNeedsUpdating();
+}
+
 void Transform::translate(const float x, const float y, const float z) {
 	m_data.m_current.m_translation += glm::vec3(x, y, z);
 	m_matNeedsUpdate = true;
@@ -193,6 +200,16 @@ void Transform::setRotations(const float x, const float y, const float z) {
 	treeNeedsUpdating();
 }
 
+void Transform::setRotations(const glm::quat& rotations) {
+	m_data.m_current.m_rotationQuat = rotations;
+	m_data.m_current.m_rotation = glm::eulerAngles(rotations);
+	clampRotation();
+	m_matNeedsUpdate = true;
+	m_hasChanged |= 2;
+	treeNeedsUpdating();
+}
+
+
 void Transform::setScale(const float scale) {
 	m_data.m_current.m_scale = glm::vec3(scale, scale, scale	);
 	m_matNeedsUpdate = true;
@@ -221,14 +238,15 @@ void Transform::setForward(const glm::vec3& forward) {
 	m_hasChanged |= 2;
 }
 
-
 Transform* Transform::getParent() const {
 	return m_parent;
 }
 
+// Returns the local translation
 const glm::vec3& Transform::getTranslation() const {
 	return m_data.m_current.m_translation;
 }
+
 const glm::vec3& Transform::getRotations() const {
 	return m_data.m_current.m_rotation;
 }
@@ -379,6 +397,11 @@ void Transform::clampRotation(float& axis) {
 
 void Transform::createTransformMatrix(glm::mat4& destination, const glm::vec3& translation, const glm::quat& rotation, const glm::vec3& scale) const {
 	glm::mat4 prev = glm::mat4(destination);
+
+	destination[3].x = m_center.x;
+	destination[3].y = m_center.y;
+	destination[3].z = m_center.z;
+
 	destination = glm::mat4_cast(rotation);
 	
 	// Column major means destination[0] is the first column, not the first row

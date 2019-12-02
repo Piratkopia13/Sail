@@ -1,18 +1,23 @@
 #include "pch.h"
 #include "MovementSystem.h"
-#include "..//..//components/TransformComponent.h"
-#include "..//..//components/MovementComponent.h"
-#include "..//..//Entity.h"
+#include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/MovementComponent.h"
+#include "Sail/entities/components/RagdollComponent.h"
+#include "Sail/entities/components/RenderInActiveGameComponent.h"
+#include "Sail/entities/components/RenderInReplayComponent.h"
+#include "Sail/entities/Entity.h"
 
-MovementSystem::MovementSystem() {
+
+template <typename T>
+MovementSystem<T>::MovementSystem() {
 	registerComponent<TransformComponent>(true, true, true);
 	registerComponent<MovementComponent>(true, true, true);
+	registerComponent<RagdollComponent>(false, true, false);
+	registerComponent<T>(true, false, false);
 }
 
-MovementSystem::~MovementSystem() {
-}
-
-void MovementSystem::update(float dt) {
+template <typename T>
+void MovementSystem<T>::update(float dt) {
 	for (auto& e : entities) {
 
 		TransformComponent* transform = e->getComponent<TransformComponent>();
@@ -33,3 +38,7 @@ void MovementSystem::update(float dt) {
 		movement->updateableDt = dt;
 	}
 }
+
+
+template class MovementSystem<RenderInActiveGameComponent>;
+template class MovementSystem<RenderInReplayComponent>;

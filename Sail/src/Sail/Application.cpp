@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Application.h"
-#include "events/WindowResizeEvent.h"
+#include "events/types/WindowResizeEvent.h"
 #include "../SPLASH/src/game/events/TextInputEvent.h"
 #include "KeyBinds.h"
 #include "KeyCodes.h"
@@ -8,6 +8,7 @@
 #include "TimeSettings.h"
 #include "entities/ECS.h"
 #include "entities/systems/Systems.h"
+#include "events/EventDispatcher.h"
 
 
 
@@ -18,17 +19,19 @@
 Application* Application::s_instance = nullptr;
 std::atomic_bool Application::s_isRunning = true;
 
-Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
+Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) : 
+	m_settingStorage("res/data/settings.saildata")
+	{
 	// Set up instance if not set
 	if (s_instance) {
-		Logger::Error("Only one application can exist!");
+		SAIL_LOG_ERROR("Only one application can exist!");
 		return;
 	}
 	s_instance = this;
 
 	// Set up console
 	m_consoleCommands = std::make_unique<ConsoleCommands>(false);
-
+	
 	// Set up thread pool with two times as many threads as logical cores, or four threads if the CPU only has one core;
 	// Note: this value might need future optimization
 	unsigned int poolSize = std::max<unsigned int>(4, (10 * std::thread::hardware_concurrency()));
@@ -50,14 +53,14 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Initialize the window
 	if (!m_window->initialize()) {
 		OutputDebugString(L"\nFailed to initialize Win32Window\n");
-		Logger::Error("Failed to initialize Win32Window!");
+		SAIL_LOG_ERROR("Failed to initialize Win32Window!");
 		return;
 	}
 
 	// Initialize the graphics API
 	if (!m_api->init(m_window.get())) {
 		OutputDebugString(L"\nFailed to initialize the graphics API\n");
-		Logger::Error("Failed to initialize the graphics API!");
+		SAIL_LOG_ERROR("Failed to initialize the graphics API!");
 		return;
 	}
 
@@ -65,10 +68,11 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	m_rendererWrapper.initialize();
 	ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	ECS::Instance()->createSystem<MetaballSubmitSystem>();
-	ECS::Instance()->createSystem<ModelSubmitSystem>();
-	ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+	ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInActiveGameComponent>>();
+	ECS::Instance()->createSystem<ModelSubmitSystem<RenderInActiveGameComponent>>();
 	ECS::Instance()->createSystem<GUISubmitSystem>();
+	ECS::Instance()->createSystem<LevelSystem>()->generateMap();
+
 
 
 
@@ -80,10 +84,14 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
-
+	m_chatWindow = std::make_unique<ChatWindow>(true);
+	ImVec2 size(400, 300);
+	m_chatWindow->setSize(size);
+	m_chatWindow->setPosition(ImVec2(30,m_window->getWindowHeight()-size.y-30));
 }
 
 Application::~Application() {
+	m_settingStorage.saveToFile("res/data/settings.saildata");
 	delete Input::GetInstance();
 }
 
@@ -116,7 +124,7 @@ int Application::startGameLoop() {
 			DispatchMessage(&msg);
 
 			if (msg.message == WM_KEYDOWN) {
-				dispatchEvent(TextInputEvent(msg));
+				EventDispatcher::Instance().emit(TextInputEvent(msg));
 			}
 		
 		} else {
@@ -126,7 +134,7 @@ int Application::startGameLoop() {
 				UINT newHeight = m_window->getWindowHeight();
 				bool isMinimized = m_window->isMinimized();
 				// Send resize event
-				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
+				EventDispatcher::Instance().emit(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
 
 			// Get delta time from last frame
@@ -157,7 +165,7 @@ int Application::startGameLoop() {
 				PostQuitMessage(0);
 			}*/
 			//if(m_delta > 0.0166)
-			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(m_delta));
+			//	SAIL_LOG_WARNING(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(m_delta));
 #endif
 			// Process state specific input
 			processInput(m_delta);
@@ -175,11 +183,11 @@ int Application::startGameLoop() {
 			while (accumulator >= TIMESTEP) {
 #endif
 
-			accumulator -= TIMESTEP;
+				accumulator -= TIMESTEP;
 
-			fixedUpdateStartTime = m_timer.getTimeSince<float>(startTime);
-			fixedUpdate(TIMESTEP);
-			m_fixedUpdateDelta = m_timer.getTimeSince<float>(startTime) - fixedUpdateStartTime;
+				fixedUpdateStartTime = m_timer.getTimeSince<float>(startTime);
+				fixedUpdate(TIMESTEP);
+				m_fixedUpdateDelta = m_timer.getTimeSince<float>(startTime) - fixedUpdateStartTime;
 
 
 #ifndef PERFORMANCE_SPEED_TEST
@@ -213,22 +221,18 @@ int Application::startGameLoop() {
 	return (int)msg.wParam;
 }
 
+void Application::setCurrentCamera(Camera* camera) {
+	m_cameraRef = camera;
+}
+
 std::string Application::getPlatformName() {
 	return std::string(SAIL_PLATFORM);
 }
 
 Application* Application::getInstance() {
 	if (!s_instance)
-		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
+		SAIL_LOG_ERROR("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
 	return s_instance;
-}
-
-void Application::dispatchEvent(Event& event) {
-	m_api->onEvent(event);
-	Input::GetInstance()->onEvent(event);
-
-	m_rendererWrapper.onEvent(event);
-	
 }
 
 GraphicsAPI* const Application::getAPI() {
@@ -246,6 +250,18 @@ ResourceManager& Application::getResourceManager() {
 
 ConsoleCommands& Application::getConsole() {
 	return *m_consoleCommands;
+}
+
+SettingStorage& Application::getSettings() {
+	return m_settingStorage;
+}
+
+ChatWindow* Application::getChatWindow() {
+	return m_chatWindow.get();
+}
+
+Camera* Application::getCurrentCamera() const {
+	return m_cameraRef;
 }
 
 MemoryManager& Application::getMemoryManager() {

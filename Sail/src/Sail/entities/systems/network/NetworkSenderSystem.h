@@ -12,7 +12,9 @@
 class Entity;
 class MessageType;
 class NetworkReceiverSystem;
+class KillCamReceiverSystem;
 struct NetworkSenderEvent;
+
 
 class NetworkSenderSystem : public BaseComponentSystem {
 public:
@@ -22,17 +24,20 @@ public:
 	void update();
 	virtual void stop() override;
 
-	void init(Netcode::PlayerID playerID, NetworkReceiverSystem* receiverSystem);
+	void init(Netcode::PlayerID playerID, NetworkReceiverSystem* receiverSystem, KillCamReceiverSystem* killCamSystem);
 	
 	void queueEvent(NetworkSenderEvent* event);
-	void pushDataToBuffer(std::string data);
-	
-	// TODO: Is this used?
-	const std::vector<Entity*>& getEntities() const;
+	void pushDataToBuffer(const std::string& data);
 
-	void addEntityToListONLYFORNETWORKRECIEVER(Entity* e);
+#ifdef DEVELOPMENT
+	unsigned int getByteSize() const override;
+	void imguiPrint(Entity** selectedEntity = nullptr) {
+		ImGui::Text(std::string("ID: " + std::to_string((int)m_playerID)).c_str());
+	}
+#endif
+
 private:
-	void writeMessageToArchive(Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar);
+	void writeMessageToArchive(const Netcode::MessageType& messageType, Entity* e, Netcode::OutArchive& ar);
 	void writeEventToArchive(NetworkSenderEvent* event, Netcode::OutArchive& ar);
 	
 private:
@@ -41,6 +46,7 @@ private:
 	std::atomic<size_t> m_nrOfEventsToSendToSelf = 0; // atomic is probably not needed
 
 	NetworkReceiverSystem* m_receiverSystem = nullptr;
+	KillCamReceiverSystem* m_killCamSystem = nullptr;
 
 	/*
 	 * The host will copy incoming packages to this queue and then send them all out in update()
@@ -57,5 +63,5 @@ private:
 	std::queue<std::string> m_HOSTONLY_dataToForward;
 	std::mutex m_forwardBufferLock;
 
-	std::mutex m_eventMutex;
+	std::mutex m_queueMutex;
 };

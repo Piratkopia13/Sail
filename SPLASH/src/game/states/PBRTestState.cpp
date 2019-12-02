@@ -4,6 +4,8 @@
 #include "Sail/entities/systems/Systems.h"
 #include "Sail/TimeSettings.h"
 
+#include "Sail/events/EventDispatcher.h"
+
 #include <sstream>
 #include <iomanip>
 
@@ -15,6 +17,10 @@ PBRTestState::PBRTestState(StateStack& stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 	, m_camController(&m_cam)
 	, m_profiler(true) {
+
+	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
+
+
 	auto& console = Application::getInstance()->getConsole();
 	console.addCommand("state <string>", [&](const std::string& param) {
 		if (param == "menu") {
@@ -62,9 +68,8 @@ PBRTestState::PBRTestState(StateStack& stack)
 	// Create systems for rendering
 	m_componentSystems.beginEndFrameSystem = ECS::Instance()->createSystem<BeginEndFrameSystem>();
 	m_componentSystems.boundingboxSubmitSystem = ECS::Instance()->createSystem<BoundingboxSubmitSystem>();
-	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem>();
-	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem>();
-	m_componentSystems.realTimeModelSubmitSystem = ECS::Instance()->createSystem<RealTimeModelSubmitSystem>();
+	m_componentSystems.metaballSubmitSystem = ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInActiveGameComponent>>();
+	m_componentSystems.modelSubmitSystem = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInActiveGameComponent>>();
 
 	// Create entity adder system
 	m_componentSystems.entityAdderSystem = ECS::Instance()->getEntityAdderSystem();
@@ -171,6 +176,8 @@ PBRTestState::~PBRTestState() {
 	ECS::Instance()->destroyAllEntities();
 
 	delete m_octree;
+
+	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
 // Process input for the state
@@ -204,14 +211,17 @@ bool PBRTestState::processInput(float dt) {
 }
 
 
-bool PBRTestState::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&PBRTestState::onResize));
+bool PBRTestState::onEvent(const Event& event) {
+	switch (event.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
+	default: break;
+	}
 
 	return true;
 }
 
-bool PBRTestState::onResize(WindowResizeEvent& event) {
-	m_cam.resize(event.getWidth(), event.getHeight());
+bool PBRTestState::onResize(const WindowResizeEvent& event) {
+	m_cam.resize(event.width, event.height);
 	return true;
 }
 
@@ -228,8 +238,10 @@ bool PBRTestState::fixedUpdate(float dt) {
 
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
-	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | "
-		+ Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
+#ifdef DEVELOPMENT
+	m_app->getWindow()->setWindowTitle("S.P.L.A.S.H.2.O | Development | "
+									   + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
+#endif
 
 	static float counter = 0.0f;
 	static float size = 1.0f;
@@ -254,7 +266,6 @@ bool PBRTestState::render(float dt, float alpha) {
 	m_componentSystems.beginEndFrameSystem->beginFrame(m_cam);
 
 	m_componentSystems.modelSubmitSystem->submitAll(alpha);
-	m_componentSystems.realTimeModelSubmitSystem->submitAll(alpha);
 	m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 	m_componentSystems.boundingboxSubmitSystem->submitAll();
 

@@ -4,16 +4,16 @@
 #include "..//..//components/Components.h"
 #include "..//..//Entity.h"
 
-MetaballSubmitSystem::MetaballSubmitSystem() {
-	registerComponent<MetaballComponent>(true, false, false);	// Data is not read, but the component is required for this system anyway
+template <typename T>
+MetaballSubmitSystem<T>::MetaballSubmitSystem() {
+	registerComponent<MetaballComponent>(true, true, false);
 	registerComponent<TransformComponent>(true, true, false);
 	registerComponent<CullingComponent>(false, true, false);
+	registerComponent<T>(true, true, false);
 }
 
-MetaballSubmitSystem::~MetaballSubmitSystem() {
-}
-
-void MetaballSubmitSystem::submitAll(const float alpha) {
+template <typename T>
+void MetaballSubmitSystem<T>::submitAll(const float alpha) {
 	Renderer* renderer = Application::getInstance()->getRenderWrapper()->getCurrentRenderer();
 
 	for (auto& e : entities) {
@@ -25,6 +25,10 @@ void MetaballSubmitSystem::submitAll(const float alpha) {
 			flags |= Renderer::IS_VISIBLE_ON_SCREEN;
 		}
 
-		renderer->submitMetaball(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, nullptr, transform->getInterpolatedTranslation(alpha), flags);
+		MetaballComponent* mc = e->getComponent<MetaballComponent>();
+		renderer->submitMetaball(Renderer::RENDER_COMMAND_TYPE_NON_MODEL_METABALL, nullptr, transform->getInterpolatedTranslation(alpha), flags, mc->renderGroupIndex);
 	}
 }
+
+template class MetaballSubmitSystem<RenderInActiveGameComponent>;
+template class MetaballSubmitSystem<RenderInReplayComponent>;
