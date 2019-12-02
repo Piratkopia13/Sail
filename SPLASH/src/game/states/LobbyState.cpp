@@ -521,6 +521,9 @@ void LobbyState::renderGameSettings() {
 		ImGui::PopFont();
 		ImGui::Separator();
 
+		bool disableSettings = !NWrapperSingleton::getInstance().isHost();
+		m_optionsWindow.setDisabled(disableSettings);
+
 		if (m_optionsWindow.renderGameOptions()) {
 			m_settingsChanged = true;
 		}

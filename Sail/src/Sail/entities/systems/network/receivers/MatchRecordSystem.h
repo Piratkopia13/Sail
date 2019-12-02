@@ -15,6 +15,7 @@ public:
 
 	void initRecording();
 	bool initReplay(std::string replayName);
+	bool endReplay();
 
 	int status = 0;
 

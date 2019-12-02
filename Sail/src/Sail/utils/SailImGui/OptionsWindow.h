@@ -13,11 +13,13 @@ public:
 	virtual void renderWindow() override;
 	bool renderGameOptions();
 	void updateMap();
+	void setDisabled(bool b = true);
 
 private:
 	Application* m_app;
 	SettingStorage* m_settings;
 	LevelSystem* m_levelSystem;
+	bool m_disabled = false;
 
 	void drawCrosshair();
 	void drawMap();

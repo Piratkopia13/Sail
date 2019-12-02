@@ -94,6 +94,14 @@ bool MatchRecordSystem::initReplay(std::string replayName) {
 	return true;
 }
 
+bool MatchRecordSystem::endReplay() {
+	if (status == 2) {
+		replay.close();
+	}
+
+	return true;
+}
+
 void MatchRecordSystem::recordPackages(std::queue<std::string> data) {
 	unsigned np = data.size();
 	recorded.write((char*)& np, sizeof(np));
