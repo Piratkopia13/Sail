@@ -7,7 +7,7 @@ struct Particle{
 	float spawnTime;
 };
 
-struct ParticleInput{
+struct ParticleInput{ // Size of this type is hardcoded in ShaderPipeline.cpp - change this if struct changes
 	Particle particles[312];
 	uint4 toRemove[312/4];
 	float3 cameraPos;
@@ -34,7 +34,7 @@ struct Vertex { // Size of this type is hardcoded in ShaderPipeline.cpp - change
 
 RWStructuredBuffer<Vertex> CSOutputBuffer: register(u10);
 
-struct ParticlePhysics {
+struct ParticlePhysics { // Size of this type is hardcoded in ParticleSystem.cpp (initEmitter()) - change this if struct changes
 	float3 velocity;
 	float3 acceleration;
 	float3 position;

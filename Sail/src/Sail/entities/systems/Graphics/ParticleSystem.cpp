@@ -129,7 +129,7 @@ void ParticleSystem::initEmitter(Entity* owner, ParticleEmitterComponent* compon
 
 	auto* context = Application::getInstance()->getAPI<DX12API>();
 
-	emitter.particlePhysicsSize = 9 * 4; // 9 floats times 4 bytes
+	emitter.particlePhysicsSize = 11 * 4; // 11 floats times 4 bytes
 
 	emitter.physicsBufferDefaultHeap = SAIL_NEW wComPtr<ID3D12Resource>[DX12API::NUM_GPU_BUFFERS];
 	for (UINT i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
