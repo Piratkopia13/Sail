@@ -1,6 +1,8 @@
 #include "Sail/../../Sail/src/Network/NetworkModule.hpp"
 #include "MenuState.h"
 
+#include <Psapi.h>
+
 #include "Sail.h"
 #include "../libraries/imgui/imgui.h"
 
@@ -178,6 +180,7 @@ if (m_usePercentage) {
 	}
 #ifdef DEVELOPMENT
 	renderDebug();
+	renderRAM();
 #endif
 	if (m_joiningLobby) {
 		renderJoiningLobby();
@@ -289,6 +292,29 @@ void MenuState::renderDebug() {
 	}
 	ImGui::End();
 
+}
+
+void MenuState::renderRAM() {
+	static int framesElapsed = 100;		// Trigger the update on the first frame
+	framesElapsed++;
+
+	static size_t physicalMemory = 0;
+	auto workSetUsage = []() {
+		PROCESS_MEMORY_COUNTERS_EX pmc;
+		GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+		return pmc.WorkingSetSize;
+	};
+
+	if (framesElapsed > 100) {
+		physicalMemory = workSetUsage();
+		framesElapsed = 0;
+	}
+
+	if (ImGui::Begin("RAM usage")) {
+		auto str = std::to_string(physicalMemory / (1024 * 1024)) + " MB";
+		ImGui::Text(str.c_str());
+	}
+	ImGui::End();
 }
 
 void MenuState::joinLobby(std::string& ip) {

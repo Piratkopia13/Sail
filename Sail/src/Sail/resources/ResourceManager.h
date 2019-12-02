@@ -14,7 +14,9 @@ class ShaderPipeline;
 class Shader;
 //class SoundManager;
 
-class ResourceManager {
+struct ID3D12GraphicsCommandList4;
+
+class ResourceManager final {
 public:
 	ResourceManager();
 	~ResourceManager();
@@ -105,7 +107,17 @@ public:
 	// SoundManager
 	//SoundManager* getSoundManager();
 
+	void uploadFinishedTextures(ID3D12GraphicsCommandList4* cmdList);
+	
+#ifdef DEVELOPMENT
+	void unloadTextures();
+#endif
+
+	void logRemainingTextures() const;
+	void printLoadedTexturesToFile() const;
+
 private:
+	unsigned int calculateTextureByteSize() const;
 	const std::string getSuitableName(const std::string& name);
 
 	enum RMDataType {
@@ -135,10 +147,17 @@ private:
 	// SoundManager containing all sounds
 	//std::unique_ptr<SoundManager> m_soundManager;
 
+	// Used when uploading textures to VRAM
+	std::mutex m_finishedTexturesMutex;
+	mutable std::mutex m_textureDatasMutex;
+	std::vector<Texture*> m_finishedTextures;
 
 	std::unique_ptr<AssimpLoader> m_assimpLoader;
 	std::unique_ptr<FBXLoader> m_fbxLoader;
 	Shader* m_defaultShader;
+
+	std::vector<std::string> m_loadedTextures;
+	mutable bool m_hasLogged = false;
 };
 
 template <typename T>

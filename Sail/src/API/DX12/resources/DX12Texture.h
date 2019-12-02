@@ -17,6 +17,7 @@ public:
 	void initBuffers(ID3D12GraphicsCommandList4* cmdList);
 	bool hasBeenInitialized() const;
 	ID3D12Resource1* getResource() const;
+	const std::string& getFilename() const;
 
 private:
 	void generateMips(ID3D12GraphicsCommandList4* cmdList);

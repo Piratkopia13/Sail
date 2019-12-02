@@ -11,6 +11,7 @@ TextureData::TextureData() {
 }
 TextureData::TextureData(const std::string& filename) {
 	load(filename);
+	m_fileName = filename;
 }
 TextureData::~TextureData() {
 	Memory::SafeDeleteArr(m_data.textureData);
@@ -50,4 +51,8 @@ glm::vec4 TextureData::getPixel(unsigned int x, unsigned int y) {
 
 unsigned int  TextureData::getByteSize() const {
 	return sizeof(*this) + sizeof(unsigned char) * m_data.width * m_data.height * m_data.channels;
+}
+
+const std::string& TextureData::getFileName() const {
+	return m_fileName;
 }

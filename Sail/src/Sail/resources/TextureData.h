@@ -24,7 +24,9 @@ public:
 	
 	unsigned int getByteSize() const;
 
+	const std::string& getFileName() const;
+
 private:
 	ResourceFormat::TextureData m_data;
-
+	std::string m_fileName;
 };

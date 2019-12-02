@@ -99,7 +99,6 @@ void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	});
 
 	m_isInitialized = true;
-
 }
 
 bool DX12Texture::hasBeenInitialized() const {
@@ -108,6 +107,10 @@ bool DX12Texture::hasBeenInitialized() const {
 
 ID3D12Resource1* DX12Texture::getResource() const {
 	return textureDefaultBuffers[0].Get();
+}
+
+const std::string& DX12Texture::getFilename() const {
+	return m_textureData.getFileName();
 }
 
 void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {

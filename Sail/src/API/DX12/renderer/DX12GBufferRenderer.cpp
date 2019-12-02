@@ -19,7 +19,7 @@
 #include "Sail/entities/ECS.h"
 #include "../DX12VertexBuffer.h"
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
-#include "Sail/events/EventDispatcher.h"
+#include "Sail/events/Events.h"
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
@@ -159,17 +159,21 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 #else
 	if (threadID == 0) {
 
+		// Upload queued textures
+		Application::getInstance()->getResourceManager().uploadFinishedTextures(cmdList.Get());
+
+
 		// Init all vbuffers and textures - this needs to be done on ONE thread
 		// TODO: optimize!
 		for (auto& renderCommand : commandQueue) {
 			auto& vbuffer = static_cast<DX12VertexBuffer&>(renderCommand.model.mesh->getVertexBuffer());
 			vbuffer.init(cmdList.Get());
-			for (int i = 0; i < 3; i++) {
+			/*for (int i = 0; i < 3; i++) {
 				auto* tex = static_cast<DX12Texture*>(renderCommand.model.mesh->getMaterial()->getTexture(i));
 				if (tex) {
 					tex->initBuffers(cmdList.Get());
 				}
-			}
+			}*/
 		}
 
 		// Transition output textures to render target
