@@ -35,8 +35,10 @@ public:
 		m_dataTypes.clear();
 	}
 
-	void addMessageType(Netcode::MessageType type) { 
-		m_dataTypes.push_back(type); 
+	void addMessageType(Netcode::MessageType type) {
+		if (!messageTypeAlreadyExists(type)) {
+			m_dataTypes.push_back(type); 
+		}
 	}
 
 	void removeMessageType(Netcode::MessageType type) {

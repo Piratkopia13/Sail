@@ -76,22 +76,6 @@ unsigned int NetworkReceiverSystem::getByteSize() const {
 }
 #endif
 
-void NetworkReceiverSystem::createPlayer(const PlayerComponentInfo& info, const glm::vec3& pos) {
-	// Early exit if the entity already exists
-	if (findFromNetID(info.playerCompID)) {
-		return;
-	}
-
-	auto e = ECS::Instance()->createEntity("networkedEntity");
-	instantAddEntity(e.get());
-
-	SAIL_LOG("Created player with id: " + std::to_string(info.playerCompID));
-
-	// lightIndex set to 999, can probably be removed since it no longer seems to be used
-	EntityFactory::CreateOtherPlayer(e, info.playerCompID, info.candleID, info.gunID, 999, pos);
-	ECS::Instance()->addAllQueuedEntities();
-}
-
 void NetworkReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
 		e->queueDestruction();
@@ -175,7 +159,7 @@ void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKil
 void NetworkReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
 	if (auto e = findFromNetID(id); e) {
 		auto animation = e->getComponent<AnimationComponent>();
-		animation->setAnimation(info.index);
+		animation->setAnimation(info.index, false);
 		animation->animationTime = info.time;
 		animation->pitch = info.pitch;
 		return;
@@ -228,8 +212,8 @@ void NetworkReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement) {
-	GameDataTracker::getInstance().setStatsForPlayer(player, nrOfKills, placement);
+void NetworkReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken) {
+	GameDataTracker::getInstance().setStatsForPlayer(player, nrOfKills, placement, nDeaths, damage, damageTaken);
 }
 
 void NetworkReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {
@@ -238,6 +222,17 @@ void NetworkReceiverSystem::updateSanity(const Netcode::ComponentID id, const fl
 		return;
 	}
 	SAIL_LOG_WARNING("updateSanity called but no matching entity found");
+}
+
+void NetworkReceiverSystem::updateProjectile(const Netcode::ComponentID id, const glm::vec3& pos, const glm::vec3& vel) {
+	if (auto e = findFromNetID(id); e) {
+		e->getComponent<TransformComponent>()->setTranslation(pos);
+		e->getComponent<MovementComponent>()->velocity = vel;
+
+		Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(pos);
+		return;
+	}
+	SAIL_LOG_WARNING("updateProjectile called but no matching entity found");
 }
 
 // If I requested the projectile it has a local owner
@@ -266,6 +261,11 @@ void NetworkReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	EntityFactory::CreateProjectile(e, args);
 }
 
+void NetworkReceiverSystem::submitWaterPoint(const glm::vec3& point) {
+	// Place water point at intersection position
+	Application::getInstance()->getRenderWrapper()->getCurrentRenderer()->submitWaterPoint(point);
+}
+
 
 // TODO only emit events if the entities still exist
 void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID projectileID) {
@@ -282,10 +282,10 @@ void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const 
 
 void NetworkReceiverSystem::playerJumped(const Netcode::ComponentID id) {
 	if (auto e = findFromNetID(id); e) {
+		EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 		return;
 	}
 	SAIL_LOG_WARNING("waterHitPLayer called but no matching entity found");
-	EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 }
 
 void NetworkReceiverSystem::playerLanded(const Netcode::ComponentID id) {

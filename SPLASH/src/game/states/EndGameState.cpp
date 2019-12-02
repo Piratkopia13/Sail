@@ -92,6 +92,8 @@ bool EndGameState::renderImgui(float dt) {
 	renderPersonalStats();
 	renderFunStats();
 
+
+	m_app->getChatWindow()->renderChat(dt);
 	//WORK IN PROGRESS
 	//renderWinners();
 
@@ -173,7 +175,16 @@ void EndGameState::renderPersonalStats() {
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowSize(size);
 	if (ImGui::Begin("##PERSONALSTATS", nullptr, m_backgroundOnlyflags)) {
+		ImGui::PushFont(m_imguiHandler->getFont("Beb30"));
+		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+		ImGui::Text("Personal Stats");
+		ImGui::Separator();
+		ImGui::PopStyleColor();
+		ImGui::PopFont();
 		GameDataTracker::getInstance().renderPersonalStats();
+
+		
+
 	}
 	ImGui::End();
 }
@@ -184,14 +195,20 @@ void EndGameState::renderFunStats() {
 	static ImVec2 pos(0, m_padding);
 
 
-	size.x = m_app->getWindow()->getWindowWidth() * 0.6f;
+	size.x = m_app->getWindow()->getWindowWidth() * 0.2f;
 	pos.x = (m_app->getWindow()->getWindowWidth() - m_padding * 2) * 0.5f - size.x * 0.5f;
 	pos.y = (m_app->getWindow()->getWindowHeight() - m_padding - size.y);
 
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowSize(size);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(786, 200), ImVec2(4000, 4000));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(300, 200), ImVec2(4000, 4000));
 	if (ImGui::Begin("##FUNSTATS", nullptr, m_backgroundOnlyflags)) {
+		ImGui::PushFont(m_imguiHandler->getFont("Beb30"));
+		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+		ImGui::Text("Tidbits");
+		ImGui::Separator();
+		ImGui::PopStyleColor();
+		ImGui::PopFont();
 		GameDataTracker::getInstance().renderFunStats();
 	}
 	ImGui::End();

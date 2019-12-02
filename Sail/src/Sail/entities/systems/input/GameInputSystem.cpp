@@ -31,6 +31,7 @@ GameInputSystem::GameInputSystem() : BaseComponentSystem() {
 	registerComponent<GunComponent>(false, true, true);
 	registerComponent<SprintingComponent>(true, true, false);
 	registerComponent<AnimationComponent>(true, true, false);
+	registerComponent<NetworkSenderComponent>(false, true, true);
 	m_mapPointer = nullptr;
 
 	// cam variables
@@ -54,14 +55,18 @@ void GameInputSystem::fixedUpdate(float dt) {
 }
 
 void GameInputSystem::update(float dt, float alpha) {
-	this->processMouseInput(dt);
 	this->updateCameraPosition(alpha);
 }
 
 void GameInputSystem::initialize(Camera* cam) {
+	// If a camera doesn't exist...
 	if ( m_cam == nullptr ) {
+		// ... Create it
 		m_cam = SAIL_NEW CameraController(cam);
-	} else {
+	} 
+	// If it does exist...
+	else {
+		// ... Delete it then create it!?!?
 		CameraController* tempCam = m_cam;
 		Memory::SafeDelete(tempCam);
 		m_cam = SAIL_NEW CameraController(cam);
@@ -391,7 +396,8 @@ void GameInputSystem::processMouseInput(const float& dt) {
 		trans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
 
 		GunComponent* gc = e->getComponent<GunComponent>();
-		TransformComponent* ptc = e->getComponent<TransformComponent>();
+
+		// Rotate gun
 		if (gc) {
 			for (auto childE : e->getChildEntities()) {
 				if (childE->getName().find("WaterGun") != std::string::npos) {
@@ -401,22 +407,41 @@ void GameInputSystem::processMouseInput(const float& dt) {
 			}
 		}
 
-		if (!e->hasComponent<SpectatorComponent>() && Input::IsMouseButtonPressed(KeyBinds::SHOOT) && !e->getComponent<SprintingComponent>()->sprintedLastFrame) {
-			GunComponent* gc = e->getComponent<GunComponent>();
-			TransformComponent* ptc = e->getComponent<TransformComponent>();
-			if (gc) {
-				for (auto childE : e->getChildEntities()) {
-					if (childE->getName().find("WaterGun") != std::string::npos) {
-						TransformComponent* tc = childE->getComponent<TransformComponent>();
-						glm::vec3 gunPosition = glm::vec3(tc->getMatrixWithUpdate()[3]) + m_cam->getCameraDirection() * 0.33f;
+		// Manage the firing of the gun
+		if (Input::IsMouseButtonPressed(KeyBinds::SHOOT) && !e->hasComponent<SpectatorComponent>() && !e->getComponent<SprintingComponent>()->sprintedLastFrame) {
 
-						e->getComponent<GunComponent>()->setFiring(gunPosition, m_cam->getCameraDirection());
+			// Check if the player's candle is lit
+			bool isLit = true;
+			for (auto childE : e->getChildEntities()) {
+				if (auto candleC = childE->getComponent<CandleComponent>()) {
+					isLit = candleC->isLit;
+					break;
+				}
+			}
+
+			// Only fire if the candle is lit
+			if (isLit) {
+				if (gc) {
+					for (auto childE : e->getChildEntities()) {
+						if (childE->getName().find("WaterGun") != std::string::npos) {
+							TransformComponent* tc = childE->getComponent<TransformComponent>();
+							glm::vec3 gunPosition = glm::vec3(tc->getMatrixWithUpdate()[3]) + m_cam->getCameraDirection() * 0.33f;
+
+							gc->setFiring(gunPosition, m_cam->getCameraDirection());
+						}
 					}
+				}
+			} else {
+				// Stop firing when the candle is no longer lit
+				if (gc->firing) {
+					if (auto nsc = e->getComponent<NetworkSenderComponent>()) {
+						nsc->addMessageType(Netcode::MessageType::SHOOT_END);
+						gc->state = GunState::ENDING;
+					}
+					gc->firing = false;
 				}
 			}
 		} else {
-
-			GunComponent* gc = e->getComponent<GunComponent>();
 			if (gc) {
 				gc->firing = false;
 			}
@@ -434,8 +459,7 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		playerTrans->setRotations(0.f, glm::radians(-m_yaw), 0.f);
 		animation->pitch = glm::radians(-m_pitch);
 
-		const glm::vec3 finalPos = playerTrans->getRenderMatrix(alpha) * glm::vec4(animation->headPositionLocalCurrent, 1.f);
-		const glm::vec3 camPos = glm::vec3(finalPos);
+		const glm::vec3 camPos = playerTrans->getMatrixWithUpdate() * glm::vec4(animation->headPositionLocalCurrent, 1.f);
 
 		m_cam->setCameraPosition(camPos);
 	}
@@ -466,14 +490,10 @@ unsigned int GameInputSystem::getByteSize() const {
 #endif
 
 void GameInputSystem::toggleCandleCarry(Entity* entity) {
-	// No need to do anything since it's to soon since last action
-	if (entity->getComponent<CandleComponent>()) {
-		if (entity->getComponent<CandleComponent>()->candleToggleTimer < CANDLE_TIMER) { return; }
-	}
-
 	for (auto torch : entity->getChildEntities()) {
 		if (torch->hasComponent<CandleComponent>()) {
 			if (torch->getComponent<CandleComponent>()->candleToggleTimer < CANDLE_TIMER) {
+				// No need to do anything since it's to soon since last action
 				return;
 			}
 		}
@@ -494,9 +514,8 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 							throwingComp->isCharging = true;
 							if (throwingComp->chargeTime >= throwingComp->chargeToThrowThreshold) {
 								// We want to throw the torch
-								throwingComp->isThrowing = true;
 								throwingComp->isCharging = false;
-								candleComp->candleToggleTimer = 0.f;
+								//candleComp->candleToggleTimer = 0.f;
 							}
 						} else {
 							// Torch isn't carried so try to pick it up
@@ -506,8 +525,7 @@ void GameInputSystem::toggleCandleCarry(Entity* entity) {
 					} else if (candleComp->isCarried && throwingComp->wasChargingLastFrame) {
 						// We want to throw the torch
 						throwingComp->isCharging = false;
-						throwingComp->isThrowing = true;
-						candleComp->candleToggleTimer = 0.f;
+						//candleComp->candleToggleTimer = 0.f;
 					}
 				}
 			}
@@ -531,8 +549,9 @@ Movement GameInputSystem::getPlayerMovementInput(Entity* e) {
 	if (Input::IsKeyPressed(KeyBinds::MOVE_UP)) { playerMovement.upMovement += 1.0f; }
 	if (Input::IsKeyPressed(KeyBinds::MOVE_DOWN)) { playerMovement.upMovement -= 1.0f; }
 
+	auto animC = e->getComponent<AnimationComponent>();
 	auto throwC = e->getComponent<ThrowingComponent>();
-	if (throwC->isThrowing || throwC->isCharging) {
+	if (animC->animationIndex == 9/*IDLE_THROW*/ || animC->animationIndex == 11/*RUNNING_THROW*/ || throwC->chargeTime > 0.f) {
 		return playerMovement;
 	}
 

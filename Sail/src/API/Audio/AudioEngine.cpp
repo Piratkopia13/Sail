@@ -31,15 +31,13 @@
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfuuid")
 #pragma comment(lib, "hrtfapo.lib")
-//#include <xaudio2.h>
-//#include <x3daudio.h>
 
 #include <xaudio2fx.h>
 #pragma comment(lib,"xaudio2.lib")
 
 AudioEngine::AudioEngine() {
 	HRESULT hr;
-	hr = CoInitialize(nullptr);
+	hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
 #pragma region ERROR_CHECKING
 	try {
@@ -63,6 +61,14 @@ AudioEngine::~AudioEngine() {
 	for (auto& e : m_sound) {
 		e.xapo.ReleaseAndGetAddressOf();
 	}
+
+	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		m_isStreaming[i] = false;
+		m_isStreamPaused[i] = false;
+		m_isFinished[i] = true;
+		m_overlapped[i] = { 0 };
+		m_streamLocks[i].store(false);
+	}
 }
 
 void AudioEngine::loadSound(const std::string& filename) {
@@ -85,7 +91,13 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 		// ... create a source voice for it,
 		hr = m_xAudio2->CreateSourceVoice(&m_sound[indexValue].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
 		// ... set volume,
-		m_sound[indexValue].sourceVoice->SetVolume(volume);
+		if (FAILED(hr)) {
+			SAIL_LOG_WARNING("Failed to create a sourcevoice!");
+		}
+		hr = m_sound[indexValue].sourceVoice->SetVolume(volume);
+		if (FAILED(hr)) {
+			SAIL_LOG_WARNING("Failed to set volume to a sourcevoice!");
+		}
 		// ... set up hrtf.
 		setUpxAPO(indexValue);
 
@@ -94,9 +106,18 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 	}
 	else {
 		// Reset; preparing for re-creation
-		m_sound[indexValue].sourceVoice->Stop();
-		m_sound[indexValue].sourceVoice->FlushSourceBuffers();
-		m_sound[indexValue].sourceVoice->Discontinuity();
+		hr = m_sound[indexValue].sourceVoice->Stop();
+		if (FAILED(hr)) {
+			SAIL_LOG_WARNING("Failed to stop a sourcevoice!");
+		}
+		hr = m_sound[indexValue].sourceVoice->FlushSourceBuffers();
+		if (FAILED(hr)) {
+			SAIL_LOG_WARNING("Failed to flush a sourcevoice!");
+		}
+		hr = m_sound[indexValue].sourceVoice->Discontinuity();
+		if (FAILED(hr)) {
+			SAIL_LOG_WARNING("Failed to create a sourcevoice!");
+		}
 
 		// Destroy to source voice to reset settings completely
 		m_sound[indexValue].sourceVoice->DestroyVoice();
@@ -261,6 +282,129 @@ void AudioEngine::startSpecificSound(int index, float volume) {
 	}
 }
 
+void AudioEngine::startDeathSound(const std::string& filename, float volume) {
+	if (!Application::getInstance()->getResourceManager().hasAudioData(filename)) {
+		SAIL_LOG_ERROR("That audio file has NOT been loaded yet!");
+		return;
+	}
+
+	m_deathSound.filename = filename;
+	HRESULT hr = S_OK;
+
+	// Is this the first time this function was called for this sound...
+	if (m_deathSound.sourceVoice == nullptr) {
+		// ... create a source voice for it,
+		hr = m_xAudio2->CreateSourceVoice(&m_deathSound.sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+		// ... set volume,
+		hr = m_deathSound.sourceVoice->SetVolume(volume);
+		// ... set up hrtf.
+		hr = CreateHrtfApo(nullptr, &m_deathSound.xapo);
+		hr = m_deathSound.xapo.As(&m_deathSound.hrtfParams);
+		hr = m_deathSound.hrtfParams->SetEnvironment(m_deathSound.environment);
+		if (FAILED(hr)) {
+			SAIL_LOG_ERROR("Failed to create Hrtf Apo for death sound");
+		}
+
+		// Create a submix specifically for this
+		createXAPOsubMixVoice(&m_deathSound.xAPOsubMixVoice, m_deathSound.xapo);
+	}
+
+	hr = m_deathSound.xAPOsubMixVoice->SetVolume(volume);
+	if (FAILED(hr)) {
+		SAIL_LOG_ERROR("Failed to set volume to death sound");
+	}
+
+	//			   										  xAPO
+	// [index].SourceVoice -----> [index].xAPOsubMixVoice ---> m_masterVoice
+	sendVoiceTosubMixVoice(
+		&m_deathSound.sourceVoice,
+		&m_deathSound.xAPOsubMixVoice,
+		false
+	);
+
+
+	hr = m_deathSound.sourceVoice->FlushSourceBuffers();
+
+	// Submit audio data to the source voice.
+	if (SUCCEEDED(hr)) {
+		hr = m_deathSound.sourceVoice->SubmitSourceBuffer(
+			Application::getInstance()->getResourceManager().getAudioData(m_deathSound.filename).getSoundBuffer());
+	}
+
+	if (SUCCEEDED(hr)) {
+		hr = m_deathSound.sourceVoice->Start(0);
+		hr = m_deathSound.sourceVoice->SetVolume(volume);
+	}
+
+	// Apply changes directly
+	m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL);
+}
+
+void AudioEngine::updateDeathvolume(float volume) {
+	m_deathSound.sourceVoice->SetVolume(volume);
+}
+
+void AudioEngine::startInsanitySound(const std::string& filename, float volume) {
+	if (!Application::getInstance()->getResourceManager().hasAudioData(filename)) {
+		SAIL_LOG_ERROR("That audio file has NOT been loaded yet!");
+		return;
+	}
+
+	m_insanitySound.filename = filename;
+	HRESULT hr = S_OK;
+
+	// Is this the first time this function was called for this sound...
+	if (m_insanitySound.sourceVoice == nullptr) {
+		// ... create a source voice for it,
+		hr = m_xAudio2->CreateSourceVoice(&m_insanitySound.sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
+		// ... set volume,
+		hr = m_insanitySound.sourceVoice->SetVolume(volume);
+		// ... set up hrtf.
+		hr = CreateHrtfApo(nullptr, &m_insanitySound.xapo);
+		hr = m_insanitySound.xapo.As(&m_insanitySound.hrtfParams);
+		hr = m_insanitySound.hrtfParams->SetEnvironment(m_insanitySound.environment);
+		if (FAILED(hr)) {
+			SAIL_LOG_ERROR("Failed to create Hrtf Apo for insanitydeath sound");
+		}
+
+		// Create a submix specifically for this
+		createXAPOsubMixVoice(&m_insanitySound.xAPOsubMixVoice, m_insanitySound.xapo);
+	}
+
+	hr = m_insanitySound.xAPOsubMixVoice->SetVolume(volume);
+	if (FAILED(hr)) {
+		SAIL_LOG_ERROR("Failed to set volume to insanitydeath sound");
+	}
+
+	//			   										  xAPO
+	// [index].SourceVoice -----> [index].xAPOsubMixVoice ---> m_masterVoice
+	sendVoiceTosubMixVoice(
+		&m_insanitySound.sourceVoice,
+		&m_insanitySound.xAPOsubMixVoice,
+		false
+	);
+
+	hr = m_insanitySound.sourceVoice->FlushSourceBuffers();
+
+	// Submit audio data to the source voice.
+	if (SUCCEEDED(hr)) {
+		hr = m_insanitySound.sourceVoice->SubmitSourceBuffer(
+			Application::getInstance()->getResourceManager().getAudioData(m_insanitySound.filename).getSoundBuffer());
+	}
+
+	if (SUCCEEDED(hr)) {
+		hr = m_insanitySound.sourceVoice->Start(0);
+		hr = m_insanitySound.sourceVoice->SetVolume(volume);
+	}
+
+	// Apply changes directly
+	m_xAudio2->CommitChanges(XAUDIO2_COMMIT_ALL);
+}
+
+void AudioEngine::updateInsanityVolume(float volume) {
+	m_insanitySound.sourceVoice->SetVolume(volume);
+}
+
 void AudioEngine::stopSpecificSound(int index) {
 	if (this->checkSoundIndex(index) && m_sound[index].sourceVoice != nullptr) {
 		m_sound[index].sourceVoice->Stop(0);
@@ -270,6 +414,21 @@ void AudioEngine::stopSpecificSound(int index) {
 void AudioEngine::stopSpecificStream(int index) {
 	if (this->checkStreamIndex(index) && m_stream[index].sourceVoice != nullptr) {
 		m_isStreaming[index] = false;
+	}
+}
+
+void AudioEngine::pause_unpause_AllStreams(bool pauseTRUE_unpauseFALSE)
+{
+	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
+		this->m_isStreamPaused[i] = pauseTRUE_unpauseFALSE;
+		if (this->m_stream[i].sourceVoice != nullptr) {
+			if (pauseTRUE_unpauseFALSE == true) {
+				this->m_stream[i].sourceVoice->Stop();
+			}
+			else {
+				this->m_stream[i].sourceVoice->Start();
+			}
+		}
 	}
 }
 
@@ -290,6 +449,14 @@ void AudioEngine::stopAllSounds() {
 
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
 		m_isStreaming[i] = false;
+	}
+}
+
+void AudioEngine::pauseAllSounds() {
+	for (int i = 0; i < SOUND_COUNT; i++) {
+		if (m_sound[i].sourceVoice != nullptr) {
+			m_sound[i].sourceVoice->Stop();
+		}
 	}
 }
 
@@ -387,6 +554,36 @@ unsigned int AudioEngine::getByteSize() const {
 
 	return size;
 }
+
+void AudioEngine::logDebugData() {
+	using namespace std;
+	XAUDIO2_PERFORMANCE_DATA data;
+	m_xAudio2->GetPerformanceData(&data);
+	string log = "";
+	string activeLog = "";
+	string perFrameLog = "";
+	activeLog += string("ActiveMatrixMixCount: ")			+= to_string(data.ActiveMatrixMixCount)		  += string(" ");
+	activeLog += string("ActiveResamplerCount: ")			+= to_string(data.ActiveResamplerCount)		  += string(" ");
+	activeLog += string("ActiveSourceVoiceCount: ")		+= to_string(data.ActiveSourceVoiceCount)	  += string(" ");
+	activeLog += string("ActiveSubmixVoiceCount: ")		+= to_string(data.ActiveSubmixVoiceCount)	  += string(" ");
+	activeLog += string("ActiveXmaSourceVoices: ")		+= to_string(data.ActiveXmaSourceVoices)	  += string(" ");
+	activeLog += string("ActiveXmaStreams: ")				+= to_string(data.ActiveXmaStreams)			  += string(" ");
+	activeLog += string("TotalSourceVoiceCount: ") += to_string(data.TotalSourceVoiceCount) += string(" ");
+	perFrameLog += string("AudioCyclesSinceLastQuery: ")	+= to_string(data.AudioCyclesSinceLastQuery)  += string(" ");
+	perFrameLog += string("CurrentLatencyInSamples: ")		+= to_string(data.CurrentLatencyInSamples)	  += string(" ");    
+	perFrameLog += string("MaximumCyclesPerQuantum: ")		+= to_string(data.MaximumCyclesPerQuantum)	  += string(" ");
+	perFrameLog += string("MinimumCyclesPerQuantum: ") += to_string(data.MinimumCyclesPerQuantum) += string(" ");
+	perFrameLog += string("TotalCyclesSinceLastQueryv: ") += to_string(data.TotalCyclesSinceLastQuery) += string(" ");
+	log += string("MemoryUsageInBytes: ")			+= to_string(data.MemoryUsageInBytes)		  += string(" ");
+	log += string("GlitchesSinceEngineStarted: ") += to_string(data.GlitchesSinceEngineStarted)	  += string(" ");
+		
+	SAIL_LOG(activeLog.c_str());
+	cout << "\n";
+	SAIL_LOG(log.c_str());
+	cout << "\n";
+	SAIL_LOG(perFrameLog.c_str());
+	cout << " ------------------------ NEW AUDIO FRAME --------------------------------- \n";
+}
 #endif
 
 void AudioEngine::initialize() {
@@ -398,6 +595,7 @@ void AudioEngine::initialize() {
 	for (int i = 0; i < STREAMED_SOUNDS_COUNT; i++) {
 		m_stream[i].sourceVoice = nullptr;
 		m_isStreaming[i] = false;
+		m_isStreamPaused[i] = false;
 		m_isFinished[i] = true;
 		m_overlapped[i] = { 0 };
 		m_streamLocks[i].store(false);
@@ -409,12 +607,33 @@ void AudioEngine::initialize() {
 	}
 }
 
+void AudioEngine::activateDebugLayer() {
+	XAUDIO2_DEBUG_CONFIGURATION debugConfig = {};
+	debugConfig.TraceMask = XAUDIO2_LOG_WARNINGS;		// Also enables LOG_ERRORS
+	debugConfig.TraceMask |= XAUDIO2_LOG_DETAIL;		// Also enables LOG_INFO
+	debugConfig.TraceMask |= XAUDIO2_LOG_FUNC_CALLS;	// Also enables LOG_API_CALLS
+	debugConfig.TraceMask |= XAUDIO2_LOG_TIMING;
+	debugConfig.TraceMask |= XAUDIO2_LOG_LOCKS;
+	debugConfig.TraceMask |= XAUDIO2_LOG_MEMORY;
+	debugConfig.TraceMask |= XAUDIO2_LOG_STREAMING;
+	debugConfig.BreakMask = XAUDIO2_LOG_ERRORS;
+	m_xAudio2->SetDebugConfiguration(&debugConfig, nullptr);
+
+#if (_WIN32_WINNT >= WIN_32_WINNT_WIN10)
+	SAIL_LOG("AUDIOENGINE: Xaudio 2.9 Debugging enabled | Windows 10");
+#elif (_WIN32_WINNT >= WIN_32_WINNT_WIN8)
+	SAIL_LOG("AUDIOENGINE: Xaudio 2.8 debugging enabled | Windows 8");
+#else
+	SAIL_LOG("AUDIOENGINE: Xaudio 2.7 debugging enabled");
+#endif
+}
+
 HRESULT AudioEngine::initXAudio2() {
 	UINT32 flags = XAUDIO2_1024_QUANTUM;
 
-//#ifdef _DEBUG
-//	flags |= XAUDIO2_DEBUG_ENGINE;
-//#endif
+#ifdef DEVELOPMENT
+	flags |= XAUDIO2_DEBUG_ENGINE;
+#endif
 
 	HRESULT hr = XAudio2Create(&m_xAudio2, flags);
 
@@ -423,10 +642,23 @@ HRESULT AudioEngine::initXAudio2() {
 	// Mastering voice will be automatically destroyed when XAudio2 instance is destroyed.
 	if (SUCCEEDED(hr)) {
 		hr = m_xAudio2->CreateMasteringVoice(&m_masterVoice, 2, 48000);
-	}	
+
+		if (FAILED(hr)) {
+			assert(false);
+		}
+	}
+	else {
+		SAIL_LOG_ERROR("Failed to create Xaudio2");
+	}
+
+#if DEVELOPMENT
+	// Activate debug layer if we're in development
+	activateDebugLayer();
+#endif
 
 	return hr;
 }
+
 
 int AudioEngine::fetchSoundIndex() {
 	m_currSoundIndex++;
@@ -511,29 +743,6 @@ void AudioEngine::createXAPOsubMixVoice(IXAudio2SubmixVoice* *source, Microsoft:
 		SAIL_LOG_ERROR("Attempted to create a xAPOsubMixVoice which already existed");
 		return;
 	}
-
-	//XAUDIO2_EFFECT_DESCRIPTOR fxDesc{};
-	//fxDesc.InitialState = TRUE;
-	//fxDesc.OutputChannels = 2;          // Stereo output
-	//fxDesc.pEffect = xapo.Get();        // HRTF xAPO set as the effect.
-
-	///*
-	//Possibly append the "reverb" effect in the effect chain here
-
-	//*/
-	//XAUDIO2_EFFECT_CHAIN fxChain{};
-	//fxChain.EffectCount = 1;
-	//fxChain.pEffectDescriptors = &fxDesc;
-	//XAUDIO2_VOICE_SENDS sends = {};
-	//XAUDIO2_SEND_DESCRIPTOR sendDesc = {};
-	//sendDesc.pOutputVoice = m_masterVoice;
-	//sends.SendCount = 1;
-	//sends.pSends = &sendDesc;
-	//// HRTF APO expects mono 48kHz input, so we configure the submix voice for that format.
-	//hr = m_xAudio2->CreateSubmixVoice(&submixVoice, 1, 48000, 0, 0, &sends, &fxChain);
-	//submixVoice->SetVolume(volume);
-
-	// ------------------- OLD ABOVE, NEW BELOW
 
 	XAUDIO2_EFFECT_DESCRIPTOR xAPOeffectDesc{};
 	XAUDIO2_EFFECT_CHAIN xAPOeffectChain{};
@@ -633,10 +842,6 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 				}
 			}
 
-			// creating a 'sourceVoice' for WAV file-type
-			//if (SUCCEEDED(hr)) {
-			//	hr = m_xAudio2->CreateSourceVoice(&m_stream[myIndex].sourceVoice, (WAVEFORMATEX*)Application::getInstance()->getResourceManager().getAudioData(filename).getFormat());
-			//}
 			hr = m_xAudio2->CreateSourceVoice(&m_stream[myIndex].sourceVoice, wfx, 0, 1.0f, &voiceContext);
 			if (hr != S_OK) {
 				SAIL_LOG_ERROR("Failed to create source voice!");
@@ -691,13 +896,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 			// Reading from the file (when time-since-last-read has passed threshold)
 			while ((currentPosition < metadata.lengthBytes) && m_isStreaming[myIndex]) {
-				if (GetAsyncKeyState(VK_ESCAPE)) {
-					m_isStreaming[myIndex] = false;
-					while (GetAsyncKeyState(VK_ESCAPE) && m_isStreaming[myIndex]) {
-						Sleep(10);
-					}
-					break;
-				}
+				while (m_isStreamPaused[myIndex]); // Wait while paused
 
 				DWORD cbValid = std::min(STREAMING_BUFFER_SIZE, static_cast<int>(metadata.lengthBytes - static_cast<UINT32>(currentPosition)));
 				m_overlapped[myIndex].Offset = metadata.offsetBytes + currentPosition;
@@ -714,11 +913,7 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 
 				currentPosition += cbValid;
 
-				//
-				// At this point the read is progressing in the background and we are free to do
-				// other processing while we wait for it to finish. For the purposes of this sample,
-				// however, we'll just go to sleep until the read is done.
-				//
+				// Sleep while waiting for currently-playing chunk to finish
 				if (wait) {
 					WaitForSingleObject(m_overlapped[myIndex].hEvent, INFINITE);
 				}
@@ -780,24 +975,13 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 			m_isStreaming[myIndex] = false;
 		}
 
-		//if (!m_isStreaming[myIndex])
-		//{
-		//	m_sourceVoiceStream[myIndex]->SetVolume(0);
-
-		//	XAUDIO2_VOICE_STATE state;
-		//	for (;;)
-		//	{
-		//		m_sourceVoiceStream[myIndex]->GetState(&state);
-		//		if (!state.BuffersQueued)
-		//			break;
-
-		//		WaitForSingleObject(voiceContext.hBufferEndEvent, INFINITE);
-		//	}
-		//}
-
 		currentChunk = 0;
 		currentVolume = 0;
-		m_stream[myIndex].sourceVoice->Stop();
+		// There is a rare case where multi-threading means this sourceVoice MAY have been
+		// cleaned by another part of the system (AKA: Keep this nullptr check to avoid rare crash)
+		if (m_stream[myIndex].sourceVoice != nullptr) {
+			m_stream[myIndex].sourceVoice->Stop();
+		}
 	}
 	//
 	// Clean up
@@ -810,15 +994,6 @@ void AudioEngine::streamSoundInternal(const std::string& filename, int myIndex, 
 	}
 
 	m_isFinished[myIndex] = true;
-	m_streamLocks[myIndex].store(false);
-
-		// Commented-out because it causes a crash during death of other player
-	// Clean up audio component as well
-	//if (pAudioC != nullptr) {
-	//	if (pAudioC->m_currentlyStreaming.size() == 1) {
-	//		pAudioC->m_currentlyStreaming.clear();
-	//	}
-	//}
 }
 
 //--------------------------------------------------------------------------------------

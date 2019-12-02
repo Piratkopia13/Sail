@@ -3,7 +3,7 @@
 
 class SpeedLimitComponent final : public Component<SpeedLimitComponent> {
 public:
-	SpeedLimitComponent(float maxSpeed_ = INFINITY) 
+	SpeedLimitComponent(float maxSpeed_ = 9999999.0f)
 		: maxSpeed(maxSpeed_)
 		, normalMaxSpeed(maxSpeed) {}
 	~SpeedLimitComponent() {}

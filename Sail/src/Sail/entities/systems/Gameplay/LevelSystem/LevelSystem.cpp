@@ -96,12 +96,7 @@ void LevelSystem::generateMap() {
 
 	//creates tilemap for the level
 	matchRoom();
-
-	//fills rooms with stuff
-	generateClutter();
 	
-	// Find spawn points
-	addSpawnPoints();
 }
 
 void LevelSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) {
@@ -116,6 +111,12 @@ void LevelSystem::createWorld(const std::vector<Model*>& tileModels, Model* bb) 
 			}
 		}
 	}
+
+	//fills rooms with stuff
+	generateClutter();
+
+	// Find spawn points
+	addSpawnPoints();
 }
 
 void LevelSystem::destroyWorld() {
@@ -1418,6 +1419,11 @@ const RoomInfo LevelSystem::getRoomInfo(int ID) {
 	return info;
 }
 
+int *** LevelSystem::getTiles() {
+	return tileArr;
+}
+
+
 #ifdef DEVELOPMENT
 unsigned int LevelSystem::getByteSize() const {
 	unsigned int size = BaseComponentSystem::getByteSize() + sizeof(*this);
@@ -1488,7 +1494,7 @@ void LevelSystem::generateClutter() {
 			vats.rot = 180;
 			vats.posy = (room.posy + 0.5f) * tileSize + tileOffset - tileSize / 2.f;
 			vats.posx = (room.posx + (room.sizex) / 2.0f) * tileSize + tileOffset - tileSize / 2.f;
-			extraSpawnPoints.push_back(glm::vec3(vats.posx, 0.1f, vats.posy));
+			extraSpawnPoints.push_back(glm::vec3(vats.posx, 0.5f, vats.posy));
 			specialClutter.push(vats);
 			matched.at(i).isCloning = true;
 		}
