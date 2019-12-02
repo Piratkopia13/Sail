@@ -1751,6 +1751,8 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 #ifdef _PERFORMANCE_TEST
 		sc->isOn = true;
 #endif
+
+#ifdef DEVELOPMENT
 		auto* particleEmitterComp = e2->addComponent<ParticleEmitterComponent>();
 		particleEmitterComp->size = 1.0f;
 		particleEmitterComp->offset = { 0, tileHeight * 6, 0 };
@@ -1765,5 +1767,6 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 			Application::getInstance()->getResourceManager().loadTexture(particleTextureName);
 		}
 		particleEmitterComp->setTexture(particleTextureName);
+#endif
 	}
 }
