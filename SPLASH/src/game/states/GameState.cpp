@@ -519,7 +519,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
-	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
+	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<HazardLightSystem>();
 
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();

@@ -21,6 +21,7 @@ ParticleEmitterComponent::ParticleEmitterComponent()
 	lifeTime = 1.0f;
 	spawnRate = 0.1f;
 	spawnTimer = 0.0f;
+	atlasSize = glm::uvec2(1U, 1U);
 
 	init();
 }
@@ -143,6 +144,7 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		float elapsedTime = m_timer.getTimeSince<float>(m_startTime) - m_cpuOutput[context->getSwapIndex()].lastFrameTime;
 		m_inputData.frameTime = elapsedTime;
 		m_inputData.size = size;
+		m_inputData.atlasSize = atlasSize;
 
 		//Update timer for this buffer
 		m_cpuOutput[context->getSwapIndex()].lastFrameTime += elapsedTime;
