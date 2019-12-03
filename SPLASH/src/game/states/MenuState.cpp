@@ -276,22 +276,19 @@ void MenuState::removeDeadLobbies() {
 void MenuState::renderDebug() {
 
 	if (ImGui::Begin("Loading Info")) {
-		//maxCount being hardcoded for now
+		auto& rm = m_app->getResourceManager();
+
 		std::string progress = "Models:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(m_app->getResourceManager().numberOfModels() / 28.0f, ImVec2(0.0f, 0.0f), std::string(std::to_string(m_app->getResourceManager().numberOfModels()) + ":" + std::to_string(28)).c_str());
+		ImGui::ProgressBar(rm.numberOfModels() / (float)TOTAL_NR_OF_MODELS, ImVec2(0.0f, 0.0f), std::string(std::to_string(rm.numberOfModels()) + ":" + std::to_string(TOTAL_NR_OF_MODELS)).c_str());
 
 		progress = "Textures:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(m_app->getResourceManager().numberOfTextures() / 64.0f, ImVec2(0.0f, 0.0f));
-
-	
-
+		ImGui::ProgressBar(rm.numberOfTextures() / (float)TOTAL_NR_OF_TEXTURES, ImVec2(0.0f, 0.0f));
 	}
 	ImGui::End();
-
 }
 
 void MenuState::renderRAM() {
