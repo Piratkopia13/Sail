@@ -94,12 +94,6 @@ LobbyState::LobbyState(StateStack& stack)
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
 	//m_lobbyAudio->addComponent<AudioComponent>();
 	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
-
-	if (NWrapperSingleton::getInstance().isHost()) {
-		//NW
-		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 1);
-	}
-
 }
 
 LobbyState::~LobbyState() {
@@ -222,10 +216,7 @@ bool LobbyState::renderImgui(float dt) {
 bool LobbyState::onEvent(const Event& event) {
 	State::onEvent(event);
 
-	
-
 	switch (event.type) {
-
 
 	case Event::Type::NETWORK_JOINED:		onPlayerJoined((const NetworkJoinedEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
@@ -484,13 +475,20 @@ void LobbyState::renderPlayerList() {
 
 			ImGui::SameLine(x[2]);
 
-			// READY 
-			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-			bool asd = currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0;
-			ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd); 
-			ImGui::PopItemFlag();
-			ImGui::PopStyleVar();
+			// READY
+			if (currentplayer.id == myID) {
+				if (ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &m_ready)) {
+					NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, m_ready);
+				}
+			} else {
+				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+				bool asd = currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0;
+				ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd);
+				ImGui::PopItemFlag();
+				ImGui::PopStyleVar();
+			}
+
 			ImGui::EndGroup();
 			if (ImGui::BeginPopupContextItem(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str())) {
 				if (NWrapperSingleton::getInstance().isHost()) {
@@ -613,8 +611,9 @@ void LobbyState::renderMenu() {
 		
 		if (NWrapperSingleton::getInstance().isHost()) {
 			bool allReady = true;
+			const unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
 			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
-				if (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1) {
+				if (p.id != myID &&  (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1)) {
 					allReady = false;
 				}
 			}

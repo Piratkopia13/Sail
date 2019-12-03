@@ -226,9 +226,9 @@ void SettingStorage::createApplicationDefaultGraphics() {
 void SettingStorage::createApplicationDefaultSound() {
 	auto& applicationSettingsD = applicationSettingsDynamic["sound"] = std::unordered_map<std::string, DynamicSetting>();
 	applicationSettingsD["global"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
-	applicationSettingsD["music"]   = DynamicSetting(1.0f, 0.0f, 1.0f);
-	applicationSettingsD["effects"] = DynamicSetting(1.0f, 0.0f, 1.0f);
-	applicationSettingsD["voices"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
+	//applicationSettingsD["music"]   = DynamicSetting(1.0f, 0.0f, 1.0f);
+	//applicationSettingsD["effects"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	//applicationSettingsD["voices"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
 }
 void SettingStorage::createApplicationDefaultMisc() {
 	applicationSettingsStatic["misc"] = std::unordered_map<std::string, Setting>();
