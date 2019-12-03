@@ -30,8 +30,8 @@ private:
 	std::unique_ptr<Renderer> m_rendererRaytrace;
 	std::unique_ptr<Renderer> m_rendererScreenSpace;
 	std::unique_ptr<Renderer> m_rendererParticles;
+	std::unique_ptr<PostProcessPipeline> m_postProcessPipeline;
 	Renderer* m_currentRenderer;
-	std::shared_ptr<PostProcessPipeline> m_postProcessPipeline;
 
 	bool m_doPostProcessing;
 };

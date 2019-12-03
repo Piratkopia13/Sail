@@ -316,6 +316,24 @@ void ResourceManager::uploadFinishedTextures(ID3D12GraphicsCommandList4* cmdList
 	m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
 }
 
+void ResourceManager::clearModelCopies() {
+	std::unique_lock lock(m_modelMutex);
+
+	std::vector<std::string> modelsToRemove;
+
+	// Find which models has a number after ".fbx"
+	for (auto& model : m_models) {
+		if (model.first.back() != 'x') {
+			modelsToRemove.push_back(model.first);
+		}
+	}
+
+	// Remove those models
+	for (auto& modelToRemove : modelsToRemove) {
+		m_models.erase(modelToRemove);
+	}
+}
+
 #ifdef DEVELOPMENT
 void ResourceManager::unloadTextures() {
 	std::unique_lock<std::mutex> lockData(m_textureDatasMutex);
@@ -323,7 +341,6 @@ void ResourceManager::unloadTextures() {
 	m_textureDatas = std::map<std::string, std::unique_ptr<TextureData>>();
 	m_byteSize[RMDataType::Textures] = calculateTextureByteSize();
 }
-#endif
 
 void ResourceManager::logRemainingTextures() const {
 	std::unique_lock<std::mutex> lock(m_textureDatasMutex);
@@ -334,7 +351,7 @@ void ResourceManager::logRemainingTextures() const {
 }
 
 void ResourceManager::printLoadedTexturesToFile() const {
-	if (m_hasLogged) {
+	if (m_hasLoggedTextures) {
 		return;
 	}
 
@@ -347,8 +364,27 @@ void ResourceManager::printLoadedTexturesToFile() const {
 
 	file.close();
 
-	m_hasLogged = true;
+	m_hasLoggedTextures = true;
 }
+
+void ResourceManager::printModelsToFile() const {
+	if (m_hasLoggedModels) {
+		return;
+	}
+
+	std::ofstream file;
+	file.open("LoadedModels.txt");
+
+	std::unique_lock lock(m_modelMutex);
+	for (auto& model : m_models) {
+		file << model.first + "\n";
+	}
+
+	file.close();
+
+	m_hasLoggedModels = true;
+}
+#endif
 
 unsigned int ResourceManager::calculateTextureByteSize() const {
 	// No lock needed since this is only called from this class,

@@ -53,8 +53,6 @@ GameState::GameState(StateStack& stack)
 	m_gameStarted = m_isSingleplayer; //Delay start of game until everyOne is ready if playing multiplayer
 	
 
-
-
 	if (!m_isSingleplayer) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
 		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
@@ -130,13 +128,8 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 
 	m_app->getResourceManager().setDefaultShader(shader);
-	std::string playerModelName = "Doc.fbx";
-
 
 	// Create/load models
-	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
-	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-
 	Model* lightModel = &m_app->getResourceManager().getModel("Torch.fbx", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Torch/Torch_Albedo.dds");
 	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Torch/Torch_NM.dds");
@@ -192,10 +185,6 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
 	m_componentSystems.networkReceiverSystem->setGameState(this);
 	
-
-	// Bots creation
-	createBots(boundingBoxModel, playerModelName, cubeModel, lightModel);
-
 #ifdef _PERFORMANCE_TEST
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
@@ -283,6 +272,8 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_KILLCAM, this);
+
+	m_app->getResourceManager().clearModelCopies();
 }
 
 // Process input for the state
@@ -454,6 +445,7 @@ bool GameState::processInput(float dt) {
 	}
 #endif
 	if (Input::WasKeyJustPressed(KeyBinds::UNLOAD_CPU_TEXTURES)) {
+		Application::getInstance()->getResourceManager().printModelsToFile();
 		Application::getInstance()->getResourceManager().printLoadedTexturesToFile();
 		Application::getInstance()->getResourceManager().logRemainingTextures();
 		Application::getInstance()->getResourceManager().unloadTextures();
@@ -1150,76 +1142,6 @@ void GameState::waitForOtherPlayers() {
 			}
 		}
 	}
-}
-
-const std::string GameState::createCube(const glm::vec3& position) {
-
-	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
-		"cubeWidth1.fbx", &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
-	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-
-	Model* tmpbbModel = &m_app->getResourceManager().getModel(
-		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<GBufferWireframe>());
-	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-
-	auto e = ECS::Instance()->createEntity("new cube");
-	//e->addComponent<ModelComponent>(tmpCubeModel);
-
-	e->addComponent<TransformComponent>(position);
-
-	e->addComponent<BoundingBoxComponent>(tmpbbModel);
-
-	e->addComponent<CollidableComponent>();
-
-	return std::string("Added Cube at (" +
-		std::to_string(position.x) + ":" +
-		std::to_string(position.y) + ":" +
-		std::to_string(position.z) + ")");
-}
-
-void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
-	// Load models used for test level
-	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
-	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
-	arenaModel->getMesh(0)->getMaterial()->setMetalnessScale(0.570f);
-	arenaModel->getMesh(0)->getMaterial()->setRoughnessScale(0.593f);
-	arenaModel->getMesh(0)->getMaterial()->setAOScale(0.023f);
-
-	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
-	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");
-
-	Model* containerModel = &m_app->getResourceManager().getModel("containerBasic.fbx", shader);
-	containerModel->getMesh(0)->getMaterial()->setMetalnessScale(0.778f);
-	containerModel->getMesh(0)->getMaterial()->setRoughnessScale(0.394f);
-	containerModel->getMesh(0)->getMaterial()->setAOScale(0.036f);
-	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
-
-	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
-	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
-	rampModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
-	rampModel->getMesh(0)->getMaterial()->setRoughnessScale(1.0f);
-	rampModel->getMesh(0)->getMaterial()->setAOScale(1.0f);
-
-	// Create entities for test level
-	
-	auto e = EntityFactory::CreateStaticMapObject("Arena", arenaModel, boundingBoxModel, glm::vec3(0.0f , 0.0f, 0.0f));
-	e = EntityFactory::CreateStaticMapObject("Map_Barrier1", barrierModel, boundingBoxModel, glm::vec3(-16.15f * 0.3f, 0.f, 3.83f * 0.3f), glm::vec3(0.f, -0.79f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Barrier2", barrierModel, boundingBoxModel, glm::vec3(-4.54f * 0.3f, 0.f, 8.06f * 0.3f));
-	e = EntityFactory::CreateStaticMapObject("Map_Barrier3", barrierModel, boundingBoxModel, glm::vec3(8.46f * 0.3f, 0.f, 8.06f * 0.3f));
-	e = EntityFactory::CreateStaticMapObject("Map_Container1", containerModel, boundingBoxModel, glm::vec3(6.95f * 0.3f, 0.f, 25.f * 0.3f));
-	e = EntityFactory::CreateStaticMapObject("Map_Container2", containerModel, boundingBoxModel, glm::vec3(-25.f * 0.3f, 0.f, 12.43f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Container3", containerModel, boundingBoxModel, glm::vec3(-25.f * 0.3f, 2.4f, -7.73f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Container4", containerModel, boundingBoxModel, glm::vec3(-19.67f * 0.3f, 0.f, -24.83f * 0.3f), glm::vec3(0.f, 0.79f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Container5", containerModel, boundingBoxModel, glm::vec3(-0.f, 0.f, -14.f * 0.3f));
-	e = EntityFactory::CreateStaticMapObject("Map_Container6", containerModel, boundingBoxModel, glm::vec3(24.20f * 0.3f, 0.f, -8.f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Container7", containerModel, boundingBoxModel, glm::vec3(24.2f * 0.3f, 2.4f, -22.8f * 0.3f), glm::vec3(0.f, 1.57f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Container8", containerModel, boundingBoxModel, glm::vec3(24.36f * 0.3f, 0.f, -32.41f * 0.3f));
-	e = EntityFactory::CreateStaticMapObject("Map_Ramp1", rampModel, boundingBoxModel, glm::vec3(5.2f * 0.3f, 0.f, -32.25f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Ramp2", rampModel, boundingBoxModel, glm::vec3(15.2f * 0.3f, 2.4f, -32.25f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Ramp3", rampModel, boundingBoxModel, glm::vec3(24.f * 0.3f, 2.4f, -5.5f * 0.3f), glm::vec3(0.f, 4.71f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Ramp4", rampModel, boundingBoxModel, glm::vec3(24.f * 0.3f, 0.f, 9.f * 0.3f), glm::vec3(0.f, 4.71f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Ramp5", rampModel, boundingBoxModel, glm::vec3(-16.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 0.f, 0.f));
-	e = EntityFactory::CreateStaticMapObject("Map_Ramp6", rampModel, boundingBoxModel, glm::vec3(-34.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
 }
 
 void GameState::createBots(Model* boundingBoxModel, const std::string& characterModel, Model* projectileModel, Model* lightModel) {

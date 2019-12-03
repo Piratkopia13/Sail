@@ -109,13 +109,14 @@ public:
 	//SoundManager* getSoundManager();
 
 	void uploadFinishedTextures(ID3D12GraphicsCommandList4* cmdList);
-	
+	void clearModelCopies();
+
 #ifdef DEVELOPMENT
 	void unloadTextures();
-#endif
-
 	void logRemainingTextures() const;
 	void printLoadedTexturesToFile() const;
+	void printModelsToFile() const;
+#endif
 
 private:
 	unsigned int calculateTextureByteSize() const;
@@ -139,7 +140,7 @@ private:
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
 	// Models mapped to their filenames
 	//std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
-	std::mutex m_modelMutex;
+	mutable std::mutex m_modelMutex;
 	std::map < std::string, std::unique_ptr<Model>> m_models;
 	std::mutex m_animationMutex;
 	std::map < std::string, std::unique_ptr<AnimationStack>> m_animationStacks;
@@ -158,7 +159,8 @@ private:
 	Shader* m_defaultShader;
 
 	std::vector<std::string> m_loadedTextures;
-	mutable bool m_hasLogged = false;
+	mutable bool m_hasLoggedTextures = false;
+	mutable bool m_hasLoggedModels = false;
 };
 
 template <typename T>

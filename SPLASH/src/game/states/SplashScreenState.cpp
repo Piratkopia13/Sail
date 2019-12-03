@@ -55,7 +55,6 @@ bool SplashScreenState::loadModels(Application* app) {
 //#ifndef _DEBUG
 	rm->loadModel("Doc.fbx");
 	rm->loadModel("Torch.fbx");
-	//rm->loadModel("candleExported.fbx");
 	rm->loadModel("Tiles/RoomWall.fbx");
 	rm->loadModel("Tiles/RoomDoor.fbx");
 	rm->loadModel("Tiles/CorridorDoor.fbx");
@@ -74,7 +73,6 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Clutter/Saftblandare.fbx");
 	rm->loadModel("WaterPistol.fbx");
 	rm->loadModel("boundingBox.fbx", &rm->getShaderSet<WireframeShader>());
-	//rm->loadModel("cubeWidth1.fbx");
 	rm->loadModel("Clutter/Microscope.fbx");
 	rm->loadModel("Clutter/CloningVats.fbx");
 	rm->loadModel("Clutter/ControlStation.fbx");
