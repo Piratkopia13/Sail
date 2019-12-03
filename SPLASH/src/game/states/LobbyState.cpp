@@ -444,6 +444,7 @@ void LobbyState::renderPlayerList() {
 				ImGui::SetNextItemWidth(27);
 				if (ImGui::BeginCombo(unique.c_str(), std::string("##"+m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().name).c_str())) {
 					ImGui::PopStyleColor();
+					int selectedIndex = 0;
 					for (auto const& key : m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].options) {
 						std::string name = key.name + unique;
 						col = ImVec4(
@@ -455,14 +456,15 @@ void LobbyState::renderPlayerList() {
 						ImGui::PushStyleColor(ImGuiCol_Text, col);
 						if (ImGui::Selectable(name.c_str(), index == (char)key.value)) {
 							if (NWrapperSingleton::getInstance().isHost()) {
-								m_app->getSettings().gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected(key.value);
+								m_app->getSettings().gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected(selectedIndex);
 								m_settingsChanged = true;
 							} else {
 								//This is called by clients and will trigger the "NETWORK_TEAM_REQUESTED_COLOR_CHANGE" event on the host
-								NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeamColor(key.value);
+								NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeamColor(selectedIndex);
 							}
 						}
 						ImGui::PopStyleColor();
+						selectedIndex++;
 					}
 					ImGui::EndCombo();
 				}
