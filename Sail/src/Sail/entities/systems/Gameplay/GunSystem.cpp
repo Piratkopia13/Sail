@@ -62,7 +62,7 @@ void GunSystem::update(float dt) {
 				}
 
 					m_gameDataTracker->logWeaponFired();
-					fireGun(e, gun);
+					fireGun(e, gun, powC);
 				}
 				// DO NOT SHOOT (Cooldown between shots)
 				else {
@@ -129,27 +129,37 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun, PowerUpComponent* powC) {
 	Netcode::PlayerID myPlayerID = Netcode::getComponentOwner(e->getComponent<NetworkSenderComponent>()->m_id);
 
 	// Tell yours and everybody else's NetworkReceiverSystem to spawn the projectile
-	
-	constexpr float randomSpread = 0.05;
-	unsigned int number = 2;
+	std::vector<glm::vec3> vel;
+	vel.push_back(gun->direction * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
+	constexpr float randomSpread = 0.05f;
 	if (powC) {
 		if (powC->powerUps[PowerUpComponent::PowerUps::SHOWER].time > 0.0f) {
-			number = 7;
+			glm::vec3 right = glm::normalize(glm::cross(gun->direction, glm::vec3(0.0f, 1.0f, 0.0f)));
+			glm::vec3 up = glm::normalize(glm::cross(vel.front(), right));
+
+			vel.push_back(glm::normalize(gun->direction + 0.3f*right + 0.3f*up) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
+			vel.push_back(glm::normalize(gun->direction - 0.3f*right + 0.3f*up) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
+			vel.push_back(glm::normalize(gun->direction + 0.3f*right - 0.3f*up ) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
+			vel.push_back(glm::normalize(gun->direction - 0.3f*right - 0.3f*up) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
+		}
+		else {
+			vel.push_back(gun->direction * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
 		}
 	}
+	else {
+		vel.push_back(gun->direction * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
+	}
 
-	for (unsigned int i = 0; i < number; i++) {
+	for (auto& velocity : vel) {
 
 		
-		const glm::vec3 velocity = gun->direction * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity;
 		glm::vec3 randPos;
-
-		randPos.r = (Utils::rnd() * randomSpread * 2 - randomSpread) * (number > 2 ? 20 : 2);
-		randPos.g = (Utils::rnd() * randomSpread * 2 - randomSpread) * (number > 2 ? 20 : 2);
-		randPos.b = (Utils::rnd() * randomSpread * 2 - randomSpread) * (number > 2 ? 20 : 2);
+		randPos.r = (Utils::rnd() * randomSpread * 2 - randomSpread);
+		randPos.g = (Utils::rnd() * randomSpread * 2 - randomSpread);
+		randPos.b = (Utils::rnd() * randomSpread * 2 - randomSpread);
 
 		randPos += glm::normalize(velocity) * (Utils::rnd() * randomSpread * 2 - randomSpread) * 5.0f;
-
+		
 		auto rayFrom = e->getComponent<TransformComponent>()->getTranslation();
 		rayFrom.y = gun->position.y;
 		Octree::RayIntersectionInfo rayInfo;
