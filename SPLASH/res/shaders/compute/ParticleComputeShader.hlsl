@@ -32,7 +32,7 @@ struct Vertex { // Size of this type is hardcoded in ShaderPipeline.cpp - change
 	float3 bitangent;
 };
 
-RWStructuredBuffer<Vertex> CSOutputBuffer: register(u10);
+RWStructuredBuffer<Vertex> CSOutputBuffer: register(u10) : SAIL_IGNORE;
 
 struct ParticlePhysics { // Size of this type is hardcoded in ParticleSystem.cpp (initEmitter()) - change this if struct changes
 	float3 velocity;
