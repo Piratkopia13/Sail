@@ -943,12 +943,9 @@ void GameState::shutDownGameState() {
 
 // TODO: Add more systems here that only deal with replay entities/components
 void GameState::updatePerTickKillCamComponentSystems(float dt) {
-	//SAIL_LOG("updatePerTickKillCamComponentSystems called");
-
 	if (m_componentSystems.killCamReceiverSystem->skipUpdate()) {
 		return;
 	}
-	//SAIL_LOG("updatePerTickKillCamComponentSystems continued");
 
 	m_componentSystems.killCamReceiverSystem->prepareUpdate();
 	m_componentSystems.killCamLightSystem->prepareFixedUpdate();

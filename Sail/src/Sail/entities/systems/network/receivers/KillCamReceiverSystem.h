@@ -145,7 +145,7 @@ private:
 	NetcodeDataRingBuffer m_myKillCamData;	
 
 	bool m_hasStarted   = false;
-	bool m_finalKillCam = false;
+	bool m_isFinalKillCam = false;
 
 	SlowMotionSetting m_slowMotionState = SlowMotionSetting::DISABLE;
 	size_t m_killCamTickCounter = 0; // Counts ticks in the range [ 0, SLOW_MO_MULTIPLIER )
