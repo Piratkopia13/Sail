@@ -163,10 +163,6 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/DDS/Tiles/Corner_NM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/Corner_Albedo.dds");
 
-	/*rm->loadTexture("pbr/metal/metalnessRoughnessAO.tga");
-	rm->loadTexture("pbr/metal/normal.tga");
-	rm->loadTexture("pbr/metal/albedo.tga");*/
-
 	rm->loadTexture("pbr/DDS/Clutter/Saftblandare_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Saftblandare_NM.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Saftblandare_Albedo.dds");
@@ -225,6 +221,9 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("Icons/PlayersLeft.tga");
 	rm->loadTexture("Icons/CantShootIcon1.tga");
 	rm->loadTexture("Icons/CantShootIcon2.tga");
+
+	// Load the missing texture texture
+	rm->loadTexture("missing.tga");
 
 	return true;
 }

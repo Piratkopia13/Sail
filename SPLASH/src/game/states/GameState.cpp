@@ -592,8 +592,15 @@ void GameState::initConsole() {
 			returnMsg = "State change to menu requested";
 		}
 		else if (param == "pbr") {
+			// Load the textures that weren't needed until now
+			auto& rm = Application::getInstance()->getResourceManager();
+			rm.loadTexture("pbr/metal/metalnessRoughnessAO.tga");
+			rm.loadTexture("pbr/metal/normal.tga");
+			rm.loadTexture("pbr/metal/albedo.tga");
+
 			requestStackPop();
 			requestStackPush(States::PBRTest);
+
 			stateChanged = true;
 			returnMsg = "State change to pbr requested";
 		}

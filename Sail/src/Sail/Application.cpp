@@ -82,8 +82,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Register devices to use raw input from hardware
 	//m_input.registerRawDevices(*m_window.getHwnd());
 
-	// Load the missing texture texture
-	m_resourceManager.loadTexture("missing.tga");
 	m_chatWindow = std::make_unique<ChatWindow>(true);
 	ImVec2 size(400, 300);
 	m_chatWindow->setSize(size);
