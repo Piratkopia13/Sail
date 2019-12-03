@@ -450,12 +450,28 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	return e;
 }
 
-Entity::SPtr EntityFactory::CreateCleaningBot(Model* boundingBoxModel, Model* botModel, const glm::vec3& pos, NodeSystem* ns) {
+Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* ns) {
 	auto e = ECS::Instance()->createEntity("Cleaning Bot");
+
+	std::string modelName = "CleaningBot.fbx";
+	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
+	botModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CleaningBot_MRAO.tga");
+	botModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CleaningBot_Albedo.tga");
+	botModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CleaningBot_NM.tga");
+	botModel->setIsAnimated(false);
+
+	// All players have a bounding box
+	/*auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();
+	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModelCopy("boundingBox.fbx", wireframeShader);
+	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
+	boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
+	boundingBoxModel->getMesh(0)->getMaterial()->setRoughnessScale(0.5);*/
+
 	e->addComponent<ModelComponent>(botModel);
 	e->addComponent<TransformComponent>(pos);
-	e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-	e->addComponent<CollidableComponent>(true);
+	/*e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
+	e->addComponent<CollidableComponent>(true);*/
 	e->addComponent<MovementComponent>();
 	e->addComponent<SpeedLimitComponent>();
 	e->addComponent<CollisionComponent>(true);
@@ -465,8 +481,8 @@ Entity::SPtr EntityFactory::CreateCleaningBot(Model* boundingBoxModel, Model* bo
 
 	e->addComponent<AudioComponent>();
 
-	e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
-	e->getComponent<SpeedLimitComponent>()->maxSpeed = 3.0f;
+	e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, 0.f, 0.0f);
+	e->getComponent<SpeedLimitComponent>()->maxSpeed = 2.0f;
 
 	auto fsmComp = e->addComponent<FSMComponent>();
 

@@ -4,7 +4,7 @@
 #include <list>
 
 //Keep this define in case debugging is needed
-#define _DEBUG_NODESYSTEM
+//#define _DEBUG_NODESYSTEM
 
 #ifdef _DEBUG_NODESYSTEM
 #include "Sail/entities/Entity.h"
@@ -66,6 +66,7 @@ public:
 	std::vector<Entity::SPtr>& getNodeEntities();
 	Model* m_connectionModel;
 	std::vector<Entity::SPtr> m_nodeEntities;
+	Shader* m_shader;
 #endif
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const;
@@ -83,6 +84,4 @@ private:
 
 	unsigned int m_xMax = 0;
 	unsigned int m_zMax = 0;
-
-	Shader* m_shader;
 };

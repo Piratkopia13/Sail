@@ -365,13 +365,15 @@ void AiSystem::updatePhysics(Entity* e, float dt) {
 		movement->velocity = glm::vec3(0.f, movement->velocity.y, 0.f);
 		ai->timeTakenOnPath = 3.f;
 	}
+
+	transform->setTranslation(transform->getTranslation().x, 0.f, transform->getTranslation().z);
 }
 
 float AiSystem::getAiYaw(MovementComponent* moveComp, float currYaw, float dt) {
 	float newYaw = currYaw;
 	if ( glm::length2(moveComp->velocity) > 0.f ) {
 		float desiredYaw = 0.f;
-		float turnRate = glm::pi<float>();//glm::two_pi<float>() / 2.f; // 2 pi
+		float turnRate = glm::two_pi<float>();//glm::two_pi<float>() / 2.f; // 2 pi
 		auto normalizedVel = glm::normalize(moveComp->velocity);
 		float moveCompX = normalizedVel.x;
 		float moveCompZ = normalizedVel.z;

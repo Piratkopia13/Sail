@@ -1219,12 +1219,12 @@ void GameState::createBots(Model* boundingBoxModel, const std::string& character
 		botCount = 0;
 	}
 
-	botCount = 2;
+	botCount = 5;
 
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
-			auto e = EntityFactory::CreateCleaningBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, m_componentSystems.aiSystem->getNodeSystem());
+			auto e = EntityFactory::CreateCleaningBot(spawnLocation, m_componentSystems.aiSystem->getNodeSystem());
 		}
 		else {
 			SAIL_LOG_ERROR("Bot not spawned because all spawn points are already used for this map.");
