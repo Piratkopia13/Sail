@@ -123,6 +123,12 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
         // Point lights
         [unroll]
         for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
+            PointlightInput p = scene.pointLights[i];
+            // Ignore point light if color is black
+            if (all(p.color == 0.0f)) {
+                continue;
+            }
+            
             int shadowTextureIndex = scene.shadowTextureIndexMap[i].index;
             if (shadowTextureIndex == -1) {
                 // No shadow texture is bound to this light, skip it
@@ -130,12 +136,6 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
             }
             float shadowAmount = scene.shadow[shadowTextureIndex];
             // float shadowAmount = 1.f;
-            PointlightInput p = scene.pointLights[i];
-            
-            // Ignore point light if color is black
-            if (all(p.color == 0.0f)) {
-                continue;
-            }
             numLights++;
             // Dont add light to pixels that are in complete shadow
             if (shadowAmount == 0.f) {
@@ -148,19 +148,18 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
         // Spotlights
         [unroll]
 		for (int j = 0; j < NUM_POINT_LIGHTS; j++) {
+            SpotlightInput p = scene.spotLights[j];
+			// Ignore point light if color is black
+			if (all(p.color == 0.0f) || p.angle == 0) {
+				continue;
+			}
+
             int shadowTextureIndex = scene.shadowTextureIndexMap[j + NUM_POINT_LIGHTS].index;
             if (shadowTextureIndex == -1) {
                 // No shadow texture is bound to this light, skip it
                 continue;
             }
             float shadowAmount = scene.shadow[shadowTextureIndex];
-
-			SpotlightInput p = scene.spotLights[j];
-
-			// Ignore point light if color is black
-			if (all(p.color == 0.0f) || p.angle == 0) {
-				continue;
-			}
 
 			float3 L = normalize(p.position - pixel.worldPosition);
 			float angle = dot(L, normalize(p.direction));

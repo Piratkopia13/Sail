@@ -172,22 +172,6 @@ void rayGen() {
 	float3 worldPosition = mul(CB_SceneData.viewToWorld, vsPosition).xyz;
 	// ---------------------------------------------------
 
-#ifndef ENABLE_SOFT_SHADOWS
-	// Hard shadows
-	RayPayload payload;
-	payload.recursionDepth = 1;
-	payload.closestTvalue = 0;
-	payload.color = float4(0,0,0,0);
-	if (worldNormal.x == -1 && worldNormal.y == -1) {
-		// Bounding boxes dont need shading
-		lOutputPositionsOne[launchIndex] = float4(albedoColor.rgb, 1.0f);
-		return;
-	} else {
-		shade(worldPosition, worldNormal, albedoColor.rgb, emissivness, metalness, roughness, ao, payload);
-	}
-
-#else
-
 	// Material
 	float3 albedoOne = gbuffer_albedo[launchIndex].rgb;
 	float4 mrao = gbuffer_metalnessRoughnessAO[launchIndex];
@@ -413,7 +397,6 @@ void rayGen() {
 	lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
 	lOutputPositionsTwo[launchIndex] = float4(worldPositionTwo, 1.0f);
 
-#endif
 }
 
 [shader("miss")]
