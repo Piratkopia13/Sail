@@ -89,6 +89,16 @@ const std::string& ParticleEmitterComponent::getTextureName() const {
 }
 
 void ParticleEmitterComponent::spawnParticles(int particlesToSpawn) {
+	int maxCount = 0;
+
+	for (unsigned int i = 0; i < DX12API::NUM_GPU_BUFFERS; i++) {
+		if ((int) m_cpuOutput->newParticles.size() > maxCount) {
+			maxCount = m_cpuOutput->newParticles.size();
+		}
+	}
+
+	particlesToSpawn = glm::min(particlesToSpawn, (int) (m_maxParticlesSpawnPerFrame - maxCount));
+
 	//Spawn particles for all swap buffers
 	for (int j = 0; j < particlesToSpawn; j++) {
 		//Get random spread

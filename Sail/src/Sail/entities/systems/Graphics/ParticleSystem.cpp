@@ -140,6 +140,8 @@ void ParticleSystem::initEmitter(Entity* owner, ParticleEmitterComponent* compon
 	emitter.inputConstantBufferSize = (12 * 312 + 312 + 11) * 4;
 	void* scrapData = malloc(emitter.inputConstantBufferSize);
 	emitter.inputConstantBuffer = std::make_unique<ShaderComponent::DX12ConstantBuffer>(scrapData, emitter.inputConstantBufferSize, ShaderComponent::CS, 0);
+	free(scrapData);
+
 
 	component->setAsCreatedInSystem();
 }
