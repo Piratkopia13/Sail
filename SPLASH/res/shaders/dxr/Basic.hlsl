@@ -267,14 +267,10 @@ void rayGen() {
 		scene.spotLights = CB_SceneData.spotLights;
 		scene.brdfLUT = sys_brdfLUT;
 		scene.sampler = ss;
-		// scene.shadow = shadowTwo;
-		// Map shadow "textures" sequentally
-		// for (uint k = 0; k < NUM_TOTAL_LIGHTS; k++) {
-		// 	scene.shadowTextureIndexMap[k].index = k;
-		// }
+
 		float4 secondBounceColor = pbrShade(scene, pixelTwo, -1.f);
+		// float4 secondBounceColor = 0.f;
 		// Shade the first hit
-		// scene.shadow = shadowOne;
 		float4 outputColor = pbrShade(scene, pixelOne, secondBounceColor.rgb);
 		lOutputPositionsOne[launchIndex] = outputColor;
 

@@ -41,7 +41,7 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float3 shadeWithLight(PointlightInput light, float3 worldPosition, float3 N, float3 V, float3 F0, float3 albedo, float metalness, float roughness, float shadowAmount) {
+inline float3 shadeWithLight(PointlightInput light, float3 worldPosition, float3 N, float3 V, float3 F0, float3 albedo, float metalness, float roughness, float shadowAmount) {
     float3 L = normalize(light.position - worldPosition);
     float3 H = normalize(V + L);
     float distance = length(light.position - worldPosition);
@@ -159,6 +159,13 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
 			if (all(p.color == 0.0f) || p.angle == 0) {
 				continue;
 			}
+			float3 L = normalize(p.position - pixel.worldPosition);
+			float angle = dot(L, normalize(p.direction));
+            // Ignore if angle is outside light
+            // abs is used to make spotlights bidirectional
+			if (abs(angle) <= p.angle) {
+				continue;
+			}
 #ifdef RAYTRACER_HARD_SHADOWS
     float distance = length(p.position - pixel.worldPosition);
     float3 direction = normalize(p.position - pixel.worldPosition);
@@ -173,13 +180,6 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
             float shadowAmount = scene.shadow[shadowTextureIndex];
 #endif
 
-			float3 L = normalize(p.position - pixel.worldPosition);
-			float angle = dot(L, normalize(p.direction));
-            // Ignore if angle is outside light
-            // abs is used to make spotlights bidirectional
-			if (abs(angle) <= p.angle) {
-				continue;
-			}
 
 			numLights++;
 			// Dont add light to pixels that are in complete shadow
