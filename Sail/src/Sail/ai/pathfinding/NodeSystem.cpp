@@ -70,7 +70,7 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 
 std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, const NodeSystem::Node& to) {
 	std::vector<NodeSystem::Node> nPath;
-	if ( from.index != to.index && !m_nodes[to.index].blocked) {
+	if (from.index != to.index && !m_nodes[to.index].blocked && !m_nodes[from.index].blocked && m_connections[to.index].size() > 0 && m_connections[from.index].size() > 0) {
 		auto start = std::chrono::high_resolution_clock::now();
 		auto path = aStar(from.index, to.index);
 		m_pathSearchTimes[m_currSearchTimeIndex % NUM_SEARCH_TIMES] = 
@@ -236,7 +236,8 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 	fScores[from] = 0;
 	camefrom[from] = from;
 
-	while (!openSet.empty()) {
+	unsigned int numNodesChecked = 0;
+	while (!openSet.empty() && numNodesChecked < 100) {
 		current = openSet.front();
 		for (unsigned int n : openSet) {
 			if (fScores[n] < fScores[current]) {
@@ -276,6 +277,7 @@ std::vector<unsigned int> NodeSystem::aStar(const unsigned int from, const unsig
 				}
 			}
 		}
+		numNodesChecked++;
 	}
 
 	delete[] camefrom;

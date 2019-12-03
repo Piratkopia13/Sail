@@ -49,7 +49,7 @@ private:
 	float getAiYaw(MovementComponent* moveComp, float currYaw, float dt);
 	void aiUpdateFunc(Entity* e, const float dt);
 	glm::vec3 getDesiredDir(AiComponent* aiComp, TransformComponent* transComp);
-	bool nodeConnectionCheck(glm::vec3 nodePos, glm::vec3 otherNodePos);
+	bool nodeConnectionCheck(glm::vec3 nodePos, glm::vec3 otherNodePos, Entity* nodeEnt);
 	glm::vec3 getNodePos(const int x, const int z, float nodeSize, float nodePadding, float startOffsetX, float startOffsetZ);
 
 private:

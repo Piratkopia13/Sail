@@ -59,7 +59,7 @@ void AiSystem::initNodeSystem(Octree* octree) {
 	float realXMax = sizeX * tileSize;
 	float realZMax = sizeZ * tileSize;
 	float nodeSize = 0.5f;
-	float nodePadding = tileSize / 2.f;
+	float nodePadding = tileSize / 5.f;
 	int xMax = static_cast<int>(std::ceil(realXMax / (nodePadding))) + 1;
 	int zMax = static_cast<int>(std::ceil(realZMax / (nodePadding))) + 1;
 	int size = xMax * zMax;
@@ -71,13 +71,11 @@ void AiSystem::initNodeSystem(Octree* octree) {
 	float startOffsetX = -tileSize / 2.f;
 	float startOffsetZ = -tileSize / 2.f;
 	float startOffsetY = 0.f;
-	//bool* walkable = SAIL_NEW bool[size];
 
 	// Entity used for collision checking
 	auto e = ECS::Instance()->createEntity("DeleteMeFirstFrameDummy");
 	float collisionBoxHeight = 0.9f;
 	float collisionBoxHalfHeight = collisionBoxHeight / 2.f;
-	//e->addComponent<BoundingBoxComponent>(bbModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, collisionBoxHalfHeight, 0.7f));
 	e->addComponent<BoundingBoxComponent>(nodeSystemCube.get())->getBoundingBox()->setHalfSize(glm::vec3(nodeSize / 2.f, collisionBoxHalfHeight, nodeSize / 2.f));
 
 
@@ -153,10 +151,8 @@ void AiSystem::initNodeSystem(Octree* octree) {
 					}
 
 					if (x > -1 && x < xMax && z > -1 && z < zMax) {
-						// Doesn't work with backfaces :( - but its kinda fine cause no "truly walkable" nodes has a connection to the
-						// in-wall nodes, only the other way round
 						bool doConnect = nodeConnectionCheck(nodePos,
-															 getNodePos(x, z, nodeSize, nodePadding, startOffsetX, startOffsetZ));						
+															 getNodePos(x, z, nodeSize, nodePadding, startOffsetX, startOffsetZ), e.get());						
 						if (doConnect) {
 							// get index
 							int index = z * xMax + x;
@@ -255,17 +251,17 @@ glm::vec3 AiSystem::getDesiredDir(AiComponent* aiComp, TransformComponent* trans
 		desiredDir = glm::vec3(1.0f, 0.f, 0.f);
 	}
 	desiredDir = glm::normalize(desiredDir);
-	return desiredDir; // TODO: Check this - should probably not return a reference??
+	return desiredDir;
 }
 
-bool AiSystem::nodeConnectionCheck(glm::vec3 nodePos, glm::vec3 otherNodePos) {
+bool AiSystem::nodeConnectionCheck(glm::vec3 nodePos, glm::vec3 otherNodePos, Entity* nodeEnt) {
 	// Setup
 	float dst = glm::distance(nodePos, otherNodePos);
 	glm::vec3 dir = glm::normalize(otherNodePos - nodePos);
 
 	// Intersection check
 	Octree::RayIntersectionInfo tempInfo;
-	m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + 0.5f, nodePos.z), dir, &tempInfo);
+	m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + 0.5f, nodePos.z), dir, &tempInfo, nodeEnt, 0.5f, false, true);
 
 	// Nothing between the two nodes
 	if (tempInfo.closestHit > dst || tempInfo.closestHit < 0.0f) {
