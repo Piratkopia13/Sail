@@ -21,6 +21,7 @@
 #include "Sail/entities/systems/physics/OctreeAddRemoverSystem.h"
 #include "Sail/events/EventDispatcher.h"
 #include <glm/gtx/string_cast.hpp>
+#include "API/DX12/resources/DX12DDSTexture.h"
 
 DX12GBufferRenderer::DX12GBufferRenderer() {
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
@@ -213,7 +214,9 @@ void DX12GBufferRenderer::recordCommands(PostProcessPipeline* postProcessPipelin
 		shaderPipeline->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
 		shaderPipeline->trySetCBufferVar("sys_mProj", &camera->getProjMatrix(), sizeof(glm::mat4));
 
-		cmdList->SetGraphicsRoot32BitConstants(GlobalRootParam::CBV_TEAM_COLOR, 3, &teamColors[command->teamColorID], 0);
+		if (teamColors.size() > 0) {
+			cmdList->SetGraphicsRoot32BitConstants(GlobalRootParam::CBV_TEAM_COLOR, 3, &teamColors[command->teamColorID], 0);
+		}
 
 		// Specifically used in GBuffer shader to calculate motion vectors
 		glm::mat4 wvpLastFrame = camera->getViewProjectionLastFrame() * glm::transpose(command->transformLastFrame);
