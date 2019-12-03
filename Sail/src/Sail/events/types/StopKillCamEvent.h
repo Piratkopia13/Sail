@@ -2,5 +2,7 @@
 #include "Sail/events/Event.h"
 
 struct StopKillCamEvent : public Event {
-	StopKillCamEvent() : Event(Event::Type::STOP_KILLCAM) {}
+	StopKillCamEvent(bool finalKillCam) : Event(Event::Type::STOP_KILLCAM), isFinalKill(finalKillCam) {}
+
+	bool isFinalKill;
 };

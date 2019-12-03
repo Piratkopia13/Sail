@@ -52,6 +52,26 @@ KillCamReceiverSystem::~KillCamReceiverSystem() {
 	stop();
 }
 
+
+float KillCamReceiverSystem::getKillCamAlpha(const float alpha) const {
+	if (m_slowMotionState == SlowMotionSetting::ENABLE) {
+		return (static_cast<float>(m_killCamTickCounter) + alpha) / static_cast<float>(SLOW_MO_MULTIPLIER);
+	} else {
+		return alpha;
+	}
+}
+
+float KillCamReceiverSystem::getKillCamDelta(const float delta) const {
+	return (m_slowMotionState == SlowMotionSetting::ENABLE) ? (delta / SLOW_MO_MULTIPLIER) : delta;
+}
+
+// If slow motion is enabled only update once every SLOW_MO_MULTIPLIER ticks
+bool KillCamReceiverSystem::skipUpdate() {
+	m_killCamTickCounter = (++m_killCamTickCounter) % SLOW_MO_MULTIPLIER;
+	return (m_slowMotionState == SlowMotionSetting::ENABLE && m_killCamTickCounter != 0);
+}
+
+
 void KillCamReceiverSystem::stop() {
 	// Clear the saved data
 	for (std::vector<Netcode::ComponentID>& data : m_notHoldingTorches) {
@@ -73,13 +93,15 @@ void KillCamReceiverSystem::stop() {
 }
 
 bool KillCamReceiverSystem::startKillCam() {
+	// Note: PlayerSystem checks for this now
+	
 	// Only play kill cam if we were actually killed by a player
-	if (m_idOfKillingProjectile == Netcode::UNINITIALIZED) {
-		// TODO: STOP KILLCAM EVENT
-		//EventDispatcher::Instance().emit(StartKillCamEvent(false));
-		EventDispatcher::Instance().emit(StopKillCamEvent());
-		return false;
-	}
+	//if (m_idOfKillingProjectile == Netcode::UNINITIALIZED) {
+	//	// TODO: STOP KILLCAM EVENT
+	//	//EventDispatcher::Instance().emit(StartKillCamEvent(false));
+	//	EventDispatcher::Instance().emit(StopKillCamEvent(false));
+	//	return false;
+	//}
 
 	const Netcode::PlayerID killerID = Netcode::getComponentOwner(m_idOfKillingProjectile);
 
@@ -119,7 +141,7 @@ void KillCamReceiverSystem::stopMyKillCam() {
 	m_killerPlayer = nullptr;
 	m_killerProjectile = nullptr;
 	m_trackingProjectile = false;
-	Memory::SafeDelete(m_cam);
+	//Memory::SafeDelete(m_cam);
 
 	m_projectilePos = { 0,0,0 };
 	m_killerHeadPos = { 0,0,0 };
@@ -199,13 +221,17 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 
 // Should only be called when the killcam is active
 void KillCamReceiverSystem::processReplayData(float dt) {
-	// Add the entities to all relevant systems so that they for example will have their animations updated
-	if (!m_hasStarted) {
-		// Only play kill cam if we were actually killed by a player
-		if (!startKillCam()) {
-			return;
-		}
-	}
+	SAIL_LOG("processReplayData called");
+
+	//// Add the entities to all relevant systems so that they for example will have their animations updated
+	//if (!m_hasStarted) {
+	//	// Only play kill cam if we were actually killed by a player
+	//	if (!startKillCam()) {
+	//		return;
+	//	}
+	//}
+	//SAIL_LOG("Killcam starting");
+
 
 	NetcodeDataRingBuffer* data = &m_myKillCamData;
 	// TODO: if final killcam use m_replayData instead
@@ -219,7 +245,7 @@ void KillCamReceiverSystem::processReplayData(float dt) {
 		
 		// TODO: STOP KILLCAM EVENT
 		//EventDispatcher::Instance().emit(StartKillCamEvent(false));
-		EventDispatcher::Instance().emit(StopKillCamEvent());
+		EventDispatcher::Instance().emit(StopKillCamEvent(m_finalKillCam));
 	}
 }
 
@@ -303,7 +329,7 @@ void KillCamReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 // SHOULD REMAIN EMPTY FOR THE KILLCAM
 void KillCamReceiverSystem::matchEnded() {}
 
-void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::ComponentID killerID) {
+void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const KillInfo& info) {
 	//destroyEntity(networkIdOfKilled);
 	
 	//if (auto e = findFromNetID(networkIdOfKilled); e) {
@@ -443,7 +469,7 @@ void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 }
 
 // SHOULD REMAIN EMPTY FOR THE KILLCAM
-void KillCamReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken) {}
+void KillCamReceiverSystem::setPlayerStats(const PlayerStatsInfo& info) {}
 
 // SHOULD PROABABLY REMAIN EMPTY FOR THE KILLCAM
 void KillCamReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {}
@@ -605,20 +631,9 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 
 		stopMyKillCam();
 
-		const Netcode::PlayerID killerID = Netcode::getComponentOwner(e.killingProjectile);
-
-		const bool wasKilledByAnotherPlayer = (
-			killerID != Netcode::UNINITIALIZED &&
-			killerID != Netcode::INSANITY_COMP_ID &&
-			killerID != Netcode::SPRINKLER_COMP_ID &&
-			Netcode::getComponentOwner(killerID) != e.deadPlayer);
-
-		if (wasKilledByAnotherPlayer) {
-			m_idOfKillingProjectile = e.killingProjectile;
-		}
-
+		// Note: PlayerSystem checks that this is the ID of a projectile for us
+		m_idOfKillingProjectile = e.killingProjectile;
 		m_finalKillCam = e.finalKillCam;
-		
 
 		startKillCam();
 

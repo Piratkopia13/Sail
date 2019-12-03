@@ -713,6 +713,8 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 }
 
 void GameState::onStartKillCam(const StartKillCamEvent& event) {
+	SAIL_LOG("GameState::onStartKillCam called");
+
 	// Stop our killcam if it's playing (either because we stopped it or because the final killcam is starting)
 	if (m_isInKillCamMode) {
 		m_componentSystems.killCamReceiverSystem->stopMyKillCam();
@@ -724,13 +726,15 @@ void GameState::onStartKillCam(const StartKillCamEvent& event) {
 
 	if (event.finalKillCam) {
 		m_killCamText = NWrapperSingleton::getInstance().getPlayer(killer)->name + " eliminated " 
-			+ NWrapperSingleton::getInstance().getPlayer(event.deadPlayer)->name + " and won the math!";
+			+ NWrapperSingleton::getInstance().getPlayer(event.deadPlayer)->name + " and won the match!";
 	} else {
 		m_killCamText = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(killer)->name;
 	}
 }
 
 void GameState::onStopKillCam(const StopKillCamEvent& event) {
+	SAIL_LOG("GameState::onStopKillCam called");
+
 	m_componentSystems.killCamReceiverSystem->stopMyKillCam();
 	m_isInKillCamMode = false;
 }
@@ -952,9 +956,12 @@ void GameState::shutDownGameState() {
 
 // TODO: Add more systems here that only deal with replay entities/components
 void GameState::updatePerTickKillCamComponentSystems(float dt) {
+	SAIL_LOG("updatePerTickKillCamComponentSystems called");
+
 	if (m_componentSystems.killCamReceiverSystem->skipUpdate()) {
 		return;
 	}
+	SAIL_LOG("updatePerTickKillCamComponentSystems continued");
 
 	m_componentSystems.killCamReceiverSystem->prepareUpdate();
 	m_componentSystems.killCamLightSystem->prepareFixedUpdate();
