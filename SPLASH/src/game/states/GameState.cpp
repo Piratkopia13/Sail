@@ -207,7 +207,8 @@ GameState::GameState(StateStack& stack)
 #ifdef _PERFORMANCE_TEST
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
-
+#else
+	createBots(boundingBoxModel, playerModelName, lightModel);
 #endif
 	
 #ifdef _DEBUG
@@ -979,6 +980,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
+	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
@@ -1228,22 +1230,24 @@ void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	e = EntityFactory::CreateStaticMapObject("Map_Ramp6", rampModel, boundingBoxModel, glm::vec3(-34.f * 0.3f, 0.f, 20.f * 0.3f), glm::vec3(0.f, 3.14f, 0.f));
 }
 
-void GameState::createBots(Model* boundingBoxModel, const std::string& characterModel, Model* projectileModel, Model* lightModel) {
-	/*int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
+void GameState::createBots(Model* boundingBoxModel, const std::string& characterModel, Model* lightModel) {
+	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
 	if (botCount < 0) {
 		botCount = 0;
 	}
 
+	botCount = 2;
+
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
-			auto e = EntityFactory::CreateBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+			auto e = EntityFactory::CreateCleaningBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, m_componentSystems.aiSystem->getNodeSystem());
 		}
 		else {
 			SAIL_LOG_ERROR("Bot not spawned because all spawn points are already used for this map.");
 		}
-	}*/
+	}
 }
 
 void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {

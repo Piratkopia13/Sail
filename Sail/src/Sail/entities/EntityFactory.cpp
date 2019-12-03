@@ -450,6 +450,61 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	return e;
 }
 
+Entity::SPtr EntityFactory::CreateCleaningBot(Model* boundingBoxModel, Model* botModel, const glm::vec3& pos, NodeSystem* ns) {
+	auto e = ECS::Instance()->createEntity("Cleaning Bot");
+	e->addComponent<ModelComponent>(botModel);
+	e->addComponent<TransformComponent>(pos);
+	e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
+	e->addComponent<CollidableComponent>(true);
+	e->addComponent<MovementComponent>();
+	e->addComponent<SpeedLimitComponent>();
+	e->addComponent<CollisionComponent>(true);
+	e->addComponent<AiComponent>();
+	e->addComponent<CullingComponent>();
+	e->addComponent<RenderInActiveGameComponent>();
+
+	e->addComponent<AudioComponent>();
+
+	e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	e->getComponent<SpeedLimitComponent>()->maxSpeed = 3.0f;
+
+	auto fsmComp = e->addComponent<FSMComponent>();
+
+	// =========Create states and transitions===========
+
+	SearchingState* searchState = fsmComp->createState<SearchingState>(ns);
+	//AttackingState* attackState = fsmComp->createState<AttackingState>();
+	//fsmComp->createState<FleeingState>(ns);
+
+	// TODO: unnecessary to create new transitions for each FSM if they're all identical
+	//Attack State
+	/*FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
+	attackToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
+	FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
+	attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
+
+	// Search State
+	FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
+	searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
+	FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
+	searchToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
+
+	// Fleeing State
+	FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
+	fleeingToSearch->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, true);
+
+	//fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
+	//fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
+
+	fsmComp->addTransition<SearchingState, AttackingState>(searchToAttack);
+	fsmComp->addTransition<SearchingState, FleeingState>(searchToFleeing);
+
+	fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);*/
+	// =========[END] Create states and transitions===========
+
+	return e;
+}
+
 Entity::SPtr EntityFactory::CreateStaticMapObject(const std::string& name, Model* model, Model* boundingBoxModel, const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale) {
 	auto e = ECS::Instance()->createEntity(name);
 	e->addComponent<ModelComponent>(model);

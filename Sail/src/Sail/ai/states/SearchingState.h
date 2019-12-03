@@ -16,7 +16,7 @@ public:
 
 private:
 
-	void findRandomNodeIndex();
+	void findRandomNodeIndex(int currNodeIndex);
 
 	NodeSystem* m_nodeSystem;
 

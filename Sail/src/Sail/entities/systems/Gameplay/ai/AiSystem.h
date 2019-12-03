@@ -35,8 +35,12 @@ public:
 
 	NodeSystem* getNodeSystem();
 
+	virtual void stop() override;
+
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const override;
+	const float getAveragePathSearchTime() const;
+	const float getAverageAiUpdateTime() const;
 #endif
 
 private:
@@ -54,4 +58,8 @@ private:
 	std::unique_ptr<NodeSystem> m_nodeSystem;
 
 	Octree* m_octree;
+
+	const static unsigned int NUM_UPDATE_TIMES = 10;
+	float m_updateTimes[NUM_UPDATE_TIMES];
+	unsigned int m_currUpdateTimeIndex = 0;
 };

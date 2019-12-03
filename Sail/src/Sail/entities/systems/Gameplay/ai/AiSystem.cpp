@@ -26,6 +26,10 @@
 
 #include <glm/gtx/vector_angle.hpp>
 
+#ifdef _DEBUG_NODESYSTEM
+#include "Sail/entities/components/ModelComponent.h"
+#endif
+
 
 AiSystem::AiSystem() {
 	registerComponent<TransformComponent>(true, true, true);
@@ -36,7 +40,7 @@ AiSystem::AiSystem() {
 
 	m_nodeSystem = std::make_unique<NodeSystem>();
 
-	m_timeBetweenPathUpdate = 0.5f;
+	m_timeBetweenPathUpdate = 3.f;
 }
 
 AiSystem::~AiSystem() {}
@@ -52,19 +56,18 @@ void AiSystem::initNodeSystem(Octree* octree) {
 	float tileSize = Application::getInstance()->getSettings().gameSettingsDynamic["map"]["tileSize"].value;
 	float realXMax = sizeX * tileSize;
 	float realZMax = sizeZ * tileSize;
-	float realSize = realZMax * realXMax;
 	float nodeSize = 0.5f;
-	float nodePadding = nodeSize;
-	int xMax = static_cast<int>(std::floor(realXMax / (nodeSize + nodePadding)));
-	int zMax = static_cast<int>(std::floor(realZMax / (nodeSize + nodePadding)));
+	float nodePadding = tileSize / 2.f;
+	int xMax = static_cast<int>(std::ceil(realXMax / (nodePadding))) + 1;
+	int zMax = static_cast<int>(std::ceil(realZMax / (nodePadding))) + 1;
 	int size = xMax * zMax;
 
 	int currX = 0;
 	int currZ = 0;
 
 	// Currently needed cause map doesn't start creation from (0,0)
-	float startOffsetX = -tileSize / 2.f + nodeSize;
-	float startOffsetZ = -tileSize / 2.f + nodeSize;
+	float startOffsetX = -tileSize / 2.f;
+	float startOffsetZ = -tileSize / 2.f;
 	float startOffsetY = 0.f;
 	//bool* walkable = SAIL_NEW bool[size];
 
@@ -101,20 +104,18 @@ void AiSystem::initNodeSystem(Octree* octree) {
 		bool blocked = false;
 		Octree::RayIntersectionInfo tempInfo;
 		glm::vec3 down(0.f, -1.f, 0.f);
-		m_octree->getRayIntersection(glm::vec3(nodePos.x, nodePos.y + collisionBoxHalfHeight, nodePos.z), down, &tempInfo, e.get(), 0.01f);
+		m_octree->getRayIntersection(glm::vec3(nodePos.x + 0.01f, nodePos.y + collisionBoxHalfHeight, nodePos.z), down, &tempInfo, e.get(), 0.1f);
 		if (tempInfo.closestHitIndex != -1) {
 			float floorCheckVal = glm::angle(tempInfo.info[tempInfo.closestHitIndex].shape->getNormal(), -down);
 			// If there's a low angle between the up-vector and the normal of the surface, it can be counted as floor
 			bool isFloor = (floorCheckVal < 0.1f) ? true : false;
 			if (!isFloor) {
 				blocked = true;
-				SAIL_LOG(std::to_string(i) + "'s floor has too high angle.");
 			} else {
 				// Update the height of the node position
 				nodePos.y = nodePos.y + (collisionBoxHalfHeight - tempInfo.closestHit);
 			}
 		} else {
-			SAIL_LOG(std::to_string(i) + " has no floor.");
 			blocked = true;
 		}
 
@@ -127,14 +128,12 @@ void AiSystem::initNodeSystem(Octree* octree) {
 		//bbPos.z -= nodeSize;
 		e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setPosition(bbPos);
 		std::vector < Octree::CollisionInfo> vec;
-		m_octree->getCollisions(e.get(), e->getComponent<BoundingBoxComponent>()->getBoundingBox(), &vec);
+		m_octree->getCollisions(e.get(), e->getComponent<BoundingBoxComponent>()->getBoundingBox(), &vec, true, true);
 
 		for (Octree::CollisionInfo& info : vec) {
 			int j = (info.entity->getName().compare("Map_") || info.entity->getName().compare("Clu"));
 			if (j >= 0) {
 				//Not walkable
-
-				SAIL_LOG(std::to_string(i) + " is blocked by something.");
 				blocked = true;
 				break;
 			}
@@ -186,7 +185,7 @@ void AiSystem::initNodeSystem(Octree* octree) {
 
 	e->queueDestruction();
 
-	m_nodeSystem->setNodes(nodes, connections);
+	m_nodeSystem->setNodes(nodes, connections, xMax, zMax);
 }
 
 std::vector<Entity*>& AiSystem::getEntities() {
@@ -194,18 +193,26 @@ std::vector<Entity*>& AiSystem::getEntities() {
 }
 
 void AiSystem::update(float dt) {
-	std::vector<std::future<void>> futures;
+	//std::vector<std::future<void>> futures;
+	auto start = std::chrono::high_resolution_clock::now();
 	for ( auto& entity : entities ) {
 		// Might be dangerous for threads
-		futures.push_back(Application::getInstance()->pushJobToThreadPool([this, entity, dt] (int id) { this->aiUpdateFunc(entity, dt); }));
+		//futures.push_back(Application::getInstance()->pushJobToThreadPool([this, entity, dt] (int id) { this->aiUpdateFunc(entity, dt); }));
+		aiUpdateFunc(entity, dt);
 	}
-	for ( auto& a : futures ) {
+	m_updateTimes[m_currUpdateTimeIndex % NUM_UPDATE_TIMES] = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
+	m_currUpdateTimeIndex++;
+	/*for ( auto& a : futures ) {
 		a.get();
-	}
+	}*/
 }
 
 NodeSystem* AiSystem::getNodeSystem() {
 	return m_nodeSystem.get();
+}
+
+void AiSystem::stop() {
+	m_nodeSystem->stop();
 }
 
 #ifdef DEVELOPMENT
@@ -213,6 +220,17 @@ unsigned int AiSystem::getByteSize() const {
 	unsigned int size = sizeof(*this);
 	size += m_nodeSystem->getByteSize();
 	return size;
+}
+
+const float AiSystem::getAveragePathSearchTime() const {
+	return m_nodeSystem->getAverageSearchTime();
+}
+const float AiSystem::getAverageAiUpdateTime() const {
+	float updateTime = 0.f;
+	for (unsigned int i = 0; i < std::min(m_currUpdateTimeIndex, NUM_UPDATE_TIMES); i++) {
+		updateTime += m_updateTimes[i];
+	}
+	return updateTime / static_cast<float>(std::min(m_currUpdateTimeIndex, NUM_UPDATE_TIMES));
 }
 #endif
 
@@ -257,8 +275,8 @@ bool AiSystem::nodeConnectionCheck(glm::vec3 nodePos, glm::vec3 otherNodePos) {
 }
 
 glm::vec3 AiSystem::getNodePos(const int x, const int z, float nodeSize, float nodePadding, float startOffsetX, float startOffsetZ) {
-	float xPos = static_cast<float>(x) * (nodeSize + nodePadding) + startOffsetX;
-	float zPos = static_cast<float>(z) * (nodeSize + nodePadding) + startOffsetZ;
+	float xPos = static_cast<float>(x) * (nodePadding) + startOffsetX;
+	float zPos = static_cast<float>(z) * (nodePadding) + startOffsetZ;
 	return glm::vec3(xPos, 0.f, zPos);
 }
 
@@ -266,7 +284,11 @@ void AiSystem::updatePath(Entity* e) {
 	AiComponent* ai = e->getComponent<AiComponent>();
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	if (ai->updatePath ) {
-
+#ifdef _DEBUG_NODESYSTEM
+		for (int i = 0; i < ai->currPath.size(); i++) {
+			m_nodeSystem->getNodeEntities()[ai->currPath[i].index]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
+		}
+#endif
 		ai->timeTakenOnPath = 0.f;
 		ai->reachedPathingTarget = false;
 
@@ -283,6 +305,17 @@ void AiSystem::updatePath(Entity* e) {
 		}
 
 		ai->currPath = tempPath;
+
+#ifdef _DEBUG_NODESYSTEM
+		SAIL_LOG("Currpath size: " + std::to_string(ai->currPath.size()));
+		std::string daPath = "Path: {";
+		for (int i = 0; i < ai->currPath.size(); i++) {
+			m_nodeSystem->getNodeEntities()[ai->currPath[i].index]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 0.f, 1.f, 1.f));
+			daPath += std::to_string(ai->currPath[i].index) + ", ";
+		}
+		daPath += "}";
+		SAIL_LOG(daPath);
+#endif
 
 		ai->updatePath = false;
 	}
@@ -313,9 +346,14 @@ void AiSystem::updatePhysics(Entity* e, float dt) {
 		} else if (ai->currPath.size() > 0 ) {
 			// Update next node target
 			if (ai->currNodeIndex < ai->currPath.size() - 1 ) {
+#ifdef _DEBUG_NODESYSTEM
+				m_nodeSystem->getNodeEntities()[ai->currNodeIndex]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
+#endif
 				ai->currNodeIndex++;
 			}
 			ai->reachedPathingTarget = false;
+		} else {
+			ai->currPath.clear();
 		}
 
 		float newYaw = getAiYaw(movement, transform->getRotations().y, dt);
@@ -333,15 +371,15 @@ float AiSystem::getAiYaw(MovementComponent* moveComp, float currYaw, float dt) {
 	float newYaw = currYaw;
 	if ( glm::length2(moveComp->velocity) > 0.f ) {
 		float desiredYaw = 0.f;
-		float turnRate = glm::two_pi<float>() / 2.f; // 2 pi
+		float turnRate = glm::pi<float>();//glm::two_pi<float>() / 2.f; // 2 pi
 		auto normalizedVel = glm::normalize(moveComp->velocity);
 		float moveCompX = normalizedVel.x;
 		float moveCompZ = normalizedVel.z;
 		moveCompZ = moveCompZ != 0 ? moveCompZ : 0.1f;
-		if (moveComp->velocity.z < 0.f ) {
-			desiredYaw = glm::atan(moveCompX / moveCompZ) + 1.5707f;
+		if (moveCompZ < 0.f/* || moveCompX < 0.f*/) {
+			desiredYaw = glm::atan(moveCompX / moveCompZ) - glm::pi<float>();// + 0.7854f;
 		} else {
-			desiredYaw = glm::atan(moveCompX / moveCompZ) - 1.5707f;
+			desiredYaw = glm::atan(moveCompX / moveCompZ);// - glm::pi<float>();// - 0.7854f;
 		}
 		desiredYaw = Utils::wrapValue(desiredYaw, 0.f, glm::two_pi<float>());
 		float diff = desiredYaw - currYaw;
