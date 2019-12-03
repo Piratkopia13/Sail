@@ -54,7 +54,7 @@ private:
 	void runSystem(float dt, BaseComponentSystem* toRun);
 
 	void createTestLevel(Shader* shader, Model* boundingBoxModel);
-	void createBots(Model* boundingBoxModel, const std::string& characterModel, Model* lightModel);
+	void createBots();
 	void createLevel(Shader* shader, Model* boundingBoxModel);
 	const std::string createCube(const glm::vec3& position);
 	const std::string teleportToMap();

@@ -457,9 +457,9 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* 
 
 	std::string modelName = "CleaningBot.fbx";
 	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
-	botModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CleaningBot_MRAO.tga");
-	botModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CleaningBot_Albedo.tga");
-	botModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CleaningBot_NM.tga");
+	botModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
+	botModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
+	botModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/CleaningRobot/CleaningBot_NM.dds");
 	botModel->setIsAnimated(false);
 
 	// All players have a bounding box
@@ -478,8 +478,6 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* 
 		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
 	}
 	e->addComponent<NetworkReceiverComponent>(compID, Netcode::EntityType::MECHA_ENTITY);
-	/*e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
-	e->addComponent<CollidableComponent>(true);*/
 	e->addComponent<MovementComponent>();
 	e->addComponent<SpeedLimitComponent>();
 	e->addComponent<CollisionComponent>(true);
@@ -497,6 +495,8 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* 
 	// =========Create states and transitions===========
 
 	SearchingState* searchState = fsmComp->createState<SearchingState>(ns);
+	// Keep this for now
+
 	//AttackingState* attackState = fsmComp->createState<AttackingState>();
 	//fsmComp->createState<FleeingState>(ns);
 
