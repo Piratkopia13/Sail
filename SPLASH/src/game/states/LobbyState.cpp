@@ -456,7 +456,7 @@ void LobbyState::renderPlayerList() {
 						ImGui::PushStyleColor(ImGuiCol_Text, col);
 						if (ImGui::Selectable(name.c_str(), index == (char)key.value)) {
 							if (NWrapperSingleton::getInstance().isHost()) {
-								m_app->getSettings().gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected(selectedIndex);
+								m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected(selectedIndex);
 								m_settingsChanged = true;
 							} else {
 								//This is called by clients and will trigger the "NETWORK_TEAM_REQUESTED_COLOR_CHANGE" event on the host
