@@ -61,9 +61,4 @@ namespace KeyBinds {
 	// Keybinds used for debugging
 		// TODO: Move all debugging keybinds here
 	extern int SPECTATOR_DEBUG;
-
-//#ifdef DEVELOPMENT
-	extern int START_KILLCAM;
-//#endif
-
 };

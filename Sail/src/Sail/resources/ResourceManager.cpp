@@ -3,6 +3,9 @@
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/api/Mesh.h"
+#include "API/DX12/resources/DX12DDSTexture.h"
+
+#include <filesystem>
 
 // Horrible, I know
 // But "needed" for filling a command list with finished textures
@@ -13,6 +16,7 @@
 
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
+const std::string ResourceManager::SAIL_DEFAULT_TEXTURE_LOCATION = "res/textures/";
 
 ResourceManager::ResourceManager() {
 	m_fbxLoader = std::make_unique<FBXLoader>();
@@ -67,6 +71,8 @@ bool ResourceManager::hasAudioData(const std::string& filename) {
 //
 
 void ResourceManager::loadTextureData(const std::string& filename) {
+	SAIL_LOG_WARNING(filename + " should be swapped out for a dds version.");
+
 	std::unique_lock<std::mutex> lock(m_textureDatasMutex);
 	auto inserted = m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename) });
 	if (inserted.second) {
@@ -91,15 +97,24 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 //
 
 void ResourceManager::loadTexture(const std::string& filename) {
-	auto inserted = m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename)) });
+	auto path = std::filesystem::path(SAIL_DEFAULT_TEXTURE_LOCATION + filename);
+	if (path.has_extension() && std::filesystem::exists(path)) {
+		if (path.extension().compare(".tga") == 0 || path.extension().compare(".dds") == 0) {
+			
+			auto inserted = m_textures.insert({filename, std::unique_ptr<Texture>(Texture::Create(path.string()))});
+			m_loadedTextures.push_back(filename);
 
-	m_loadedTextures.push_back(filename);
+			if (inserted.second) {
+				// Queue upload to GPU
 
-	if (inserted.second) {
-		// Queue upload to GPU
-
-		std::unique_lock<std::mutex> lockFinished(m_finishedTexturesMutex);
-		m_finishedTextures.push_back(inserted.first->second.get());
+				std::unique_lock<std::mutex> lockFinished(m_finishedTexturesMutex);
+				m_finishedTextures.push_back(inserted.first->second.get());
+			}
+		} else {
+			SAIL_LOG_ERROR(filename + " does not have a supported texture format.");
+		}
+	} else {
+		SAIL_LOG_ERROR("ResourceManager::loadTexture: Something is wrong with '" + filename + "'.");
 	}
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
