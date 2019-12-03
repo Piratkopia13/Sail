@@ -217,9 +217,9 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("Icons/CantShootIcon1.tga");
 	rm->loadTexture("Icons/CantShootIcon2.tga");
 
-	rm->loadTexture("pbr/Character/CleaningBot_Albedo.tga");
-	rm->loadTexture("pbr/Character/CleaningBot_NM.tga");
-	rm->loadTexture("pbr/Character/CleaningBot_MRAO.tga");
+	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
+	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_NM.dds");
+	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
 
 	rm->loadTexture("pbr/DDS/Doc/Doc_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Doc/Doc_MRAO.dds");
