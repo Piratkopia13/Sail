@@ -219,6 +219,7 @@ void CSMain(ComputeShaderInput IN) {
 		
 		// Physics for new particle (accounts for how far into the frame the particle was created)
 		updatePhysics(inputBuffer.numPrevParticles - inputBuffer.numToRemove + i, inputBuffer.particles[i].spawnTime);
+		updateAnimation(inputBuffer.numPrevParticles - inputBuffer.numToRemove + i);
 	}
 	
 	// Physics for all prevous particles
