@@ -1396,6 +1396,13 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	m_componentSystems.levelSystem->createWorld(tileModels, boundingBoxModel);
 	m_componentSystems.levelSystem->addClutterModel(clutterModels, boundingBoxModel);
 	m_componentSystems.gameInputSystem->m_mapPointer = m_componentSystems.levelSystem;
+
+	EntityFactory::CreatePowerUp(glm::vec3(0,0.5f,0),0);
+	EntityFactory::CreatePowerUp(glm::vec3(0,0.5f,1),1);
+	EntityFactory::CreatePowerUp(glm::vec3(0,0.5f,2),2);
+	EntityFactory::CreatePowerUp(glm::vec3(1,0.5f,0),3);
+	EntityFactory::CreatePowerUp(glm::vec3(2,0.5f,0),4);
+
 }
 
 #ifdef _PERFORMANCE_TEST
