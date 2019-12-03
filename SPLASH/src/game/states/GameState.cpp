@@ -115,8 +115,6 @@ GameState::GameState(StateStack& stack)
 	// Initialize the component systems
 	initSystems(playerID);
 
-
-
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
@@ -612,8 +610,15 @@ void GameState::initConsole() {
 			returnMsg = "State change to menu requested";
 		}
 		else if (param == "pbr") {
+			// Load the textures that weren't needed until now
+			auto& rm = Application::getInstance()->getResourceManager();
+			rm.loadTexture("pbr/metal/metalnessRoughnessAO.tga");
+			rm.loadTexture("pbr/metal/normal.tga");
+			rm.loadTexture("pbr/metal/albedo.tga");
+
 			requestStackPop();
 			requestStackPush(States::PBRTest);
+
 			stateChanged = true;
 			returnMsg = "State change to pbr requested";
 		}

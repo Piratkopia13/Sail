@@ -163,10 +163,6 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/Tiles/Corner_NM.tga");
 	rm->loadTexture("pbr/Tiles/Corner_Albedo.tga");
 
-	rm->loadTexture("pbr/metal/metalnessRoughnessAO.tga");
-	rm->loadTexture("pbr/metal/normal.tga");
-	rm->loadTexture("pbr/metal/albedo.tga");
-
 	rm->loadTexture("pbr/Clutter/Saftblandare_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/Saftblandare_NM.tga");
 	rm->loadTexture("pbr/Clutter/Saftblandare_Albedo.tga");
@@ -212,25 +208,23 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/Clutter/ControlStation_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/ControlStation_NM.tga");
 
+	rm->loadTexture("pbr/Character/CharacterTex.tga");
+	rm->loadTexture("pbr/Character/CharacterMRAO.tga");
+	rm->loadTexture("pbr/Character/CharacterNM.tga");
+
+	rm->loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
+	rm->loadTexture("pbr/WaterGun/Watergun_MRAO.tga");
+	rm->loadTexture("pbr/WaterGun/Watergun_NM.tga");
+
 	rm->loadTexture("Icons/TorchLeft.tga");
 	rm->loadTexture("Icons/TorchThrow2.tga");
 	rm->loadTexture("Icons/PlayersLeft.tga");
 	rm->loadTexture("Icons/CantShootIcon1.tga");
 	rm->loadTexture("Icons/CantShootIcon2.tga");
 
-	rm->loadTexture("pbr/Character/CharacterTex.tga");
-	rm->loadTexture("pbr/Character/CharacterMRAO.tga");
-	rm->loadTexture("pbr/Character/CharacterNM.tga");
-	
-	rm->loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
-	rm->loadTexture("pbr/WaterGun/Watergun_MRAO.tga");
-	rm->loadTexture("pbr/WaterGun/Watergun_NM.tga");
 
-	// Might not be used
-	rm->loadTexture(GUIText::fontTexture);
-
-
-
+	// Load the missing texture texture
+	rm->loadTexture("missing.tga");
 
 	return true;
 }
