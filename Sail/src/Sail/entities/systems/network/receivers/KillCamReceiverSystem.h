@@ -38,10 +38,6 @@ public:
 	void updatePerFrame(float dt, float alpha);
 	void stop() override;
 
-	// TODO: make private
-	bool startKillCam();
-	void stopMyKillCam();
-
 	void prepareUpdate();
 	void processReplayData(float dt);
 
@@ -101,7 +97,9 @@ private:
 	// Helper function
 	Entity* findFromNetID(const Netcode::ComponentID id) const override;
 
-
+	bool startKillCam();
+	void stopMyKillCam();
+	
 	bool onEvent(const Event& event) override;
 
 private:
