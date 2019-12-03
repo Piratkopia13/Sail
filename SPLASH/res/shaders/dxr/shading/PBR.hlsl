@@ -128,13 +128,19 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
             if (all(p.color == 0.0f)) {
                 continue;
             }
-            
+#ifdef RAYTRACER_HARD_SHADOWS
+    float distance = length(p.position - pixel.worldPosition);
+    float3 direction = normalize(p.position - pixel.worldPosition);
+    // Cast hard shadow ray, 1spp
+    float shadowAmount = 1.f - (float)Utils::rayHitAnything(pixel.worldPosition, pixel.worldNormal, direction, distance);
+#else
             int shadowTextureIndex = scene.shadowTextureIndexMap[i].index;
             if (shadowTextureIndex == -1) {
                 // No shadow texture is bound to this light, skip it
                 continue;
             }
             float shadowAmount = scene.shadow[shadowTextureIndex];
+#endif
             // float shadowAmount = 1.f;
             numLights++;
             // Dont add light to pixels that are in complete shadow
@@ -153,13 +159,19 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
 			if (all(p.color == 0.0f) || p.angle == 0) {
 				continue;
 			}
-
+#ifdef RAYTRACER_HARD_SHADOWS
+    float distance = length(p.position - pixel.worldPosition);
+    float3 direction = normalize(p.position - pixel.worldPosition);
+    // Cast hard shadow ray, 1spp
+    float shadowAmount = 1.f - (float)Utils::rayHitAnything(pixel.worldPosition, pixel.worldNormal, direction, distance);
+#else
             int shadowTextureIndex = scene.shadowTextureIndexMap[j + NUM_POINT_LIGHTS].index;
             if (shadowTextureIndex == -1) {
                 // No shadow texture is bound to this light, skip it
                 continue;
             }
             float shadowAmount = scene.shadow[shadowTextureIndex];
+#endif
 
 			float3 L = normalize(p.position - pixel.worldPosition);
 			float angle = dot(L, normalize(p.direction));

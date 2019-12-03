@@ -44,6 +44,7 @@ SamplerState ss : register(s0);
 SamplerState motionSS : register(s1);
 
 #define RAYTRACING
+#define RAYTRACER_HARD_SHADOWS
 #include "Utils.hlsl"
 #include "WaterOnSurface.hlsl"
 #include "shading/PBR.hlsl"
@@ -209,7 +210,7 @@ void rayGen() {
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
 	//===========MetaBalls RT END===========
 
-	// lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
+	// lOutputPositionsOne[launchIndex] = payload.albedoTwo * payloadMetaball.albedoOne;
 	// return;
 
 	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payloadMetaball.closestTvalue);
@@ -220,7 +221,6 @@ void rayGen() {
 		worldPosition = payloadMetaball.worldPositionOne;
 		worldNormal = payloadMetaball.normalOne;
 	}
-
 
 	// Second bounce information
 	float3 albedoTwo = finalPayload.albedoTwo.rgb;
@@ -234,7 +234,6 @@ void rayGen() {
 	// Change material if second bounce color should be water on a surface
 	getWaterMaterialOnSurface(albedoTwo, metalnessTwo, roughnessTwo, aoTwo, worldNormalTwo, worldPositionTwo);
 
-	
 	//////////////////////////
 	//     Hard shadows     //
 	//////////////////////////
@@ -262,75 +261,20 @@ void rayGen() {
 		pixelOne.invViewDir = CB_SceneData.cameraPosition - pixelOne.worldPosition;
     	pixelTwo.invViewDir = pixelOne.worldPosition - pixelTwo.worldPosition;
 
-		float shadowOne[NUM_TOTAL_LIGHTS];
-		float shadowTwo[NUM_TOTAL_LIGHTS];
-		// Cast hard shadow rays, 1spp
-		{
-			// Point lights
-			[unroll]
-			for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-				float shadowOneVal = 0.f;
-				float shadowTwoVal = 0.f;
-				PointlightInput p = CB_SceneData.pointLights[i];
-				// Ignore point light if color is black
-				if (!all(p.color == 0.0f)) {
-					float distance = length(p.position - worldPosition);
-					float3 direction = normalize(p.position - worldPosition);
-					shadowOneVal = (float)Utils::rayHitAnything(worldPosition, worldNormal, direction, distance);
-
-					distance = length(p.position - worldPositionTwo);
-					direction = normalize(p.position - worldPositionTwo);
-					shadowTwoVal = (float)Utils::rayHitAnything(worldPositionTwo, worldNormalTwo, direction, distance);
-				}
-				shadowOne[i] = 1.f - shadowOneVal;
-				shadowTwo[i] = 1.f - shadowTwoVal;
-			}
-			// Spotlights
-			[unroll]
-			for (int j = 0; j < NUM_POINT_LIGHTS; j++) {
-				float shadowOneVal = 0.f;
-				float shadowTwoVal = 0.f;
-				SpotlightInput p = CB_SceneData.spotLights[j];
-
-				// Ignore point light if color is black
-				if (!(all(p.color == 0.0f) || p.angle == 0)) {
-					float3 L = normalize(p.position - worldPosition);
-					float angle = dot(L, normalize(p.direction));
-					// Ignore if angle is outside light
-					if (abs(angle) > p.angle) {
-						float distance = length(p.position - worldPosition);
-						float3 direction = normalize(p.position - worldPosition);
-						shadowOneVal = (float)Utils::rayHitAnything(worldPosition, worldNormal, direction, distance);
-					}
-
-					L = normalize(p.position - worldPositionTwo);
-					angle = dot(L, normalize(p.direction));
-					// Ignore if angle is outside light
-					if (abs(angle) > p.angle) {
-						float distance = length(p.position - worldPositionTwo);
-						float3 direction = normalize(p.position - worldPositionTwo);
-						shadowTwoVal = (float)Utils::rayHitAnything(worldPositionTwo, worldNormalTwo, direction, distance);
-					}
-				}
-				shadowOne[j + NUM_POINT_LIGHTS] = 1.f - shadowOneVal;
-				shadowTwo[j + NUM_POINT_LIGHTS] = 1.f - shadowTwoVal;
-			}
-		}
-
 		PBRScene scene;
 		// Shade the reflection
 		scene.pointLights = CB_SceneData.pointLights;
 		scene.spotLights = CB_SceneData.spotLights;
 		scene.brdfLUT = sys_brdfLUT;
 		scene.sampler = ss;
-		scene.shadow = shadowTwo;
+		// scene.shadow = shadowTwo;
 		// Map shadow "textures" sequentally
-		for (uint k = 0; k < NUM_TOTAL_LIGHTS; k++) {
-			scene.shadowTextureIndexMap[k].index = k;
-		}
+		// for (uint k = 0; k < NUM_TOTAL_LIGHTS; k++) {
+		// 	scene.shadowTextureIndexMap[k].index = k;
+		// }
 		float4 secondBounceColor = pbrShade(scene, pixelTwo, -1.f);
 		// Shade the first hit
-		scene.shadow = shadowOne;
+		// scene.shadow = shadowOne;
 		float4 outputColor = pbrShade(scene, pixelOne, secondBounceColor.rgb);
 		lOutputPositionsOne[launchIndex] = outputColor;
 
