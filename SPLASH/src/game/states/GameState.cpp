@@ -704,8 +704,6 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 }
 
 void GameState::onStartKillCam(const StartKillCamEvent& event) {
-	SAIL_LOG("GameState::onStartKillCam called");
-
 	// Stop our killcam if it's playing (either because we stopped it or because the final killcam is starting)
 	if (m_isInKillCamMode) {
 		m_componentSystems.killCamReceiverSystem->stopMyKillCam();
@@ -724,8 +722,6 @@ void GameState::onStartKillCam(const StartKillCamEvent& event) {
 }
 
 void GameState::onStopKillCam(const StopKillCamEvent& event) {
-	SAIL_LOG("GameState::onStopKillCam called");
-
 	m_componentSystems.killCamReceiverSystem->stopMyKillCam();
 	m_isInKillCamMode = false;
 }
@@ -947,12 +943,12 @@ void GameState::shutDownGameState() {
 
 // TODO: Add more systems here that only deal with replay entities/components
 void GameState::updatePerTickKillCamComponentSystems(float dt) {
-	SAIL_LOG("updatePerTickKillCamComponentSystems called");
+	//SAIL_LOG("updatePerTickKillCamComponentSystems called");
 
 	if (m_componentSystems.killCamReceiverSystem->skipUpdate()) {
 		return;
 	}
-	SAIL_LOG("updatePerTickKillCamComponentSystems continued");
+	//SAIL_LOG("updatePerTickKillCamComponentSystems continued");
 
 	m_componentSystems.killCamReceiverSystem->prepareUpdate();
 	m_componentSystems.killCamLightSystem->prepareFixedUpdate();

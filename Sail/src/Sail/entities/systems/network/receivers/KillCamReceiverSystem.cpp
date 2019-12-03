@@ -82,9 +82,11 @@ void KillCamReceiverSystem::stop() {
 
 	m_slowMotionState = SlowMotionSetting::DISABLE;
 	m_hasStarted      = false;
+	m_finalKillCam    = false;
+	m_killCamTickCounter = 0;
 	m_idOfKillingProjectile = Netcode::UNINITIALIZED;
-	m_killerPlayer = nullptr;
-	m_killerProjectile = nullptr;
+	m_killerPlayer       = nullptr;
+	m_killerProjectile   = nullptr;
 	m_trackingProjectile = false;
 	Memory::SafeDelete(m_cam);
 
@@ -181,6 +183,15 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 		return (alpha * current) + ((1.0f - alpha) * prev);
 	};
 
+
+	if (m_idOfKillingProjectile == Netcode::UNINITIALIZED) {
+		//SAIL_LOG("NO KILLING PROJECTILE IDENTIFIED");
+	}
+
+	if (m_killerPlayer == nullptr) {
+		//SAIL_LOG("NO KILLING PLAYER IDENTIFIED");
+	}
+
 	// only update the camera's position if a player killed us
 	if (m_idOfKillingProjectile == Netcode::UNINITIALIZED || m_killerPlayer == nullptr) {
 		return;
@@ -221,7 +232,6 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 
 // Should only be called when the killcam is active
 void KillCamReceiverSystem::processReplayData(float dt) {
-	SAIL_LOG("processReplayData called");
 
 	//// Add the entities to all relevant systems so that they for example will have their animations updated
 	//if (!m_hasStarted) {
@@ -627,7 +637,9 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 	};
 
 	auto onStartKillCam = [&](const StartKillCamEvent& e) {
-		if (m_finalKillCam) { return; } // Ignore this event if we're already in the final killcam
+		if (m_finalKillCam) {
+			SAIL_LOG("ALREADY IN FINAL KILLCAM");
+			return; } // Ignore this event if we're already in the final killcam
 
 		stopMyKillCam();
 

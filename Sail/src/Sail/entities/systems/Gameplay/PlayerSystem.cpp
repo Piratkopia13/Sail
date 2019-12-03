@@ -113,7 +113,7 @@ bool PlayerSystem::onEvent(const Event& event) {
 			killlerPlayerID != victimPlayerID); // and they didn't kill themselves
 
 		// Start the killcam when we die and when it's the final kill of the round
-		if ((myPlayerDied | e.isFinalKill) && wasKilledByAnotherPlayer) {
+		if ((myPlayerDied || e.isFinalKill) && wasKilledByAnotherPlayer) {
 			SAIL_LOG("start killCam emit");
 			EventDispatcher::Instance().emit(StartKillCamEvent(e.killerID, victimPlayerID, e.isFinalKill));
 		}
