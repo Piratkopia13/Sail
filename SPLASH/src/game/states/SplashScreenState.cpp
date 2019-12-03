@@ -161,10 +161,6 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/Tiles/Corner_NM.tga");
 	rm->loadTexture("pbr/Tiles/Corner_Albedo.tga");
 
-	rm->loadTexture("pbr/metal/metalnessRoughnessAO.tga");
-	rm->loadTexture("pbr/metal/normal.tga");
-	rm->loadTexture("pbr/metal/albedo.tga");
-
 	rm->loadTexture("pbr/Clutter/Saftblandare_MRAO.tga");
 	rm->loadTexture("pbr/Clutter/Saftblandare_NM.tga");
 	rm->loadTexture("pbr/Clutter/Saftblandare_Albedo.tga");
@@ -215,7 +211,9 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("Icons/PlayersLeft.tga");
 	rm->loadTexture("Icons/CantShootIcon1.tga");
 	rm->loadTexture("Icons/CantShootIcon2.tga");
-
+	
+	// Load the missing texture texture
+	rm->loadTexture("missing.tga");
 
 
 	return true;

@@ -123,9 +123,6 @@ GameState::GameState(StateStack& stack)
 	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_MRAO.tga");
 	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_NM.tga");
 
-	// Font sprite map texture
-	Application::getInstance()->getResourceManager().loadTexture(GUIText::fontTexture);
-
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
@@ -621,8 +618,15 @@ void GameState::initConsole() {
 			returnMsg = "State change to menu requested";
 		}
 		else if (param == "pbr") {
+			// Load the textures that weren't needed until now
+			auto& rm = Application::getInstance()->getResourceManager();
+			rm.loadTexture("pbr/metal/metalnessRoughnessAO.tga");
+			rm.loadTexture("pbr/metal/normal.tga");
+			rm.loadTexture("pbr/metal/albedo.tga");
+
 			requestStackPop();
 			requestStackPush(States::PBRTest);
+
 			stateChanged = true;
 			returnMsg = "State change to pbr requested";
 		}
@@ -1263,14 +1267,8 @@ void GameState::createBots(Model* boundingBoxModel, const std::string& character
 }
 
 void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
-	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	std::vector<Model*> tileModels;
 	std::vector<Model*> clutterModels;
-	//Load textures for level
-	{
-		ResourceManager& manager = Application::getInstance()->getResourceManager();
-		manager.loadTexture(tileTex);
-	}
 
 	//Load tileset for world
 	{
