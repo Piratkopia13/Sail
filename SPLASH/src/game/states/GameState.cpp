@@ -290,24 +290,6 @@ GameState::~GameState() {
 // NOTE: Done every frame
 bool GameState::processInput(float dt) {
 
-
-//#ifdef DEVELOPMENT
-	constexpr float TOGGLE_TIMER = 0.2f;
-	static float cooldown = 0.0f;
-	cooldown += dt;
-
-	// Manually toggle killcam
-	if (Input::IsKeyPressed(KeyBinds::START_KILLCAM) & cooldown > TOGGLE_TIMER) {
-		m_isInKillCamMode = !m_isInKillCamMode;
-		cooldown = 0.0f;
-		if (!m_isInKillCamMode) {
-			m_componentSystems.killCamReceiverSystem->stop();
-		}
-	}
-//#endif
-
-
-
 #ifndef DEVELOPMENT
 	//Capture mouse
 	if (m_app->getWindow()->isFocused()) {
