@@ -7,6 +7,7 @@
 #include "../../../components/SpeedLimitComponent.h"
 #include "Sail/ai/pathfinding/NodeSystem.h"
 #include "Sail/entities/components/MapComponent.h"
+#include "Sail/entities/components/NetworkSenderComponent.h"
 
 #include "../../../ECS.h"
 #include "../../../components/BoundingBoxComponent.h"
@@ -37,6 +38,7 @@ AiSystem::AiSystem() {
 	registerComponent<SpeedLimitComponent>(true, true, true);
 	registerComponent<AiComponent>(true, true, true);
 	registerComponent<FSMComponent>(true, true, true);
+	registerComponent<NetworkSenderComponent>(true, false, false);
 
 	m_nodeSystem = std::make_unique<NodeSystem>();
 

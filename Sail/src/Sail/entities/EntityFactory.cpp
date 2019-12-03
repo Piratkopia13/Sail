@@ -453,6 +453,8 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* ns) {
 	auto e = ECS::Instance()->createEntity("Cleaning Bot");
 
+	const Netcode::ComponentID compID = Netcode::generateUniqueBotID();
+
 	std::string modelName = "CleaningBot.fbx";
 	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
 	botModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CleaningBot_MRAO.tga");
@@ -470,6 +472,12 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* 
 
 	e->addComponent<ModelComponent>(botModel);
 	e->addComponent<TransformComponent>(pos);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		auto sendC = e->addComponent<NetworkSenderComponent>(Netcode::EntityType::MECHA_ENTITY, compID);
+		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
+		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
+	}
+	e->addComponent<NetworkReceiverComponent>(compID, Netcode::EntityType::MECHA_ENTITY);
 	/*e->addComponent<BoundingBoxComponent>(boundingBoxModel)->getBoundingBox()->setHalfSize(glm::vec3(0.7f, .9f, 0.7f));
 	e->addComponent<CollidableComponent>(true);*/
 	e->addComponent<MovementComponent>();
