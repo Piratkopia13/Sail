@@ -219,18 +219,6 @@ bool SplashScreenState::loadTextures(Application* app) {
 
 	rm->loadTexture("pbr/Character/CleaningBot_Albedo.tga");
 	rm->loadTexture("pbr/Character/CleaningBot_NM.tga");
-
-
-
-
-
-
-
-
-
-
-
-
 	rm->loadTexture("pbr/Character/CleaningBot_MRAO.tga");
 
 	return true;
