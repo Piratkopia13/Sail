@@ -462,14 +462,6 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* 
 	botModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/CleaningRobot/CleaningBot_NM.dds");
 	botModel->setIsAnimated(false);
 
-	// All players have a bounding box
-	/*auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();
-	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModelCopy("boundingBox.fbx", wireframeShader);
-	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-	boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
-	boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
-	boundingBoxModel->getMesh(0)->getMaterial()->setRoughnessScale(0.5);*/
-
 	e->addComponent<ModelComponent>(botModel);
 	e->addComponent<TransformComponent>(pos);
 	if (NWrapperSingleton::getInstance().isHost()) {

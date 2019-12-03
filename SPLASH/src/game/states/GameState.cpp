@@ -361,30 +361,6 @@ bool GameState::processInput(float dt) {
 		SAIL_LOG("Number of draws " + std::to_string(nrOfDraws));
 	}
 
-	// TODO: Move this to a system
-	// Toggle ai following the player
-	/*if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_AI_FOLLOWING)) {
-		auto entities = m_componentSystems.aiSystem->getEntities();
-		for (int i = 0; i < entities.size(); i++) {
-			auto aiComp = entities[i]->getComponent<AiComponent>();
-			if (aiComp->entityTarget == nullptr) {
-
-				// Find the candle child entity of player
-				Entity* candle = nullptr;
-				std::vector<Entity*> children = m_player->getChildEntities();
-				for (auto& child : children) {
-					if (child->hasComponent<CandleComponent>()) {
-						candle = child;
-						break;
-					}
-				}
-				aiComp->setTarget(candle);
-			} else {
-				aiComp->setTarget(nullptr);
-			}
-		}
-	}*/
-
 	// Set directional light if using forward rendering
 	if (Input::IsKeyPressed(KeyBinds::SET_DIRECTIONAL_LIGHT)) {
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
