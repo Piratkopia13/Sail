@@ -92,6 +92,51 @@ void KillCamReceiverSystem::stop() {
 	m_killerHeadPos = { 0,0,0 };
 }
 
+bool KillCamReceiverSystem::startKillCam() {
+	const Netcode::PlayerID killerID = Netcode::getComponentOwner(m_idOfKillingProjectile);
+
+	// Copy the past few seconds to data that we'll read from for our own killcam
+	m_myKillCamData = m_replayData;
+
+	for (auto e : entities) {
+		const Netcode::ComponentID compID = e->getComponent<ReplayReceiverComponent>()->m_id;
+
+		e->tryToAddToSystems = true;
+		e->addComponent<RenderInReplayComponent>();
+
+
+		if (e->hasComponent<PlayerComponent>()) {
+			if (killerID == Netcode::getComponentOwner(compID)) {
+				e->addComponent<KillerComponent>();
+				m_killerPlayer = e;
+			}
+
+			// Put torches where they were at that point in time
+			for (Netcode::ComponentID& notHolding : m_notHoldingTorches[m_myKillCamData.readIndex]) {
+				if (compID == notHolding) {
+					setCandleState(compID, false);
+				}
+			}
+		}
+	}
+	m_hasStarted = true;
+
+	return true;
+}
+
+void KillCamReceiverSystem::stopMyKillCam() {
+	m_slowMotionState = SlowMotionSetting::DISABLE;
+	m_hasStarted = false;
+	m_idOfKillingProjectile = Netcode::UNINITIALIZED;
+	m_killerPlayer = nullptr;
+	m_killerProjectile = nullptr;
+	m_trackingProjectile = false;
+
+	m_projectilePos = { 0,0,0 };
+	m_killerHeadPos = { 0,0,0 };
+}
+
+
 void KillCamReceiverSystem::init(Netcode::PlayerID player, Camera* cam) {
 	initBase(player);
 
@@ -518,49 +563,6 @@ Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) cons
 	return nullptr;
 }
 
-bool KillCamReceiverSystem::startKillCam() {
-	const Netcode::PlayerID killerID = Netcode::getComponentOwner(m_idOfKillingProjectile);
-
-	// Copy the past few seconds to data that we'll read from for our own killcam
-	m_myKillCamData = m_replayData;
-
-	for (auto e : entities) {
-		const Netcode::ComponentID compID = e->getComponent<ReplayReceiverComponent>()->m_id;
-
-		e->tryToAddToSystems = true;
-		e->addComponent<RenderInReplayComponent>();
-
-
-		if (e->hasComponent<PlayerComponent>()) {
-			if (killerID == Netcode::getComponentOwner(compID)) {
-				e->addComponent<KillerComponent>();
-				m_killerPlayer = e;
-			}
-
-			// Put torches where they were at that point in time
-			for (Netcode::ComponentID& notHolding : m_notHoldingTorches[m_myKillCamData.readIndex]) {
-				if (compID == notHolding) {
-					setCandleState(compID, false);
-				}
-			}
-		}
-	}
-	m_hasStarted = true;
-
-	return true;
-}
-
-void KillCamReceiverSystem::stopMyKillCam() {
-	m_slowMotionState = SlowMotionSetting::DISABLE;
-	m_hasStarted = false;
-	m_idOfKillingProjectile = Netcode::UNINITIALIZED;
-	m_killerPlayer = nullptr;
-	m_killerProjectile = nullptr;
-	m_trackingProjectile = false;
-
-	m_projectilePos = { 0,0,0 };
-	m_killerHeadPos = { 0,0,0 };
-}
 
 bool KillCamReceiverSystem::onEvent(const Event& event) {
 	auto onStartKillCam = [&](const StartKillCamEvent& e) {
