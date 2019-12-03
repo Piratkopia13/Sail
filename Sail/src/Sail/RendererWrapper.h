@@ -20,6 +20,7 @@ public:
 	Renderer* getParticleRenderer();
 	Renderer* getScreenSpaceRenderer();
 	PostProcessPipeline* getPostProcessPipeline();
+	void removeWaterPoint(const glm::vec3& worldPos, const glm::ivec3& posOffset, const glm::ivec3& negOffset) const;
 	bool checkIfOnWater(const glm::vec3& worldPos) const;
 	bool onEvent(const Event& event) override;
 

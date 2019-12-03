@@ -318,6 +318,68 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	}
 }
 
+void DXRBase::removeWaterAtWorldPosition(const glm::vec3& position, const glm::ivec3& posOffset, const glm::ivec3& negOffset) {
+	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
+
+	// Convert position to index, stored as floats
+	glm::vec3 floatInd = ((position - mapStart) / mapSize) * m_waterArrSizes;
+	// Convert triple-number index to a single index value
+	int origQuarterIndex = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
+	// Convert triple-number (float) to triple-number (int)
+	glm::i32vec3 origInd = floor(floatInd);
+
+	for (int x = negOffset.x; x < posOffset.x + 1; x++) {
+		for (int y = negOffset.y; y < posOffset.y + 1; y++) {
+			for (int z = negOffset.z; z < posOffset.z + 1; z++) {
+				int quarterIndex = origQuarterIndex + x;
+				glm::i32vec3 ind = origInd;
+				if (quarterIndex < 0) {
+					ind.x -= 1;
+					quarterIndex = 4 + quarterIndex;
+				} else if (quarterIndex > 3) {
+					ind.x += 1;
+					quarterIndex = quarterIndex - 4;
+				}
+				ind.x = glm::clamp(ind.x, 0, int(m_waterArrSizes.x));
+				ind.y = glm::clamp(ind.y + y, 0, int(m_waterArrSizes.y));
+				ind.z = glm::clamp(ind.z + z, 0, int(m_waterArrSizes.z));
+				int arrIndex = Utils::to1D(ind, m_waterArrSizes.x, m_waterArrSizes.y);
+				if (m_updateWater[arrIndex]) {
+					// Ignore water points that are outside the map
+					if (arrIndex >= 0 && arrIndex < m_waterArrSize) {
+						// Make sure to update this water
+						m_updateWater[arrIndex] = true;
+						uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
+						uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
+						uint8_t up2 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 2);
+						uint8_t up3 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 3);
+
+						switch (quarterIndex) {
+						case 0:
+							m_waterDeltas[arrIndex] = Utils::packQuarterFloat(0U, up1, up2, up3);
+							break;
+						case 1:
+							m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, 0U, up2, up3);
+							break;
+						case 2:
+							m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, 0U, up3);
+							break;
+						case 3:
+							m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, up2, 0U);
+							break;
+						}
+
+						m_waterDataCPU[arrIndex] = m_waterDeltas[arrIndex];
+						m_waterChanged = true;
+					}
+				}
+			}
+		}
+	}
+}
+
 bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 	bool returnValue = false;
 

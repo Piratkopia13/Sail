@@ -265,6 +265,10 @@ void DX12RaytracingRenderer::submitWaterPoint(const glm::vec3& pos) {
 	m_dxr.addWaterAtWorldPosition(pos);
 }
 
+void DX12RaytracingRenderer::removeWaterPoint(const glm::vec3& pos, const glm::ivec3& posOffset, const glm::ivec3& negOffset) {
+	m_dxr.removeWaterAtWorldPosition(pos, posOffset, negOffset);
+}
+
 void DX12RaytracingRenderer::setTeamColors(const std::vector<glm::vec3>& teamColors) {
 	Renderer::setTeamColors(teamColors);
 }

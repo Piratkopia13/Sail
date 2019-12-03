@@ -4,6 +4,7 @@
 #include "Sail/ai/pathfinding/NodeSystem.h"
 #include "Sail/entities/components/AiComponent.h"
 #include "Sail/entities/components/TransformComponent.h"
+#include "Sail.h"
 
 #include "Sail/utils/Utils.h"
 
@@ -49,7 +50,25 @@ void SearchingState::update(float dt, Entity* entity) {
 		aiComp->reachedPathingTarget = false;
 	}
 	//}
-	
+	auto moveC = entity->getComponent<MovementComponent>();
+	glm::ivec3 posOffset, negOffset;
+	posOffset = glm::ivec3(1, 0, 1);
+	negOffset = glm::ivec3(-1, 0, -1);
+	if (moveC && glm::length2(moveC->velocity) > 0.f) {
+		auto velNorm = glm::normalize(moveC->velocity);
+		if (velNorm.x > 0) {
+			posOffset.x += int(velNorm.x * 3.f) + 1;
+		} else {
+			negOffset.x += int(velNorm.x * 3.f) - 1;
+		}
+
+		if (velNorm.z > 0) {
+			posOffset.z += int(velNorm.z * 3.f) + 1;
+		} else {
+			negOffset.z += int(velNorm.z * 3.f) - 1;
+		}
+	}
+	Application::getInstance()->getRenderWrapper()->removeWaterPoint(aiPos, posOffset, negOffset);
 
 }
 

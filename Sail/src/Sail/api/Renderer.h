@@ -69,6 +69,7 @@ public:
 	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) { };
 	virtual void submitWaterPoint(const glm::vec3& pos) { };
 	virtual bool checkIfOnWater(const glm::vec3& pos) { return false; }
+	virtual void removeWaterPoint(const glm::vec3& pos, const glm::ivec3& posOffset, const glm::ivec3& negOffset) {};
 	virtual void end() { };
 
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID, bool castShadows);

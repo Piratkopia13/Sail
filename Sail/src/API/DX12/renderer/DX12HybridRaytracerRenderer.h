@@ -22,6 +22,7 @@ public:
 	virtual void present(PostProcessPipeline* postProcessPipeline = nullptr, RenderableTexture* output = nullptr) override;
 	virtual bool onEvent(const Event& event) override;
 	virtual void setTeamColors(const std::vector<glm::vec3>& teamColors) override;
+	virtual void removeWaterPoint(const glm::vec3& pos, const glm::ivec3& posOffset, const glm::ivec3& negOffset) override;
 	virtual bool checkIfOnWater(const glm::vec3& pos) override;
 
 	DX12GBufferRenderer* getGBufferRenderer() const;
