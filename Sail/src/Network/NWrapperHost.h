@@ -12,6 +12,8 @@ public:
 
 	bool host(int port = 54000);
 	bool connectToIP(char* = "127.0.0.1:54000");
+	virtual void setAllowJoining(bool b);
+
 	void setLobbyName(std::string name);
 	void updateServerDescription();
 

@@ -620,6 +620,9 @@ void LobbyState::renderMenu() {
 					}
 					mrs = new MatchRecordSystem();
 					mrs->initRecording();
+				}else if (mrs && mrs->status == 2) {
+					NWrapperSingleton::getInstance().stopUDP();
+					NWrapperSingleton::getInstance().getNetworkWrapper()->setAllowJoining(false);
 				}
 
 				//TODO: ONLY DO THIS IF GAMEMODE IS FFA

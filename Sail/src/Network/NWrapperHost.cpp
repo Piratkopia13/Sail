@@ -25,6 +25,10 @@ bool NWrapperHost::connectToIP(char*) {
 	return false;
 }
 
+void NWrapperHost::setAllowJoining(bool b) {
+	m_network->setAllowJoining(b);
+}
+
 void NWrapperHost::setLobbyName(std::string name) {
 	m_lobbyName = name;
 	updateServerDescription();

@@ -74,7 +74,7 @@ public:
 
 	virtual bool host(int port = 54000) = 0;
 	virtual bool connectToIP(char* = "127.0.0.1:54000") = 0;
-
+	virtual void setAllowJoining(bool b) {};
 	virtual void sendChatMsg(std::string msg) = 0;
 
 	void sendSerializedDataAllClients(const std::string& data);
