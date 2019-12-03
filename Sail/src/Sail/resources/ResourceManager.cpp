@@ -303,7 +303,14 @@ void ResourceManager::uploadFinishedTextures(ID3D12GraphicsCommandList4* cmdList
 		dx12Tex->initBuffers(cmdList);
 		
 		const std::string& filename = dx12Tex->getFilename();
-		m_textureDatas.erase(filename);
+		
+		// Remove tga data if it's a tga texture
+		if (m_textureDatas.erase(filename) > 0) {
+			continue;
+		}
+
+		// Remove dds data
+		dx12Tex->clearDDSData();
 	}
 	m_finishedTextures.clear();
 

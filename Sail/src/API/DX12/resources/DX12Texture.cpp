@@ -134,6 +134,10 @@ ID3D12Resource* DX12Texture::getResource() const {
 	return textureDefaultBuffers[0].Get();
 }
 
+void DX12Texture::clearDDSData() {
+	m_ddsData.reset(nullptr);
+}
+
 const std::string& DX12Texture::getFilename() const {
 	return m_fileName;
 }

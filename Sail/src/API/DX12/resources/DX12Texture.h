@@ -18,6 +18,8 @@ public:
 	bool hasBeenInitialized() const;
 	const std::string& getFilename() const;
 	ID3D12Resource* getResource() const;
+	
+	void clearDDSData();
 
 private:
 	void generateMips(ID3D12GraphicsCommandList4* cmdList);
