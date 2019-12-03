@@ -11,7 +11,7 @@ PowerUpComponent::PowerUpComponent() {
 
 PowerUpComponent::~PowerUpComponent() {
 }
-
+#ifdef DEVELOPMENT
 void PowerUpComponent::imguiRender(Entity** selected) {
 
 	if(ImGui::CollapsingHeader("PickUps##adders")) {
@@ -34,3 +34,4 @@ void PowerUpComponent::imguiRender(Entity** selected) {
 	}
 	ImGui::Columns(1);
 }
+#endif

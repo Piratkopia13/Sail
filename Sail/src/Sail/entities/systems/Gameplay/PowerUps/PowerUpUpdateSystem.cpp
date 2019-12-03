@@ -22,8 +22,9 @@ void PowerUpUpdateSystem::update(float dt) {
 		}
 	}
 }
-
+#ifdef DEVELOPMENT
 unsigned int PowerUpUpdateSystem::getByteSize() const {
 	/* TODO: Fix component size */
 	return sizeof(*this);
 }
+#endif
