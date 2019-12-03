@@ -8,6 +8,8 @@
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include <string>
 
+#include "Sail/utils/GUISettings.h"
+
 
 
 SplashScreenState::SplashScreenState(StateStack& stack)
@@ -215,6 +217,18 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("Icons/PlayersLeft.tga");
 	rm->loadTexture("Icons/CantShootIcon1.tga");
 	rm->loadTexture("Icons/CantShootIcon2.tga");
+
+	rm->loadTexture("pbr/Character/CharacterTex.tga");
+	rm->loadTexture("pbr/Character/CharacterMRAO.tga");
+	rm->loadTexture("pbr/Character/CharacterNM.tga");
+	
+	rm->loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
+	rm->loadTexture("pbr/WaterGun/Watergun_MRAO.tga");
+	rm->loadTexture("pbr/WaterGun/Watergun_NM.tga");
+
+	// Might not be used
+	rm->loadTexture(GUIText::fontTexture);
+
 
 
 

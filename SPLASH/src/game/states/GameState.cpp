@@ -86,6 +86,7 @@ GameState::GameState(StateStack& stack)
 	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<GBufferWireframe>();
 
 	//Wireframe bounding box model
+	
 	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
 	//boundingBoxModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
@@ -114,17 +115,7 @@ GameState::GameState(StateStack& stack)
 	// Initialize the component systems
 	initSystems(playerID);
 
-	// Textures needs to be loaded before they can be used
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterTex.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterMRAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/Character/CharacterNM.tga");
 
-	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_Albedo.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_MRAO.tga");
-	Application::getInstance()->getResourceManager().loadTexture("pbr/WaterGun/Watergun_NM.tga");
-
-	// Font sprite map texture
-	Application::getInstance()->getResourceManager().loadTexture(GUIText::fontTexture);
 
 	// Add a directional light which is used in forward rendering
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
@@ -1263,14 +1254,8 @@ void GameState::createBots(Model* boundingBoxModel, const std::string& character
 }
 
 void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
-	std::string tileTex = "sponza/textures/tileTexture1.tga";
 	std::vector<Model*> tileModels;
 	std::vector<Model*> clutterModels;
-	//Load textures for level
-	{
-		ResourceManager& manager = Application::getInstance()->getResourceManager();
-		manager.loadTexture(tileTex);
-	}
 
 	//Load tileset for world
 	{
