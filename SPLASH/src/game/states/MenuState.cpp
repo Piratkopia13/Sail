@@ -798,9 +798,9 @@ void MenuState::renderReplays() {
 				ImGui::NextColumn();
 				ImGui::Text("Deathmatch"); ImGui::NextColumn();
 				ImGui::Text("Custom"); ImGui::NextColumn();
-				ImGui::InputTextWithHint((std::string("##replayName") + replay.string()).c_str(),std::string("New Name").c_str(), replayNameBuf, 40);
+				ImGui::InputTextWithHint((std::string("##replayName") + replay.string()).c_str(),std::string("New Name").c_str(), replayNameBuf, sizeof(replayNameBuf) - 1);
 				ImGui::SameLine();
-				if (ImGui::Button("Save")) {
+				if (ImGui::Button((std::string("Save##") + replay.string()).c_str())) {
 					std::string name(replayNameBuf);
 					if (name.length() > 2){
 						std::error_code err;
@@ -809,6 +809,8 @@ void MenuState::renderReplays() {
 								if (!std::filesystem::remove(replay, err)) {
 									SAIL_LOG_WARNING("Error saving replay: Save succeded but old copy could not be removed.");
 								}
+
+								memset(replayNameBuf, 0, sizeof(replayNameBuf));
 							} else {
 								SAIL_LOG_WARNING("Could not save replay: Copy Failed.");
 							}
