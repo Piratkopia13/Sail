@@ -6,7 +6,9 @@
 
 PowerUpCollectibleSystem::PowerUpCollectibleSystem() :
 	m_collectDistance(2.0f),
-	m_playerList(nullptr)
+	m_playerList(nullptr),
+	m_respawnTime(30.0f),
+	m_duration(15.0f)
 {
 	registerComponent<PowerUpCollectibleComponent>(true, true, true);
 }
@@ -21,6 +23,15 @@ void PowerUpCollectibleSystem::init(std::vector<Entity*>* playerList) {
 void PowerUpCollectibleSystem::setSpawnPoints(std::vector<glm::vec3>& points) {
 	m_spawnPoints.clear();
 	m_spawnPoints.insert(m_spawnPoints.begin(), points.begin(), points.end());
+}
+
+
+void PowerUpCollectibleSystem::setRespawnTime(const float time) {
+	m_respawnTime = time;
+}
+
+void PowerUpCollectibleSystem::setDuration(const float time) {
+	m_duration = time;
 }
 
 void PowerUpCollectibleSystem::update(float dt) {
@@ -53,11 +64,11 @@ void PowerUpCollectibleSystem::update(float dt) {
 					m_distances.emplace_back(dist);
 					if (dist <= m_collectDistance) {
 						if (auto* playerpowerC = player->getComponent<PowerUpComponent>()) {
-							playerpowerC->powerUps[powerCC->powerUp].addTime(powerCC->powerUpDuration);
+							playerpowerC->powerUps[powerCC->powerUp].addTime(m_duration);
 							e->queueDestruction(); // TODO: CHANGE TO NETWORK MESSAGE
 							if (powerCC->respawnTime > 0.0f) {
 								//powerCC->time = powerCC->respawnTime; // TODO: CHANGE TO NETWORK MESSAGE
-								m_respawns.push_back({ 5, PowerUps(powerCC->powerUp), transformC->getTranslation() });
+								m_respawns.push_back({ m_respawnTime, PowerUps(powerCC->powerUp), transformC->getTranslation() });
 							}
 						}
 					}

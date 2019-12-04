@@ -8,6 +8,8 @@ public:
 	~PowerUpCollectibleSystem();
 	void init(std::vector<Entity*>* playerList);
 	void setSpawnPoints(std::vector<glm::vec3>& points);
+	void setRespawnTime(const float time);
+	void setDuration(const float time);
 	void update(float dt) override;
 	void spawnSingleUsePowerUp(const PowerUps powerUp, const float time, glm::vec3 pos, Entity* parent = nullptr);
 	void spawnPowerUps(int amount = -1);
@@ -25,6 +27,9 @@ private:
 		glm::vec3 pos;
 	};
 	float m_collectDistance;
+	float m_respawnTime;
+	float m_duration;
+
 
 	std::vector<Entity*>* m_playerList;
 	std::list<ReSpawn> m_respawns;

@@ -1393,7 +1393,11 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	// SPAWN POWERUPS IF ENABLED
 	if (settings.gameSettingsStatic["map"]["Powerup"].getSelected().value == 0.0f) {
+
+
 		m_componentSystems.powerUpCollectibleSystem->setSpawnPoints(m_componentSystems.levelSystem->powerUpSpawnPoints);
+		m_componentSystems.powerUpCollectibleSystem->setDuration(settings.gameSettingsDynamic["powerup"]["duration"].value);
+		m_componentSystems.powerUpCollectibleSystem->setRespawnTime(settings.gameSettingsDynamic["powerup"]["respawnTime"].value);
 		m_componentSystems.powerUpCollectibleSystem->spawnPowerUps();
 	}
 
