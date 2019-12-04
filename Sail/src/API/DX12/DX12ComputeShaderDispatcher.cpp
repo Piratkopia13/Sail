@@ -27,6 +27,7 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 	assert(computeShader.getPipeline()->isComputeShader()); // Not a compute shader
 	auto* dxShaderPipeline = static_cast<DX12ShaderPipeline*>(computeShader.getPipeline());
 	
+
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	const auto& settings = computeShader.getComputeSettings();
 
@@ -34,10 +35,10 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 		dxCmdList->SetComputeRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getComputeGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
 
 	// Resize output textures
-	for (unsigned int i = 0; i < settings->numOutputTextures; i++) {
-		const auto& tex = computeShader.getComputeOutputForIndex(*computeShader.getComputeOutput(), i);
-		tex->resize(input.outputWidth, input.outputHeight);
-	}
+	//for (unsigned int i = 0; i < settings->numOutputTextures; i++) {
+	//	const auto& tex = computeShader.getComputeOutputForIndex(*computeShader.getComputeOutput(), i);
+	//	tex->resize(input.outputWidth, input.outputHeight);
+	//}
 
 	// Bind input textures
 	for (unsigned int i = 0; i < settings->numInputTextures; i++) {

@@ -8,6 +8,12 @@
 #include "Sail/graphics/shader/postprocess/TonemapShader.h"
 #include "Sail/events/EventDispatcher.h"
 
+//#include "Sail/Application.h"
+#include "API/DX12/DX12API.h"
+#include "API/DX12/resources/DescriptorHeap.h"
+#include "API/DX12/resources/DX12RenderableTexture.h"
+
+
 PostProcessPipeline::PostProcessPipeline() 
 	: m_bloomTexture(nullptr)
 {
@@ -38,6 +44,9 @@ PostProcessPipeline::~PostProcessPipeline() {
 RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void* cmdList) {
 	auto& settings = Application::getInstance()->getSettings();
 
+	auto* context = Application::getInstance()->getAPI<DX12API>();
+
+
 	// Read from game settings
 	bool enableFXAA = settings.applicationSettingsStatic["graphics"]["fxaa"].getSelected().value > 0.f;
 	float bloomAmount = settings.applicationSettingsStatic["graphics"]["bloom"].getSelected().value;
@@ -46,6 +55,8 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void
 
 	// Stage one - fxaa if enabled
 	RenderableTexture* stageOneOutput = baseTexture;
+
+
 	if (enableFXAA) {
 		// FXAA
 		input.inputRenderableTexture = baseTexture;
@@ -58,23 +69,77 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void
 	if (bloomAmount > 0.f) {
 		input.inputRenderableTexture = m_bloomTexture;
 		// Blur pass one
-		auto* output = runStage(input, m_stages["BloomBlur1V"], cmdList);
-		input.inputRenderableTexture = output->outputTexture;
-		output = runStage(input, m_stages["BloomBlur1H"], cmdList);
+		
+		
+		
+		// TODO: make this work if FXAA is disabled
+		// Use the baseTexture as the output since that's no longer used
+		auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
+		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
+		static_cast<DX12RenderableTexture*>(baseTexture)->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(baseTexture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+
+		runStage(input, m_stages["BloomBlur1V"], cmdList);
+		//auto* output = runStage(input, m_stages["BloomBlur1V"], cmdList);
+		//input.inputRenderableTexture = output->outputTexture;
+		input.inputRenderableTexture = baseTexture;
+		auto* output = runStage(input, m_stages["BloomBlur1H"], cmdList);
+		
+		
+		
+		
+		// Use the baseTexture as the output since that's no longer used
+		cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
+		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
+		static_cast<DX12RenderableTexture*>(baseTexture)->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(baseTexture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
 		// Blur pass two
 		input.inputRenderableTexture = output->outputTexture;
 		output = runStage(input, m_stages["BloomBlur2V"], cmdList);
-		input.inputRenderableTexture = output->outputTexture;
+		//input.inputRenderableTexture = output->outputTexture;
+		input.inputRenderableTexture = baseTexture;
 		output = runStage(input, m_stages["BloomBlur2H"], cmdList);
+		
+		
+		
+		
+		// Use the baseTexture as the output since that's no longer used
+		cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
+		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
+		static_cast<DX12RenderableTexture*>(baseTexture)->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(baseTexture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		
 		// Blur pass three
 		input.inputRenderableTexture = output->outputTexture;
 		output = runStage(input, m_stages["BloomBlur3V"], cmdList);
-		input.inputRenderableTexture = output->outputTexture;
+		//input.inputRenderableTexture = output->outputTexture;
+		input.inputRenderableTexture = baseTexture;
 		auto* bloomOutput = runStage(input, m_stages["BloomBlur3H"], cmdList);
+
+
+
+
+
+
+
+
+
+
+
+
 
 		input.inputRenderableTexture = stageOneOutput;
 		input.inputRenderableTextureTwo = bloomOutput->outputTexture;
 
+		
+		
+		
+		
+		
+		
 		auto& blendStage = m_stages["BloomBlend"];
 		// Set blend amount in shader
 		blendStage.shader->getPipeline()->trySetCBufferVar("blendFactor", &bloomAmount, sizeof(float));
@@ -86,7 +151,7 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void
 	// Last stage - tonemapping, always runs
 	input.inputRenderableTexture = stageTwoOutput;
 	auto* tonemapOutput = runStage(input, m_stages["Tonemapper"], cmdList);
-
+	
 	return tonemapOutput->outputTexture;
 }
 
@@ -98,7 +163,7 @@ PostProcessPipeline::PostProcessOutput* PostProcessPipeline::runStage(PostProces
 	Application* app = Application::getInstance();
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
-
+	
 	m_dispatcher->begin(cmdList);
 
 	PostProcessOutput* output;
