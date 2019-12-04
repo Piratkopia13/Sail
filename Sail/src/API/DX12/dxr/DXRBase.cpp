@@ -405,6 +405,53 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 	return returnValue;
 }
 
+// THIS WAS IMPLEMENTED SPECIFICALLY FOR CLEANING STATE!
+glm::vec3 DXRBase::getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) {
+	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
+	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
+	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
+
+	// Convert position to index, stored as floats
+	glm::vec3 floatInd = ((position - mapStart) / mapSize) * m_waterArrSizes;
+	// Convert triple-number index to a single index value
+	int origQuarterIndex = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
+	// Convert triple-number (float) to triple-number (int)
+	glm::i32vec3 origInd = floor(floatInd);
+
+	int xOffset = maxOffset.x / mapSize.x * m_waterArrSizes.x;
+	int zOffset = maxOffset.z / mapSize.z * m_waterArrSizes.z;
+
+	for (int x = -xOffset; x < xOffset + 1; x++) {
+		for (int z = -zOffset; z < zOffset + 1; z++) {
+			int quarterIndex = origQuarterIndex + x;
+			glm::i32vec3 ind = origInd;
+			if (quarterIndex < 0) {
+				ind.x -= 1;
+				quarterIndex = 4 + quarterIndex;
+			} else if (quarterIndex > 3) {
+				ind.x += 1;
+				quarterIndex = quarterIndex - 4;
+			}
+			ind.x = glm::clamp(ind.x, 0, int(m_waterArrSizes.x));
+			ind.z = glm::clamp(ind.z + z, 0, int(m_waterArrSizes.z));
+			int arrIndex = Utils::to1D(ind, m_waterArrSizes.x, m_waterArrSizes.y);
+			// Ignore water points that are outside the map
+			if (arrIndex >= 0 && arrIndex < m_waterArrSize) {
+				// Make sure to update this water
+				if (m_waterDataCPU[arrIndex] > 0U) {
+					SAIL_LOG_WARNING("Found water");
+
+					glm::vec3 ind3d = Utils::to3D(arrIndex, m_waterArrSizes.x, m_waterArrSizes.y);
+					return (ind3d / m_waterArrSizes) * m_mapSize + m_mapStart;
+				}
+			}
+		}
+	}
+
+	auto daRand = glm::diskRand(maxOffset.x);
+	return position + glm::vec3(daRand.x, 0.f, daRand.y);
+}
+
 void DXRBase::updateWaterData() {
 	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["watersimulation"].getSelected().value) {
 		simulateWater(Application::getInstance()->getDelta());

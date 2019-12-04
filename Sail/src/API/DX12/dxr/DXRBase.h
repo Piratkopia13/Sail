@@ -47,6 +47,8 @@ public:
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	void removeWaterAtWorldPosition(const glm::vec3& position, const glm::ivec3& posOffset, const glm::ivec3& negOffset);
 	bool checkWaterAtWorldPosition(const glm::vec3& position);
+	// THIS WAS IMPLEMENTED SPECIFICALLY FOR CLEANING STATE!
+	glm::vec3 getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset);
 	void updateWaterData();
 	void dispatch(DX12RenderableTexture* outputTexture, DX12RenderableTexture* outputBloomTexture, ID3D12GraphicsCommandList4* cmdList);
 	void simulateWater(float dt);

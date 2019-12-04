@@ -62,10 +62,11 @@ public:
 	void stop();
 
 #ifdef _DEBUG_NODESYSTEM
+	void colorPath(const std::vector<NodeSystem::Node>& path, const glm::vec4& colour);
 	void setDebugModelAndScene(Shader* shader);
 	std::vector<Entity::SPtr>& getNodeEntities();
-	Model* m_connectionModel;
 	std::vector<Entity::SPtr> m_nodeEntities;
+	std::vector<std::vector<Entity::SPtr>> m_connectionEntities;
 	Shader* m_shader;
 #endif
 #ifdef DEVELOPMENT

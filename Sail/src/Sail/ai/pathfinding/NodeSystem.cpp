@@ -53,13 +53,14 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 
 	for (int i = 0; i < m_nodes.size(); i++) {
 		auto currNodeConnections = m_connections[i];
+		auto currConnectionsEntities = std::vector<Entity::SPtr>();
 		for (int j = 0; j < currNodeConnections.size(); j++) {
 			glm::vec3 pos = m_nodes[i].position;
 			glm::vec3 dir = m_nodes[currNodeConnections[j]].position - pos;
 			auto dirLength = glm::length(dir);
 			auto normalizedDir = glm::normalize(dir);
 			pos += normalizedDir * dirLength * 0.5f;
-			m_nodeEntities.push_back(ECS::Instance()->createEntity("Connection " + std::to_string(i)));
+			currConnectionsEntities.push_back(ECS::Instance()->createEntity("Connection " + std::to_string(i)));
 			float dirX = normalizedDir.x;
 			float dirZ = normalizedDir.z;
 			// To avoid division by zero
@@ -71,14 +72,21 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 				yaw = glm::atan(dirX / dirZ);
 			}
 
-			auto transComp = m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(pos);
+			auto transComp = currConnectionsEntities[j]->addComponent<TransformComponent>(pos);
 			transComp->setRotations(0.f, yaw, 0.f);
 			transComp->setScale(0.005f, 0.005f, dirLength / 2.f);
-			m_nodeEntities[currNodeEntity]->addComponent<RealTimeComponent>();
-			m_nodeEntities[currNodeEntity]->addComponent<ModelComponent>(m_connectionModel);
-			m_nodeEntities[currNodeEntity]->addComponent<CullingComponent>();
-			m_nodeEntities[currNodeEntity++]->addComponent<RenderInActiveGameComponent>();
+			currConnectionsEntities[j]->addComponent<RealTimeComponent>();
+
+			auto connectionModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
+			connectionModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
+			connectionModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
+			connectionModel->setCastShadows(false);
+
+			currConnectionsEntities[j]->addComponent<ModelComponent>(connectionModel);
+			currConnectionsEntities[j]->addComponent<CullingComponent>();
+			currConnectionsEntities[j]->addComponent<RenderInActiveGameComponent>();
 		}
+		m_connectionEntities.push_back(currConnectionsEntities);
 	}
 #endif
 }
@@ -164,13 +172,32 @@ void NodeSystem::stop() {
 }
 
 #ifdef _DEBUG_NODESYSTEM
+void NodeSystem::colorPath(const std::vector<NodeSystem::Node>& path, const glm::vec4& colour) {
+	unsigned int numConnsToColour = 0U;
+	for (int i = 0; i < path.size(); i++) {
+		m_nodeEntities[path[i].index]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(colour);
+		if (i > 0) {
+			for (int j = 0; j < m_connections[path[i].index].size(); j++) {
+				if (m_connections[path[i].index][j] == path[i - 1].index) {
+					m_connectionEntities[path[i].index][j]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(colour);
+					numConnsToColour++;
+				}
+			}
+		}
+		if (i < path.size() - 1) {
+			for (int j = 0; j < m_connections[path[i].index].size(); j++) {
+				if (m_connections[path[i].index][j] == path[i + 1].index) {
+					m_connectionEntities[path[i].index][j]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(colour);
+					numConnsToColour++;
+				}
+			}
+		}
+	}
+	SAIL_LOG("num connections: " + std::to_string(numConnsToColour));
+}
+
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_shader = shader;
-
-	m_connectionModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
-	m_connectionModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
-	m_connectionModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 1.f, 1.f, 1.f));
-	m_connectionModel->setCastShadows(false);
 }
 
 std::vector<Entity::SPtr>& NodeSystem::getNodeEntities() {

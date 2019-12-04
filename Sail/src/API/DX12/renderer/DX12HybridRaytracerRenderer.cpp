@@ -77,6 +77,10 @@ bool DX12HybridRaytracerRenderer::checkIfOnWater(const glm::vec3& pos) {
 	return m_rendererRaytrace->checkIfOnWater(pos);
 }
 
+glm::vec3 DX12HybridRaytracerRenderer::getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) {
+	return m_rendererRaytrace->getNearestWaterPosition(position, maxOffset);
+}
+
 DX12GBufferRenderer* DX12HybridRaytracerRenderer::getGBufferRenderer() const {
 	return m_rendererGbuffer.get();
 }

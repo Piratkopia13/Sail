@@ -3,6 +3,7 @@
 #include "Sail/ai/states/State.h"
 
 class NodeSystem;
+class RendererWrapper;
 
 class CleaningState : public FSM::State<CleaningState> {
 public:
@@ -15,8 +16,11 @@ public:
 
 private:
 	void findRandomNodeIndex(int currNodeIndex);
+	void searchForWater(const glm::vec3& currPos);
 
-	NodeSystem* m_nodeSystem;
-	int m_targetNode;
+	NodeSystem* m_nodeSystemRef;
+	RendererWrapper* m_rendererWrapperRef;
+	//int m_targetNode;
+	glm::vec3 m_targetPos;
 	float m_searchingClock;
 };

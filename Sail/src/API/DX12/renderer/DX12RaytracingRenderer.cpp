@@ -278,6 +278,10 @@ bool DX12RaytracingRenderer::checkIfOnWater(const glm::vec3& pos) {
 	return m_dxr.checkWaterAtWorldPosition(pos);
 }
 
+glm::vec3 DX12RaytracingRenderer::getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) {
+	return m_dxr.getNearestWaterPosition(position, maxOffset);
+}
+
 void DX12RaytracingRenderer::updateMetaballAABB() {
 	
 }

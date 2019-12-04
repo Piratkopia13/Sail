@@ -5,8 +5,9 @@
 #include "Sail.h"
 
 CleaningState::CleaningState(NodeSystem* nodeSystem) 
-	: m_nodeSystem(nodeSystem)
-	, m_targetNode(0)
+	: m_nodeSystemRef(nodeSystem)
+	, m_rendererWrapperRef(Application::getInstance()->getRenderWrapper())
+	, m_targetPos(0.f, 0.f, 0.f)
 	, m_searchingClock(4.f) {}
 
 CleaningState::~CleaningState() {}
@@ -16,26 +17,23 @@ void CleaningState::update(float dt, Entity* entity) {
 	auto aiPos = entity->getComponent<TransformComponent>()->getMatrixWithUpdate()[3];
 
 	m_searchingClock += dt;
-	if (m_searchingClock > 5.f) {
+	if (m_searchingClock > 2.f) {
 		int index = -1;
 		if (aiComp->currPath.size() > 0) {
 			index = aiComp->currPath[aiComp->currNodeIndex].index;
 		}
 
-		findRandomNodeIndex(index);
-		m_searchingClock = 0.f;
-		aiComp->posTarget = m_nodeSystem->getNodes()[m_targetNode].position;
+		m_searchingClock = glm::linearRand(-2.f, 1.f);
+		if (glm::linearRand(0.f, 1.f) > 0.4f) {
+			findRandomNodeIndex(index);
+		} else {
+			searchForWater(aiPos);
+		}
+		aiComp->posTarget = m_targetPos;
 		aiComp->updatePath = true;
 	}
 
 	aiComp->doWalk = true;
-
-	/*if (m_targetNode != -1 && aiComp->timeTakenOnPath > 2.f) {
-		aiComp->posTarget = m_nodeSystem->getNodes()[m_targetNode].position;
-		aiComp->doWalk = true;
-		aiComp->updatePath = true;
-		aiComp->reachedPathingTarget = false;
-	}*/
 
 	auto moveC = entity->getComponent<MovementComponent>();
 	glm::ivec3 posOffset, negOffset;
@@ -56,7 +54,7 @@ void CleaningState::update(float dt, Entity* entity) {
 		}
 	}
 
-	Application::getInstance()->getRenderWrapper()->removeWaterPoint(aiPos, posOffset, negOffset);
+	m_rendererWrapperRef->removeWaterPoint(aiPos, posOffset, negOffset);
 }
 
 void CleaningState::reset(Entity* entity) {
@@ -67,7 +65,7 @@ void CleaningState::reset(Entity* entity) {
 }
 
 void CleaningState::init(Entity* entity) {
-	m_targetNode = 0;
+	m_targetPos = glm::vec3(0.f, 0.f, 0.f);
 	m_searchingClock = 4.f;
 	auto aiComp = entity->getComponent<AiComponent>();
 	if (aiComp) {
@@ -77,15 +75,23 @@ void CleaningState::init(Entity* entity) {
 
 void CleaningState::findRandomNodeIndex(int currNodeIndex) {
 	bool foundIndex = false;
+	int targetNode = 0;
 	while (!foundIndex) {
 		int randX = (std::rand() % 20) - 10;
 		int randZ = (std::rand() % 20) - 10;
-		m_targetNode = currNodeIndex;
-		m_targetNode += randX + randZ * m_nodeSystem->getXMax();
-		m_targetNode %= (m_nodeSystem->getXMax() * m_nodeSystem->getZMax());
-		m_targetNode = std::max(m_targetNode, 0);
-		if (!m_nodeSystem->getNodes()[m_targetNode].blocked) {
+		targetNode = currNodeIndex;
+		targetNode += randX + randZ * m_nodeSystemRef->getXMax();
+		targetNode %= (m_nodeSystemRef->getXMax() * m_nodeSystemRef->getZMax());
+		targetNode = std::max(targetNode, 0);
+		if (!m_nodeSystemRef->getNodes()[targetNode].blocked) {
 			foundIndex = true;
 		}
 	}
+
+	m_targetPos = m_nodeSystemRef->getNodes()[targetNode].position;
+}
+
+void CleaningState::searchForWater(const glm::vec3& currPos) {
+	glm::vec3 maxOffset(30.f, 0.f, 30.f);
+	m_targetPos = m_rendererWrapperRef->getNearestWaterPosition(currPos, maxOffset);
 }

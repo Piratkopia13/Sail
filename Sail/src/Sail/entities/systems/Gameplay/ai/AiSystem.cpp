@@ -281,9 +281,7 @@ void AiSystem::updatePath(Entity* e) {
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	if (ai->updatePath ) {
 #ifdef _DEBUG_NODESYSTEM
-		for (int i = 0; i < ai->currPath.size(); i++) {
-			m_nodeSystem->getNodeEntities()[ai->currPath[i].index]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
-		}
+		m_nodeSystem->colorPath(ai->currPath, glm::vec4(0.f, 1.f, 0.f, 1.f));
 #endif
 		ai->timeTakenOnPath = 0.f;
 		ai->reachedPathingTarget = false;
@@ -303,14 +301,7 @@ void AiSystem::updatePath(Entity* e) {
 		ai->currPath = tempPath;
 
 #ifdef _DEBUG_NODESYSTEM
-		SAIL_LOG("Currpath size: " + std::to_string(ai->currPath.size()));
-		std::string daPath = "Path: {";
-		for (int i = 0; i < ai->currPath.size(); i++) {
-			m_nodeSystem->getNodeEntities()[ai->currPath[i].index]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 0.f, 1.f, 1.f));
-			daPath += std::to_string(ai->currPath[i].index) + ", ";
-		}
-		daPath += "}";
-		SAIL_LOG(daPath);
+		m_nodeSystem->colorPath(ai->currPath, glm::vec4(0.f, 0.f, 1.f, 1.f));
 #endif
 
 		ai->updatePath = false;
@@ -342,9 +333,9 @@ void AiSystem::updatePhysics(Entity* e, float dt) {
 		} else if (ai->currPath.size() > 0 ) {
 			// Update next node target
 			if (ai->currNodeIndex < ai->currPath.size() - 1 ) {
-#ifdef _DEBUG_NODESYSTEM
+/*#ifdef _DEBUG_NODESYSTEM
 				m_nodeSystem->getNodeEntities()[ai->currNodeIndex]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
-#endif
+#endif*/
 				ai->currNodeIndex++;
 			}
 			ai->reachedPathingTarget = false;
