@@ -66,11 +66,9 @@ void PowerUpCollectibleSystem::spawnSingleUsePowerUp(const PowerUps powerUp, con
 	pC->respawnTime = -1.0f;
 	pC->powerUpDuration = time;
 	if (parent) {
-
-
-
+		//TODO: Get Parent ID
 	}
-	//TODO: SEND MESSAGE
+	//TODO: SEND MESSAGE WITH PARENT ID
 }
 void PowerUpCollectibleSystem::spawnPowerUps(int amount) {
 	for (int i = 0; i < amount; i++) {
@@ -105,15 +103,15 @@ void PowerUpCollectibleSystem::imguiPrint(Entity** selectedEntity) {
 	ImGui::Separator();
 
 }
+#endif
 void PowerUpCollectibleSystem::spawnPowerUp(glm::vec3 pos, int powerUp, float time, float respawntime) {
 	Entity::SPtr e = EntityFactory::CreatePowerUp(pos, powerUp);
 	auto* pC = e->getComponent<PowerUpCollectibleComponent>();
 	pC->respawnTime = respawntime;
 	pC->powerUpDuration = time;
-	//TODO: SEND MESSAGE
+	//TODO: SEND MESSAGE WITHOUT PARENT ID
 }
 void PowerUpCollectibleSystem::updateSpawns(const float dt) {
-
 	auto it = m_respawns.begin();
 	while (it != m_respawns.end()) {
 		it->time -= dt;
@@ -126,4 +124,3 @@ void PowerUpCollectibleSystem::updateSpawns(const float dt) {
 		}
 	}
 }
-#endif
