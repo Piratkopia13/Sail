@@ -32,8 +32,12 @@ public:
 
 #ifdef DEVELOPMENT
 	const unsigned int getByteSize() const override {
-		/* TODO: Fix component size */
-		return sizeof(*this);
+		int size = sizeof(*this);
+		for (auto& pow : powerUps) {
+			size += sizeof(PowerUp);
+			size += sizeof(char)*pow.name.size();
+		}
+		return size;
 	}
 	void imguiRender(Entity** selected);
 #endif

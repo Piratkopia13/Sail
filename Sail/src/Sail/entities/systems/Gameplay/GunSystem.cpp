@@ -43,12 +43,12 @@ void GunSystem::setOctree(Octree* octree) {
 void GunSystem::update(float dt) {
 	for (auto& e : entities) {
 		GunComponent* gun = e->getComponent<GunComponent>();
-		PowerUpComponent* powC = e->getComponent<PowerUpComponent>();
 		// Gun is firing and is not overloaded
 		if (gun->firing && gun->gunOverloadTimer <= 0) {
 			// SHOOT
 			if (gun->projectileSpawnTimer <= 0.f) {
 					// Determine projectileSpeed based on how long the gun has been firing continuously
+				PowerUpComponent* powC = e->getComponent<PowerUpComponent>();
 				if (powC) {
 					if (powC->powerUps[PowerUpComponent::PowerUps::POWERWASH].time > 0) {
 						gun->projectileSpeed = gun->baseProjectileSpeed * 2;
@@ -61,13 +61,13 @@ void GunSystem::update(float dt) {
 					alterProjectileSpeed(gun);
 				}
 
-					m_gameDataTracker->logWeaponFired();
-					fireGun(e, gun, powC);
-				}
-				// DO NOT SHOOT (Cooldown between shots)
-				else {
-					gun->firingContinuously = false;
-				}
+				m_gameDataTracker->logWeaponFired();
+				fireGun(e, gun, powC);
+			}
+			// DO NOT SHOOT (Cooldown between shots)
+			else {
+				gun->firingContinuously = false;
+			}
 
 			// Overload the gun if necessary
 			if ((gun->gunOverloadvalue += dt) > gun->gunOverloadThreshold) {
