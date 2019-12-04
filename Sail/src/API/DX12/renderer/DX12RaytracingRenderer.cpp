@@ -48,8 +48,6 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_shadeShader = &app->getResourceManager().getShaderSet<ShadePassShader>();
 	m_fullscreenModel = ModelFactory::ScreenQuadModel::Create(m_shadeShader);
 
-	m_currNumDecals = 0;
-	memset(m_decals, 0, sizeof DXRShaderCommon::DecalData * MAX_DECALS);
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
@@ -220,7 +218,6 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 	m_hardShadowsLastFrame = hardShadows;
 	
 	m_dxr.updateSceneData(camera, lightSetup, metaballGroups_vec, teamColors);
-	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateWaterData();
 	m_dxr.updateAccelerationStructures(commandQueue, metaballGroups_vec, cmdListCompute.Get());
 	m_dxr.dispatch(m_outputTextures, m_outputBloomTexture.get(), m_shadowsLastFrame.get(), cmdListCompute.Get());
@@ -462,15 +459,6 @@ void DX12RaytracingRenderer::submitMetaball(RenderCommandType type, Material* ma
 		m_metaballGroups_map[group].balls.emplace_back(ball);
 		m_metaballGroups_map[group].averageDistToCamera += ball.distToCamera;
 	}
-}
-
-void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {
-	DXRShaderCommon::DecalData decalData;
-	decalData.position = pos;
-	decalData.rot = rot;
-	decalData.halfSize = halfSize;
-	m_decals[m_currNumDecals % MAX_DECALS] = decalData;
-	m_currNumDecals++;
 }
 
 void DX12RaytracingRenderer::submitWaterPoint(const glm::vec3& pos) {

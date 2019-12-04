@@ -19,13 +19,6 @@ groupshared float2 cache[NUM_SHADOW_TEXTURES][cacheSize];
 
 #define BSIGMA 1.0
 
-float normpdf(in float x, in float sigma) {
-    // return 0.39894f * exp(-0.5f * x / (sigma * sigma)) / sigma;
-	// stor skillnad -> returnerna lågt
-    // return 1.f / (max(abs(x) * 100.f, 0.0000001f));
-    return 1.f - x;
-}
-
 float normpdf3(in float3 v, in float sigma) {
 	return 0.39894f * exp(-0.5f * dot(v,v) / (sigma * sigma)) / sigma;
 }

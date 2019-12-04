@@ -36,7 +36,6 @@ namespace DXRShaderCommon {
 #define MAX_NUM_METABALLS 500
 #define MAX_NUM_METABALL_GROUPS 16
 #define METABALL_RADIUS 0.12f
-#define MAX_DECALS 100
 #define NUM_SHADOW_TEXTURES 14
 #define LIGHT_RADIUS 0.08 // TODO: tweak this!
 
@@ -116,7 +115,7 @@ struct SceneCBuffer {
 	bool doHardShadows;
 	float3 cameraDirection;
 	uint nMetaballGroups;
-    uint nDecals;
+	uint padding;
 	float nearZ;
 	float farZ;
 	float padding2;
@@ -146,17 +145,6 @@ struct MeshData {
 };
 struct MeshCBuffer {
 	MeshData data[MAX_INSTANCES]; // cbuffer min size is 64kb, fill with flags
-};
-
-struct DecalData {
-    float3 position;
-	float padding0;
-    float3 halfSize;
-	float padding1;
-    float4x4 rot;
-};
-struct DecalCBuffer {
-    DecalData data[MAX_DECALS];
 };
 
 struct ProceduralPrimitiveAttributes {

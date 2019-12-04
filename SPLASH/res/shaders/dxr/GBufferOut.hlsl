@@ -93,19 +93,14 @@ GBuffers PSMain(PSIn input) {
 		} else {
 			gbuffers.albedo *= albedo;
 		}
-
 	}
 
     gbuffers.metalnessRoughnessAO = float4(sys_material_pbr.metalnessScale, sys_material_pbr.roughnessScale, sys_material_pbr.aoScale, 1.0f);
 	if (sys_material_pbr.hasMetalnessRoughnessAOTexture)
 		gbuffers.metalnessRoughnessAO *= sys_texMetalnessRoughnessAO.Sample(PSss, input.texCoords);
 
-    // float2 screenPos = input.clipPos.xy / input.clipPos.w * 0.5f + 0.5f;
-    // screenPos.y = 1.f - screenPos.y; // Flip y cuz directX
-    // float2 positionLastFrame = sys_texLastScreenPositions.Sample(PSss, screenPos).xy;
     float2 position = input.clipPos.xy / input.clipPos.w * 0.5f + 0.5f;
     float2 positionLastFrame = input.clipPosLastFrame.xy / input.clipPosLastFrame.w * 0.5f + 0.5f;
-    // gbuffers.motionVector = float4(position * 0.5f + 0.5f, 0.0f, 1.0f);
     gbuffers.motionVector = (position - positionLastFrame) * 0.5f + 0.5f;
 
     return gbuffers;

@@ -11,11 +11,6 @@ RWTexture2D<float4> gbuffer_metalnessRoughnessAO 	: register(u2);
 Texture2D<float2>   gbuffer_motionVectors			: register(t10);
 Texture2D<float>    gbuffer_depth 					: register(t11);
 
-// Decal textures
-// Texture2D<float4> decal_texAlbedo 					: register(t17); // NOT USED
-// Texture2D<float4> decal_texNormal 					: register(t18); // NOT USED
-// Texture2D<float4> decal_texMetalnessRoughnessAO 	: register(t19); // NOT USED
-
 RWTexture2D<float4> lOutputAlbedo		 		: register(u3);		// RGB
 RWTexture2D<float4> lOutputNormals 				: register(u4); 	// XYZ
 RWTexture2D<float4> lOutputMetalnessRoughnessAO : register(u5); 	// Metalness/Roughness/AO
@@ -27,7 +22,6 @@ Texture2DArray<float2> InputShadowsLastFrame 	: register(t20); 	// last frame Sh
 
 ConstantBuffer<SceneCBuffer> CB_SceneData : register(b0, space0);
 ConstantBuffer<MeshCBuffer> CB_MeshData : register(b1, space0);
-// ConstantBuffer<DecalCBuffer> CB_DecalData : register(b2, space0); // NOT USED
 
 StructuredBuffer<Vertex> vertices : register(t1, space0);
 StructuredBuffer<uint> indices : register(t1, space1);
@@ -211,9 +205,6 @@ void rayGen() {
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
 	//===========MetaBalls RT END===========
 
-	// lOutputPositionsOne[launchIndex] = payloadMetaball.albedoOne;
-	// return;
-
 	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payloadMetaball.closestTvalue);
 	RayPayload finalPayload = payload;
 	if (metaballDepth <= linearDepth) { 
@@ -276,7 +267,6 @@ void rayGen() {
 		scene.sampler = ss;
 
 		float4 secondBounceColor = pbrShade(scene, pixelTwo, -1.f);
-		// float4 secondBounceColor = 0.f;
 		// Shade the first hit
 		float4 outputColor = pbrShade(scene, pixelOne, secondBounceColor.rgb);
 		// float4 outputColor = secondBounceColor;
@@ -306,7 +296,6 @@ void rayGen() {
 
 	float totalShadowAmount = 0.f;
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
-	// float2 reprojectedTexCoord = screenTexCoord;
 
 	uint shadowTextureIndex = 0;
 	int lightIndex = 0;

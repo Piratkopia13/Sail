@@ -244,10 +244,5 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
     // Add the (improvised) ambient term to get the final color of the pixel
     float3 color = ambient + Lo;
 
-    // // Gamma correction
-    // color = color / (color + 1.0f);
-    // // Tone mapping using the Reinhard operator
-    // color = pow(color, 1.0f / 2.2f);
-
     return float4(color, 1.0f);
 }

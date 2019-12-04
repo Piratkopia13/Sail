@@ -106,15 +106,12 @@ Outputs PSMain(PSIn input) {
     scene.shadow = shadowTwo;
     scene.shadowTextureIndexMap = shadowTextureIndexMap;
 	float4 secondBounceColor = pbrShade(scene, pixelTwo, -1.f);
-	// float4 secondBounceColor = 0.f;
 
     // Shade the first hit
     scene.shadow = shadowOne;
     float4 outputColor = pbrShade(scene, pixelOne, secondBounceColor.rgb);
     // return outputColor;
     output.shaded = outputColor;
-	// output.shaded = float4(shadowTwo[0], 0.f, 0.f, 1.0f);
-
 
     // Write bloom pass input
     output.bloom = float4((length(outputColor.rgb) > 1.0f) ? clamp(outputColor.rgb, 0.f, 3.f) : 0.f, 1.0f);
