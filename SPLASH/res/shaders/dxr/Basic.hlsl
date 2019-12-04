@@ -210,7 +210,7 @@ void rayGen() {
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
 	//===========MetaBalls RT END===========
 
-	// lOutputPositionsOne[launchIndex] = payloadMetaball.albedoTwo;
+	// lOutputPositionsOne[launchIndex] = payloadMetaball.albedoOne;
 	// return;
 
 	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payloadMetaball.closestTvalue);
@@ -220,6 +220,12 @@ void rayGen() {
 		// Overwrite variables used for shadow rays
 		worldPosition = payloadMetaball.worldPositionOne;
 		worldNormal = payloadMetaball.normalOne;
+
+		albedoOne = payloadMetaball.albedoOne;
+		metalnessOne = payloadMetaball.metalnessRoughnessAOOne.r;
+		roughnessOne = payloadMetaball.metalnessRoughnessAOOne.g;
+		aoOne = payloadMetaball.metalnessRoughnessAOOne.b;
+		emissivenessOne = 0.f;
 	}
 
 	// Second bounce information
@@ -477,7 +483,7 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 		reflect_color =  saturate(reflect_color);
 
 		float4 refract_color = refract_payload.albedoTwo;
-		refract_color.b += 0.01f;
+		refract_color.b += 0.3f;
 		refract_color = saturate(refract_color);
 
 		float3 hitToCam = CB_SceneData.cameraPosition - Utils::HitWorldPosition();
@@ -488,13 +494,12 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 		finaldiffusecolor.a = 1;
 
 		/////////////////////////
-		payload.albedoOne = float4(1.f, 0.f, 0.f, 1.0f);
-		// payload.albedoOne = float4(finaldiffusecolor.rgb, 1.0f);
+		payload.albedoOne = float4(refract_color.rgb, 1.0f);
 		payload.normalOne = normalInWorldSpace;
-		payload.metalnessRoughnessAOOne = float4(1.f, 1.f, 1.f, 1.f);
+		payload.metalnessRoughnessAOOne = float4(1.f, 0.f, 1.f, 1.f);
 		payload.worldPositionOne = Utils::HitWorldPosition();
 
-		payload.albedoTwo = reflect_payload.albedoTwo;
+		payload.albedoTwo = float4(reflect_color.rgb, 1.0f);
 		payload.normalTwo = reflect_payload.normalTwo;
 		payload.metalnessRoughnessAOTwo = reflect_payload.metalnessRoughnessAOTwo;
 		payload.worldPositionTwo = reflect_payload.worldPositionTwo;

@@ -249,6 +249,11 @@ void DXRBase::updateSceneData(Camera* cam, LightSetup* lights, const std::vector
 	newData.frameCount = m_frameCount++;
 	newData.nMetaballGroups = metaballGroups.size();
 
+	for (auto& group : metaballGroups) {
+		newData.metaballGroup[group->index].start = group->gpuGroupStartOffset;
+		newData.metaballGroup[group->index].size = group->balls.size();
+	}
+
 	int nTeams = teamColors.size();
 	for (int i = 0; i < nTeams && i < NUM_TEAM_COLORS; i++) {
 		newData.teamColors[i] = glm::vec4(teamColors[i], 1.0f);
