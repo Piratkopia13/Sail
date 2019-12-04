@@ -19,10 +19,6 @@
 
 #include <future>
 
-// Mainly used in progress bar
-#define TOTAL_NR_OF_MODELS 23
-#define TOTAL_NR_OF_TEXTURES 85
-
 class Camera;
 
 // Forward declarations

@@ -50,11 +50,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
 	particleEmitterComp->spawnRate = 0.001f;
 	particleEmitterComp->lifeTime = 0.13f;
-	std::string particleTextureName = "particles/animFire.dds";
-	if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
-		Application::getInstance()->getResourceManager().loadTexture(particleTextureName);
-	}
-	particleEmitterComp->setTexture(particleTextureName);
+	particleEmitterComp->setTexture("particles/animFire.dds");
 
 	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
 	ragdollComp->localCenterOfMass = { 0.f, 0.2f, 0.f };

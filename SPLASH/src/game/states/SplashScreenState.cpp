@@ -218,6 +218,8 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/DDS/WaterGun/Watergun_MRAO.dds");
 	rm->loadTexture("pbr/DDS/WaterGun/Watergun_NM.dds");
 
+	rm->loadTexture("particles/animFire.dds");
+
 	rm->loadTexture("Icons/TorchLeft.tga");
 	rm->loadTexture("Icons/TorchThrow2.tga");
 	rm->loadTexture("Icons/PlayersLeft.tga");

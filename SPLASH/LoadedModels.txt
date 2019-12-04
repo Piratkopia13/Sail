@@ -27,4 +27,3 @@ Tiles/RoomWall.fbx1
 Torch.fbx
 WaterPistol.fbx
 boundingBox.fbx
-cubeWidth1.fbx

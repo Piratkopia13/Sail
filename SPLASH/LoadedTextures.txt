@@ -76,10 +76,16 @@ pbr/DDS/Doc/Doc_NM.dds
 pbr/DDS/WaterGun/Watergun_Albedo.dds
 pbr/DDS/WaterGun/Watergun_MRAO.dds
 pbr/DDS/WaterGun/Watergun_NM.dds
+particles/animFire.dds
 Icons/TorchLeft.tga
 Icons/TorchThrow2.tga
 Icons/PlayersLeft.tga
 Icons/CantShootIcon1.tga
 Icons/CantShootIcon2.tga
 missing.tga
-particles/animFire.dds
+pbr/splash/PuddleAlbedo.tga
+pbr/splash/PuddleNM.tga
+pbr/splash/puddleMRAo.tga
+pbr/splash/PuddleAlbedo.tga
+pbr/splash/PuddleNM.tga
+pbr/splash/puddleMRAo.tga

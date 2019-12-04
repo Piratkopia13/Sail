@@ -16,6 +16,11 @@
 #include <string>
 #include "Sail/utils/SailImGui/SailImGui.h"
 
+// Mainly used in progress bar
+#define TOTAL_NR_OF_MODELS 23
+#define TOTAL_NR_OF_TEXTURES 85
+
+
 MenuState::MenuState(StateStack& stack) 
 	: State(stack),
 	inputIP("") {
@@ -281,12 +286,20 @@ void MenuState::renderDebug() {
 		std::string progress = "Models:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(rm.numberOfModels() / (float)TOTAL_NR_OF_MODELS, ImVec2(0.0f, 0.0f), std::string(std::to_string(rm.numberOfModels()) + ":" + std::to_string(TOTAL_NR_OF_MODELS)).c_str());
+		ImGui::ProgressBar(
+			rm.numberOfModels() / (float)TOTAL_NR_OF_MODELS,
+			ImVec2(0.0f, 0.0f),
+			std::string(std::to_string(rm.numberOfModels()) + ":" + std::to_string(TOTAL_NR_OF_MODELS)).c_str()
+		);
 
 		progress = "Textures:";
 		ImGui::Text(progress.c_str());
 		ImGui::SameLine();
-		ImGui::ProgressBar(rm.numberOfTextures() / (float)TOTAL_NR_OF_TEXTURES, ImVec2(0.0f, 0.0f));
+		ImGui::ProgressBar(
+			rm.numberOfTextures() / (float)TOTAL_NR_OF_TEXTURES,
+			ImVec2(0.0f, 0.0f),
+			std::string(std::to_string(rm.numberOfTextures()) + ":" + std::to_string(TOTAL_NR_OF_TEXTURES)).c_str()
+		);
 	}
 	ImGui::End();
 }
