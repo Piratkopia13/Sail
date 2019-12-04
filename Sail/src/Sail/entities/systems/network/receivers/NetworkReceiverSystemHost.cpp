@@ -93,6 +93,7 @@ void NetworkReceiverSystemHost::prepareEndScreen(const Netcode::PlayerID sender,
 }
 
 bool NetworkReceiverSystemHost::onEvent(const Event& event) {
+	NetworkReceiverSystem::onEvent(event);
 
 	switch (event.type) {
 	case Event::Type::START_KILLCAM:
