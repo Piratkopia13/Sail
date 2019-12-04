@@ -229,7 +229,5 @@ bool SplashScreenState::loadTextures(Application* app) {
 	// Load the missing texture texture
 	rm->loadTexture("missing.tga");
 
-	rm->loadTexture("pbr/brdfLUT.tga");
-
 	return true;
 }

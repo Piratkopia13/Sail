@@ -823,7 +823,11 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		// Next slot is used for the brdfLUT
 		m_rtBrdfLUTGPUHandle = gpuHandle;
 
-		auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
+		auto& rm = Application::getInstance()->getResourceManager();
+		if (!rm.hasTexture(m_brdfLUTPath)) {
+			rm.loadTexture(m_brdfLUTPath);
+		}
+		auto& brdfLutTex = static_cast<DX12Texture&>(rm.getTexture(m_brdfLUTPath));
 		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, brdfLutTex.getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
