@@ -16,6 +16,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
 	//_CrtSetBreakAlloc(903);
 	
+	//SetProcessWorkingSetSizeEx(GetCurrentProcess(), 204'800, 268'435'456, QUOTA_LIMITS_HARDWS_MAX_ENABLE);
+
 	Game game(hInstance);
 	game.run();
 

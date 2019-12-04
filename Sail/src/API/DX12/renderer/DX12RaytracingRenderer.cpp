@@ -25,8 +25,8 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	m_outputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Raytracing renderer output texture", Texture::R16G16B16A16_FLOAT)));
 	m_outputBloomTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "Raytracing renderer bloom output texture", Texture::R16G16B16A16_FLOAT)));
 
-	m_currNumDecals = 0;
-	memset(m_decals, 0, sizeof(DXRShaderCommon::DecalData) * MAX_DECALS);
+	/*m_currNumDecals = 0;
+	memset(m_decals, 0, sizeof(DXRShaderCommon::DecalData) * MAX_DECALS);*/
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
@@ -167,7 +167,7 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 		m_dxr.updateSceneData(*camera, *lightSetup, metaballGroups_vec, teamColors, (postProcessPipeline) ? false : true);
 	}
 
-	m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
+	//m_dxr.updateDecalData(m_decals, m_currNumDecals > MAX_DECALS - 1 ? MAX_DECALS : m_currNumDecals);
 	m_dxr.updateWaterData();
 	m_dxr.updateAccelerationStructures(commandQueue, cmdListCompute.Get(), metaballGroups_vec);
 	m_dxr.dispatch(m_outputTexture.get(), m_outputBloomTexture.get(), cmdListCompute.Get());
@@ -252,14 +252,14 @@ void DX12RaytracingRenderer::submitMetaball(RenderCommandType type, Material* ma
 	}
 }
 
-void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {
-	DXRShaderCommon::DecalData decalData;
-	decalData.position = pos;
-	decalData.rot = rot;
-	decalData.halfSize = halfSize;
-	m_decals[m_currNumDecals % MAX_DECALS] = decalData;
-	m_currNumDecals++;
-}
+//void DX12RaytracingRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {
+//	DXRShaderCommon::DecalData decalData;
+//	decalData.position = pos;
+//	decalData.rot = rot;
+//	decalData.halfSize = halfSize;
+//	m_decals[m_currNumDecals % MAX_DECALS] = decalData;
+//	m_currNumDecals++;
+//}
 
 void DX12RaytracingRenderer::submitWaterPoint(const glm::vec3& pos) {
 	m_dxr.addWaterAtWorldPosition(pos);

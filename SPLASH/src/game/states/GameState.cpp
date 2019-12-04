@@ -344,15 +344,15 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::SPRAY)) {
-		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.closestHit >= 0.0f) {
-			// size (the size you want) = 0.3
-			// halfSize = (1 / 0.3) * 0.5 = 1.667
-			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(1.667f));
-		}
-	}
+	//if (Input::WasKeyJustPressed(KeyBinds::SPRAY)) {
+	//	Octree::RayIntersectionInfo tempInfo;
+	//	m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
+	//	if (tempInfo.closestHit >= 0.0f) {
+	//		// size (the size you want) = 0.3
+	//		// halfSize = (1 / 0.3) * 0.5 = 1.667
+	//		m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(1.667f));
+	//	}
+	//}
 
 	//Test frustum culling
 	if (Input::IsKeyPressed(KeyBinds::TEST_FRUSTUMCULLING)) {

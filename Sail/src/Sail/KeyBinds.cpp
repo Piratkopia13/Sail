@@ -15,7 +15,7 @@ namespace KeyBinds {
 	int MOVE_DOWN;
 	int SPRINT;
 	int SHOOT;
-	int SPRAY;
+	//int SPRAY;
 	int LIGHT_CANDLE;
 	int SHOW_IN_GAME_MENU;
 
@@ -75,7 +75,7 @@ void KeyBinds::init() {
 	SPRINT             = SAIL_KEY_SHIFT;
 	SHOOT              = SAIL_MOUSE_LEFT_BUTTON;
 	THROW_CHARGE	   = SAIL_KEY_F;
-	SPRAY              = SAIL_KEY_L;
+	//SPRAY              = SAIL_KEY_L;
 	LIGHT_CANDLE       = SAIL_KEY_R;
 	SHOW_IN_GAME_MENU  = SAIL_KEY_ESCAPE;
 

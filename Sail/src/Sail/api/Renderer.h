@@ -66,7 +66,7 @@ public:
 
 	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags, int group) {}
 
-	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) { };
+	//virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) { };
 	virtual void submitWaterPoint(const glm::vec3& pos) { };
 	virtual bool checkIfOnWater(const glm::vec3& pos) { return false; }
 	virtual void end() { };

@@ -35,9 +35,9 @@ void DX12HybridRaytracerRenderer::submitMetaball(RenderCommandType type, Materia
 	m_rendererRaytrace->submitMetaball(type, material, pos, flags, group);
 }
 
-void DX12HybridRaytracerRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {
-	m_rendererRaytrace->submitDecal(pos, rot, halfSize);
-}
+//void DX12HybridRaytracerRenderer::submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) {
+//	m_rendererRaytrace->submitDecal(pos, rot, halfSize);
+//}
 
 void DX12HybridRaytracerRenderer::submitWaterPoint(const glm::vec3& pos) {
 	m_rendererRaytrace->submitWaterPoint(pos);
