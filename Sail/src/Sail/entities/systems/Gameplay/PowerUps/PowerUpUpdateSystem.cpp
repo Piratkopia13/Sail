@@ -10,7 +10,6 @@ PowerUpUpdateSystem::~PowerUpUpdateSystem() {
 }
 
 void PowerUpUpdateSystem::update(float dt) {
-
 	for (auto& e: entities) {
 		if (auto* powC = e->getComponent<PowerUpComponent>()) {
 			for (auto& pow : powC->powerUps) {

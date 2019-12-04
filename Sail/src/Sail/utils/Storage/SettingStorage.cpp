@@ -266,7 +266,10 @@ void SettingStorage::createGameDefaultMap() {
 		{ "on", 0.0f },
 		{ "off",1.0f }
 	}));
-
+	gameSettingsStatic["map"]["Powerup"] = Setting(0, std::vector<Setting::Option>({
+		{ "on", 0.0f },
+		{ "off",1.0f }
+	}));
 
 
 
@@ -280,8 +283,8 @@ void SettingStorage::createGameDefaultMap() {
 		{"Cologne",		5},
 		{"Frankfurt",	6},
 		{"Bremen",		7},
-		{"Flensburg",			8},
-		{"Hanover",			9},
+		{"Flensburg",	8},
+		{"Hanover",		9},
 		{"Wasserburg",	10}, // Alex - Hanslin/Hansburg/
 		{"Lubeck",		11}, // Fred - /
 	}));

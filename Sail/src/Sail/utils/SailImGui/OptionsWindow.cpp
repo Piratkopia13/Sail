@@ -216,7 +216,7 @@ bool OptionsWindow::renderGameOptions() {
 	unsigned int selected = 0;
 	std::string valueName = "";
 
-	static std::vector<std::string> MapOptions = { "sprinkler" };
+	static std::vector<std::string> MapOptions = { "sprinkler", "Powerup" };
 	for (auto& optionName : MapOptions) {
 		sopt = &stat["map"][optionName];
 		selected = sopt->selected;
@@ -234,6 +234,7 @@ bool OptionsWindow::renderGameOptions() {
 		if (SailImGui::TextButton(std::string(">##" + optionName).c_str())) {
 			sopt->setSelected(selected + 1);
 		}
+		ImGui::NextColumn();
 	}
 
 	ImGui::NextColumn();
