@@ -24,19 +24,19 @@ void PowerUpCollectibleSystem::update(float dt) {
 	m_distances.clear();
 	//Only let host control powerup pickup for all players.
 	if (!isHost) {
-		m_distances.emplace_back(-1.0f);
 		return;
 	}
 	if (!m_playerList) {
-		m_distances.emplace_back(-2.0f);
 		return;
 	}
+
+	updateSpawns(dt);
+
 	for (auto& e : entities) {
 		auto* transformC = e->getComponent<TransformComponent>();
 		auto* powerCC = e->getComponent<PowerUpCollectibleComponent>();
 		if (transformC && powerCC) {
 			if (powerCC->time > 0.0f) {
-				m_distances.emplace_back(-3.0f);
 				continue;
 			}
 			
@@ -51,7 +51,7 @@ void PowerUpCollectibleSystem::update(float dt) {
 							e->queueDestruction(); // TODO: CHANGE TO NETWORK MESSAGE
 							if (powerCC->respawnTime > 0.0f) {
 								//powerCC->time = powerCC->respawnTime; // TODO: CHANGE TO NETWORK MESSAGE
-								//m_respawns.emplace_back(powerCC->respawnTime, powerCC->powerUp);
+								m_respawns.push_back({ 5, PowerUps(powerCC->powerUp), transformC->getTranslation() });
 							}
 						}
 					}
@@ -95,6 +95,14 @@ void PowerUpCollectibleSystem::imguiPrint(Entity** selectedEntity) {
 	}
 
 	ImGui::Separator();
+	
+	for (auto& respawn : m_respawns) {
+		ImGui::Text(std::to_string(respawn.time).c_str());
+	}
+
+
+
+	ImGui::Separator();
 
 }
 void PowerUpCollectibleSystem::spawnPowerUp(glm::vec3 pos, int powerUp, float time, float respawntime) {
@@ -106,5 +114,16 @@ void PowerUpCollectibleSystem::spawnPowerUp(glm::vec3 pos, int powerUp, float ti
 }
 void PowerUpCollectibleSystem::updateSpawns(const float dt) {
 
+	auto it = m_respawns.begin();
+	while (it != m_respawns.end()) {
+		it->time -= dt;
+		if (it->time <= 0.0f) {
+			spawnPowerUp(it->pos, it->powerUp, 15.0f, 30.0f); //TODO: change values to use settings
+			it = m_respawns.erase(it);
+		}
+		else {
+			it++;
+		}
+	}
 }
 #endif
