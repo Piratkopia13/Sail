@@ -379,7 +379,7 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 		shaderPipeline->setCBufferVar("pointLights", &plData, sizeof(plData));
 		shaderPipeline->setCBufferVar("spotLights", &slData, sizeof(slData));
 
-		const unsigned int maxLights = NUM_POINT_LIGHTS * 2; // Point light and spot lights
+		const unsigned int maxLights = NUM_TOTAL_LIGHTS; // Point light and spot lights
 		IndexMap indexMapData[maxLights];
 		// Map shadow texture indices to light indices
 		uint lightIndex = 0;

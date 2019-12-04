@@ -29,7 +29,7 @@ cbuffer PSSceneCBuffer : register(b0) {
     float3 cameraPosition;
     float padding;
     PointlightInput pointLights[NUM_POINT_LIGHTS];
-    SpotlightInput spotLights[NUM_POINT_LIGHTS];
+    SpotlightInput spotLights[NUM_SPOT_LIGHTS];
     IndexMap shadowTextureIndexMap[NUM_TOTAL_LIGHTS]; // Maps light indices to shadow texture indices
 }
 
@@ -106,6 +106,7 @@ Outputs PSMain(PSIn input) {
     scene.shadow = shadowTwo;
     scene.shadowTextureIndexMap = shadowTextureIndexMap;
 	float4 secondBounceColor = pbrShade(scene, pixelTwo, -1.f);
+	// float4 secondBounceColor = 0.f;
 
     // Shade the first hit
     scene.shadow = shadowOne;

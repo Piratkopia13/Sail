@@ -30,7 +30,8 @@ namespace DXRShaderCommon {
 #define MAX_RAY_RECURSION_DEPTH 15
 #define MAX_INSTANCES 400
 #define NUM_POINT_LIGHTS 12
-#define NUM_TOTAL_LIGHTS NUM_POINT_LIGHTS*2
+#define NUM_SPOT_LIGHTS 12
+#define NUM_TOTAL_LIGHTS NUM_POINT_LIGHTS + NUM_SPOT_LIGHTS
 #define NUM_TEAM_COLORS 12
 #define MAX_NUM_METABALLS 500
 #define MAX_NUM_METABALL_GROUPS 16
@@ -120,7 +121,7 @@ struct SceneCBuffer {
 	float farZ;
 	float padding2;
     PointlightInput pointLights[NUM_POINT_LIGHTS];
-    SpotlightInput spotLights[NUM_POINT_LIGHTS];
+    SpotlightInput spotLights[NUM_SPOT_LIGHTS];
 	float4 teamColors[NUM_TEAM_COLORS];
 	MetaballGroupData metaballGroup[MAX_NUM_METABALL_GROUPS];
 

@@ -13,14 +13,14 @@ void LightSetup::addPointLight(const PointLight& pl) {
 	m_pls.push_back(pl);
 	if (pl.getIndex() < 0) {
 		SAIL_LOG_WARNING("Pointlight Index Less than 0. Index: " + std::to_string(pl.getIndex()));
-		m_pls.back().setIndex(m_pls.size() + 12);
+		m_pls.back().setIndex(m_pls.size() + MAX_POINTLIGHTS_RENDERING);
 	}
 }
 void LightSetup::addSpotLight(const SpotLight& pl) {
 	m_sls.push_back(pl);
 	if (pl.getIndex() < 0) {
 		SAIL_LOG_WARNING("Spotlight Index Less than 0. Index: " + std::to_string(pl.getIndex()));
-		m_sls.back().setIndex(m_sls.size() + 12);
+		m_sls.back().setIndex(m_sls.size() + MAX_SPOTLIGHTS_RENDERING);
 	}
 }
 
@@ -80,8 +80,9 @@ void LightSetup::updateBufferData() {
 	m_dlData.color = m_dl.getColor();
 	m_dlData.direction = m_dl.getDirection();
 	// Copy the x first lights into the buffer
-	for (unsigned int i = 0; i < MAX_POINTLIGHTS_FORWARD_RENDERING; i++) {
-		//Pointlights
+
+	// Pointlights
+	for (unsigned int i = 0; i < MAX_POINTLIGHTS_RENDERING; i++) {
 		if (i < m_pls.size()) {// break;
 			m_plData.pLights[i].attConstant = m_pls[i].getAttenuation().constant;
 			m_plData.pLights[i].attLinear = m_pls[i].getAttenuation().linear;
@@ -95,8 +96,9 @@ void LightSetup::updateBufferData() {
 			m_plData.pLights[i].color = glm::vec3(0.f, 0.f, 0.f);
 			m_plData.pLights[i].position = glm::vec3(0.f, 0.f, 0.f);
 		}
-
-		//Spotlights
+	}
+	// Spotlights
+	for (unsigned int i = 0; i < MAX_SPOTLIGHTS_RENDERING; i++) {
 		if (i < m_sls.size()) {// break;
 			m_slData.sLights[i].attConstant		= m_sls[i].getAttenuation().constant;
 			m_slData.sLights[i].attLinear		= m_sls[i].getAttenuation().linear;

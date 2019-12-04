@@ -85,7 +85,7 @@ struct IndexMap {
 };
 struct PBRScene {
     PointlightInput pointLights[NUM_POINT_LIGHTS];
-    SpotlightInput spotLights[NUM_POINT_LIGHTS];
+    SpotlightInput spotLights[NUM_SPOT_LIGHTS];
     Texture2D<float4> brdfLUT;
     SamplerState sampler;
     // Only used for soft shadows
@@ -121,15 +121,20 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
     // Do lighting from all light sources
     {
         // Point lights
-        [unroll]
+        // [unroll]
+        PointlightInput p;
         for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
-            PointlightInput p = scene.pointLights[i];
+            p = scene.pointLights[i];
             // Ignore point light if color is black
             if (all(p.color == 0.0f)) {
                 continue;
             }
+            float distance = length(p.position - pixel.worldPosition);
+            // Ignore lights that are too far away
+            if (distance > p.attConstant) {
+                continue;
+            }
 #ifdef RAYTRACER_HARD_SHADOWS
-    float distance = length(p.position - pixel.worldPosition);
     float3 direction = normalize(p.position - pixel.worldPosition);
     // Cast hard shadow ray, 1spp
     float shadowAmount = 1.f - (float)Utils::rayHitAnything(pixel.worldPosition, pixel.worldNormal, direction, distance);
@@ -152,23 +157,28 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
             Lo += shadeWithLight(p, pixel.worldPosition, N, V, F0, pixel.albedo, pixel.metalness, pixel.roughness, shadowAmount);
         }
         // Spotlights
-        [unroll]
-		for (int j = 0; j < NUM_POINT_LIGHTS; j++) {
-            SpotlightInput p = scene.spotLights[j];
+        // [unroll]
+        SpotlightInput s;
+		for (int j = 0; j < NUM_SPOT_LIGHTS; j++) {
+            s = scene.spotLights[j];
 			// Ignore point light if color is black
-			if (all(p.color == 0.0f) || p.angle == 0) {
+			if (all(s.color == 0.0f) || s.angle == 0) {
 				continue;
 			}
-			float3 L = normalize(p.position - pixel.worldPosition);
-			float angle = dot(L, normalize(p.direction));
+			float3 L = normalize(s.position - pixel.worldPosition);
+			float angle = dot(L, normalize(s.direction));
             // Ignore if angle is outside light
             // abs is used to make spotlights bidirectional
-			if (abs(angle) <= p.angle) {
+			if (abs(angle) <= s.angle) {
 				continue;
 			}
+            float distance = length(s.position - pixel.worldPosition);
+            // Ignore lights that are too far away
+            if (distance > s.attConstant) {
+                continue;
+            }
 #ifdef RAYTRACER_HARD_SHADOWS
-    float distance = length(p.position - pixel.worldPosition);
-    float3 direction = normalize(p.position - pixel.worldPosition);
+    float3 direction = normalize(s.position - pixel.worldPosition);
     // Cast hard shadow ray, 1spp
     float shadowAmount = 1.f - (float)Utils::rayHitAnything(pixel.worldPosition, pixel.worldNormal, direction, distance);
 #else
@@ -188,9 +198,8 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
             }
             totalShadowAmount += shadowAmount;
 
-            PointlightInput castedP = (PointlightInput)p; // Not doing the cast on a separate line breaks shader compilation
+            PointlightInput castedP = (PointlightInput)s; // Not doing the cast on a separate line breaks shader compilation
             Lo += shadeWithLight(castedP, pixel.worldPosition, N, V, F0, pixel.albedo, pixel.metalness, pixel.roughness, shadowAmount);
-            // Lo = float3(shadowAmount, shadowAmount, shadowAmount);
 		}
     }
 
@@ -198,7 +207,7 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
 	// This fixes water being visible in darkness
 	totalShadowAmount /= max(numLights, 1);
 	totalShadowAmount = (totalShadowAmount * totalShadowAmount);
-	pixel.ao = lerp(0.f, pixel.ao, totalShadowAmount);
+	// pixel.ao = lerp(0.f, pixel.ao, totalShadowAmount);
 
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT
     float3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, pixel.roughness);

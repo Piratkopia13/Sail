@@ -76,7 +76,7 @@ float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal,
 	bool foundLight = false;
 	while (true) {
 		skip = false;
-		if (inOutlightIndex >= NUM_POINT_LIGHTS * 2) {
+		if (inOutlightIndex >= NUM_TOTAL_LIGHTS) {
 			// No more applicable lights found!
 			inOutlightIndex = -1;
 			return 0.f;
@@ -182,7 +182,7 @@ void rayGen() {
 	float emissivenessOne = pow(1 - mrao.a, 2);
 	float originalAoOne = aoOne;
 	// Change material if first bounce color should be water on a surface
-	getWaterMaterialOnSurface(albedoOne, metalnessOne, roughnessOne, aoOne, worldNormal, worldPosition); // TODO: fix and uncomment
+	getWaterMaterialOnSurface(albedoOne, metalnessOne, roughnessOne, aoOne, worldNormal, worldPosition);
 
 	RayDesc ray;
 	ray.Origin = worldPosition;
@@ -210,7 +210,7 @@ void rayGen() {
 	TraceRay(gRtScene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, INSTANCE_MASK_METABALLS, 0 /* ray index*/, 0, 0, ray, payloadMetaball);
 	//===========MetaBalls RT END===========
 
-	// lOutputPositionsOne[launchIndex] = payload.albedoTwo * payloadMetaball.albedoOne;
+	// lOutputPositionsOne[launchIndex] = payloadMetaball.albedoTwo;
 	// return;
 
 	float metaballDepth = dot(normalize(CB_SceneData.cameraDirection), normalize(rayDir) * payloadMetaball.closestTvalue);
@@ -272,10 +272,11 @@ void rayGen() {
 		// float4 secondBounceColor = 0.f;
 		// Shade the first hit
 		float4 outputColor = pbrShade(scene, pixelOne, secondBounceColor.rgb);
+		// float4 outputColor = secondBounceColor;
 		lOutputPositionsOne[launchIndex] = outputColor;
 
 		// Write bloom pass input
-		lOutputBloom[launchIndex] = float4((length(outputColor.rgb) > 1.0f) ? outputColor.rgb : 0.f, 1.0f);
+		lOutputBloom[launchIndex] = float4((length(outputColor.rgb) > 1.0f) ? clamp(outputColor.rgb, 0.f, 3.f) : 0.f, 1.0f);
 
 		return; // Stop here, all code below is for soft shadows
 	}
@@ -426,22 +427,22 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	// Initialize a random seed
 	uint randSeed = Utils::initRand( DispatchRaysIndex().x + DispatchRaysIndex().y * DispatchRaysDimensions().x, CB_SceneData.frameCount );
 	
-	// Write shadows for each light
-	uint shadowTextureIndex = 0;
-	uint lightIndex = 0;
-	[unroll]
-	while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
-		float shadowAmount = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, lightIndex);
-		if (lightIndex == -1) {
-			// No more lights available!
-			break;
+	if (!CB_SceneData.doHardShadows) {
+		// Soft shadows only
+		// Write shadows for each light
+		uint shadowTextureIndex = 0;
+		uint lightIndex = 0;
+		[unroll]
+		while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
+			float shadowAmount = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, lightIndex);
+			if (lightIndex == -1) {
+				// No more lights available!
+				break;
+			}
+			payload.shadowTwo[lightIndex] = shadowAmount;
+			shadowTextureIndex++;
 		}
-		payload.shadowTwo[lightIndex] = shadowAmount;
-		shadowTextureIndex++;
 	}
-	// for (uint j = 0; j < NUM_SHADOW_TEXTURES; j++) {
-	// 	payload.shadowTwo[j] = 0.f;
-	// }
 
 	payload.albedoTwo.rgb = albedoColor.rgb; // TODO: store alpha and use as team color amount
 	payload.normalTwo = normalInWorldSpace;
@@ -487,7 +488,8 @@ void closestHitProcedural(inout RayPayload payload, in ProceduralPrimitiveAttrib
 		finaldiffusecolor.a = 1;
 
 		/////////////////////////
-		payload.albedoOne = float4(finaldiffusecolor.rgb, 1.0f);
+		payload.albedoOne = float4(1.f, 0.f, 0.f, 1.0f);
+		// payload.albedoOne = float4(finaldiffusecolor.rgb, 1.0f);
 		payload.normalOne = normalInWorldSpace;
 		payload.metalnessRoughnessAOOne = float4(1.f, 1.f, 1.f, 1.f);
 		payload.worldPositionOne = Utils::HitWorldPosition();
