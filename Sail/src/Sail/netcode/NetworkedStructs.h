@@ -28,8 +28,9 @@ namespace Netcode {
 	
 	static constexpr PlayerID    MESSAGE_SPRINKLER_ID = 254;
 	static constexpr ComponentID SPRINKLER_COMP_ID    = static_cast<ComponentID>(MESSAGE_SPRINKLER_ID) << SHIFT_AMOUNT;
-
 	static constexpr PlayerID    MESSAGE_INSANITY_ID  = 253;
+	static constexpr PlayerID    NEUTRAL_OWNER_ID     = 251; //NEUTRAL OWNER, NOT A PLAYER
+
 	static constexpr ComponentID INSANITY_COMP_ID     = static_cast<ComponentID>(MESSAGE_INSANITY_ID) << SHIFT_AMOUNT;
 
 	static constexpr PlayerID    NONE_PLAYER_ID_START = 200;
@@ -73,6 +74,7 @@ namespace Netcode {
 		GUN_ENTITY,
 		PROJECTILE_ENTITY,
 		MECHA_ENTITY, // RIP Mecha-Jörgen (2019-2019)
+		POWER_UP, // RIP Mecha-Jörgen (2019-2019)
 		INVALID_ENTITY,
 	};
 
@@ -111,6 +113,8 @@ namespace Netcode {
 		ENABLE_SPRINKLERS,
 		START_THROWING,
 		STOP_THROWING,
+		SPAWN_POWER_UP,
+		DESTROY_POWER_UP,
 		EMPTY,
 		COUNT
 	}; 
@@ -204,6 +208,30 @@ namespace Netcode {
 	public:
 		MessageData() {}
 		virtual ~MessageData() {}
+	};
+
+	class MessageSpawnPowerUp : public MessageData {
+	public:
+		MessageSpawnPowerUp(int powerUpType, glm::vec3 translation_, Netcode::ComponentID powerUpComponentID)
+			: translation(translation_), powerUpComponentID(powerUpComponentID), powerUpType(powerUpType)
+		{
+		}
+		virtual ~MessageSpawnPowerUp() {}
+
+		int powerUpType;
+		glm::vec3 translation;
+		Netcode::ComponentID powerUpComponentID;
+	};
+
+	class MessageDestroyPowerUp : public MessageData {
+	public:
+		MessageDestroyPowerUp(Netcode::ComponentID powerUpComponentID, Netcode::ComponentID pickedByPlayer) : powerUpComponentID(powerUpComponentID), pickedByPlayer(pickedByPlayer) {
+		
+		}
+		virtual ~MessageDestroyPowerUp() {}
+
+		Netcode::ComponentID powerUpComponentID;
+		Netcode::ComponentID pickedByPlayer;
 	};
 
 	class MessageSpawnProjectile : public MessageData {

@@ -437,6 +437,28 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				waterHitPlayer(playerwhoWasHit, projectile);
 			}
 			break;
+			case Netcode::MessageType::SPAWN_POWER_UP:
+			{
+				int type;
+				glm::vec3 pos;
+				Netcode::ComponentID compID;
+
+				ar(type);
+				ArchiveHelpers::loadVec3(ar, pos);
+				ar(compID);
+				spawnPowerup(type, pos, compID);
+			}
+			break;
+			case Netcode::MessageType::DESTROY_POWER_UP:
+			{
+				Netcode::ComponentID compID;
+				Netcode::ComponentID pickedByPlayer;
+
+				ar(compID);
+				ar(pickedByPlayer);
+				destroyPowerup(compID, pickedByPlayer);
+			}
+			break;
 			default:
 				SAIL_LOG_ERROR("INVALID NETWORK EVENT NR " + std::to_string((int)messageType) + " RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 				break;

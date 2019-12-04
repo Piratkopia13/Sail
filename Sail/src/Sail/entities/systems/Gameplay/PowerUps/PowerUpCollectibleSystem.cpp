@@ -8,9 +8,14 @@ PowerUpCollectibleSystem::PowerUpCollectibleSystem() :
 	m_playerList(nullptr)
 {
 	registerComponent<PowerUpCollectibleComponent>(true, true, true);
+
+	EventDispatcher::Instance().subscribe(Event::Type::SPAWN_POWERUP, this);
+	EventDispatcher::Instance().subscribe(Event::Type::DESTROY_POWERUP, this);
 }
 
 PowerUpCollectibleSystem::~PowerUpCollectibleSystem() {
+	EventDispatcher::Instance().unsubscribe(Event::Type::SPAWN_POWERUP, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::DESTROY_POWERUP, this);
 }
 
 void PowerUpCollectibleSystem::init(std::vector<Entity*>* playerList) {
@@ -47,8 +52,20 @@ void PowerUpCollectibleSystem::update(float dt) {
 					m_distances.emplace_back(dist);
 					if (dist <= m_collectDistance) {
 						if (auto* playerpowerC = player->getComponent<PowerUpComponent>()) {
+							
+							//Send to both clients and host
+							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+								Netcode::MessageType::DESTROY_POWER_UP,
+								SAIL_NEW Netcode::MessageDestroyPowerUp{
+									e->getComponent<NetworkReceiverComponent>()->m_id,
+									player->getComponent<NetworkReceiverComponent>()->m_id
+								}
+								, false
+							);
+
+							e->queueDestruction();
 							playerpowerC->powerUps[powerCC->powerUp].addTime(powerCC->powerUpDuration);
-							e->queueDestruction(); // TODO: CHANGE TO NETWORK MESSAGE
+
 							if (powerCC->respawnTime > 0.0f) {
 								//powerCC->time = powerCC->respawnTime; // TODO: CHANGE TO NETWORK MESSAGE
 								m_respawns.push_back({ 5, PowerUps(powerCC->powerUp), transformC->getTranslation() });
@@ -100,17 +117,26 @@ void PowerUpCollectibleSystem::imguiPrint(Entity** selectedEntity) {
 		ImGui::Text(std::to_string(respawn.time).c_str());
 	}
 
-
-
 	ImGui::Separator();
-
 }
-void PowerUpCollectibleSystem::spawnPowerUp(glm::vec3 pos, int powerUp, float time, float respawntime) {
-	Entity::SPtr e = EntityFactory::CreatePowerUp(pos, powerUp);
+
+void PowerUpCollectibleSystem::spawnPowerUp(glm::vec3 pos, int powerUp, float time, float respawntime, Netcode::ComponentID compID) {
+	Entity::SPtr e = EntityFactory::CreatePowerUp(pos, powerUp, compID);
 	auto* pC = e->getComponent<PowerUpCollectibleComponent>();
 	pC->respawnTime = respawntime;
 	pC->powerUpDuration = time;
-	//TODO: SEND MESSAGE
+
+	if (NWrapperSingleton::getInstance().isHost()) {
+		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+			Netcode::MessageType::SPAWN_POWER_UP,
+			SAIL_NEW Netcode::MessageSpawnPowerUp{
+				powerUp,
+				pos,
+				e->getComponent<NetworkSenderComponent>()->m_id,
+			}	
+			, false
+		);
+	}
 }
 void PowerUpCollectibleSystem::updateSpawns(const float dt) {
 
@@ -125,5 +151,47 @@ void PowerUpCollectibleSystem::updateSpawns(const float dt) {
 			it++;
 		}
 	}
+}
+
+void PowerUpCollectibleSystem::onDestroyPowerUp(const DestroyPowerUp& e) {
+	for (auto pow : entities) {
+		NetworkReceiverComponent* nrc = pow->getComponent<NetworkReceiverComponent>();
+		PowerUpCollectibleComponent* powerCC = pow->getComponent<PowerUpCollectibleComponent>();
+
+		if (nrc && nrc->m_id == e._netCompID) {
+			//NetworkReceiverComponent* player_nrc;
+			//for (auto& player : *m_playerList) {
+			//	player_nrc = player->getComponent<NetworkReceiverComponent>();
+			//	if (player_nrc && player_nrc->m_id && e.pickedByPlayer) {
+			//		Netcode::PlayerID ownerId = Netcode::getComponentOwner(player_nrc->m_id);
+			//		PowerUpComponent* playerpowerC = player->getComponent<PowerUpComponent>();
+
+			//		playerpowerC->powerUps[powerCC->powerUp].addTime(powerCC->powerUpDuration);
+
+			//	}
+			//}
+
+			pow->queueDestruction();
+			break;
+		}
+	}
+}
+
+bool PowerUpCollectibleSystem::onEvent(const Event& e) {
+	
+	switch (e.type) {
+	case Event::Type::SPAWN_POWERUP:
+	{
+		SpawnPowerUp& p = (SpawnPowerUp&)e;
+		spawnPowerUp(p.pos, p.powerUpType, 0, 0, p._netCompID);
+	}
+		break;
+	case Event::Type::DESTROY_POWERUP: onDestroyPowerUp((const DestroyPowerUp&)e);
+	break;
+	default:
+		break;
+	}
+	
+	return false;
 }
 #endif

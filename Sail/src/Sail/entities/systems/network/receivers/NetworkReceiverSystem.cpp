@@ -276,7 +276,13 @@ void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const 
 	SAIL_LOG_WARNING("waterHitPLayer called but no matching entity found");
 }
 
+void NetworkReceiverSystem::spawnPowerup(const int type, const glm::vec3& pos, const Netcode::ComponentID compID) {
+	EventDispatcher::Instance().emit(SpawnPowerUp(type, pos, compID));
+}
 
+void NetworkReceiverSystem::destroyPowerup(const Netcode::ComponentID compID, const Netcode::ComponentID pickedByPlayer) {
+	EventDispatcher::Instance().emit(DestroyPowerUp(compID, pickedByPlayer));
+}
 
 // AUDIO
 
