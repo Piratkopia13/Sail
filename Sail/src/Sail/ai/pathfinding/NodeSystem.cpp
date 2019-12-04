@@ -31,7 +31,7 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 	int currNodeEntity = 0;
 	for ( int i = 0; i < m_nodes.size(); i++ ) {
 		m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
-		m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position)->setScale(0.5f);
+		m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position)->setScale(0.1f);
 		m_nodeEntities[currNodeEntity]->addComponent<RealTimeComponent>();
 		m_nodeEntities[currNodeEntity]->addComponent<CullingComponent>();
 		m_nodeEntities[currNodeEntity]->addComponent<RenderInActiveGameComponent>();
@@ -56,9 +56,24 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 		for (int j = 0; j < currNodeConnections.size(); j++) {
 			glm::vec3 pos = m_nodes[i].position;
 			glm::vec3 dir = m_nodes[currNodeConnections[j]].position - pos;
-			pos += glm::normalize(dir) * glm::length(dir) * 0.5f;
+			auto dirLength = glm::length(dir);
+			auto normalizedDir = glm::normalize(dir);
+			pos += normalizedDir * dirLength * 0.5f;
 			m_nodeEntities.push_back(ECS::Instance()->createEntity("Connection " + std::to_string(i)));
-			m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(pos)->setScale(0.25f);
+			float dirX = normalizedDir.x;
+			float dirZ = normalizedDir.z;
+			// To avoid division by zero
+			dirZ = dirZ != 0 ? dirZ : 0.001f;
+			float yaw = 0.f;
+			if (dirZ < 0.f) {
+				yaw = glm::atan(dirX / dirZ) - glm::pi<float>();
+			} else {
+				yaw = glm::atan(dirX / dirZ);
+			}
+
+			auto transComp = m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(pos);
+			transComp->setRotations(0.f, yaw, 0.f);
+			transComp->setScale(0.005f, 0.005f, dirLength / 2.f);
 			m_nodeEntities[currNodeEntity]->addComponent<RealTimeComponent>();
 			m_nodeEntities[currNodeEntity]->addComponent<ModelComponent>(m_connectionModel);
 			m_nodeEntities[currNodeEntity]->addComponent<CullingComponent>();
@@ -100,7 +115,7 @@ const NodeSystem::Node& NodeSystem::getNearestNode(const glm::vec3& position) co
 	unsigned int index = 0;
 
 	for ( unsigned int i = 0; i < m_nodes.size(); i++ ) {
-		if (!m_nodes[i].blocked) {
+		if (!m_nodes[i].blocked && m_connections[m_nodes[i].index].size() > 0) {
 			float d = glm::distance2(m_nodes[i].position, position);
 			if (d < dist && !m_nodes[i].blocked) {
 				index = i;

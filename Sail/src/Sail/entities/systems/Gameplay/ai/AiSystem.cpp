@@ -41,8 +41,6 @@ AiSystem::AiSystem() {
 	registerComponent<NetworkSenderComponent>(true, false, false);
 
 	m_nodeSystem = std::make_unique<NodeSystem>();
-
-	m_timeBetweenPathUpdate = 3.f;
 }
 
 AiSystem::~AiSystem() {}
@@ -237,7 +235,7 @@ void AiSystem::aiUpdateFunc(Entity* e, const float dt) {
 	
 	AiComponent* ai = e->getComponent<AiComponent>();
 
-	if ( ai->timeTakenOnPath > m_timeBetweenPathUpdate && ai->doWalk ) {
+	if ( ai->timeTakenOnPath >= ai->timeBetweenPathUpdate && ai->doWalk && ai->automaticallyUpdatePath ) {
 		ai->updatePath = true;
 	}
 

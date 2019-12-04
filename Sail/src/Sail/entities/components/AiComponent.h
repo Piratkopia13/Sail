@@ -13,9 +13,11 @@ public:
 		, targetReachedThreshold(1.3f)
 		, maxSteeringForce(0.3f)
 		, mass(1.0f)
+		, timeBetweenPathUpdate(3.f)
 		, reachedPathingTarget(true)
 		, updatePath(true)
 		, doWalk(false)
+		, automaticallyUpdatePath(true)
 		, currNodeIndex(0)
 		, lastVisitedNode(NodeSystem::Node(glm::vec3(10000.f, 10000.f, 10000.f), false, 2381831))
 		, controlledEntity(nullptr)
@@ -32,10 +34,12 @@ public:
 	float targetReachedThreshold;
 	float maxSteeringForce;
 	float mass;
+	float timeBetweenPathUpdate;
 	
 	bool reachedPathingTarget;
 	bool updatePath;
 	bool doWalk;
+	bool automaticallyUpdatePath;
 
 	int currNodeIndex;
 
