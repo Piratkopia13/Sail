@@ -135,16 +135,7 @@ GameState::GameState(StateStack& stack)
 	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Torch/Torch_NM.dds");
 	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Torch/Torch_MRAO.dds");
 
-
-#ifdef DEVELOPMENT
-	/* GUI testing */
-
-	//EntityFactory::CreateScreenSpaceText("HELLO", glm::vec2(0.8f, 0.9f), glm::vec2(0.4f, 0.2f));
-	/* /GUI testing */
-#endif
-
 	// Crosshair
-	//EntityFactory::CreateGUIEntity("crosshairEntity", "crosshair.tga", glm::vec2(0.f, 0.f), glm::vec2(0.005f, 0.00888f));
 	auto crosshairEntity = EntityFactory::CreateCrosshairEntity("crosshairEntity");
 
 	// Level Creation

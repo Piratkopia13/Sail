@@ -18,7 +18,7 @@
 
 // Mainly used in progress bar
 #define TOTAL_NR_OF_MODELS 23
-#define TOTAL_NR_OF_TEXTURES 82
+#define TOTAL_NR_OF_TEXTURES 83
 
 
 MenuState::MenuState(StateStack& stack) 

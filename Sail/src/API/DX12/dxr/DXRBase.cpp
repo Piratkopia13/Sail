@@ -22,7 +22,6 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	, m_mapSize(1.f)
 	, m_mapStart(1.f)
 {
-
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::RESET_WATER, this);
 
@@ -823,9 +822,7 @@ void DXRBase::createInitialShaderResources(bool remake) {
 
 		// Next slot is used for the brdfLUT
 		m_rtBrdfLUTGPUHandle = gpuHandle;
-		if (!Application::getInstance()->getResourceManager().hasTexture(m_brdfLUTPath)) {
-			Application::getInstance()->getResourceManager().loadTexture(m_brdfLUTPath);
-		}
+
 		auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
 		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, brdfLutTex.getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		cpuHandle.ptr += m_heapIncr;
