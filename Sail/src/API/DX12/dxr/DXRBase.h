@@ -43,6 +43,7 @@ public:
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList, const std::vector<DXRBase::MetaballGroup*>& metaballGroups);
 
 	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
+	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
 	bool checkWaterAtWorldPosition(const glm::vec3& position);
 	void updateWaterData();
@@ -110,17 +111,20 @@ private:
 	void initMetaballBuffers();
 	void updateMetaballpositions(const std::vector<DXRBase::MetaballGroup*>& metaballGroups);
 
+	void initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle);
 	void addMetaballGroupAABB(int index);
 
 private:
 	DX12API* m_context;
 
 	DX12RenderableTexture** m_gbufferInputTextures;
+	DX12Texture** m_decalInputTextures;
 
 	std::string m_shaderFilename;
 
 	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_sceneCB;
 	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_meshCB;
+	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_decalCB;
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
 	std::vector<std::unordered_map<int, InstanceList>> m_bottomBuffers_Metaballs;
@@ -140,6 +144,7 @@ private:
 	};
 
 	std::string m_brdfLUTPath;
+	std::string m_decalTexPaths[3];
 
 	wComPtr<ID3D12DescriptorHeap> m_rtDescriptorHeap = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle[2];
@@ -152,12 +157,15 @@ private:
 
 	D3D12_GPU_DESCRIPTOR_HANDLE m_rtBrdfLUTGPUHandle;
 	std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_gbufferStartGPUHandles;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_decalTexGPUHandles;
 	UINT m_heapIncr;
 	UINT m_usedDescriptors;
 
 	std::vector<MeshHandles> m_rtMeshHandles[2];
 	// Metaballs
 	std::vector<ID3D12Resource*> m_metaballPositions_srv;
+	// Decals
+	UINT m_decalsToRender;
 
 	const WCHAR* m_rayGenName = L"rayGen";
 	const WCHAR* m_closestHitName = L"closestHitTriangle";

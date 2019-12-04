@@ -17,7 +17,7 @@ public:
 	virtual bool onEvent(const Event& event) override;
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID, bool castShadows) override;
 	virtual void submitMetaball(RenderCommandType type, Material* material, const glm::vec3& pos, RenderFlag flags, int group) override;
-	//virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;
+	virtual void submitDecal(const glm::vec3& pos, const glm::mat3& rot, const glm::vec3& halfSize) override;
 	virtual void submitWaterPoint(const glm::vec3& pos) override;
 	virtual bool checkIfOnWater(const glm::vec3& pos) override;
 
@@ -41,6 +41,6 @@ private:
 	std::map<int, DXRBase::MetaballGroup> m_metaballGroups_map;
 
 	// Decals
-	/*DXRShaderCommon::DecalData m_decals[MAX_DECALS];
-	size_t m_currNumDecals;*/
+	DXRShaderCommon::DecalData m_decals[MAX_DECALS];
+	size_t m_currNumDecals;
 };
