@@ -26,13 +26,6 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::RESET_WATER, this);
 
-	/*m_decalTexPaths[0] = "pbr/water/Water_001_COLOR.tga";
-	m_decalTexPaths[1] = "pbr/water/Water_001_NORM.tga";
-	m_decalTexPaths[2] = "pbr/water/Water_001_MAT.tga";*/
-	m_decalTexPaths[0] = "pbr/splash/PuddleAlbedo.tga";
-	m_decalTexPaths[1] = "pbr/splash/PuddleNM.tga";
-	m_decalTexPaths[2] = "pbr/splash/puddleMRAo.tga";
-
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	// Create frame resources (one per swap buffer)
@@ -856,9 +849,6 @@ void DXRBase::createInitialShaderResources(bool remake) {
 			m_usedDescriptors+=4;
 		}
 
-		// Initialize decal SRVs
-		initDecals(&gpuHandle, &cpuHandle);
-
 		//// Ray gen settings CB
 		//m_rayGenCBData.flags = RT_ENABLE_TA | RT_ENABLE_JITTER_AA;
 		//m_rayGenCBData.numAORays = 5;
@@ -905,7 +895,6 @@ void DXRBase::createInitialShaderResources(bool remake) {
 			free(initData);
 		}
 	}
-
 }
 
 void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
@@ -914,25 +903,6 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 	// Make sure brdfLut texture has been initialized
 	auto& brdfLutTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
 	brdfLutTex.initBuffers(cmdList);
-
-	// Make sure decal textures has been initialized
-	{
-		auto& decalTex = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[0]));
-		if (!decalTex.hasBeenInitialized()) {
-			decalTex.initBuffers(cmdList);
-			decalTex.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		}
-		auto& decalTex1 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[1]));
-		if (!decalTex1.hasBeenInitialized()) {
-			decalTex1.initBuffers(cmdList);
-			decalTex1.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		}
-		auto& decalTex2 = static_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_decalTexPaths[2]));
-		if (!decalTex2.hasBeenInitialized()) {
-			decalTex2.initBuffers(cmdList);
-			decalTex2.transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		}
-	}
 
 	// Update descriptors for vertices, indices, textures etc
 	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_rtHeapCPUHandle[frameIndex];
@@ -1203,26 +1173,6 @@ void DXRBase::initMetaballBuffers() {
 		m_metaballPositions_srv.emplace_back(DX12Utils::CreateBuffer(m_context->getDevice(), MAX_NUM_METABALLS * sizeof(glm::vec3), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 		m_metaballPositions_srv.back()->SetName(L"Metaball Positions");
 	}
-}
-
-void DXRBase::initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle) {
-	auto& resMan = Application::getInstance()->getResourceManager();
-	resMan.loadTexture(m_decalTexPaths[0]);
-	resMan.loadTexture(m_decalTexPaths[1]);
-	resMan.loadTexture(m_decalTexPaths[2]);
-
-	m_decalTexGPUHandles = *gpuHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors[3];
-	srcDescriptors[0] = static_cast<DX12Texture*>(&resMan.getTexture(m_decalTexPaths[0]))->getSrvCDH();
-	srcDescriptors[1] = static_cast<DX12Texture*>(&resMan.getTexture(m_decalTexPaths[1]))->getSrvCDH();
-	srcDescriptors[2] = static_cast<DX12Texture*>(&resMan.getTexture(m_decalTexPaths[2]))->getSrvCDH();
-
-	UINT dstRangeSizes[] = {3};
-	UINT srcRangeSizes[] = {1, 1, 1};
-	m_context->getDevice()->CopyDescriptors(1, cpuHandle, dstRangeSizes, 3, srcDescriptors, srcRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	cpuHandle->ptr += m_heapIncr * 3;
-	gpuHandle->ptr += m_heapIncr * 3;
-	m_usedDescriptors += 3;
 }
 
 void DXRBase::addMetaballGroupAABB(int index) {

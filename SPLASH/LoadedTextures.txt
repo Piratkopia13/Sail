@@ -1,7 +1,4 @@
 pbr/brdfLUT.tga
-pbr/splash/PuddleAlbedo.tga
-pbr/splash/PuddleNM.tga
-pbr/splash/puddleMRAo.tga
 splash_logo_smaller.tga
 pbr/DDS/Torch/Torch_MRAO.dds
 pbr/DDS/Torch/Torch_NM.dds
@@ -83,9 +80,3 @@ Icons/PlayersLeft.tga
 Icons/CantShootIcon1.tga
 Icons/CantShootIcon2.tga
 missing.tga
-pbr/splash/PuddleAlbedo.tga
-pbr/splash/PuddleNM.tga
-pbr/splash/puddleMRAo.tga
-pbr/splash/PuddleAlbedo.tga
-pbr/splash/PuddleNM.tga
-pbr/splash/puddleMRAo.tga

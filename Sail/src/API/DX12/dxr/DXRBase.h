@@ -111,7 +111,6 @@ private:
 	void initMetaballBuffers();
 	void updateMetaballpositions(const std::vector<DXRBase::MetaballGroup*>& metaballGroups);
 
-	void initDecals(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle);
 	void addMetaballGroupAABB(int index);
 
 private:
