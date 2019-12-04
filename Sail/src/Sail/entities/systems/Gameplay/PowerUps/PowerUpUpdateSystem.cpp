@@ -1,6 +1,6 @@
 #include "pch.h" 
 #include "PowerUpUpdateSystem.h"
-#include "Sail/entities/components/PowerUpComponent.h"
+#include "Sail/entities/components/PowerUp/PowerUpComponent.h"
 
 PowerUpUpdateSystem::PowerUpUpdateSystem() {
 	registerComponent<PowerUpComponent>(true, true, true);

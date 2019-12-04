@@ -402,6 +402,9 @@ Entity::SPtr EntityFactory::CreatePowerUp(glm::vec3& spawn, const int type) {
 	
 	powerUp->addComponent<TransformComponent>(spawn);
 	powerUp->addComponent<RenderInActiveGameComponent>();
+	powerUp->addComponent<PowerUpCollectibleComponent>()->powerUp = type;
+	auto* moveC = powerUp->addComponent<MovementComponent>();
+	moveC->rotation = glm::vec3(1, 1, 1);
 	return powerUp;
 }
 

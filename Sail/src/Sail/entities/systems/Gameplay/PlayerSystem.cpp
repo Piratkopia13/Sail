@@ -13,13 +13,31 @@
 #include <array>
 
 PlayerSystem::PlayerSystem() {
-	registerComponent<NoEntityComponent>(true, true, true);
+	registerComponent<PlayerComponent>(true, true, true);
 	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
 }
 
 PlayerSystem::~PlayerSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::PLAYER_DEATH, this);
 }
+
+void PlayerSystem::update(float dt) {
+	// no point in having this atm, leave until it becomes relevant
+	//for (auto* e : entities) {
+	//
+	//}
+}
+
+std::vector<Entity*>* PlayerSystem::getPlayers() {
+	return &entities;
+}
+
+#ifdef DEVELOPMENT
+void PlayerSystem::imguiPrint(Entity** selectedEntity) {
+
+
+}
+#endif
 
 bool PlayerSystem::onEvent(const Event& event) {
 
