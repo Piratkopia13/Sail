@@ -121,7 +121,7 @@ void ParticleSystem::initEmitter(Entity* owner, ParticleEmitterComponent* compon
 	auto& gbufferShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	auto& inputLayout = gbufferShader.getPipeline()->getInputLayout();
 
-	emitter.outputVertexBufferSize = 6 * 1700;
+	emitter.outputVertexBufferSize = 6 * 300;
 	auto& noDepthShader = Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShaderNoDepth>();
 	emitter.model = std::make_unique<Model>(emitter.outputVertexBufferSize, &noDepthShader);
 
