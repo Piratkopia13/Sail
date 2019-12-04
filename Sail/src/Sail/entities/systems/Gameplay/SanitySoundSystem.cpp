@@ -7,6 +7,9 @@
 #include "Sail/entities/components/CandleComponent.h"
 #include "Sail/entities/components/LocalOwnerComponent.h"
 
+#include "../Sail/src/Sail/Application.h"
+#include "Sail/utils/Storage/SettingStorage.h"
+
 #include "Sail/entities/Entity.h"
 
 SanitySoundSystem::SanitySoundSystem() {
@@ -39,14 +42,13 @@ void SanitySoundSystem::update(float dt) {
 		if (!m_switch_ambiance) {
 			if (sanity < TIMEPOINT_AMBIANCE) {
 				m_switch_ambiance = true;
-				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", true, 1.0f, false, true);
+				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", true, 0.0f, false, true);
 			}
 		} else if (m_switch_ambiance) {
 			if (sanity == TIMEPOINT_AMBIANCE) {
 				m_switch_ambiance = false;
-				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", false, 1.0f, false, true);
+				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", false, 0.0f, false, true);
 			} else {
-				float tempX = (1.0f - sanity);
 				// Logarithmic increase of volume = linear to our ears
 				ac->streamSetVolume_HELPERFUNC("res/sounds/sanity/insanity_ambiance.xwb", volume);
 			}
@@ -94,7 +96,7 @@ void SanitySoundSystem::update(float dt) {
 
 		else if (m_switch_breathing) {
 			if (sanity > TIMEPOINT_BREATHING) {
-				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_breathing.xwb", false, 1.0f, false, true);
+				ac->streamSoundRequest_HELPERFUNC("res/sounds/sanity/insanity_breathing.xwb", false, 0.0f, false, true);
 				m_switch_breathing = false;
 			}
 			else {
