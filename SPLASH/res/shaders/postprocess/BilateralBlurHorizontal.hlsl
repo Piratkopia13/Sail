@@ -57,8 +57,10 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID,
 			float2 factor;
 			// factor.r = (1.f / max(abs(cache[k].r-cache[k - i].r), 0.001f)) * weights[i+blurRadius];
 			factor.r = (1.f - abs(cache[lightIndex][k].r-cache[lightIndex][k - i].r)) * weights[i+blurRadius];
+			factor.g = (1.f - abs(cache[lightIndex][k].g-cache[lightIndex][k - i].g)) * weights[i+blurRadius];
+
 			
-			factor.g = normpdf(cache[lightIndex][k].g-cache[lightIndex][k - i].g, BSIGMA) * bZ * weights[i+blurRadius];
+			// factor.g = normpdf(cache[lightIndex][k].g-cache[lightIndex][k - i].g, BSIGMA) * bZ * weights[i+blurRadius];
 			Z += factor;
 			blurColor += factor*cache[lightIndex][k];
 		}

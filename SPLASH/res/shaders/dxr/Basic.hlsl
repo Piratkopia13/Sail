@@ -119,6 +119,7 @@ float getShadowAmount(inout uint seed, float3 worldPosition, float3 worldNormal,
 		float coneAngle = acos(dot(toLight, toLightEdge)) * 2.0f;
 		float distance = length(p.position - worldPosition);
 
+		[unroll]
 		for (int shadowSample = 0; shadowSample < numSamples; shadowSample++) {
 			float3 L = Utils::getConeSample(seed, toLight, coneAngle);
 			lightShadowAmount += (float)Utils::rayHitAnything(worldPosition, worldNormal, L, distance);
@@ -221,7 +222,7 @@ void rayGen() {
 		worldPosition = payloadMetaball.worldPositionOne;
 		worldNormal = payloadMetaball.normalOne;
 
-		albedoOne = payloadMetaball.albedoOne;
+		albedoOne = payloadMetaball.albedoOne.rgb;
 		metalnessOne = payloadMetaball.metalnessRoughnessAOOne.r;
 		roughnessOne = payloadMetaball.metalnessRoughnessAOOne.g;
 		aoOne = payloadMetaball.metalnessRoughnessAOOne.b;
@@ -308,7 +309,7 @@ void rayGen() {
 	// float2 reprojectedTexCoord = screenTexCoord;
 
 	uint shadowTextureIndex = 0;
-	uint lightIndex = 0;
+	int lightIndex = 0;
 	[unroll]
 	while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
 		float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, lightIndex);
@@ -319,7 +320,7 @@ void rayGen() {
 
 		float2 cLast = InputShadowsLastFrame.SampleLevel(motionSS, float3(reprojectedTexCoord, shadowTextureIndex), 0).rg;
 		// float2 cLast = 0.0f;
-		float2 shadow = float2(firstBounceShadow, payload.shadowTwo[lightIndex]);
+		float2 shadow = float2(firstBounceShadow, finalPayload.shadowTwo[shadowTextureIndex]);
 		shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
 		lOutputShadows[uint3(launchIndex, shadowTextureIndex)] = shadow;
 		totalShadowAmount += firstBounceShadow;
@@ -343,7 +344,7 @@ void rayGen() {
 	lOutputMetalnessRoughnessAO[launchIndex] = float4(metalnessTwo, roughnessTwo, aoTwo, emissivenessTwo);
 	lOutputPositionsOne[launchIndex] = float4(worldPosition, 1.0f);
 	lOutputPositionsTwo[launchIndex] = float4(worldPositionTwo, 1.0f);
-
+	
 }
 
 [shader("miss")]
@@ -436,16 +437,16 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	if (!CB_SceneData.doHardShadows) {
 		// Soft shadows only
 		// Write shadows for each light
-		uint shadowTextureIndex = 0;
-		uint lightIndex = 0;
-		[unroll]
+		int shadowTextureIndex = 0;
+		int lightIndex = 0;
+		[unroll] // THIS IS REQUIRED FOR SOME REASON
 		while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
 			float shadowAmount = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, lightIndex);
 			if (lightIndex == -1) {
 				// No more lights available!
 				break;
 			}
-			payload.shadowTwo[lightIndex] = shadowAmount;
+			payload.shadowTwo[shadowTextureIndex] = shadowAmount;
 			shadowTextureIndex++;
 		}
 	}
