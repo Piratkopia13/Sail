@@ -275,7 +275,6 @@ void SettingStorage::createGameDefaultMap() {
 
 	gameSettingsDynamic["powerup"]["duration"] = DynamicSetting(15.0f, 5.0f, 60.0f);
 	gameSettingsDynamic["powerup"]["respawnTime"] = DynamicSetting(30.0f, 5.0f, 300.0f);
-	gameSettingsDynamic["powerup"]["maxDuration"] = DynamicSetting(60.0f, 5.0f, 300.0f);
 
 
 

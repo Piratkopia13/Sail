@@ -259,7 +259,7 @@ bool OptionsWindow::renderGameOptions() {
 	ImGui::Spacing();
 
 
-	if (ImGui::CollapsingHeader("Advanced Settings")) {
+	if (ImGui::CollapsingHeader("Advanced Settings##map")) {
 		SettingStorage::DynamicSetting* mapSizeX = &m_app->getSettings().gameSettingsDynamic["map"]["sizeX"];
 		SettingStorage::DynamicSetting* mapSizeY = &m_app->getSettings().gameSettingsDynamic["map"]["sizeY"];
 
@@ -350,10 +350,10 @@ bool OptionsWindow::renderGameOptions() {
 	ImGui::PopItemFlag();
 	ImGui::PopStyleColor();
 
-	if (ImGui::CollapsingHeader("Advanced Settingsasdasd")) {
+	if (ImGui::CollapsingHeader("Advanced Settings##game")) {
 		ImGui::Indent();
 
-		ImGui::Text("powerups");
+		SailImGui::HeaderText("PowerUp ");
 		ImGui::Text("Duration");
 		ImGui::SameLine(x[0]);
 		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
