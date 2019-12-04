@@ -36,57 +36,47 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 		m_nodeEntities[currNodeEntity]->addComponent<CullingComponent>();
 		m_nodeEntities[currNodeEntity]->addComponent<RenderInActiveGameComponent>();
 		if (m_nodes[i].blocked) {
-			auto blockedNodeModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
-			blockedNodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
-			blockedNodeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 0.f, 0.f, 1.f));
-			blockedNodeModel->setCastShadows(false);
-			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(blockedNodeModel);
+			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_blockedNode);
 		} else {
-			auto nodeModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
-			nodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
-			nodeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
-			nodeModel->setCastShadows(false);
-			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(nodeModel);
+			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_activeNode);
 		}
 	}
 
 
 	for (int i = 0; i < m_nodes.size(); i++) {
 		auto currNodeConnections = m_connections[i];
-		auto currConnectionsEntities = std::vector<Entity::SPtr>();
+		m_connectionEntities.push_back(std::vector<std::pair<unsigned int, Entity::SPtr>>());
+		int currConnIndex = 0;
 		for (int j = 0; j < currNodeConnections.size(); j++) {
-			glm::vec3 pos = m_nodes[i].position;
-			glm::vec3 dir = m_nodes[currNodeConnections[j]].position - pos;
-			auto dirLength = glm::length(dir);
-			auto normalizedDir = glm::normalize(dir);
-			pos += normalizedDir * dirLength * 0.5f;
-			currConnectionsEntities.push_back(ECS::Instance()->createEntity("Connection " + std::to_string(i)));
-			float dirX = normalizedDir.x;
-			float dirZ = normalizedDir.z;
-			// To avoid division by zero
-			dirZ = dirZ != 0 ? dirZ : 0.001f;
-			float yaw = 0.f;
-			if (dirZ < 0.f) {
-				yaw = glm::atan(dirX / dirZ) - glm::pi<float>();
-			} else {
-				yaw = glm::atan(dirX / dirZ);
+			// Only add forward-connections (to save mesh space)
+			if (currNodeConnections[j] > i) {
+				glm::vec3 pos = m_nodes[i].position;
+				glm::vec3 dir = m_nodes[currNodeConnections[j]].position - pos;
+				auto dirLength = glm::length(dir);
+				auto normalizedDir = glm::normalize(dir);
+				pos += normalizedDir * dirLength * 0.5f;
+				m_connectionEntities[i].emplace_back(currNodeConnections[j], ECS::Instance()->createEntity("Connection " + std::to_string(i)).get());
+				float dirX = normalizedDir.x;
+				float dirZ = normalizedDir.z;
+				// To avoid division by zero
+				dirZ = dirZ != 0 ? dirZ : 0.001f;
+				float yaw = 0.f;
+				if (dirZ < 0.f) {
+					yaw = glm::atan(dirX / dirZ) - glm::pi<float>();
+				} else {
+					yaw = glm::atan(dirX / dirZ);
+				}
+
+				auto transComp = m_connectionEntities[i][currConnIndex].second->addComponent<TransformComponent>(pos);
+				transComp->setRotations(0.f, yaw, 0.f);
+				transComp->setScale(0.005f, 0.005f, dirLength / 2.f);
+				m_connectionEntities[i][currConnIndex].second->addComponent<RealTimeComponent>();
+
+				m_connectionEntities[i][currConnIndex].second->addComponent<ModelComponent>(m_activeNode);
+				m_connectionEntities[i][currConnIndex].second->addComponent<CullingComponent>();
+				m_connectionEntities[i][currConnIndex++].second->addComponent<RenderInActiveGameComponent>();
 			}
-
-			auto transComp = currConnectionsEntities[j]->addComponent<TransformComponent>(pos);
-			transComp->setRotations(0.f, yaw, 0.f);
-			transComp->setScale(0.005f, 0.005f, dirLength / 2.f);
-			currConnectionsEntities[j]->addComponent<RealTimeComponent>();
-
-			auto connectionModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
-			connectionModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
-			connectionModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
-			connectionModel->setCastShadows(false);
-
-			currConnectionsEntities[j]->addComponent<ModelComponent>(connectionModel);
-			currConnectionsEntities[j]->addComponent<CullingComponent>();
-			currConnectionsEntities[j]->addComponent<RenderInActiveGameComponent>();
 		}
-		m_connectionEntities.push_back(currConnectionsEntities);
 	}
 #endif
 }
@@ -143,14 +133,6 @@ const std::vector<NodeSystem::Node>& NodeSystem::getNodes() const {
 	return m_nodes;
 }
 
-const unsigned int NodeSystem::getAverageSearchTime() const {
-	float searchTime = 0.f;
-	for (unsigned int i = 0; i < std::min(m_currSearchTimeIndex, NUM_SEARCH_TIMES); i++) {
-		searchTime += m_pathSearchTimes[i];
-	}
-	return searchTime / static_cast<float>(std::min(m_currSearchTimeIndex, NUM_SEARCH_TIMES));
-}
-
 const unsigned int NodeSystem::getXMax() const {
 	return m_xMax;
 }
@@ -173,39 +155,70 @@ void NodeSystem::stop() {
 
 #ifdef _DEBUG_NODESYSTEM
 void NodeSystem::colorPath(const std::vector<NodeSystem::Node>& path, const glm::vec4& colour) {
-	unsigned int numConnsToColour = 0U;
 	for (int i = 0; i < path.size(); i++) {
-		m_nodeEntities[path[i].index]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(colour);
+		// Colour all affected nodes
+		if (colour.b > 0.f) {
+			m_nodeEntities[path[i].index]->getComponent<ModelComponent>()->setModel(m_pathNode);
+		} else {
+			m_nodeEntities[path[i].index]->getComponent<ModelComponent>()->setModel(m_activeNode);
+		}
+
+		// Colour all affected backward-connections
 		if (i > 0) {
-			for (int j = 0; j < m_connections[path[i].index].size(); j++) {
-				if (m_connections[path[i].index][j] == path[i - 1].index) {
-					m_connectionEntities[path[i].index][j]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(colour);
-					numConnsToColour++;
+			for (int j = 0; j < m_connectionEntities[path[i].index].size(); j++) {
+				if (m_connectionEntities[path[i].index][j].first == path[i - 1].index) {
+					if (colour.b > 0.f) {
+						m_connectionEntities[path[i].index][j].second->getComponent<ModelComponent>()->setModel(m_pathNode);
+					} else {
+						m_connectionEntities[path[i].index][j].second->getComponent<ModelComponent>()->setModel(m_activeNode);
+					}
 				}
 			}
 		}
+		// Colour all affected forward-connections
 		if (i < path.size() - 1) {
-			for (int j = 0; j < m_connections[path[i].index].size(); j++) {
-				if (m_connections[path[i].index][j] == path[i + 1].index) {
-					m_connectionEntities[path[i].index][j]->getComponent<ModelComponent>()->getModel()->getMesh(0)->getMaterial()->setColor(colour);
-					numConnsToColour++;
+			for (int j = 0; j < m_connectionEntities[path[i].index].size(); j++) {
+				if (m_connectionEntities[path[i].index][j].first == path[i + 1].index) {
+					if (colour.b > 0.f) {
+						m_connectionEntities[path[i].index][j].second->getComponent<ModelComponent>()->setModel(m_pathNode);
+					} else {
+						m_connectionEntities[path[i].index][j].second->getComponent<ModelComponent>()->setModel(m_activeNode);
+					}
 				}
 			}
 		}
 	}
-	SAIL_LOG("num connections: " + std::to_string(numConnsToColour));
 }
 
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_shader = shader;
-}
 
-std::vector<Entity::SPtr>& NodeSystem::getNodeEntities() {
-	return m_nodeEntities;
+	m_activeNode = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
+	m_activeNode->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
+	m_activeNode->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 1.f, 1.f, 1.f));
+	m_activeNode->setCastShadows(false);
+
+	m_blockedNode = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
+	m_blockedNode->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
+	m_blockedNode->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 0.f, 0.f, 1.f));
+	m_blockedNode->setCastShadows(false);
+
+	m_pathNode = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
+	m_pathNode->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
+	m_pathNode->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 0.f, 1.f, 1.f));
+	m_pathNode->setCastShadows(false);
 }
 #endif
 
 #ifdef DEVELOPMENT
+const unsigned int NodeSystem::getAverageSearchTime() const {
+	float searchTime = 0.f;
+	for (unsigned int i = 0; i < std::min(m_currSearchTimeIndex, NUM_SEARCH_TIMES); i++) {
+		searchTime += m_pathSearchTimes[i];
+	}
+	return searchTime / static_cast<float>(std::min(m_currSearchTimeIndex, NUM_SEARCH_TIMES));
+}
+
 unsigned int NodeSystem::getByteSize() const {
 	unsigned int size = sizeof(*this);
 	size += m_connections.size() * sizeof(std::vector<unsigned int>);

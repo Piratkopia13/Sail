@@ -1186,7 +1186,7 @@ void GameState::createBots() {
 		botCount = 0;
 	}
 
-	botCount = 1;
+	botCount = 50;
 
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();

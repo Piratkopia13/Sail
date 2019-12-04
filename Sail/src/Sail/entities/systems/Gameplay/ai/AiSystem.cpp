@@ -161,6 +161,10 @@ void AiSystem::initNodeSystem(Octree* octree) {
 			}
 		}
 
+		if (conns.size() == 0) {
+			blocked = true;
+		}
+
 		nodes.emplace_back(nodePos, blocked, i);
 		connections.push_back(conns);
 	}

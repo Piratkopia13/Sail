@@ -15,7 +15,10 @@ namespace Netcode {
 	static constexpr ComponentID TORCH_VALUE   = 3;
 	static constexpr ComponentID RESET_VALUE   = 4;
 
-	static void resetIDCounter() { gNetworkIDCounter = RESET_VALUE; }
+	static void resetIDCounter() { 
+		gNetworkIDCounter = RESET_VALUE;
+		gNetworkBotIDCounter = 0;
+	}
 	static ComponentID createNetworkID()    { return ++gNetworkIDCounter; }
 	static ComponentID nrOfNetworkObjects() { return gNetworkIDCounter; }
 
