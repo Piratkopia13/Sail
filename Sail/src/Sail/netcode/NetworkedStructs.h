@@ -27,18 +27,19 @@ namespace Netcode {
 	static constexpr ComponentID SHIFT_AMOUNT = 18;
 
 #pragma region SPECIAL_ID_VALUES
-	// Used to signify NetworkMessages sent Internally
-	static constexpr PlayerID    MESSAGE_FROM_SELF_ID = 255;
-	
-	static constexpr PlayerID    MESSAGE_SPRINKLER_ID = 254;
-	static constexpr ComponentID SPRINKLER_COMP_ID    = static_cast<ComponentID>(MESSAGE_SPRINKLER_ID) << SHIFT_AMOUNT;
+	// All non-player and non-player-owned entities will have PlayerIDs above 200
+	static constexpr PlayerID    NONE_PLAYER_ID_START = 200;
 
+  static constexpr PlayerID    MESSAGE_BOT_ID       = 252;
+  
 	static constexpr PlayerID    MESSAGE_INSANITY_ID  = 253;
 	static constexpr ComponentID INSANITY_COMP_ID     = static_cast<ComponentID>(MESSAGE_INSANITY_ID) << SHIFT_AMOUNT;
 
-	static constexpr PlayerID    MESSAGE_BOT_ID = 252;
-
-	static constexpr PlayerID    NONE_PLAYER_ID_START = 200;
+	static constexpr PlayerID    MESSAGE_SPRINKLER_ID = 254;
+	static constexpr ComponentID SPRINKLER_COMP_ID    = static_cast<ComponentID>(MESSAGE_SPRINKLER_ID) << SHIFT_AMOUNT;
+	
+	// Used to signify NetworkMessages sent Internally
+	static constexpr PlayerID    MESSAGE_FROM_SELF_ID = 255;
 #pragma endregion
 
 	static constexpr ComponentID generateID(PlayerID playerID, ComponentID counter) {
@@ -82,7 +83,7 @@ namespace Netcode {
 		CANDLE_ENTITY,
 		GUN_ENTITY,
 		PROJECTILE_ENTITY,
-		MECHA_ENTITY, // RIP Mecha-Jörgen (2019-2019)
+		MECHA_ENTITY, // RIP Mecha-JÃ¶rgen (2019-2019)
 		INVALID_ENTITY,
 	};
 
@@ -290,10 +291,12 @@ namespace Netcode {
 
 	class MessagePlayerDied : public MessageData {
 	public:
-		MessagePlayerDied(Netcode::ComponentID id, Netcode::ComponentID killer) : playerWhoDied(id), killingEntity(killer) {}
+		MessagePlayerDied(Netcode::ComponentID id, Netcode::ComponentID killer, bool finalKill) 
+			: playerWhoDied(id), killingEntity(killer), isFinalKill(finalKill) {}
 		~MessagePlayerDied() {}
 		Netcode::ComponentID playerWhoDied;
 		Netcode::ComponentID killingEntity;
+		bool isFinalKill;
 	};
 
 	class MessageCandleHeldState : public MessageData {
