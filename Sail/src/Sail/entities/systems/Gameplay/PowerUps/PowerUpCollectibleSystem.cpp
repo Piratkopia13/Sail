@@ -1,3 +1,4 @@
+#include "PowerUpCollectibleSystem.h"
 #include "pch.h" 
 #include "PowerUpCollectibleSystem.h"
 #include "Sail/entities/components/PowerUp/PowerUpCollectibleComponent.h"
@@ -15,6 +16,11 @@ PowerUpCollectibleSystem::~PowerUpCollectibleSystem() {
 
 void PowerUpCollectibleSystem::init(std::vector<Entity*>* playerList) {
 	m_playerList = playerList;
+}
+
+void PowerUpCollectibleSystem::setSpawnPoints(std::vector<glm::vec3>& points) {
+	m_spawnPoints.clear();
+	m_spawnPoints.insert(m_spawnPoints.begin(), points.begin(), points.end());
 }
 
 void PowerUpCollectibleSystem::update(float dt) {
@@ -71,8 +77,20 @@ void PowerUpCollectibleSystem::spawnSingleUsePowerUp(const PowerUps powerUp, con
 	//TODO: SEND MESSAGE WITH PARENT ID
 }
 void PowerUpCollectibleSystem::spawnPowerUps(int amount) {
+	static bool side = false;
+	if (amount = -1) {
+		amount = m_spawnPoints.size();
+	}
 	for (int i = 0; i < amount; i++) {
-		spawnPowerUp(glm::vec3(rand() % 5, 1, rand() % 5), rand() % PowerUps::NUMPOWUPS - 1, 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
+		if (side) {
+			spawnPowerUp(m_spawnPoints.front(), rand() % PowerUps::NUMPOWUPS - 1, 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
+			m_spawnPoints.pop_front();
+		} 
+		else {
+			spawnPowerUp(m_spawnPoints.back(), rand() % PowerUps::NUMPOWUPS - 1, 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
+			m_spawnPoints.pop_back();
+		}
+		side = !side;
 	}
 }
 #ifdef DEVELOPMENT

@@ -1404,7 +1404,12 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	m_componentSystems.levelSystem->addClutterModel(clutterModels, boundingBoxModel);
 	m_componentSystems.gameInputSystem->m_mapPointer = m_componentSystems.levelSystem;
 
-	m_componentSystems.powerUpCollectibleSystem->spawnPowerUps(5);
+
+	m_componentSystems.powerUpCollectibleSystem->setSpawnPoints(m_componentSystems.levelSystem->powerUpSpawnPoints);
+	m_componentSystems.powerUpCollectibleSystem->spawnPowerUps();
+
+
+
 
 }
 

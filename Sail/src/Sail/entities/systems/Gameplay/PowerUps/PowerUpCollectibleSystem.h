@@ -7,9 +7,10 @@ public:
 	PowerUpCollectibleSystem();
 	~PowerUpCollectibleSystem();
 	void init(std::vector<Entity*>* playerList);
+	void setSpawnPoints(std::vector<glm::vec3>& points);
 	void update(float dt) override;
 	void spawnSingleUsePowerUp(const PowerUps powerUp, const float time, glm::vec3 pos, Entity* parent = nullptr);
-	void spawnPowerUps(int amount);
+	void spawnPowerUps(int amount = -1);
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const override;
 	void imguiPrint(Entity** selectedEntity = nullptr) override;
@@ -27,6 +28,6 @@ private:
 
 	std::vector<Entity*>* m_playerList;
 	std::list<ReSpawn> m_respawns;
-
+	std::list<glm::vec3> m_spawnPoints;
 	std::vector<float> m_distances;
 };
