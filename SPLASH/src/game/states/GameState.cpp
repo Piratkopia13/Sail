@@ -160,8 +160,9 @@ GameState::GameState(StateStack& stack)
 	// Level Creation
 	
 	createLevel(shader, boundingBoxModel);
+#ifndef _DEBUG
 	m_componentSystems.aiSystem->initNodeSystem(m_octree);
-
+#endif
 	// Player creation
 	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
 		
@@ -200,7 +201,9 @@ GameState::GameState(StateStack& stack)
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #else
-	createBots();
+	#ifndef _DEBUG
+		createBots();
+	#endif
 #endif
 	
 #ifdef _DEBUG
