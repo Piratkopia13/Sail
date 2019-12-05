@@ -216,7 +216,7 @@ bool OptionsWindow::renderGameOptions() {
 	unsigned int selected = 0;
 	std::string valueName = "";
 
-	static std::vector<std::string> MapOptions = { "sprinkler" };
+	static std::vector<std::string> MapOptions = { "sprinkler", "Powerup" };
 	for (auto& optionName : MapOptions) {
 		sopt = &stat["map"][optionName];
 		selected = sopt->selected;
@@ -234,6 +234,7 @@ bool OptionsWindow::renderGameOptions() {
 		if (SailImGui::TextButton(std::string(">##" + optionName).c_str())) {
 			sopt->setSelected(selected + 1);
 		}
+		ImGui::NextColumn();
 	}
 
 	ImGui::NextColumn();
@@ -258,7 +259,7 @@ bool OptionsWindow::renderGameOptions() {
 	ImGui::Spacing();
 
 
-	if (ImGui::CollapsingHeader("Advanced Settings")) {
+	if (ImGui::CollapsingHeader("Advanced Settings##map")) {
 		SettingStorage::DynamicSetting* mapSizeX = &m_app->getSettings().gameSettingsDynamic["map"]["sizeX"];
 		SettingStorage::DynamicSetting* mapSizeY = &m_app->getSettings().gameSettingsDynamic["map"]["sizeY"];
 
@@ -305,6 +306,10 @@ bool OptionsWindow::renderGameOptions() {
 			m_app->getSettings().gameSettingsDynamic["map"]["clutter"].setValue(val * 0.01f);
 			settingsChanged = true;
 		}
+
+
+
+
 		ImGui::Unindent();
 	}
 
@@ -312,7 +317,7 @@ bool OptionsWindow::renderGameOptions() {
 	ImGui::Spacing();
 	ImGui::Spacing();
 
-	SailImGui::HeaderText("Gamemode Settings");
+	SailImGui::HeaderText("Game Settings");
 	ImGui::Separator();
 
 
@@ -342,10 +347,43 @@ bool OptionsWindow::renderGameOptions() {
 		}
 
 	}
-
 	ImGui::PopItemFlag();
 	ImGui::PopStyleColor();
 
+	if (ImGui::CollapsingHeader("Advanced Settings##game")) {
+		ImGui::Indent();
+
+		SailImGui::HeaderText("PowerUp ");
+		ImGui::Text("Duration");
+		ImGui::SameLine(x[0]);
+		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
+		float val = m_app->getSettings().gameSettingsDynamic["powerup"]["duration"].value;
+		if (ImGui::SliderFloat("##Duration",
+			&val,
+			m_app->getSettings().gameSettingsDynamic["powerup"]["duration"].minVal,
+			m_app->getSettings().gameSettingsDynamic["powerup"]["duration"].maxVal,
+			"%.0fs"
+		)) {
+			m_app->getSettings().gameSettingsDynamic["powerup"]["duration"].setValue(val);
+			settingsChanged = true;
+		}
+
+		ImGui::Text("respawnTime");
+		ImGui::SameLine(x[0]);
+		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
+		val = m_app->getSettings().gameSettingsDynamic["powerup"]["respawnTime"].value;
+		if (ImGui::SliderFloat("##respawnTime",
+			&val,
+			m_app->getSettings().gameSettingsDynamic["powerup"]["respawnTime"].minVal,
+			m_app->getSettings().gameSettingsDynamic["powerup"]["respawnTime"].maxVal,
+			"%.0fs"
+		)) {
+			m_app->getSettings().gameSettingsDynamic["powerup"]["respawnTime"].setValue(val);
+			settingsChanged = true;
+		}
+
+
+	}
 
 	if (mapChanged) {
 		updateMap();

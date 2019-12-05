@@ -1,3 +1,4 @@
+#include "PowerUpCollectibleSystem.h"
 #include "pch.h" 
 #include "PowerUpCollectibleSystem.h"
 #include "Sail/entities/components/PowerUp/PowerUpCollectibleComponent.h"
@@ -5,7 +6,9 @@
 
 PowerUpCollectibleSystem::PowerUpCollectibleSystem() :
 	m_collectDistance(2.0f),
-	m_playerList(nullptr)
+	m_playerList(nullptr),
+	m_respawnTime(30.0f),
+	m_duration(15.0f)
 {
 	registerComponent<PowerUpCollectibleComponent>(true, true, true);
 
@@ -20,6 +23,20 @@ PowerUpCollectibleSystem::~PowerUpCollectibleSystem() {
 
 void PowerUpCollectibleSystem::init(std::vector<Entity*>* playerList) {
 	m_playerList = playerList;
+}
+
+void PowerUpCollectibleSystem::setSpawnPoints(std::vector<glm::vec3>& points) {
+	m_spawnPoints.clear();
+	m_spawnPoints.insert(m_spawnPoints.begin(), points.begin(), points.end());
+}
+
+
+void PowerUpCollectibleSystem::setRespawnTime(const float time) {
+	m_respawnTime = time;
+}
+
+void PowerUpCollectibleSystem::setDuration(const float time) {
+	m_duration = time;
 }
 
 void PowerUpCollectibleSystem::update(float dt) {
@@ -52,7 +69,7 @@ void PowerUpCollectibleSystem::update(float dt) {
 					m_distances.emplace_back(dist);
 					if (dist <= m_collectDistance) {
 						if (auto* playerpowerC = player->getComponent<PowerUpComponent>()) {
-							
+
 							//Send to both clients and host
 							NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 								Netcode::MessageType::DESTROY_POWER_UP,
@@ -63,12 +80,12 @@ void PowerUpCollectibleSystem::update(float dt) {
 								, false
 							);
 
-							e->queueDestruction();
-							playerpowerC->powerUps[powerCC->powerUp].addTime(powerCC->powerUpDuration);
+							playerpowerC->powerUps[powerCC->powerUp].addTime(m_duration);
+							e->queueDestruction(); // TODO: CHANGE TO NETWORK MESSAGE
 
 							if (powerCC->respawnTime > 0.0f) {
 								//powerCC->time = powerCC->respawnTime; // TODO: CHANGE TO NETWORK MESSAGE
-								m_respawns.push_back({ 5, PowerUps(powerCC->powerUp), transformC->getTranslation() });
+								m_respawns.push_back({ m_respawnTime, PowerUps(powerCC->powerUp), transformC->getTranslation() });
 							}
 						}
 					}
@@ -83,15 +100,25 @@ void PowerUpCollectibleSystem::spawnSingleUsePowerUp(const PowerUps powerUp, con
 	pC->respawnTime = -1.0f;
 	pC->powerUpDuration = time;
 	if (parent) {
-
-
-
+		//TODO: Get Parent ID
 	}
-	//TODO: SEND MESSAGE
+	//TODO: SEND MESSAGE WITH PARENT ID
 }
 void PowerUpCollectibleSystem::spawnPowerUps(int amount) {
+	static bool side = false;
+	if (amount = -1) {
+		amount = m_spawnPoints.size();
+	}
 	for (int i = 0; i < amount; i++) {
-		spawnPowerUp(glm::vec3(rand() % 5, 1, rand() % 5), rand() % PowerUps::NUMPOWUPS - 1, 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
+		if (side) {
+			spawnPowerUp(m_spawnPoints.front(), rand() % PowerUps::NUMPOWUPS - 1, 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
+			m_spawnPoints.pop_front();
+		} 
+		else {
+			spawnPowerUp(m_spawnPoints.back(), rand() % PowerUps::NUMPOWUPS - 1, 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
+			m_spawnPoints.pop_back();
+		}
+		side = !side;
 	}
 }
 #ifdef DEVELOPMENT
@@ -120,12 +147,13 @@ void PowerUpCollectibleSystem::imguiPrint(Entity** selectedEntity) {
 	ImGui::Separator();
 }
 
+#endif
 void PowerUpCollectibleSystem::spawnPowerUp(glm::vec3 pos, int powerUp, float time, float respawntime, Netcode::ComponentID compID) {
 	Entity::SPtr e = EntityFactory::CreatePowerUp(pos, powerUp, compID);
 	auto* pC = e->getComponent<PowerUpCollectibleComponent>();
 	pC->respawnTime = respawntime;
 	pC->powerUpDuration = time;
-
+	//TODO: SEND MESSAGE WITHOUT PARENT ID
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 			Netcode::MessageType::SPAWN_POWER_UP,
@@ -133,13 +161,12 @@ void PowerUpCollectibleSystem::spawnPowerUp(glm::vec3 pos, int powerUp, float ti
 				powerUp,
 				pos,
 				e->getComponent<NetworkSenderComponent>()->m_id,
-			}	
+			}
 			, false
 		);
 	}
 }
 void PowerUpCollectibleSystem::updateSpawns(const float dt) {
-
 	auto it = m_respawns.begin();
 	while (it != m_respawns.end()) {
 		it->time -= dt;
@@ -194,4 +221,3 @@ bool PowerUpCollectibleSystem::onEvent(const Event& e) {
 	
 	return false;
 }
-#endif

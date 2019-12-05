@@ -10,7 +10,6 @@ PowerUpUpdateSystem::~PowerUpUpdateSystem() {
 }
 
 void PowerUpUpdateSystem::update(float dt) {
-
 	for (auto& e: entities) {
 		if (auto* powC = e->getComponent<PowerUpComponent>()) {
 			for (auto& pow : powC->powerUps) {
@@ -24,7 +23,7 @@ void PowerUpUpdateSystem::update(float dt) {
 }
 #ifdef DEVELOPMENT
 unsigned int PowerUpUpdateSystem::getByteSize() const {
-	/* TODO: Fix component size */
-	return sizeof(*this);
+	int size = sizeof(*this);
+	return size;
 }
 #endif
