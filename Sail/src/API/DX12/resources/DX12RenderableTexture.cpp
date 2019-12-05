@@ -138,6 +138,9 @@ DXGI_FORMAT DX12RenderableTexture::convertFormat(Texture::FORMAT format) const {
 	case Texture::R16G16B16A16_FLOAT:
 		dxgiFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		break;
+	case Texture::R32G32B32A32_FLOAT:
+		dxgiFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		break;
 	default:
 		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 		break;
