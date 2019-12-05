@@ -352,6 +352,11 @@ bool OptionsWindow::renderGameOptions() {
 
 	if (ImGui::CollapsingHeader("Advanced Settings##game")) {
 		ImGui::Indent();
+		bool powActive = stat["map"]["Powerup"].getSelected().value == 0.0f ? true : false;
+		if (!powActive) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+		}
 
 		SailImGui::HeaderText("PowerUp ");
 		ImGui::Text("Duration");
@@ -389,10 +394,14 @@ bool OptionsWindow::renderGameOptions() {
 			&val,
 			m_app->getSettings().gameSettingsDynamic["powerup"]["count"].minVal,
 			m_app->getSettings().gameSettingsDynamic["powerup"]["count"].maxVal,
-			"%.0fs"
+			"%.0f"
 		)) {
 			m_app->getSettings().gameSettingsDynamic["powerup"]["count"].setValue(val);
 			settingsChanged = true;
+		}
+		if (!powActive) {
+			ImGui::PopItemFlag();
+			ImGui::PopStyleColor();
 		}
 
 	}
@@ -406,18 +415,21 @@ bool OptionsWindow::renderGameOptions() {
 }
 
 void OptionsWindow::updateMap() {
+	
+	float oldCount = m_levelSystem->powerUpSpawnPoints.size();
 	m_levelSystem->destroyWorld();
 	m_levelSystem->seed = m_settings->gameSettingsDynamic["map"]["seed"].value;
 	m_levelSystem->clutterModifier = m_settings->gameSettingsDynamic["map"]["clutter"].value * 100;
 	m_levelSystem->xsize = m_settings->gameSettingsDynamic["map"]["sizeX"].value;
 	m_levelSystem->ysize = m_settings->gameSettingsDynamic["map"]["sizeY"].value;
 
-	m_levelSystem->generateMap();
+	m_levelSystem->generateMap(); 
 	auto& count = m_settings->gameSettingsDynamic["powerup"]["count"];
 	count.maxVal = m_levelSystem->powerUpSpawnPoints.size();
-	if (count.maxVal > count.value) {
-		count.value = count.maxVal;
-	}
+	float p = count.value / oldCount;
+	p = std::clamp(p, 0.0f, 1.0f);
+	count.value = p * count.maxVal;
+
 }
 
 void OptionsWindow::drawCrosshair() {
