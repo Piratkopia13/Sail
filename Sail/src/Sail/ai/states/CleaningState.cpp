@@ -17,7 +17,7 @@ void CleaningState::update(float dt, Entity* entity) {
 	auto aiPos = entity->getComponent<TransformComponent>()->getMatrixWithUpdate()[3];
 
 	m_searchingClock += dt;
-	if (m_searchingClock > 2.f) {
+	if (m_searchingClock > 2.f && aiComp->currPath.size() / 2 <= aiComp->currNodeIndex) {
 		int index = -1;
 		if (aiComp->currPath.size() > 0) {
 			index = aiComp->currPath[aiComp->currNodeIndex].index;
