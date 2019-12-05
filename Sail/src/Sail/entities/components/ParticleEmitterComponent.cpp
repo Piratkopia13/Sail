@@ -230,7 +230,6 @@ void ParticleEmitterComponent::updateOnGPU(ID3D12GraphicsCommandList4* cmdList, 
 		// Update nr of particles in this buffer and erase added and removed emitters from the queues
 		m_cpuOutput[context->getSwapIndex()].previousNrOfParticles = glm::min(m_cpuOutput[context->getSwapIndex()].previousNrOfParticles + numPart - numPartRem, data.outputVertexBufferSize / 6);
 
-		//m_cpuOutput[context->getSwapIndex()].newParticles.erase(m_cpuOutput[context->getSwapIndex()].newParticles.begin(), m_cpuOutput[context->getSwapIndex()].newParticles.begin() + numPart);
 		m_cpuOutput[context->getSwapIndex()].newParticles.clear();
 		m_cpuOutput[context->getSwapIndex()].toRemove.clear();
 	}
