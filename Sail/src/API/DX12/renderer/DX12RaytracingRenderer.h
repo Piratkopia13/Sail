@@ -28,12 +28,12 @@ public:
 
 	virtual void setTeamColors(const std::vector<glm::vec3>& teamColors);
 	virtual void updateMetaballAABB();
-	void createSoftShadowsTextures(unsigned int numPlayers);
 
 	void setGBufferInputs(DX12RenderableTexture** inputs);
 	DXRBase* getDXRBase();
 
 private:
+	void createSoftShadowsTextures();
 	DX12RenderableTexture* runDenoising(ID3D12GraphicsCommandList4* cmdList);
 	DX12RenderableTexture* runShading(ID3D12GraphicsCommandList4* cmdList, DX12RenderableTexture* shadows);
 	bool onResize(const WindowResizeEvent& event);
@@ -62,8 +62,6 @@ private:
 	ShadePassShader* m_shadeShader;
 
 	bool m_hardShadowsLastFrame;
-	// Number of shadow textures varies with the number of players for optimizations sake
-	unsigned int m_numShadowTextures;
 
 	DX12ComputeShaderDispatcher m_computeShaderDispatcher;
 

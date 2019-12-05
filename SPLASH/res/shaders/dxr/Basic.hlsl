@@ -294,13 +294,13 @@ void rayGen() {
 	motionVector.y = 1.f - motionVector.y;
 	motionVector = motionVector * 2.f - 1.0f;
 
-	// float totalShadowAmount = 0.f;
+	float totalShadowAmount = 0.f;
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
 
 	uint shadowTextureIndex = 0;
 	int lightIndex = 0;
 	[unroll]
-	while (shadowTextureIndex < CB_SceneData.numShadowTextures) {
+	while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
 		float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, lightIndex);
 		if (lightIndex == -1) {
 			// No more lights available!
@@ -312,10 +312,10 @@ void rayGen() {
 		float2 shadow = float2(firstBounceShadow, finalPayload.shadowTwo[shadowTextureIndex]);
 		shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
 		lOutputShadows[uint3(launchIndex, shadowTextureIndex)] = shadow;
-		// totalShadowAmount += firstBounceShadow;
+		totalShadowAmount += firstBounceShadow;
 		shadowTextureIndex++;
 	}
-	// totalShadowAmount /= max(CB_SceneData.numShadowTextures, 1);
+	totalShadowAmount /= max(NUM_SHADOW_TEXTURES, 1);
 
 	// Interpolation to shade water in shadows nicely, currently done in shadepass instead
 	// totalShadowAmount = 1 - totalShadowAmount * totalShadowAmount;
@@ -429,7 +429,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 		int shadowTextureIndex = 0;
 		int lightIndex = 0;
 		[unroll] // THIS IS REQUIRED FOR SOME REASON
-		while (shadowTextureIndex < CB_SceneData.numShadowTextures) {
+		while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
 			float shadowAmount = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, lightIndex);
 			if (lightIndex == -1) {
 				// No more lights available!

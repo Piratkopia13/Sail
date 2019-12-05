@@ -82,8 +82,8 @@ GameState::GameState(StateStack& stack)
 	}
 	m_app->getRenderWrapper()->getCurrentRenderer()->setTeamColors(m_teamColors);
 
-	// Tell renderer to initialize everything needed for a new session
-	static_cast<DX12HybridRaytracerRenderer*>(m_app->getRenderWrapper()->getCurrentRenderer())->newGame(NWrapperSingleton::getInstance().getPlayers().size());
+	// Update water voxel grid
+	static_cast<DX12HybridRaytracerRenderer*>(m_app->getRenderWrapper()->getCurrentRenderer())->getDXRBase()->rebuildWater();
 
 	//----Octree creation----
 	//Wireframe shader
