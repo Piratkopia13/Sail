@@ -397,7 +397,6 @@ Entity::SPtr EntityFactory::CreateCleaningBotHost(const glm::vec3& pos, NodeSyst
 		e->addComponent<SpeedLimitComponent>();
 		e->addComponent<CollisionComponent>(true);
 		e->addComponent<AiComponent>();
-		e->addComponent<RenderInActiveGameComponent>();
 		e->addComponent<MovementComponent>();
 
 		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, 0.f, 0.0f);
@@ -440,6 +439,7 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, const Netcod
 	e->addComponent<CullingComponent>();
 	e->addComponent<AudioComponent>();
 	e->addComponent<NetworkReceiverComponent>(compID, Netcode::EntityType::MECHA_ENTITY);
+	e->addComponent<RenderInActiveGameComponent>();
 	e->addComponent<WaterCleaningComponent>();
 
 	return e;
