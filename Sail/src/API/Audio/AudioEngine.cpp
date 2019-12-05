@@ -534,21 +534,12 @@ void AudioEngine::setStreamVolume(int index, float value) {
 }
 
 void AudioEngine::updateProjectileLowPass(float frequency, int indexToSource) {
+	if (m_sound[indexToSource].lowpassFiltered == false) {
+		return;
+	}
+
 	// Create new lowpass filter with updated frequency.
 	XAUDIO2_FILTER_PARAMETERS lowPassFilter = createLowPassFilter(frequency);
-
-	if (indexToSource == 1) {
-		// Debug output to solve 'XAudio2: Filter control is not available on this send'
-		std::string debugOutput = "";
-		debugOutput += "Index: " + std::to_string(indexToSource) + ". ";
-		debugOutput += "Size: " + std::to_string(SOUND_COUNT) + ". ";
-		debugOutput += "timesModulused: " + std::to_string(timesModulus);
-		SAIL_LOG(debugOutput.c_str());
-	}
-
-	if (m_sound[indexToSource].lowpassFiltered == false) {
-		SAIL_LOG_ERROR("Tried to update lowpassfilter on a sound without a lowpass filter");
-	}
 
 	if (FAILED(m_sound[indexToSource].sourceVoice->SetOutputFilterParameters(
 		m_sound[indexToSource].xAPOsubMixVoice,
@@ -651,8 +642,7 @@ HRESULT AudioEngine::initXAudio2() {
 #ifdef DEVELOPMENT
 	flags |= XAUDIO2_DEBUG_ENGINE;
 #endif
-	flags |= XAUDIO2_DEBUG_ENGINE;
-
+	
 	HRESULT hr = XAudio2Create(&m_xAudio2, flags);
 
 	// HRTF APO expects mono audio data at 48kHz and produces stereo output at 48kHz
@@ -673,7 +663,6 @@ HRESULT AudioEngine::initXAudio2() {
 	// Activate debug layer if we're in development
 	activateDebugLayer();
 #endif
-	activateDebugLayer();
 
 	return hr;
 }
@@ -681,12 +670,6 @@ HRESULT AudioEngine::initXAudio2() {
 int AudioEngine::fetchSoundIndex() {
 	m_currSoundIndex++;
 	m_currSoundIndex %= SOUND_COUNT;
-	if (m_currSoundIndex == 0) {
-		timesModulus += 1;
-		SAIL_LOG("Modulused!");
-	}
-	std::string debugOutput = "Fetched Index: " + std::to_string(m_currSoundIndex);
-	SAIL_LOG(debugOutput.c_str());
 
 	return m_currSoundIndex;
 }
