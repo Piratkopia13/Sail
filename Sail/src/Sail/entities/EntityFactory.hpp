@@ -39,7 +39,8 @@ namespace EntityFactory {
 	void CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation, Netcode::PlayerID playerID, bool doNotAddToSystems = false);
 	Entity::SPtr CreateMySpectator(Netcode::PlayerID playerID, size_t lightIndex, glm::vec3 spawnLocation);
 	
-	Entity::SPtr CreateCleaningBot(const glm::vec3& pos, NodeSystem* ns);
+	Entity::SPtr CreateCleaningBotHost(const glm::vec3& pos, NodeSystem* ns, const Netcode::ComponentID compID);
+	Entity::SPtr CreateCleaningBot(const glm::vec3& pos, const Netcode::ComponentID compID);
 	Entity::SPtr CreateStaticMapObject(const std::string& name, Model * model, Model* boundingBoxModel, const glm::vec3& pos = glm::vec3(0,0,0), const glm::vec3& rot = glm::vec3(0,0,0), const glm::vec3& scale = glm::vec3(1,1,1));
 	
 	Entity::SPtr CreateProjectile(Entity::SPtr projectileEntity, const ProjectileArguments& info);

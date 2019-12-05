@@ -285,7 +285,7 @@ void AiSystem::updatePath(Entity* e) {
 	TransformComponent* transform = e->getComponent<TransformComponent>();
 	if (ai->updatePath ) {
 #ifdef _DEBUG_NODESYSTEM
-		m_nodeSystem->colorPath(ai->currPath, glm::vec4(0.f, 1.f, 0.f, 1.f));
+		m_nodeSystem->colorPath(ai->currPath, m_nodeSystem->getMaxColourID());
 #endif
 		ai->timeTakenOnPath = 0.f;
 		ai->reachedPathingTarget = false;
@@ -305,7 +305,7 @@ void AiSystem::updatePath(Entity* e) {
 		ai->currPath = tempPath;
 
 #ifdef _DEBUG_NODESYSTEM
-		m_nodeSystem->colorPath(ai->currPath, glm::vec4(0.f, 0.f, 1.f, 1.f));
+		m_nodeSystem->colorPath(ai->currPath, e->getID() % (m_nodeSystem->getMaxColourID() - 1));
 #endif
 
 		ai->updatePath = false;

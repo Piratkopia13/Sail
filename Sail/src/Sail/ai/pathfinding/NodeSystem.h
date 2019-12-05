@@ -61,15 +61,17 @@ public:
 	void stop();
 
 #ifdef _DEBUG_NODESYSTEM
-	void colorPath(const std::vector<NodeSystem::Node>& path, const glm::vec4& colour);
+	void colorPath(const std::vector<NodeSystem::Node>& path, const unsigned int colourID);
+	// Returns the highest colour ID, m_maxColourID = white
+	unsigned int getMaxColourID() { return m_maxColourID; };
 	void setDebugModelAndScene(Shader* shader);
 	std::vector<Entity::SPtr> m_nodeEntities;
 	std::vector<std::vector<std::pair<unsigned int, Entity::SPtr>>> m_connectionEntities;
 	Shader* m_shader;
 
-	Model* m_activeNode;
-	Model* m_pathNode;
+	std::vector<Model*> m_pathNodes;
 	Model* m_blockedNode;
+	const unsigned int m_maxColourID = 12;
 #endif
 #ifdef DEVELOPMENT
 	const unsigned int getAverageSearchTime() const;

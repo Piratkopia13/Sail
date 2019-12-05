@@ -31,14 +31,14 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 	int currNodeEntity = 0;
 	for ( int i = 0; i < m_nodes.size(); i++ ) {
 		m_nodeEntities.push_back(ECS::Instance()->createEntity("Node " + std::to_string(i)));
-		m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position)->setScale(0.1f);
+		m_nodeEntities[currNodeEntity]->addComponent<TransformComponent>(m_nodes[i].position)->setScale(0.2f);
 		m_nodeEntities[currNodeEntity]->addComponent<RealTimeComponent>();
 		m_nodeEntities[currNodeEntity]->addComponent<CullingComponent>();
 		m_nodeEntities[currNodeEntity]->addComponent<RenderInActiveGameComponent>();
 		if (m_nodes[i].blocked) {
 			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_blockedNode);
 		} else {
-			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_activeNode);
+			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(m_pathNodes[m_maxColourID]);
 		}
 	}
 
@@ -69,10 +69,10 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 
 				auto transComp = m_connectionEntities[i][currConnIndex].second->addComponent<TransformComponent>(pos);
 				transComp->setRotations(0.f, yaw, 0.f);
-				transComp->setScale(0.005f, 0.005f, dirLength / 2.f);
+				transComp->setScale(0.01f, 0.01f, dirLength * 1.5f);
 				m_connectionEntities[i][currConnIndex].second->addComponent<RealTimeComponent>();
 
-				m_connectionEntities[i][currConnIndex].second->addComponent<ModelComponent>(m_activeNode);
+				m_connectionEntities[i][currConnIndex].second->addComponent<ModelComponent>(m_pathNodes[m_maxColourID]);
 				m_connectionEntities[i][currConnIndex].second->addComponent<CullingComponent>();
 				m_connectionEntities[i][currConnIndex++].second->addComponent<RenderInActiveGameComponent>();
 			}
@@ -154,24 +154,17 @@ void NodeSystem::stop() {
 }
 
 #ifdef _DEBUG_NODESYSTEM
-void NodeSystem::colorPath(const std::vector<NodeSystem::Node>& path, const glm::vec4& colour) {
+void NodeSystem::colorPath(const std::vector<NodeSystem::Node>& path, const unsigned int colourID) {
+	Model* modelToSet = m_pathNodes[colourID];
 	for (int i = 0; i < path.size(); i++) {
 		// Colour all affected nodes
-		if (colour.b > 0.f) {
-			m_nodeEntities[path[i].index]->getComponent<ModelComponent>()->setModel(m_pathNode);
-		} else {
-			m_nodeEntities[path[i].index]->getComponent<ModelComponent>()->setModel(m_activeNode);
-		}
+		m_nodeEntities[path[i].index]->getComponent<ModelComponent>()->setModel(modelToSet);
 
 		// Colour all affected backward-connections
 		if (i > 0) {
 			for (int j = 0; j < m_connectionEntities[path[i].index].size(); j++) {
 				if (m_connectionEntities[path[i].index][j].first == path[i - 1].index) {
-					if (colour.b > 0.f) {
-						m_connectionEntities[path[i].index][j].second->getComponent<ModelComponent>()->setModel(m_pathNode);
-					} else {
-						m_connectionEntities[path[i].index][j].second->getComponent<ModelComponent>()->setModel(m_activeNode);
-					}
+					m_connectionEntities[path[i].index][j].second->getComponent<ModelComponent>()->setModel(modelToSet);
 				}
 			}
 		}
@@ -179,11 +172,7 @@ void NodeSystem::colorPath(const std::vector<NodeSystem::Node>& path, const glm:
 		if (i < path.size() - 1) {
 			for (int j = 0; j < m_connectionEntities[path[i].index].size(); j++) {
 				if (m_connectionEntities[path[i].index][j].first == path[i + 1].index) {
-					if (colour.b > 0.f) {
-						m_connectionEntities[path[i].index][j].second->getComponent<ModelComponent>()->setModel(m_pathNode);
-					} else {
-						m_connectionEntities[path[i].index][j].second->getComponent<ModelComponent>()->setModel(m_activeNode);
-					}
+					m_connectionEntities[path[i].index][j].second->getComponent<ModelComponent>()->setModel(modelToSet);
 				}
 			}
 		}
@@ -193,20 +182,22 @@ void NodeSystem::colorPath(const std::vector<NodeSystem::Node>& path, const glm:
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_shader = shader;
 
-	m_activeNode = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
-	m_activeNode->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
-	m_activeNode->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 1.f, 1.f, 1.f));
-	m_activeNode->setCastShadows(false);
-
-	m_blockedNode = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
+	m_blockedNode = &Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall.fbx", m_shader);
 	m_blockedNode->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 	m_blockedNode->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 0.f, 0.f, 1.f));
 	m_blockedNode->setCastShadows(false);
 
-	m_pathNode = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
-	m_pathNode->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
-	m_pathNode->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 0.f, 1.f, 1.f));
-	m_pathNode->setCastShadows(false);
+	for (int i = 0; i < m_maxColourID; i++) {
+		m_pathNodes.emplace_back(&Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall.fbx", m_shader));
+		m_pathNodes[i]->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
+		m_pathNodes[i]->getMesh(0)->getMaterial()->setColor(glm::vec4(glm::linearRand(0.f, 1.f), glm::linearRand(0.f, 1.f), glm::linearRand(0.f, 1.f), 1.f));
+		m_pathNodes[i]->setCastShadows(false);
+	}
+
+	m_pathNodes.emplace_back(&Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall.fbx", m_shader));
+	m_pathNodes[m_maxColourID]->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
+	m_pathNodes[m_maxColourID]->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 1.f, 1.f, 1.f));
+	m_pathNodes[m_maxColourID]->setCastShadows(false);
 }
 #endif
 

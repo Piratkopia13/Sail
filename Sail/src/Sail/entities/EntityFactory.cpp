@@ -386,10 +386,66 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
 }
 
-Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* ns) {
-	auto e = ECS::Instance()->createEntity("Cleaning Bot");
+Entity::SPtr EntityFactory::CreateCleaningBotHost(const glm::vec3& pos, NodeSystem* ns, const Netcode::ComponentID compID) {
+	auto e = EntityFactory::CreateCleaningBot(pos, compID);
 
-	const Netcode::ComponentID compID = Netcode::generateUniqueBotID();
+	if (NWrapperSingleton::getInstance().isHost()) {
+		auto sendC = e->addComponent<NetworkSenderComponent>(Netcode::EntityType::MECHA_ENTITY, compID);
+		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
+		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
+		e->addComponent<SpeedLimitComponent>();
+		e->addComponent<CollisionComponent>(true);
+		e->addComponent<AiComponent>();
+		e->addComponent<RenderInActiveGameComponent>();
+		e->addComponent<MovementComponent>();
+
+		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, 0.f, 0.0f);
+		e->getComponent<SpeedLimitComponent>()->maxSpeed = 2.0f;
+
+		auto fsmComp = e->addComponent<FSMComponent>();
+
+		// =========Create states and transitions===========
+
+		auto cleaningState = fsmComp->createState<CleaningState>(ns);
+		// Keep this for now
+
+		//AttackingState* attackState = fsmComp->createState<AttackingState>();
+		//fsmComp->createState<FleeingState>(ns);
+
+		// TODO: unnecessary to create new transitions for each FSM if they're all identical
+		//Attack State
+		/*FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
+		attackToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
+		FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
+		attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
+
+		// Search State
+		FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
+		searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
+		FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
+		searchToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
+
+		// Fleeing State
+		FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
+		fleeingToSearch->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, true);
+
+		//fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
+		//fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
+
+		fsmComp->addTransition<SearchingState, AttackingState>(searchToAttack);
+		fsmComp->addTransition<SearchingState, FleeingState>(searchToFleeing);
+
+		fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);*/
+		// =========[END] Create states and transitions===========
+
+
+	}
+
+	return e;
+}
+
+Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, const Netcode::ComponentID compID) {
+	auto e = ECS::Instance()->createEntity("Cleaning Bot");
 
 	std::string modelName = "CleaningBot.fbx";
 	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
@@ -400,59 +456,9 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* 
 
 	e->addComponent<ModelComponent>(botModel);
 	e->addComponent<TransformComponent>(pos);
-	if (NWrapperSingleton::getInstance().isHost()) {
-		auto sendC = e->addComponent<NetworkSenderComponent>(Netcode::EntityType::MECHA_ENTITY, compID);
-		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
-		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
-	}
-	e->addComponent<NetworkReceiverComponent>(compID, Netcode::EntityType::MECHA_ENTITY);
-	e->addComponent<MovementComponent>();
-	e->addComponent<SpeedLimitComponent>();
-	e->addComponent<CollisionComponent>(true);
-	e->addComponent<AiComponent>();
 	e->addComponent<CullingComponent>();
-	e->addComponent<RenderInActiveGameComponent>();
-
 	e->addComponent<AudioComponent>();
-
-	e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, 0.f, 0.0f);
-	e->getComponent<SpeedLimitComponent>()->maxSpeed = 2.0f;
-
-	auto fsmComp = e->addComponent<FSMComponent>();
-
-	// =========Create states and transitions===========
-
-	auto cleaningState = fsmComp->createState<CleaningState>(ns);
-	// Keep this for now
-
-	//AttackingState* attackState = fsmComp->createState<AttackingState>();
-	//fsmComp->createState<FleeingState>(ns);
-
-	// TODO: unnecessary to create new transitions for each FSM if they're all identical
-	//Attack State
-	/*FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
-	attackToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
-	FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
-	attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
-
-	// Search State
-	FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
-	searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
-	FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
-	searchToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
-
-	// Fleeing State
-	FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
-	fleeingToSearch->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, true);
-
-	//fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
-	//fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
-
-	fsmComp->addTransition<SearchingState, AttackingState>(searchToAttack);
-	fsmComp->addTransition<SearchingState, FleeingState>(searchToFleeing);
-
-	fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);*/
-	// =========[END] Create states and transitions===========
+	e->addComponent<NetworkReceiverComponent>(compID, Netcode::EntityType::MECHA_ENTITY);
 
 	return e;
 }

@@ -159,7 +159,9 @@ GameState::GameState(StateStack& stack)
 	// Level Creation
 	
 	createLevel(shader, boundingBoxModel);
-	m_componentSystems.aiSystem->initNodeSystem(m_octree);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.aiSystem->initNodeSystem(m_octree);
+	}
 
 	// Player creation
 	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
@@ -454,7 +456,9 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
 
-	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+	}
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
@@ -929,7 +933,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	runSystem(dt, m_componentSystems.aiSystem);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		runSystem(dt, m_componentSystems.aiSystem);
+	}
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
@@ -1191,7 +1197,12 @@ void GameState::createBots() {
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
-			auto e = EntityFactory::CreateCleaningBot(spawnLocation, m_componentSystems.aiSystem->getNodeSystem());
+			auto compID = Netcode::generateUniqueBotID();
+			if (NWrapperSingleton::getInstance().isHost()) {
+				EntityFactory::CreateCleaningBotHost(spawnLocation, m_componentSystems.aiSystem->getNodeSystem(), compID);
+			} else {
+				EntityFactory::CreateCleaningBot(spawnLocation, compID);
+			}
 		}
 		else {
 			SAIL_LOG_ERROR("Bot not spawned because all spawn points are already used for this map.");
