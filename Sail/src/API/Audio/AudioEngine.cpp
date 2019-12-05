@@ -35,6 +35,8 @@
 #include <xaudio2fx.h>
 #pragma comment(lib,"xaudio2.lib")
 
+static int timesModulus = 0;
+
 AudioEngine::AudioEngine() {
 	HRESULT hr;
 	hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -130,8 +132,10 @@ int AudioEngine::beginSound(const std::string& filename, Audio::EffectType effec
 	m_sound[indexValue].xAPOsubMixVoice->SetVolume(volume);
 
 	bool useFilter = false;
+	m_sound[indexValue].lowpassFiltered = false;
 	if (effectType == Audio::EffectType::PROJECTILE_LOWPASS) {
 		useFilter = true;
+		m_sound[indexValue].lowpassFiltered = true;
 	}
 
 	//			   										  xAPO
@@ -533,6 +537,19 @@ void AudioEngine::updateProjectileLowPass(float frequency, int indexToSource) {
 	// Create new lowpass filter with updated frequency.
 	XAUDIO2_FILTER_PARAMETERS lowPassFilter = createLowPassFilter(frequency);
 
+	if (indexToSource == 1) {
+		// Debug output to solve 'XAudio2: Filter control is not available on this send'
+		std::string debugOutput = "";
+		debugOutput += "Index: " + std::to_string(indexToSource) + ". ";
+		debugOutput += "Size: " + std::to_string(SOUND_COUNT) + ". ";
+		debugOutput += "timesModulused: " + std::to_string(timesModulus);
+		SAIL_LOG(debugOutput.c_str());
+	}
+
+	if (m_sound[indexToSource].lowpassFiltered == false) {
+		SAIL_LOG_ERROR("Tried to update lowpassfilter on a sound without a lowpass filter");
+	}
+
 	if (FAILED(m_sound[indexToSource].sourceVoice->SetOutputFilterParameters(
 		m_sound[indexToSource].xAPOsubMixVoice,
 		&lowPassFilter
@@ -634,6 +651,7 @@ HRESULT AudioEngine::initXAudio2() {
 #ifdef DEVELOPMENT
 	flags |= XAUDIO2_DEBUG_ENGINE;
 #endif
+	flags |= XAUDIO2_DEBUG_ENGINE;
 
 	HRESULT hr = XAudio2Create(&m_xAudio2, flags);
 
@@ -655,14 +673,21 @@ HRESULT AudioEngine::initXAudio2() {
 	// Activate debug layer if we're in development
 	activateDebugLayer();
 #endif
+	activateDebugLayer();
 
 	return hr;
 }
 
-
 int AudioEngine::fetchSoundIndex() {
 	m_currSoundIndex++;
 	m_currSoundIndex %= SOUND_COUNT;
+	if (m_currSoundIndex == 0) {
+		timesModulus += 1;
+		SAIL_LOG("Modulused!");
+	}
+	std::string debugOutput = "Fetched Index: " + std::to_string(m_currSoundIndex);
+	SAIL_LOG(debugOutput.c_str());
+
 	return m_currSoundIndex;
 }
 
