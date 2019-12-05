@@ -83,7 +83,6 @@ void PowerUpCollectibleSystem::update(float dt) {
 							e->queueDestruction(); // TODO: CHANGE TO NETWORK MESSAGE
 
 							if (powerCC->respawnTime > 0.0f) {
-								//powerCC->time = powerCC->respawnTime; // TODO: CHANGE TO NETWORK MESSAGE
 								m_respawns.push_back({ m_respawnTime, PowerUps(powerCC->powerUp), transformC->getTranslation() });
 							}
 						}
