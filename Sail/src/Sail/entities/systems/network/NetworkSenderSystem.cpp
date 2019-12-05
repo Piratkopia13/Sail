@@ -555,6 +555,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->powerUpType);
 		ArchiveHelpers::saveVec3(ar, data->translation);
 		ar(data->powerUpComponentID);
+		ar(data->parentComponentID);
 	}
 	break;
 	case Netcode::MessageType::DESTROY_POWER_UP:

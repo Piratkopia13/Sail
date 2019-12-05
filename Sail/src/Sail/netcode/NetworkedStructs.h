@@ -224,8 +224,8 @@ namespace Netcode {
 
 	class MessageSpawnPowerUp : public MessageData {
 	public:
-		MessageSpawnPowerUp(int powerUpType, glm::vec3 translation_, Netcode::ComponentID powerUpComponentID)
-			: translation(translation_), powerUpComponentID(powerUpComponentID), powerUpType(powerUpType)
+		MessageSpawnPowerUp(int powerUpType, glm::vec3 translation_, Netcode::ComponentID powerUpComponentID, Netcode::ComponentID parentComponentID)
+			: translation(translation_), powerUpComponentID(powerUpComponentID), powerUpType(powerUpType), parentComponentID(parentComponentID)
 		{
 		}
 		virtual ~MessageSpawnPowerUp() {}
@@ -233,6 +233,7 @@ namespace Netcode {
 		int powerUpType;
 		glm::vec3 translation;
 		Netcode::ComponentID powerUpComponentID;
+		Netcode::ComponentID parentComponentID;
 	};
 
 	class MessageDestroyPowerUp : public MessageData {

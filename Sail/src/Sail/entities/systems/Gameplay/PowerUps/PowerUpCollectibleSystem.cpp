@@ -64,7 +64,7 @@ void PowerUpCollectibleSystem::update(float dt) {
 			// CHECK AGAINST PLAYERS
 			for (auto* player : *m_playerList) {
 				if (auto * playerTC = player->getComponent<TransformComponent>()) {
-					float dist = glm::distance(transformC->getTranslation(), playerTC->getTranslation());
+					float dist = glm::distance(glm::vec3(transformC->getRenderMatrix()[3]), playerTC->getTranslation());
 					m_distances.emplace_back(dist);
 					if (dist <= m_collectDistance) {
 						if (auto* playerpowerC = player->getComponent<PowerUpComponent>()) {
@@ -93,16 +93,8 @@ void PowerUpCollectibleSystem::update(float dt) {
 		}
 	}
 }
-void PowerUpCollectibleSystem::spawnSingleUsePowerUp(const PowerUps powerUp, const float time, glm::vec3 pos, Entity* parent) {
-	Entity::SPtr e = EntityFactory::CreatePowerUp(pos, powerUp);
-	auto* pC = e->getComponent<PowerUpCollectibleComponent>();
-	pC->respawnTime = -1.0f;
-	pC->powerUpDuration = time;
-	if (parent) {
-		//TODO: Get Parent ID
-	}
-	//TODO: SEND MESSAGE WITH PARENT ID
-}
+
+
 void PowerUpCollectibleSystem::spawnPowerUps(int amount) {
 	static bool side = false;
 	if (amount < 0) {
@@ -152,24 +144,41 @@ void PowerUpCollectibleSystem::imguiPrint(Entity** selectedEntity) {
 
 #endif
 
-void PowerUpCollectibleSystem::spawnPowerUp(glm::vec3 pos, int powerUp, float time, float respawntime, Netcode::ComponentID compID) {
+void PowerUpCollectibleSystem::spawnPowerUp(glm::vec3 pos, int powerUp, float time, float respawntime, Entity* parent, Netcode::ComponentID compID) {
 	Entity::SPtr e = EntityFactory::CreatePowerUp(pos, powerUp, compID);
 	auto* pC = e->getComponent<PowerUpCollectibleComponent>();
-	pC->respawnTime = respawntime;
+	NetworkReceiverComponent* parentNrc = nullptr;
+
+	if (!parent) {
+		pC->respawnTime = respawntime;
+	} else {
+		pC->respawnTime = -1;
+		parent->addChildEntity(e.get());
+		parentNrc = parent->getComponent<NetworkReceiverComponent>();
+	}
 	pC->powerUpDuration = time;
-	//TODO: SEND MESSAGE WITHOUT PARENT ID
+	
 	if (NWrapperSingleton::getInstance().isHost()) {
+		Netcode::ComponentID parentID = 0;
+		if (parentNrc) {
+			parentID = parentNrc->m_id;
+		} else {
+			SAIL_LOG_WARNING("Tried to atach a powerup to a Entity that do not have a NetworkReceiverComponent!! This will not work in multiplayer.");
+		}
+
 		NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 			Netcode::MessageType::SPAWN_POWER_UP,
 			SAIL_NEW Netcode::MessageSpawnPowerUp{
 				powerUp,
 				pos,
 				e->getComponent<NetworkSenderComponent>()->m_id,
+				parentID
 			}
 			, false
 		);
 	}
 }
+
 void PowerUpCollectibleSystem::updateSpawns(const float dt) {
 	auto it = m_respawns.begin();
 	while (it != m_respawns.end()) {
@@ -214,7 +223,7 @@ bool PowerUpCollectibleSystem::onEvent(const Event& e) {
 	case Event::Type::SPAWN_POWERUP:
 	{
 		SpawnPowerUp& p = (SpawnPowerUp&)e;
-		spawnPowerUp(p.pos, p.powerUpType, 0, 0, p._netCompID);
+		spawnPowerUp(p.pos, p.powerUpType, 0, 0, p.parentEntity, p._netCompID);
 	}
 		break;
 	case Event::Type::DESTROY_POWERUP: onDestroyPowerUp((const DestroyPowerUp&)e);

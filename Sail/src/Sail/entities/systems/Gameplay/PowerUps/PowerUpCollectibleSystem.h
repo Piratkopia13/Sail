@@ -14,14 +14,13 @@ public:
 	void setRespawnTime(const float time);
 	void setDuration(const float time);
 	void update(float dt) override;
-	void spawnSingleUsePowerUp(const PowerUps powerUp, const float time, glm::vec3 pos, Entity* parent = nullptr);
 	void spawnPowerUps(int amount = -1);
+	void spawnPowerUp(glm::vec3 pos, int powerUp, float time, float respawntime, Entity* parent = nullptr, Netcode::ComponentID compID = 0);
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const override;
 	void imguiPrint(Entity** selectedEntity = nullptr) override;
 #endif
 private:
-	void spawnPowerUp(glm::vec3 pos, int powerUp, float time, float respawntime, Netcode::ComponentID compID = 0);
 	void updateSpawns(const float dt);
 
 	void onDestroyPowerUp(const DestroyPowerUp& e);

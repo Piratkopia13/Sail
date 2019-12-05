@@ -1221,6 +1221,9 @@ void GameState::createBots() {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
 			auto e = EntityFactory::CreateCleaningBot(spawnLocation, m_componentSystems.aiSystem->getNodeSystem());
+			if (NWrapperSingleton::getInstance().isHost()) {	
+				m_componentSystems.powerUpCollectibleSystem->spawnPowerUp(glm::vec3(0, 1, 0), 0, 0, 0, e.get());
+			}
 		}
 		else {
 			SAIL_LOG_ERROR("Bot not spawned because all spawn points are already used for this map.");
@@ -1399,7 +1402,8 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 
 		m_componentSystems.powerUpCollectibleSystem->setSpawnPoints(m_componentSystems.levelSystem->powerUpSpawnPoints);
-		m_componentSystems.powerUpCollectibleSystem->setDuration(settings.gameSettingsDynamic["powerup"]["duration"].value);
+		m_componentSystems.powerUpCollectibleSystem->
+			setDuration(settings.gameSettingsDynamic["powerup"]["duration"].value);
 		m_componentSystems.powerUpCollectibleSystem->setRespawnTime(settings.gameSettingsDynamic["powerup"]["respawnTime"].value);
 		if (NWrapperSingleton::getInstance().isHost()) {
 			m_componentSystems.powerUpCollectibleSystem->spawnPowerUps(settings.gameSettingsDynamic["powerup"]["count"].value);

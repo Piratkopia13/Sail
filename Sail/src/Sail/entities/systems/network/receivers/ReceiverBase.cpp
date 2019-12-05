@@ -436,11 +436,13 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				int type;
 				glm::vec3 pos;
 				Netcode::ComponentID compID;
+				Netcode::ComponentID parentCompID;
 
 				ar(type);
 				ArchiveHelpers::loadVec3(ar, pos);
 				ar(compID);
-				spawnPowerup(type, pos, compID);
+				ar(parentCompID);
+				spawnPowerup(type, pos, compID, parentCompID);
 			}
 			break;
 			case Netcode::MessageType::DESTROY_POWER_UP:
