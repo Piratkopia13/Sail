@@ -30,7 +30,6 @@ void PowerUpCollectibleSystem::setSpawnPoints(std::vector<glm::vec3>& points) {
 	m_spawnPoints.insert(m_spawnPoints.begin(), points.begin(), points.end());
 }
 
-
 void PowerUpCollectibleSystem::setRespawnTime(const float time) {
 	m_respawnTime = time;
 }
@@ -106,16 +105,20 @@ void PowerUpCollectibleSystem::spawnSingleUsePowerUp(const PowerUps powerUp, con
 }
 void PowerUpCollectibleSystem::spawnPowerUps(int amount) {
 	static bool side = false;
-	if (amount = -1) {
+	if (amount < 0) {
 		amount = m_spawnPoints.size();
+	} else {
+		//Anti crash check
+		amount = std::min(amount, (int)m_spawnPoints.size());
 	}
+
 	for (int i = 0; i < amount; i++) {
 		if (side) {
-			spawnPowerUp(m_spawnPoints.front(), rand() % PowerUps::NUMPOWUPS - 1, 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
+			spawnPowerUp(m_spawnPoints.front(), rand() % (PowerUps::NUMPOWUPS - 1), 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
 			m_spawnPoints.pop_front();
 		} 
 		else {
-			spawnPowerUp(m_spawnPoints.back(), rand() % PowerUps::NUMPOWUPS - 1, 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
+			spawnPowerUp(m_spawnPoints.back(), rand() % (PowerUps::NUMPOWUPS - 1), 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
 			m_spawnPoints.pop_back();
 		}
 		side = !side;
@@ -148,6 +151,7 @@ void PowerUpCollectibleSystem::imguiPrint(Entity** selectedEntity) {
 }
 
 #endif
+
 void PowerUpCollectibleSystem::spawnPowerUp(glm::vec3 pos, int powerUp, float time, float respawntime, Netcode::ComponentID compID) {
 	Entity::SPtr e = EntityFactory::CreatePowerUp(pos, powerUp, compID);
 	auto* pC = e->getComponent<PowerUpCollectibleComponent>();
@@ -186,17 +190,17 @@ void PowerUpCollectibleSystem::onDestroyPowerUp(const DestroyPowerUp& e) {
 		PowerUpCollectibleComponent* powerCC = pow->getComponent<PowerUpCollectibleComponent>();
 
 		if (nrc && nrc->m_id == e._netCompID) {
-			//NetworkReceiverComponent* player_nrc;
-			//for (auto& player : *m_playerList) {
-			//	player_nrc = player->getComponent<NetworkReceiverComponent>();
-			//	if (player_nrc && player_nrc->m_id && e.pickedByPlayer) {
-			//		Netcode::PlayerID ownerId = Netcode::getComponentOwner(player_nrc->m_id);
-			//		PowerUpComponent* playerpowerC = player->getComponent<PowerUpComponent>();
+			
+			NetworkReceiverComponent* player_nrc;
+			for (auto& player : *m_playerList) {
+				player_nrc = player->getComponent<NetworkReceiverComponent>();
+				if (player_nrc && player_nrc->m_id == e.pickedByPlayer) {
+					Netcode::PlayerID ownerId = Netcode::getComponentOwner(player_nrc->m_id);
+					PowerUpComponent* playerpowerC = player->getComponent<PowerUpComponent>();
 
-			//		playerpowerC->powerUps[powerCC->powerUp].addTime(powerCC->powerUpDuration);
-
-			//	}
-			//}
+					playerpowerC->powerUps[powerCC->powerUp].addTime(m_duration);
+				}
+			}
 
 			pow->queueDestruction();
 			break;
