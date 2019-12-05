@@ -1760,7 +1760,7 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		AudioComponent* ac = e2->addComponent<AudioComponent>();
 		sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
 		sc->light.setPosition(glm::vec3(0, tileHeight * 5 - 0.05, 0));
-		sc->light.setAttenuation(30.f, 0.01f, 0.01f);
+		sc->light.setRadius(30.f);
 		sc->light.setDirection(glm::vec3(1, 0, 0));
 		sc->light.setAngle(0.5);
 		sc->roomID = getRoomID(room.posx, room.posy);

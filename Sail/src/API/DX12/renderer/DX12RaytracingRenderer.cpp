@@ -338,7 +338,6 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 		m_outputBloomTexture->getRtvCDH()
 	};
 	cmdList->OMSetRenderTargets(2, rtvHandles, false, nullptr);
-	//cmdList->OMSetRenderTargets(1, &m_shadedOutput->getRtvCDH(), false, nullptr);
 	cmdList->RSSetViewports(1, m_context->getViewport());
 	cmdList->RSSetScissorRects(1, m_context->getScissorRect());
 

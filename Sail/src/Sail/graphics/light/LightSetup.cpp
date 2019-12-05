@@ -54,14 +54,12 @@ const LightSetup::SpotlightBuffer& LightSetup::getSpotLightsData() const {
 
 void LightSetup::clearPointLights() {
 	m_pls.clear();
-	//updateBufferData();
 }
 
 void LightSetup::removePointLight() {
 	if (m_pls.size() > 0) {
 		m_pls.erase(m_pls.begin());
 		std::cout << "removed light " << m_pls.size() << std::endl;
-		//updateBufferData();
 	}
 }
 
@@ -73,7 +71,6 @@ void LightSetup::removePLByIndex(int index) {
 			std::cout << "removed lightIndex " << i<<std::endl;
 		}
 	}
-	//updateBufferData();
 }
 
 void LightSetup::updateBufferData() {
@@ -83,38 +80,30 @@ void LightSetup::updateBufferData() {
 
 	// Pointlights
 	for (unsigned int i = 0; i < MAX_POINTLIGHTS_RENDERING; i++) {
-		if (i < m_pls.size()) {// break;
-			m_plData.pLights[i].attConstant = m_pls[i].getAttenuation().constant;
-			m_plData.pLights[i].attLinear = m_pls[i].getAttenuation().linear;
-			m_plData.pLights[i].attQuadratic = m_pls[i].getAttenuation().quadratic;
-			m_plData.pLights[i].color = m_pls[i].getColor();
-			m_plData.pLights[i].position = m_pls[i].getPosition();
+		if (i < m_pls.size()) {
+			m_plData.pLights[i].reachRadius		= m_pls[i].getRadius();
+			m_plData.pLights[i].color			= m_pls[i].getColor();
+			m_plData.pLights[i].position		= m_pls[i].getPosition();
 		} else {
-			m_plData.pLights[i].attConstant = 0.312f;
-			m_plData.pLights[i].attLinear = 0.0f;
-			m_plData.pLights[i].attQuadratic = 0.0009f;
-			m_plData.pLights[i].color = glm::vec3(0.f, 0.f, 0.f);
-			m_plData.pLights[i].position = glm::vec3(0.f, 0.f, 0.f);
+			m_plData.pLights[i].reachRadius		= 10.f;
+			m_plData.pLights[i].color			= glm::vec3(0.f, 0.f, 0.f);
+			m_plData.pLights[i].position		= glm::vec3(0.f, 0.f, 0.f);
 		}
 	}
 	// Spotlights
 	for (unsigned int i = 0; i < MAX_SPOTLIGHTS_RENDERING; i++) {
-		if (i < m_sls.size()) {// break;
-			m_slData.sLights[i].attConstant		= m_sls[i].getAttenuation().constant;
-			m_slData.sLights[i].attLinear		= m_sls[i].getAttenuation().linear;
-			m_slData.sLights[i].attQuadratic	= m_sls[i].getAttenuation().quadratic;
+		if (i < m_sls.size()) {
+			m_slData.sLights[i].reachRadius		= m_sls[i].getRadius();
 			m_slData.sLights[i].color			= m_sls[i].getColor();
 			m_slData.sLights[i].position		= m_sls[i].getPosition();
 			m_slData.sLights[i].direction		= m_sls[i].getDirection();
 			m_slData.sLights[i].angle			= m_sls[i].getAngle();
 		} else {
-			m_slData.sLights[i].attConstant = 0.312f;
-			m_slData.sLights[i].attLinear = 0.0f;
-			m_slData.sLights[i].attQuadratic = 0.0009f;
-			m_slData.sLights[i].color = glm::vec3(0.f, 0.f, 0.f);
-			m_slData.sLights[i].position = glm::vec3(0.f, 0.f, 0.f);
-			m_slData.sLights[i].direction = glm::vec3(0.f, 0.f, 0.f);
-			m_slData.sLights[i].angle = 0;
+			m_slData.sLights[i].reachRadius		= 10.f;
+			m_slData.sLights[i].color			= glm::vec3(0.f, 0.f, 0.f);
+			m_slData.sLights[i].position		= glm::vec3(0.f, 0.f, 0.f);
+			m_slData.sLights[i].direction		= glm::vec3(0.f, 0.f, 0.f);
+			m_slData.sLights[i].angle			= 0;
 		}
 	}
 }

@@ -78,10 +78,7 @@ struct PointlightInput {
 	float3 color;
 	float padding1;
 	float3 position;
-    float attConstant;
-    float attLinear;
-    float attQuadratic;
-	float2 padding2;
+    float reachRadius;
 };
 
 struct SpotlightInput {
@@ -90,10 +87,7 @@ struct SpotlightInput {
 	float3 color;
 	float padding1;
 	float3 position;
-    float attConstant;
-    float attLinear;
-    float attQuadratic;
-	float2 padding2;
+    float reachRadius;
 	// This part can be unique for each light type
 	float3 direction;
 	float angle;

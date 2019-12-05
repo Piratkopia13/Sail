@@ -258,7 +258,7 @@ void SettingStorage::createGameDefaultMap() {
 	gameSettingD["tileSize"] =	DynamicSetting(7.0f, 1.0f, 30.0f);
 	gameSettingD["clutter"] = DynamicSetting(0.85f,	0.0f,	1.0f);
 	gameSettingD["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
-	gameSettingD["sprinklerTime"] = DynamicSetting(10.0f, 0.0f, 600.0f);
+	gameSettingD["sprinklerTime"] = DynamicSetting(75.0f, 0.0f, 600.0f);
 	gameSettingD["sprinklerIncrement"] = DynamicSetting(30.0f, 5.0f, 300.0f);
 
 	gameSettingsStatic["map"] = std::unordered_map<std::string, Setting>();

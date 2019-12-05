@@ -49,7 +49,7 @@ inline float3 shadeWithLight(PointlightInput light, float3 worldPosition, float3
     // Standard attenuation
     // float attenuation = 1.f / (light.attConstant + light.attLinear * distance + light.attQuadratic * distance * distance);
     // Tweaked UE4 attenuation
-    float lightRadius = light.attConstant;
+    float lightRadius = light.reachRadius;
     float attenuation = pow(saturate(1.f - pow(distance/lightRadius, 4.f)), 2.f) / (distance * distance + 1.f);
     attenuation *= 8.f;
     
@@ -131,7 +131,7 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
             }
             float distance = length(p.position - pixel.worldPosition);
             // Ignore lights that are too far away
-            if (distance > p.attConstant) {
+            if (distance > p.reachRadius) {
                 continue;
             }
 #ifdef RAYTRACER_HARD_SHADOWS
@@ -174,7 +174,7 @@ float4 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
 			}
             float distance = length(s.position - pixel.worldPosition);
             // Ignore lights that are too far away
-            if (distance > s.attConstant) {
+            if (distance > s.reachRadius) {
                 continue;
             }
 #ifdef RAYTRACER_HARD_SHADOWS

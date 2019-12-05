@@ -16,10 +16,7 @@ public:
 		glm::vec3 color = glm::vec3(0.f);
 		float padding;
 		glm::vec3 position = glm::vec3(0.f);
-		float attConstant = 0.f;
-		float attLinear;
-		float attQuadratic;
-		float padding1, padding2;
+		float reachRadius = 10.f;
 	};
 
 	struct SpotlightStruct {
@@ -28,10 +25,7 @@ public:
 		glm::vec3 color = glm::vec3(0.f);
 		float padding;
 		glm::vec3 position = glm::vec3(0.f);
-		float attConstant = 0.f;
-		float attLinear;
-		float attQuadratic;
-		float padding1, padding2;
+		float reachRadius = 10.f;
 		// This part can be unique for each light type
 		glm::vec3 direction = glm::vec3(1.f, 0.0f, 0.0f);
 		float angle;

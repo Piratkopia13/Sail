@@ -323,7 +323,6 @@ bool GameState::processInput(float dt) {
 		m_showcaseProcGen = m_lightDebugWindow.isManualOverrideOn();
 		if (m_showcaseProcGen) {
 			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
-			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
 		} else {
 			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
 		}
