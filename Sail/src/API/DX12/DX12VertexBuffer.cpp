@@ -133,3 +133,18 @@ bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 	return true;
 }
 
+unsigned int DX12VertexBuffer::getByteSize() const {
+	unsigned int size = 0;
+
+	size += sizeof(*this);
+
+	size += sizeof(wComPtr<ID3D12Resource>) * m_uploadVertexBuffers.capacity();
+	size += m_byteSize * m_uploadVertexBuffers.size();
+
+	size += sizeof(wComPtr<ID3D12Resource>) * m_defaultVertexBuffers.capacity();
+
+	size += sizeof(bool) * (m_hasBeenInitialized.capacity() + m_hasBeenUpdated.capacity());
+
+	return size;
+}
+

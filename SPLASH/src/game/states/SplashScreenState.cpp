@@ -20,6 +20,8 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 
 	m_app->getResourceManager().loadTexture("splash_logo_smaller.tga");
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
+
+	//Sleep(1000000);
 }
 
 SplashScreenState::~SplashScreenState() {
@@ -48,13 +50,13 @@ bool SplashScreenState::onEvent(const Event& event) {
 }
 
 bool SplashScreenState::loadModels(Application* app) {
-	Sleep(5000);		// Used for observing when the RAM spike happens
+	Sleep(2000);		// Used for observing when the RAM spike happens
 
 	ResourceManager* rm = &app->getResourceManager();
 	rm->setDefaultShader(&rm->getShaderSet<GBufferOutShader>());
 	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
 
-	Sleep(7000);		// Used for observing when the RAM spike happens
+	Sleep(2000);		// Used for observing when the RAM spike happens
 
 //#ifndef _DEBUG
 	rm->loadModel("Doc.fbx");

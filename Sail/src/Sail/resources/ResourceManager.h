@@ -120,6 +120,8 @@ public:
 
 private:
 	unsigned int calculateTextureByteSize() const;
+	unsigned int calculateAnimationByteSize() const;
+	unsigned int calculateModelByteSize() const;
 	const std::string getSuitableName(const std::string& name);
 
 	enum RMDataType {

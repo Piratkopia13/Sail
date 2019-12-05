@@ -42,9 +42,9 @@ FBXLoader::FBXLoader() {
 	
 }
 FBXLoader::~FBXLoader() {
-
-
-	
+	if (s_manager) {
+		s_manager->Destroy();
+	}
 }
 
 #pragma region sceneAndDataImporting
@@ -114,7 +114,9 @@ FbxScene* FBXLoader::makeScene(std::string filePath, std::string sceneName) {
 	FbxScene* lScene = FbxScene::Create(s_manager, sceneName.c_str());
 	static int counter = 0;
 	//SAIL_LOG("Trying to import scene "+ sceneName +" : " + std::to_string(counter));
+
 	importer->Import(lScene);
+	
 	//SAIL_LOG("imported scene : " + std::to_string(counter++));
 	importer->Destroy();
 
@@ -130,6 +132,8 @@ void FBXLoader::clearAllScenes() {
 		val = nullptr;
 	}
 	m_scenes.clear();
+	s_manager->Destroy();
+	s_manager = nullptr;
 }
 void FBXLoader::removeScene(const std::string& name) {
 	if (m_scenes.find(name) != m_scenes.end()) {

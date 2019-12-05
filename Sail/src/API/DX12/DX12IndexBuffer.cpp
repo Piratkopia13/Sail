@@ -54,3 +54,14 @@ ID3D12Resource* DX12IndexBuffer::getBuffer() const {
 	auto frameIndex = m_context->getSwapIndex();
 	return m_indexBuffers[frameIndex].Get();
 }
+
+unsigned int DX12IndexBuffer::getByteSize() const {
+	unsigned int size = 0;
+
+	size += sizeof(*this);
+
+	size += sizeof(wComPtr<ID3D12Resource>) * m_indexBuffers.capacity();
+	size += getIndexDataSize() * m_indexBuffers.size();
+
+	return size;
+}

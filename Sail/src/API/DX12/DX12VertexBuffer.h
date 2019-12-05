@@ -16,6 +16,8 @@ public:
 	void resetHasBeenUpdated();
 	bool init(ID3D12GraphicsCommandList4* cmdList);
 
+	unsigned int getByteSize() const override;
+
 private:
 	void init(void* data);
 

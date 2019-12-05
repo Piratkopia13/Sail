@@ -158,7 +158,7 @@ void ResourceManager::addModel(const std::string& modelName, Model* model) {
 	SAIL_LOG("Added model: " + modelName);
 	model->setName(modelName);
 	m_models.insert({modelName, std::unique_ptr<Model>(model)});
-	m_byteSize[RMDataType::Models] += model->getByteSize();
+	m_byteSize[RMDataType::Models] = calculateModelByteSize();
 }
 
 bool ResourceManager::loadModel(const std::string& filename, Shader* shader, const ImporterType type) {
@@ -181,15 +181,19 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 
 	if (temp) {
 		SAIL_LOG("Loaded model: " + filename + " (" + std::to_string((float)temp->getByteSize() / (1024.f * 1024.f)) + "MB)");
-		m_byteSize[RMDataType::Models] += temp->getByteSize();
 		temp->setName(filename);
 		m_modelMutex.lock();
 		m_models.insert({ filename, std::unique_ptr<Model>(temp) });
 		m_modelMutex.unlock();
+
+		m_byteSize[RMDataType::Models] = calculateModelByteSize();
+
 		return true;
 	}
 	else {
 		SAIL_LOG_ERROR("Could not Load model: (" + filename + ")");
+
+		m_byteSize[RMDataType::Models] = calculateModelByteSize();
 
 		return false;
 	}
@@ -249,11 +253,12 @@ void ResourceManager::loadAnimationStack(const std::string& fileName, const Impo
 	if (temp) {
 		m_animationStacks.insert({fileName, std::unique_ptr<AnimationStack>(temp)});
 		SAIL_LOG("Animation size of '" + fileName + "' : " + std::to_string((float)m_animationStacks[fileName]->getByteSize() / (1024.f * 1024.f)) + "MB");
-		m_byteSize[RMDataType::Animations] += m_animationStacks[fileName]->getByteSize();
 	}
 	else {
 		SAIL_LOG_ERROR("Could not Load model: (" + fileName + ")");
 	}
+
+	m_byteSize[RMDataType::Animations] = calculateAnimationByteSize();
 }
 
 AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) {
@@ -416,6 +421,32 @@ unsigned int ResourceManager::calculateTextureByteSize() const {
 	for (auto& textureData : m_textureDatas) {
 		size += textureData.second->getByteSize();
 	}
+	return size;
+}
+
+unsigned int ResourceManager::calculateAnimationByteSize() const {
+	unsigned int size = 0;
+
+	size += m_animationStacks.size() * sizeof(std::pair<std::string, std::unique_ptr<AnimationStack>>);
+
+	for (auto& [key, val] : m_animationStacks) {
+		size += key.capacity() * sizeof(unsigned char);
+		size += val->getByteSize();
+	}
+	
+	return size;
+}
+
+unsigned int ResourceManager::calculateModelByteSize() const {
+	unsigned int size = 0;
+
+	size += sizeof(std::pair<std::string, std::unique_ptr<Model>>) * m_models.size();
+
+	for (auto& [key, val] : m_models) {
+		size += key.capacity() * sizeof(unsigned char);
+		size += val->getByteSize();
+	}
+
 	return size;
 }
 
