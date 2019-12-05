@@ -50,7 +50,6 @@ private:
 
 	virtual void requestTeam(char team);
 	virtual void setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch = true);
-
 	virtual void updateStateLoadStatus(States::ID state, char status) override;
 
 };
