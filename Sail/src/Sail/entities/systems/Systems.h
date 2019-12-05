@@ -6,7 +6,7 @@
 #include "entityManagement/EntityAdderSystem.h"
 #include "entityManagement/EntityRemovalSystem.h"
 
-//#include "Gameplay/ai/AiSystem.h"
+#include "Gameplay/ai/AiSystem.h"
 #include "Gameplay/candles/CandleHealthSystem.h"
 #include "Gameplay/candles/CandlePlacementSystem.h"
 #include "Gameplay/candles/CandleReignitionSystem.h"
@@ -16,6 +16,7 @@
 #include "Gameplay/LevelSystem/LevelSystem.h"
 #include "Gameplay/lifetime/LifeTimeSystem.h"
 #include "Gameplay/PlayerSystem.h"
+#include "Gameplay/PowerUps/PowerUpUpdateSystem.h"
 #include "Gameplay/ProjectileSystem.h"
 #include "Gameplay/sanitySoundSystem.h"
 #include "Gameplay/SanitySystem.h"
@@ -32,7 +33,7 @@
 
 #include "light/LightSystem.h"
 #include "light/LightListSystem.h"
-#include "light/SpotLightSystem.h"
+#include "light/HazardLightSystem.h"
 
 #include "network/receivers/KillCamReceiverSystem.h"
 

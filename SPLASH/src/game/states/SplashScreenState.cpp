@@ -80,6 +80,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Clutter/Microscope.fbx");
 	rm->loadModel("Clutter/CloningVats.fbx");
 	rm->loadModel("Clutter/ControlStation.fbx");
+	rm->loadModel("CleaningBot.fbx");
 
 
 	//LEAVE THIS FOR A MULTITHREADED FUTURE
@@ -209,6 +210,10 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/DDS/Clutter/ControlStation_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Clutter/ControlStation_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/ControlStation_NM.dds");
+
+	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
+	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_NM.dds");
+	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
 
 	rm->loadTexture("pbr/DDS/Doc/Doc_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Doc/Doc_MRAO.dds");

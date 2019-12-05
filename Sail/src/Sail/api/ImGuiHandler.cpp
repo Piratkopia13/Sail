@@ -2,6 +2,7 @@
 #include "ImGuiHandler.h"
 #include "imgui.h"
 
+//#define USE_ONLY_ONE_FONT
 
 void ImGuiHandler::applySailStyle() {
 	auto& style = ImGui::GetStyle();
@@ -85,6 +86,8 @@ void ImGuiHandler::addFonts() {
 	const std::string defaultPath = "res/fonts/";
 
 	m_fonts["Beb20"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 20);
+
+#ifndef USE_ONLY_ONE_FONT
 	m_fonts["Beb24"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 24);
 	m_fonts["Beb27"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 27);
 	m_fonts["Beb30"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 30);
@@ -92,4 +95,5 @@ void ImGuiHandler::addFonts() {
 	m_fonts["Beb50"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 50);
 	m_fonts["Beb60"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 60);
 	m_fonts["Beb70"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 70);
+#endif
 }

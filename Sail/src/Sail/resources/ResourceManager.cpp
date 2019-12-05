@@ -14,6 +14,8 @@
 #include <iostream>
 #include <fstream>
 
+//#define USE_ONLY_THIS_TEXTURE "missing.tga"
+
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
 const std::string ResourceManager::SAIL_DEFAULT_TEXTURE_LOCATION = "res/textures/";
@@ -97,6 +99,10 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 //
 
 void ResourceManager::loadTexture(const std::string& filename) {
+#ifdef USE_ONLY_THIS_TEXTURE
+	*const_cast<std::string*>(&filename) = std::string(USE_ONLY_THIS_TEXTURE);
+#endif
+
 	auto path = std::filesystem::path(SAIL_DEFAULT_TEXTURE_LOCATION + filename);
 	if (path.has_extension() && std::filesystem::exists(path)) {
 		if (path.extension().compare(".tga") == 0 || path.extension().compare(".dds") == 0) {
@@ -118,13 +124,20 @@ void ResourceManager::loadTexture(const std::string& filename) {
 	}
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
+#ifdef USE_ONLY_THIS_TEXTURE
+	*const_cast<std::string*>(&filename) = std::string(USE_ONLY_THIS_TEXTURE);
+#endif
 	auto pos = m_textures.find(filename);
+	
 	if (pos == m_textures.end())
 		SAIL_LOG_ERROR("Tried to access a resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().loadTexture(\"" + filename + "\") before accessing it.");
 
 	return *pos->second;
 }
 bool ResourceManager::hasTexture(const std::string& filename) {
+#ifdef USE_ONLY_THIS_TEXTURE
+	*const_cast<std::string*>(&filename) = std::string(USE_ONLY_THIS_TEXTURE);
+#endif
 	return m_textures.find(filename) != m_textures.end();
 }
 
