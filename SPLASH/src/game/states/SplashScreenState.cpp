@@ -10,6 +10,8 @@
 
 #include "Sail/utils/GUISettings.h"
 
+#include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
+#include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 
 
 SplashScreenState::SplashScreenState(StateStack& stack)
@@ -17,8 +19,13 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 {
 	m_input = Input::GetInstance();
 	m_app = Application::getInstance();
+	ResourceManager* rm = &m_app->getResourceManager();
 
-	m_app->getResourceManager().loadTexture("splash_logo_smaller.tga");
+	rm->loadTexture("splash_logo_smaller.tga");
+	rm->loadShaderSet<AnimationUpdateComputeShader>();
+	rm->loadShaderSet<ParticleComputeShader>();
+	rm->setDefaultShader(&rm->getShaderSet<GBufferOutShader>());
+	rm->loadShaderSet<WireframeShader>();
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 }
 
@@ -51,7 +58,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	//Sleep(4000);		// Used for observing when the RAM spike happens
 
 	ResourceManager* rm = &app->getResourceManager();
-	rm->setDefaultShader(&rm->getShaderSet<GBufferOutShader>());
+
 	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
 
 	//Sleep(7000);		// Used for observing when the RAM spike happens
@@ -202,7 +209,7 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/DDS/Clutter/Microscope_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Microscope_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Microscope_NM.dds");
-	
+
 	rm->loadTexture("pbr/DDS/Clutter/CloningVats_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Clutter/CloningVats_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/CloningVats_NM.dds");
@@ -224,6 +231,7 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/DDS/WaterGun/Watergun_NM.dds");
 
 	rm->loadTexture("particles/animFire.dds");
+	rm->loadTexture("particles/animSmoke.dds");
 
 	rm->loadTexture("Icons/TorchLeft.tga");
 	rm->loadTexture("Icons/TorchThrow2.tga");
