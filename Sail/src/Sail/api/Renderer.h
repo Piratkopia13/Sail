@@ -70,7 +70,7 @@ public:
 	virtual void submitWaterPoint(const glm::vec3& pos) { };
 	virtual bool checkIfOnWater(const glm::vec3& pos) { return false; }
 	virtual void removeWaterPoint(const glm::vec3& pos, const glm::ivec3& posOffset, const glm::ivec3& negOffset) {};
-	virtual glm::vec3 getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) { return glm::vec3(0.f); };
+	virtual std::pair<bool, glm::vec3> getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) { return std::pair(false, glm::vec3(0.f)); };
 	virtual void end() { };
 
 	virtual void submit(Mesh* mesh, const glm::mat4& modelMatrix, RenderFlag flags, int teamColorID, bool castShadows);

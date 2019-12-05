@@ -25,6 +25,7 @@
 #include "Graphics/AnimationSystem.h"
 #include "Graphics/AnimationChangerSystem.h"
 #include "Graphics/ParticleSystem.h"
+#include "Gameplay/WaterCleaningSystem.h"
 
 #include "input/GameInputSystem.h"
 #include "input/SprintingSystem.h"

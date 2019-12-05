@@ -6,6 +6,7 @@
 #include "Sail/entities/components/Components.h"
 #include "Sail/ai/pathfinding/NodeSystem.h"
 #include "Sail/ai/states/CleaningState.h"
+#include "Sail/ai/states/WaterSearchingState.h"
 #include "../Sail/src/Network/NWrapperSingleton.h"
 #include "Sail/graphics/geometry/factory/StringModel.h"
 #include "Sail/graphics/geometry/factory/QuadModel.h"
@@ -404,39 +405,19 @@ Entity::SPtr EntityFactory::CreateCleaningBotHost(const glm::vec3& pos, NodeSyst
 
 		auto fsmComp = e->addComponent<FSMComponent>();
 
-		// =========Create states and transitions===========
-
+		// =========Create FSM states and transitions===========
+		auto waterSearchingState = fsmComp->createState<WaterSearchingState>(ns);
 		auto cleaningState = fsmComp->createState<CleaningState>(ns);
-		// Keep this for now
 
-		//AttackingState* attackState = fsmComp->createState<AttackingState>();
-		//fsmComp->createState<FleeingState>(ns);
+		FSM::Transition* cleanToSearch = SAIL_NEW FSM::Transition;
+		cleanToSearch->addBoolCheck(cleaningState->getDoSwitch(), true);
 
-		// TODO: unnecessary to create new transitions for each FSM if they're all identical
-		//Attack State
-		/*FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
-		attackToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
-		FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
-		attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
+		FSM::Transition* searchToClean = SAIL_NEW FSM::Transition;
+		searchToClean->addBoolCheck(waterSearchingState->getDoSwitch(), true);
 
-		// Search State
-		FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
-		searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
-		FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
-		searchToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
-
-		// Fleeing State
-		FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
-		fleeingToSearch->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, true);
-
-		//fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
-		//fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
-
-		fsmComp->addTransition<SearchingState, AttackingState>(searchToAttack);
-		fsmComp->addTransition<SearchingState, FleeingState>(searchToFleeing);
-
-		fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);*/
-		// =========[END] Create states and transitions===========
+		fsmComp->addTransition<WaterSearchingState, CleaningState>(searchToClean);
+		fsmComp->addTransition<CleaningState, WaterSearchingState>(cleanToSearch);
+		// =========[END] Create FSM states and transitions===========
 
 
 	}
@@ -459,6 +440,7 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, const Netcod
 	e->addComponent<CullingComponent>();
 	e->addComponent<AudioComponent>();
 	e->addComponent<NetworkReceiverComponent>(compID, Netcode::EntityType::MECHA_ENTITY);
+	e->addComponent<WaterCleaningComponent>();
 
 	return e;
 }

@@ -45,3 +45,4 @@
 #include "ThrowingComponent.h"
 #include "TransformComponent.h"
 #include "VerticalCylinderComponent.h"
+#include "WaterCleaningComponent.h"

@@ -460,6 +460,8 @@ void GameState::initSystems(const unsigned char playerID) {
 		m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
 	}
 
+	m_componentSystems.waterCleaningSystem = ECS::Instance()->createSystem<WaterCleaningSystem>();
+
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
 	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
@@ -950,6 +952,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.particleSystem);
 	runSystem(dt, m_componentSystems.sanitySystem);
 	runSystem(dt, m_componentSystems.sanitySoundSystem);
+	runSystem(dt, m_componentSystems.waterCleaningSystem);
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
@@ -1192,7 +1195,7 @@ void GameState::createBots() {
 		botCount = 0;
 	}
 
-	botCount = 50;
+	botCount = 1;
 
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();

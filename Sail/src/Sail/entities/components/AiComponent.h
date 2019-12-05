@@ -57,5 +57,24 @@ public:
 	const unsigned int getByteSize() const override {
 		return sizeof(*this) + sizeof(NodeSystem::Node) * currPath.size();
 	}
+
+	void imguiRender(Entity** selected) {
+		ImGui::Text(("movementSpeed " + std::to_string(movementSpeed)).c_str());
+		ImGui::Text(("timeTakenOnPath " + std::to_string(timeTakenOnPath)).c_str());
+		ImGui::Text(("targetReachedThreshold " + std::to_string(targetReachedThreshold)).c_str());
+		ImGui::Text(("maxSteeringForce " + std::to_string(maxSteeringForce)).c_str());
+		ImGui::Text(("mass " + std::to_string(mass)).c_str());
+		ImGui::Text(("timeBetweenPathUpdate " + std::to_string(timeBetweenPathUpdate)).c_str());
+
+		ImGui::Text(("reachedPathingTarget " + std::to_string(reachedPathingTarget)).c_str());
+		ImGui::Text(("updatePath " + std::to_string(updatePath)).c_str());
+		ImGui::Text(("doWalk " + std::to_string(doWalk)).c_str());
+		ImGui::Text(("automaticallyUpdatePath " + std::to_string(automaticallyUpdatePath)).c_str());
+
+		ImGui::Text(("currNodeIndex " + std::to_string(currNodeIndex)).c_str());
+
+		ImGui::Text(("posTarget " + Utils::toStr(posTarget)).c_str());
+		ImGui::Text(("lastTargetPos " + Utils::toStr(lastTargetPos)).c_str());
+	}
 #endif
 };

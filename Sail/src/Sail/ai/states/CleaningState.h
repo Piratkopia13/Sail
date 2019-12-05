@@ -14,13 +14,14 @@ public:
 	void reset(Entity* entity) override;
 	void init(Entity* entity) override;
 
-private:
-	void findRandomNodeIndex(int currNodeIndex);
-	void searchForWater(const glm::vec3& currPos);
+	bool* getDoSwitch();
 
+private:
 	NodeSystem* m_nodeSystemRef;
 	RendererWrapper* m_rendererWrapperRef;
 	//int m_targetNode;
 	glm::vec3 m_targetPos;
 	float m_searchingClock;
+
+	bool m_doSwitch;
 };

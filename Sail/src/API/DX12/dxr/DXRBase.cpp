@@ -406,7 +406,7 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 }
 
 // THIS WAS IMPLEMENTED SPECIFICALLY FOR CLEANING STATE!
-glm::vec3 DXRBase::getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) {
+std::pair<bool, glm::vec3> DXRBase::getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) {
 	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
 	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
 	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
@@ -439,17 +439,15 @@ glm::vec3 DXRBase::getNearestWaterPosition(const glm::vec3& position, const glm:
 			if (arrIndex >= 0 && arrIndex < m_waterArrSize) {
 				// Make sure to update this water
 				if (m_waterDataCPU[arrIndex] > 0U) {
-					SAIL_LOG_WARNING("Found water");
-
 					glm::vec3 ind3d = Utils::to3D(arrIndex, m_waterArrSizes.x, m_waterArrSizes.y);
-					return (ind3d / m_waterArrSizes) * m_mapSize + m_mapStart;
+					return std::pair(true, (ind3d / m_waterArrSizes) * m_mapSize + m_mapStart);
 				}
 			}
 		}
 	}
 
 	auto daRand = glm::diskRand(maxOffset.x);
-	return position + glm::vec3(daRand.x, 0.f, daRand.y);
+	return std::pair(false, position + glm::vec3(daRand.x, 0.f, daRand.y));
 }
 
 void DXRBase::updateWaterData() {

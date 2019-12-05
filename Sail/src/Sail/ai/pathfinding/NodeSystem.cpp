@@ -133,6 +133,10 @@ const std::vector<NodeSystem::Node>& NodeSystem::getNodes() const {
 	return m_nodes;
 }
 
+const std::vector<std::vector<unsigned int>>& NodeSystem::getConnections() const {
+	return m_connections;
+}
+
 const unsigned int NodeSystem::getXMax() const {
 	return m_xMax;
 }
@@ -181,6 +185,8 @@ void NodeSystem::colorPath(const std::vector<NodeSystem::Node>& path, const unsi
 
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_shader = shader;
+
+	Application::getInstance()->getResourceManager().getModel("NodeSystemBall.fbx", m_shader);
 
 	m_blockedNode = &Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall.fbx", m_shader);
 	m_blockedNode->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");

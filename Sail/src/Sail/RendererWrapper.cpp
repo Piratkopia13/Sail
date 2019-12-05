@@ -71,7 +71,7 @@ bool RendererWrapper::checkIfOnWater(const glm::vec3& worldPos) const {
 	return m_rendererRaytrace->checkIfOnWater(worldPos);
 }
 
-glm::vec3 RendererWrapper::getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) {
+std::pair<bool, glm::vec3> RendererWrapper::getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) {
 	return m_rendererRaytrace->getNearestWaterPosition(position, maxOffset);
 }
 

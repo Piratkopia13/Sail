@@ -4,7 +4,7 @@
 #include <list>
 
 //Keep this define in case debugging is needed
-#define _DEBUG_NODESYSTEM
+//#define _DEBUG_NODESYSTEM
 
 #ifdef _DEBUG_NODESYSTEM
 #include "Sail/entities/Entity.h"
@@ -55,6 +55,7 @@ public:
 	const NodeSystem::Node& getNearestNode(const glm::vec3& position) const;
 	unsigned int getDistance2(unsigned int n1, unsigned int n2) const;
 	const std::vector<NodeSystem::Node>& getNodes() const;
+	const std::vector<std::vector<unsigned int>>& getConnections() const;
 	const unsigned int getXMax() const;
 	const unsigned int getZMax() const;
 
