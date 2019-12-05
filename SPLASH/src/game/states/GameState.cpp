@@ -42,7 +42,8 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
-	EventDispatcher::Instance().subscribe(Event::Type::TOGGLE_KILLCAM, this);
+	EventDispatcher::Instance().subscribe(Event::Type::START_KILLCAM, this);
+	EventDispatcher::Instance().subscribe(Event::Type::STOP_KILLCAM, this);
 
 	// Reset the counter used to generate unique ComponentIDs for the network
 	Netcode::resetIDCounter();
@@ -141,7 +142,9 @@ GameState::GameState(StateStack& stack)
 	// Level Creation
 	
 	createLevel(shader, boundingBoxModel);
-
+#ifndef _DEBUG
+	m_componentSystems.aiSystem->initNodeSystem(m_octree);
+#endif
 	// Player creation
 	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
 		
@@ -175,30 +178,26 @@ GameState::GameState(StateStack& stack)
 	
 	m_componentSystems.networkReceiverSystem->setPlayer(m_player);
 	m_componentSystems.networkReceiverSystem->setGameState(this);
-	
+
 #ifdef _PERFORMANCE_TEST
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
-
+#else
+	#ifndef _DEBUG
+		createBots();
+	#endif
 #endif
-
-
+	
 #ifdef _DEBUG
 	// Candle1 holds all lights you can place in debug...
 	m_componentSystems.lightListSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
-/*	auto nodeSystemCube = ModelFactory::CubeModel::Create(glm::vec3(0.1f), shader);
-#ifdef _DEBUG_NODESYSTEM
-	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree, wireframeShader);
-#else
-	m_componentSystems.aiSystem->initNodeSystem(nodeSystemCube.get(), m_octree);
-#endif*/
-
 	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
 	m_ambiance->addComponent<AudioComponent>();
 	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
+	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value, false, true);
+
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 
@@ -262,8 +261,8 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_KILLCAM, this);
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::START_KILLCAM, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_KILLCAM, this);
 	m_app->getResourceManager().clearModelCopies();
 }
 
@@ -283,6 +282,7 @@ bool GameState::processInput(float dt) {
 	// Unpause Game
 	if (m_readyRestartAmbiance) {
 		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(false);
+		this->m_ambiance->getComponent<AudioComponent>()->streamSetVolume_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 		m_readyRestartAmbiance = false;
 	}
 
@@ -350,30 +350,6 @@ bool GameState::processInput(float dt) {
 		int nrOfDraws = m_octree->frustumCulledDraw(m_cam);
 		SAIL_LOG("Number of draws " + std::to_string(nrOfDraws));
 	}
-
-	// TODO: Move this to a system
-	// Toggle ai following the player
-	/*if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_AI_FOLLOWING)) {
-		auto entities = m_componentSystems.aiSystem->getEntities();
-		for (int i = 0; i < entities.size(); i++) {
-			auto aiComp = entities[i]->getComponent<AiComponent>();
-			if (aiComp->entityTarget == nullptr) {
-
-				// Find the candle child entity of player
-				Entity* candle = nullptr;
-				std::vector<Entity*> children = m_player->getChildEntities();
-				for (auto& child : children) {
-					if (child->hasComponent<CandleComponent>()) {
-						candle = child;
-						break;
-					}
-				}
-				aiComp->setTarget(candle);
-			} else {
-				aiComp->setTarget(nullptr);
-			}
-		}
-	}*/
 
 	// Set directional light if using forward rendering
 	if (Input::IsKeyPressed(KeyBinds::SET_DIRECTIONAL_LIGHT)) {
@@ -474,7 +450,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
 
-	//m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
@@ -644,7 +620,8 @@ bool GameState::onEvent(const Event& event) {
 		case Event::Type::NETWORK_DROPPED:                  onPlayerDropped((const NetworkDroppedEvent&)event); break;
 		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS: onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
 		case Event::Type::NETWORK_JOINED:                   onPlayerJoined((const NetworkJoinedEvent&)event); break;
-		case Event::Type::TOGGLE_KILLCAM:                   onToggleKillCam((const ToggleKillCamEvent&)event); break;
+		case Event::Type::START_KILLCAM:                    onStartKillCam((const StartKillCamEvent&)event); break;
+		case Event::Type::STOP_KILLCAM:                     onStopKillCam((const StopKillCamEvent&)event); break;
 		default: break;
 	}
 
@@ -693,12 +670,27 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	return true;
 }
 
-void GameState::onToggleKillCam(const ToggleKillCamEvent& event) {
-	m_isInKillCamMode = event.isActive;
-	m_wasKilledBy = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(event.killedBy)->name;
-	if (!m_isInKillCamMode) {
-		m_componentSystems.killCamReceiverSystem->stop();
+void GameState::onStartKillCam(const StartKillCamEvent& event) {
+	// Stop our killcam if it's playing (either because we stopped it or because the final killcam is starting)
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamReceiverSystem->stopMyKillCam();
 	}
+	
+	m_isInKillCamMode = true;
+
+	const Netcode::PlayerID killer = Netcode::getComponentOwner(event.killingProjectile);
+
+	if (event.finalKillCam) {
+		m_killCamText = NWrapperSingleton::getInstance().getPlayer(killer)->name + " eliminated " 
+			+ NWrapperSingleton::getInstance().getPlayer(event.deadPlayer)->name + " and won the match!";
+	} else {
+		m_killCamText = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(killer)->name;
+	}
+}
+
+void GameState::onStopKillCam(const StopKillCamEvent& event) {
+	m_componentSystems.killCamReceiverSystem->stopMyKillCam();
+	m_isInKillCamMode = false;
 }
 
 
@@ -884,7 +876,7 @@ bool GameState::renderImgui(float dt) {
 		if (ImGui::Begin("##KILLCAMKILLEDBY", nullptr, m_standaloneButtonflags)) {
 			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb30"));
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.f));
-			ImGui::Text(m_wasKilledBy.c_str());
+			ImGui::Text(m_killCamText.c_str());
 			ImGui::PopStyleColor(1);
 			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, m_app->getWindow()->getWindowHeight() - height / 2 - (ImGui::GetWindowSize().y / 2)));
 			ImGui::PopFont();
@@ -956,6 +948,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
+	runSystem(dt, m_componentSystems.aiSystem);
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
@@ -1135,22 +1128,48 @@ void GameState::waitForOtherPlayers() {
 	}
 }
 
-void GameState::createBots(Model* boundingBoxModel, const std::string& characterModel, Model* projectileModel, Model* lightModel) {
-	/*int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
+const std::string GameState::createCube(const glm::vec3& position) {
+	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
+		"cubeWidth1.fbx", &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
+	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+
+	Model* tmpbbModel = &m_app->getResourceManager().getModel(
+		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<GBufferWireframe>());
+	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+
+	auto e = ECS::Instance()->createEntity("new cube");
+	//e->addComponent<ModelComponent>(tmpCubeModel);
+
+	e->addComponent<TransformComponent>(position);
+
+	e->addComponent<BoundingBoxComponent>(tmpbbModel);
+
+	e->addComponent<CollidableComponent>();
+
+	return std::string("Added Cube at (" +
+		std::to_string(position.x) + ":" +
+		std::to_string(position.y) + ":" +
+		std::to_string(position.z) + ")");
+}
+
+void GameState::createBots() {
+	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
 
 	if (botCount < 0) {
 		botCount = 0;
 	}
 
+	botCount = 5;
+
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
-			auto e = EntityFactory::CreateBot(boundingBoxModel, &m_app->getResourceManager().getModelCopy(characterModel), spawnLocation, lightModel, m_currLightIndex++, m_componentSystems.aiSystem->getNodeSystem());
+			auto e = EntityFactory::CreateCleaningBot(spawnLocation, m_componentSystems.aiSystem->getNodeSystem());
 		}
 		else {
 			SAIL_LOG_ERROR("Bot not spawned because all spawn points are already used for this map.");
 		}
-	}*/
+	}
 }
 
 void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
