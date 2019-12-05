@@ -1781,7 +1781,7 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		particleEmitterComp->constantVelocity = { 0.0f, -0.5f, 0.0f };
 		particleEmitterComp->acceleration = { 0.0f, -30.0f, 0.0f };
 		particleEmitterComp->spread = { sprinklerXspread, 0.5f, sprinklerZspread };
-		particleEmitterComp->spawnRate = 1.f / (200.f * room.sizex * room.sizey);
+		particleEmitterComp->spawnRate = 1.f / (100.f * room.sizex * room.sizey);
 		particleEmitterComp->lifeTime = 0.5f;
 		particleEmitterComp->atlasSize = glm::uvec2(8U, 3U);
 		particleEmitterComp->drag = 30.0f;
