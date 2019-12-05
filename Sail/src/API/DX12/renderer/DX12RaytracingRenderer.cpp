@@ -47,7 +47,6 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 
 	m_shadeShader = &app->getResourceManager().getShaderSet<ShadePassShader>();
 	m_fullscreenModel = ModelFactory::ScreenQuadModel::Create(m_shadeShader);
-
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
