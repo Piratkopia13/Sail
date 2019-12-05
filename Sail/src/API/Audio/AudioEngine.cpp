@@ -35,8 +35,6 @@
 #include <xaudio2fx.h>
 #pragma comment(lib,"xaudio2.lib")
 
-static int timesModulus = 0;
-
 AudioEngine::AudioEngine() {
 	HRESULT hr;
 	hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);

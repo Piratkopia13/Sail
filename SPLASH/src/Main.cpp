@@ -10,11 +10,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	freopen_s(&a, "CONOUT$", "w", stdout);
 	freopen_s(&a, "CONOUT$", "w", stderr);
 #endif
-	AllocConsole();
-	FILE* a;
-	freopen_s(&a, "CONIN$", "r", stdin);
-	freopen_s(&a, "CONOUT$", "w", stdout);
-	freopen_s(&a, "CONOUT$", "w", stderr);
 
 	// Check for memory leaks
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
