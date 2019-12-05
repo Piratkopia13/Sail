@@ -17,7 +17,7 @@ void WaterCleaningSystem::update(float dt) {
 		auto cleanC = e->getComponent<WaterCleaningComponent>();
 		auto transC = e->getComponent<TransformComponent>();
 		if (cleanC && cleanC->isCleaning && transC) {
-			auto dir = glm::vec3(glm::cos(transC->getRotations().y), 0.f, glm::sin(transC->getRotations().y));
+			auto dir = glm::vec3(glm::sin(transC->getRotations().y), 0.f, glm::cos(transC->getRotations().y));
 			glm::ivec3 posOffset, negOffset;
 			posOffset = glm::ivec3(1, 1, 1);
 			negOffset = glm::ivec3(-1, 0, -1);
