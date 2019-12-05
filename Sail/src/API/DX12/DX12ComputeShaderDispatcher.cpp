@@ -35,10 +35,10 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 		dxCmdList->SetComputeRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getComputeGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
 
 	// Resize output textures
-	//for (unsigned int i = 0; i < settings->numOutputTextures; i++) {
-	//	const auto& tex = computeShader.getComputeOutputForIndex(*computeShader.getComputeOutput(), i);
-	//	tex->resize(input.outputWidth, input.outputHeight);
-	//}
+	for (unsigned int i = 0; i < settings->numOutputTextures; i++) {
+		const auto& tex = computeShader.getComputeOutputForIndex(*computeShader.getComputeOutput(), i);
+		tex->resize(input.outputWidth, input.outputHeight);
+	}
 
 	// Bind input textures
 	for (unsigned int i = 0; i < settings->numInputTextures; i++) {

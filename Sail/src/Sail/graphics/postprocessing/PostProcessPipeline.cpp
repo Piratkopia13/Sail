@@ -74,59 +74,50 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void
 		
 		// TODO: make this work if FXAA is disabled
 		// Use the baseTexture as the output since that's no longer used
-		auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
+		/*auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
 		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
 		static_cast<DX12RenderableTexture*>(baseTexture)->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(baseTexture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(baseTexture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);*/
 
 
-		runStage(input, m_stages["BloomBlur1V"], cmdList);
-		//auto* output = runStage(input, m_stages["BloomBlur1V"], cmdList);
-		//input.inputRenderableTexture = output->outputTexture;
-		input.inputRenderableTexture = baseTexture;
-		auto* output = runStage(input, m_stages["BloomBlur1H"], cmdList);
+		//runStage(input, m_stages["BloomBlur1V"], cmdList);
+		auto* output = runStage(input, m_stages["BloomBlur1V"], cmdList);
+		input.inputRenderableTexture = output->outputTexture;
+		//input.inputRenderableTexture = baseTexture;
+		output = runStage(input, m_stages["BloomBlur1H"], cmdList);
 		
 		
 		
 		
 		// Use the baseTexture as the output since that's no longer used
-		cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
+		/*cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
 		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
 		static_cast<DX12RenderableTexture*>(baseTexture)->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(baseTexture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(baseTexture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);*/
 
 		// Blur pass two
 		input.inputRenderableTexture = output->outputTexture;
 		output = runStage(input, m_stages["BloomBlur2V"], cmdList);
-		//input.inputRenderableTexture = output->outputTexture;
-		input.inputRenderableTexture = baseTexture;
+		input.inputRenderableTexture = output->outputTexture;
+		//input.inputRenderableTexture = baseTexture;
 		output = runStage(input, m_stages["BloomBlur2H"], cmdList);
 		
 		
 		
 		
 		// Use the baseTexture as the output since that's no longer used
-		cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
+		/*cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
 		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
 		static_cast<DX12RenderableTexture*>(baseTexture)->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(baseTexture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(baseTexture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);*/
 
 		
 		// Blur pass three
 		input.inputRenderableTexture = output->outputTexture;
 		output = runStage(input, m_stages["BloomBlur3V"], cmdList);
-		//input.inputRenderableTexture = output->outputTexture;
-		input.inputRenderableTexture = baseTexture;
+		input.inputRenderableTexture = output->outputTexture;
+		//input.inputRenderableTexture = baseTexture;
 		auto* bloomOutput = runStage(input, m_stages["BloomBlur3H"], cmdList);
-
-
-
-
-
-
-
-
-
 
 
 
@@ -134,9 +125,6 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void
 		input.inputRenderableTexture = stageOneOutput;
 		input.inputRenderableTextureTwo = bloomOutput->outputTexture;
 
-		
-		
-		
 		
 		
 		
