@@ -76,10 +76,10 @@ std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, 
 		m_pathSearchTimes[m_currSearchTimeIndex % NUM_SEARCH_TIMES] = 
 			static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
-		if (m_pathSearchTimes[m_currSearchTimeIndex % NUM_SEARCH_TIMES] > 5000) {
+		/*if (m_pathSearchTimes[m_currSearchTimeIndex % NUM_SEARCH_TIMES] > 5000) {
 			SAIL_LOG("Finding a path (" + Utils::toStr(from.position) + "->" + Utils::toStr(to.position) + ") took " + 
 					 std::to_string(static_cast<float>(m_pathSearchTimes[m_currSearchTimeIndex % NUM_SEARCH_TIMES]) / 1000.f) + "ms, size of path: " + std::to_string(path.size()));
-		}
+		}*/
 		m_currSearchTimeIndex++;
 		//auto path = BFS(from.index, to.index);
 		
