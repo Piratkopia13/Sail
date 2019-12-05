@@ -33,7 +33,7 @@
 
 #include "light/LightSystem.h"
 #include "light/LightListSystem.h"
-#include "light/SpotLightSystem.h"
+#include "light/HazardLightSystem.h"
 
 #include "network/receivers/KillCamReceiverSystem.h"
 

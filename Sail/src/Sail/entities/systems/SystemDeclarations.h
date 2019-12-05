@@ -41,7 +41,7 @@ class SanitySystem;
 class SpeedLimitSystem;
 class SprinklerSystem;
 class UpdateBoundingBoxSystem;
-class SpotLightSystem;
+class HazardLightSystem;
 class SprintingSystem;
 class TeamColorSystem;
 class CandleThrowingSystem;
@@ -98,7 +98,7 @@ struct Systems {
 	SanitySoundSystem*         sanitySoundSystem         = nullptr;
 	SanitySystem*              sanitySystem              = nullptr;
 	SpeedLimitSystem*          speedLimitSystem          = nullptr;
-	SpotLightSystem*           spotLightSystem           = nullptr;
+	HazardLightSystem*           spotLightSystem           = nullptr;
 	TeamColorSystem*           teamColorSystem           = nullptr;
 	SprinklerSystem*           sprinklerSystem           = nullptr;
 	UpdateBoundingBoxSystem*   updateBoundingBoxSystem   = nullptr;
