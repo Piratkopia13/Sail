@@ -399,6 +399,7 @@ DX12RenderableTexture* DX12RaytracingRenderer::runShading(ID3D12GraphicsCommandL
 			lightIndex++;
 		}
 		shaderPipeline->setCBufferVar("shadowTextureIndexMap", &indexMapData, sizeof(indexMapData));
+		shaderPipeline->setCBufferVar("numShadowTextures", &m_numShadowTextures, sizeof(unsigned int));
 	}
 
 	static_cast<DX12Mesh*>(m_fullscreenModel->getMesh(0))->draw_new(*this, cmdList, -numCustomSRVs);
@@ -486,7 +487,7 @@ DXRBase* DX12RaytracingRenderer::getDXRBase() {
 }
 
 void DX12RaytracingRenderer::createSoftShadowsTextures(unsigned int numPlayers) {
-	m_numShadowTextures = NUM_TOTAL_LIGHTS - LightSetup::MAX_POINTLIGHTS_RENDERING + numPlayers;
+	m_numShadowTextures = glm::min<unsigned int>(NUM_TOTAL_LIGHTS - LightSetup::MAX_POINTLIGHTS_RENDERING + numPlayers, NUM_SHADOW_TEXTURES);
 
 	Application* app = Application::getInstance();
 	auto windowWidth = app->getWindow()->getWindowWidth();
