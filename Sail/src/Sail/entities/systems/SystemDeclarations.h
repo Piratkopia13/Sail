@@ -7,6 +7,7 @@
 
 class AnimationChangerSystem;
 class AudioSystem;
+class AiSystem;
 class BeginEndFrameSystem;
 class BoundingboxSubmitSystem;
 class CandleHealthSystem;
@@ -30,6 +31,7 @@ class NetworkSenderSystem;
 class OctreeAddRemoverSystem;
 class ParticleSystem;
 class PlayerSystem;
+class PowerUpUpdateSystem;
 class PrepareUpdateSystem;
 class ProjectileSystem;
 class RenderImGuiSystem;
@@ -39,7 +41,7 @@ class SanitySystem;
 class SpeedLimitSystem;
 class SprinklerSystem;
 class UpdateBoundingBoxSystem;
-class SpotLightSystem;
+class HazardLightSystem;
 class SprintingSystem;
 class TeamColorSystem;
 class CandleThrowingSystem;
@@ -63,6 +65,7 @@ class MovementPostCollisionSystem;
 struct Systems {
 	AnimationChangerSystem*    animationChangerSystem    = nullptr;
 	AudioSystem*               audioSystem               = nullptr;
+	AiSystem*				   aiSystem					 = nullptr;
 	BeginEndFrameSystem*       beginEndFrameSystem       = nullptr;
 	BoundingboxSubmitSystem*   boundingboxSubmitSystem   = nullptr;
 	CandleHealthSystem*        candleHealthSystem        = nullptr;
@@ -87,6 +90,7 @@ struct Systems {
 	OctreeAddRemoverSystem*    octreeAddRemoverSystem    = nullptr;
 	ParticleSystem*            particleSystem            = nullptr;
 	PlayerSystem*              playerSystem              = nullptr;
+	PowerUpUpdateSystem*       powerUpUpdateSystem       = nullptr;
 	PrepareUpdateSystem*       prepareUpdateSystem       = nullptr;
 	ProjectileSystem*          projectileSystem          = nullptr;
 	RenderImGuiSystem*         renderImGuiSystem         = nullptr;
@@ -94,7 +98,7 @@ struct Systems {
 	SanitySoundSystem*         sanitySoundSystem         = nullptr;
 	SanitySystem*              sanitySystem              = nullptr;
 	SpeedLimitSystem*          speedLimitSystem          = nullptr;
-	SpotLightSystem*           spotLightSystem           = nullptr;
+	HazardLightSystem*           spotLightSystem           = nullptr;
 	TeamColorSystem*           teamColorSystem           = nullptr;
 	SprinklerSystem*           sprinklerSystem           = nullptr;
 	UpdateBoundingBoxSystem*   updateBoundingBoxSystem   = nullptr;

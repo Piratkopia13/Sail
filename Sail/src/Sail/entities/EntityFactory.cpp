@@ -22,9 +22,9 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("Torch.fbx", shader);
 	candleModel->setCastShadows(false);
-	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Torch/Torch_Albedo.tga");
-	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Torch/Torch_NM.tga");
-	candleModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Torch/Torch_MRAO.tga");
+	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Torch/Torch_Albedo.dds");
+	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Torch/Torch_NM.dds");
+	candleModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Torch/Torch_MRAO.dds");
 
 
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();
@@ -48,9 +48,10 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->constantVelocity = { 0.0f, 0.2f, 0.0f };
 	particleEmitterComp->acceleration = { 0.0f, 1.0f, 0.0f };
 	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
-	particleEmitterComp->spawnRate = 0.001f;
+	particleEmitterComp->spawnRate = 0.01f;
 	particleEmitterComp->lifeTime = 0.13f;
-	std::string particleTextureName = "particles/animFire.tga";
+	std::string particleTextureName = "particles/animFire.dds";
+	particleEmitterComp->atlasSize = glm::uvec2(8U, 4U);
 	if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
 		Application::getInstance()->getResourceManager().loadTexture(particleTextureName);
 	}
@@ -73,9 +74,9 @@ Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("WaterPistol.fbx", shader);
-	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/WaterGun/Watergun_Albedo.tga");
-	candleModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/WaterGun/Watergun_MRAO.tga");
-	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/WaterGun/Watergun_NM.tga");
+	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/WaterGun/Watergun_Albedo.dds");
+	candleModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/WaterGun/Watergun_MRAO.dds");
+	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/WaterGun/Watergun_NM.dds");
 
 
 	auto gun = ECS::Instance()->createEntity(name.c_str());
@@ -125,6 +126,9 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<RealTimeComponent>();
 	myPlayer->addComponent<ThrowingComponent>();
 	myPlayer->addComponent<RenderInActiveGameComponent>();
+	myPlayer->addComponent<PowerUpComponent>();
+
+
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
@@ -321,9 +325,9 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	std::string modelName = "Doc.fbx";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* characterModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, shader);
-	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/Character/CharacterMRAO.tga");
-	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/Character/CharacterTex.tga");
-	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/Character/CharacterNM.tga");
+	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Doc/Doc_MRAO.dds");
+	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Doc/Doc_Albedo.dds");
+	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Doc/Doc_NM.dds");
 	characterModel->setIsAnimated(true);
 	AnimationStack* stack = &Application::getInstance()->getResourceManager().getAnimationStack(modelName);
 
@@ -446,6 +450,77 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);
 	// =========[END] Create states and transitions===========
 
+
+	return e;
+}
+
+Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* ns) {
+	auto e = ECS::Instance()->createEntity("Cleaning Bot");
+
+	const Netcode::ComponentID compID = Netcode::generateUniqueBotID();
+
+	std::string modelName = "CleaningBot.fbx";
+	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
+	botModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
+	botModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
+	botModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/CleaningRobot/CleaningBot_NM.dds");
+	botModel->setIsAnimated(false);
+
+	e->addComponent<ModelComponent>(botModel);
+	e->addComponent<TransformComponent>(pos);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		auto sendC = e->addComponent<NetworkSenderComponent>(Netcode::EntityType::MECHA_ENTITY, compID);
+		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
+		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
+	}
+	e->addComponent<NetworkReceiverComponent>(compID, Netcode::EntityType::MECHA_ENTITY);
+	e->addComponent<MovementComponent>();
+	e->addComponent<SpeedLimitComponent>();
+	e->addComponent<CollisionComponent>(true);
+	e->addComponent<AiComponent>();
+	e->addComponent<CullingComponent>();
+	e->addComponent<RenderInActiveGameComponent>();
+
+	e->addComponent<AudioComponent>();
+
+	e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, 0.f, 0.0f);
+	e->getComponent<SpeedLimitComponent>()->maxSpeed = 2.0f;
+
+	auto fsmComp = e->addComponent<FSMComponent>();
+
+	// =========Create states and transitions===========
+
+	SearchingState* searchState = fsmComp->createState<SearchingState>(ns);
+	// Keep this for now
+
+	//AttackingState* attackState = fsmComp->createState<AttackingState>();
+	//fsmComp->createState<FleeingState>(ns);
+
+	// TODO: unnecessary to create new transitions for each FSM if they're all identical
+	//Attack State
+	/*FSM::Transition* attackToFleeing = SAIL_NEW FSM::Transition;
+	attackToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
+	FSM::Transition* attackToSearch = SAIL_NEW FSM::Transition;
+	attackToSearch->addFloatGreaterThanCheck(attackState->getDistToHost(), 100.0f);
+
+	// Search State
+	FSM::Transition* searchToAttack = SAIL_NEW FSM::Transition;
+	searchToAttack->addFloatLessThanCheck(searchState->getDistToHost(), 100.0f);
+	FSM::Transition* searchToFleeing = SAIL_NEW FSM::Transition;
+	searchToFleeing->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, false);
+
+	// Fleeing State
+	FSM::Transition* fleeingToSearch = SAIL_NEW FSM::Transition;
+	fleeingToSearch->addBoolCheck(&aiCandleEntity->getComponent<CandleComponent>()->isLit, true);
+
+	//fsmComp->addTransition<AttackingState, FleeingState>(attackToFleeing);
+	//fsmComp->addTransition<AttackingState, SearchingState>(attackToSearch);
+
+	fsmComp->addTransition<SearchingState, AttackingState>(searchToAttack);
+	fsmComp->addTransition<SearchingState, FleeingState>(searchToFleeing);
+
+	fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);*/
+	// =========[END] Create states and transitions===========
 
 	return e;
 }
