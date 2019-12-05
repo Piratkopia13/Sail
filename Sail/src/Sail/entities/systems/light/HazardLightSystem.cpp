@@ -35,15 +35,15 @@ void HazardLightSystem::updateLights(LightSetup* lightSetup, float alpha, float 
 		if (emitter) {
 			auto* level = ECS::Instance()->getSystem<LevelSystem>();
 			auto& roomSize = level->getRoomInfo(sc->roomID).size;
-			float sprinklerXspread = roomSize.x * level->tileSize * 0.8f;
-			float sprinklerZspread = roomSize.y * level->tileSize * 0.8f;
+			float sprinklerXspread = roomSize.x * level->tileSize * 0.8f * 1.8f;
+			float sprinklerZspread = roomSize.y * level->tileSize * 0.8f * 1.8f;
 
 			emitter->size = 0.1f;
 			emitter->constantVelocity = { 0.0f, -3.0f, 0.0f };
-			emitter->acceleration = { 0.0f, -40.0f, 0.0f };
+			emitter->acceleration = { 0.0f, -9.8f, 0.0f };
 			emitter->spread = { sprinklerXspread, 0.0f, sprinklerZspread };
 			emitter->spawnRate = 1.f / (80.f * roomSize.x * roomSize.y);
-			emitter->lifeTime = 1.0f;
+			emitter->lifeTime = 0.5f;
 		}
 
 		// Update active lights

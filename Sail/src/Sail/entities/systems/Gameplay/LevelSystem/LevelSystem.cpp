@@ -1777,9 +1777,11 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		particleEmitterComp->constantVelocity = { 0.0f, -0.7f, 0.0f };
 		particleEmitterComp->acceleration = { 0.0f, -0.4f, 0.0f };
 		particleEmitterComp->spread = { 5.22f, 1.0f, 5.22f };
-		particleEmitterComp->spawnRate = 1.f / 100.f;
-		particleEmitterComp->lifeTime = 2.0f;
+		particleEmitterComp->spawnRate = 1.f / (80.f * room.sizex * room.sizey);
+		particleEmitterComp->lifeTime = 0.5f;
 		particleEmitterComp->atlasSize = glm::uvec2(8U, 3U);
+		particleEmitterComp->drag = 50.0f;
+		particleEmitterComp->maxNumberOfParticles = (int)glm::ceil((1.0f / particleEmitterComp->spawnRate) * particleEmitterComp->lifeTime);
 		std::string particleTextureName = "particles/animSmoke.dds";
 		if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
 			Application::getInstance()->getResourceManager().loadTexture(particleTextureName);
