@@ -14,7 +14,7 @@
 #include <iostream>
 #include <fstream>
 
-//#define USE_ONLY_THIS_TEXTURE "missing.tga"
+#define USE_ONLY_THIS_TEXTURE "missing.tga"
 
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
@@ -101,6 +101,9 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 void ResourceManager::loadTexture(const std::string& filename) {
 #ifdef USE_ONLY_THIS_TEXTURE
 	*const_cast<std::string*>(&filename) = std::string(USE_ONLY_THIS_TEXTURE);
+	if (hasTexture(filename)) {
+		return;
+	}
 #endif
 
 	auto path = std::filesystem::path(SAIL_DEFAULT_TEXTURE_LOCATION + filename);
