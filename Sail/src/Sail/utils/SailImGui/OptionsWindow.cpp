@@ -381,7 +381,19 @@ bool OptionsWindow::renderGameOptions() {
 			m_app->getSettings().gameSettingsDynamic["powerup"]["respawnTime"].setValue(val);
 			settingsChanged = true;
 		}
-
+		ImGui::Text("count");
+		ImGui::SameLine(x[0]);
+		ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
+		val = m_app->getSettings().gameSettingsDynamic["powerup"]["count"].value;
+		if (ImGui::SliderFloat("##count",
+			&val,
+			m_app->getSettings().gameSettingsDynamic["powerup"]["count"].minVal,
+			m_app->getSettings().gameSettingsDynamic["powerup"]["count"].maxVal,
+			"%.0fs"
+		)) {
+			m_app->getSettings().gameSettingsDynamic["powerup"]["count"].setValue(val);
+			settingsChanged = true;
+		}
 
 	}
 
@@ -401,6 +413,11 @@ void OptionsWindow::updateMap() {
 	m_levelSystem->ysize = m_settings->gameSettingsDynamic["map"]["sizeY"].value;
 
 	m_levelSystem->generateMap();
+	auto& count = m_settings->gameSettingsDynamic["powerup"]["count"];
+	count.maxVal = m_levelSystem->powerUpSpawnPoints.size();
+	if (count.maxVal > count.value) {
+		count.value = count.maxVal;
+	}
 }
 
 void OptionsWindow::drawCrosshair() {

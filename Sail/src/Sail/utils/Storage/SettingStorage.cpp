@@ -275,7 +275,7 @@ void SettingStorage::createGameDefaultMap() {
 
 	gameSettingsDynamic["powerup"]["duration"] = DynamicSetting(15.0f, 5.0f, 60.0f);
 	gameSettingsDynamic["powerup"]["respawnTime"] = DynamicSetting(30.0f, 5.0f, 300.0f);
-
+	gameSettingsDynamic["powerup"]["count"] = DynamicSetting(1.0f, 1.0f, 1.0f);
 
 
 	defaultMaps["Deathmatch"] = Setting(0, std::vector<Setting::Option>({

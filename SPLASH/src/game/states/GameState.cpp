@@ -160,8 +160,9 @@ GameState::GameState(StateStack& stack)
 	// Level Creation
 	
 	createLevel(shader, boundingBoxModel);
+#ifndef _DEBUG
 	m_componentSystems.aiSystem->initNodeSystem(m_octree);
-
+#endif
 	// Player creation
 	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
 		
@@ -200,7 +201,9 @@ GameState::GameState(StateStack& stack)
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #else
-	createBots();
+	#ifndef _DEBUG
+		createBots();
+	#endif
 #endif
 	
 #ifdef _DEBUG
@@ -1398,7 +1401,7 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 		m_componentSystems.powerUpCollectibleSystem->setSpawnPoints(m_componentSystems.levelSystem->powerUpSpawnPoints);
 		m_componentSystems.powerUpCollectibleSystem->setDuration(settings.gameSettingsDynamic["powerup"]["duration"].value);
 		m_componentSystems.powerUpCollectibleSystem->setRespawnTime(settings.gameSettingsDynamic["powerup"]["respawnTime"].value);
-		m_componentSystems.powerUpCollectibleSystem->spawnPowerUps();
+		m_componentSystems.powerUpCollectibleSystem->spawnPowerUps(settings.gameSettingsDynamic["powerup"]["count"].value);
 	}
 
 
