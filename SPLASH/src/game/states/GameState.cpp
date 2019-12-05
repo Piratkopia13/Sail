@@ -160,8 +160,9 @@ GameState::GameState(StateStack& stack)
 	// Level Creation
 	
 	createLevel(shader, boundingBoxModel);
+#ifndef _DEBUG
 	m_componentSystems.aiSystem->initNodeSystem(m_octree);
-
+#endif
 	// Player creation
 	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
 		
@@ -200,7 +201,9 @@ GameState::GameState(StateStack& stack)
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #else
-	createBots();
+	#ifndef _DEBUG
+		createBots();
+	#endif
 #endif
 	
 #ifdef _DEBUG
@@ -426,6 +429,7 @@ bool GameState::processInput(float dt) {
 void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
 	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem<RenderInActiveGameComponent>>();
+	m_componentSystems.powerUpUpdateSystem = ECS::Instance()->createSystem<PowerUpUpdateSystem>();
 
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
@@ -455,7 +459,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
-	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
+	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<HazardLightSystem>();
 
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
@@ -941,7 +945,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.speedLimitSystem->update();
 	m_componentSystems.collisionSystem->update(dt);
 	m_componentSystems.movementPostCollisionSystem->update(dt);
-
+	m_componentSystems.powerUpUpdateSystem->update(dt);
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.aiSystem);
