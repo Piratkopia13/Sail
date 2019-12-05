@@ -263,6 +263,7 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::START_KILLCAM, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_KILLCAM, this);
+
 	m_app->getResourceManager().clearModelCopies();
 }
 
@@ -686,6 +687,22 @@ void GameState::onStartKillCam(const StartKillCamEvent& event) {
 	} else {
 		m_killCamText = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(killer)->name;
 	}
+	
+	m_isInKillCamMode = true;
+
+	const Netcode::PlayerID killer = Netcode::getComponentOwner(event.killingProjectile);
+
+	if (event.finalKillCam) {
+		m_killCamText = NWrapperSingleton::getInstance().getPlayer(killer)->name + " eliminated " 
+			+ NWrapperSingleton::getInstance().getPlayer(event.deadPlayer)->name + " and won the match!";
+	} else {
+		m_killCamText = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(killer)->name;
+	}
+}
+
+void GameState::onStopKillCam(const StopKillCamEvent& event) {
+	m_componentSystems.killCamReceiverSystem->stopMyKillCam();
+	m_isInKillCamMode = false;
 }
 
 void GameState::onStopKillCam(const StopKillCamEvent& event) {
