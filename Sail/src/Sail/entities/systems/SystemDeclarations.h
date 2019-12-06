@@ -98,7 +98,7 @@ struct Systems {
 	SanitySoundSystem*         sanitySoundSystem         = nullptr;
 	SanitySystem*              sanitySystem              = nullptr;
 	SpeedLimitSystem*          speedLimitSystem          = nullptr;
-	HazardLightSystem*           spotLightSystem           = nullptr;
+	HazardLightSystem*         hazardLightSystem         = nullptr;
 	TeamColorSystem*           teamColorSystem           = nullptr;
 	SprinklerSystem*           sprinklerSystem           = nullptr;
 	UpdateBoundingBoxSystem*   updateBoundingBoxSystem   = nullptr;

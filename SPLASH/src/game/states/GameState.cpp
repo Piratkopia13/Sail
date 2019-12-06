@@ -85,9 +85,7 @@ GameState::GameState(StateStack& stack)
 	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<GBufferWireframe>();
 
 	//Wireframe bounding box model
-	
 	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
-	//boundingBoxModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 	boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
@@ -96,6 +94,8 @@ GameState::GameState(StateStack& stack)
 
 	//Create octree
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
+
+
 	//-----------------------
 
 	m_renderSettingsWindow.activateMaterialPicking(&m_cam, m_octree);
@@ -114,34 +114,16 @@ GameState::GameState(StateStack& stack)
 	// Initialize the component systems
 	initSystems(playerID);
 
-	// Add a directional light which is used in forward rendering
-	glm::vec3 color(0.0f, 0.0f, 0.0f);
-	glm::vec3 direction(0.4f, -0.2f, 1.0f);
-	direction = glm::normalize(direction);
-	m_lights.setDirectionalLight(DirectionalLight(color, direction));
+
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
-
 	m_lightDebugWindow.setLightSetup(&m_lights);
-
-	// Disable culling for testing purposes
-	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
-
-	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-
-	m_app->getResourceManager().setDefaultShader(shader);
-
-	// Create/load models
-	Model* lightModel = &m_app->getResourceManager().getModel("Torch.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Torch/Torch_Albedo.dds");
-	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Torch/Torch_NM.dds");
-	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Torch/Torch_MRAO.dds");
 
 	// Crosshair
 	auto crosshairEntity = EntityFactory::CreateCrosshairEntity("crosshairEntity");
 
 	// Level Creation
 	
-	createLevel(shader, boundingBoxModel);
+	createLevel(&m_app->getResourceManager().getShaderSet<GBufferOutShader>(), boundingBoxModel);
 #ifndef _DEBUG
 	m_componentSystems.aiSystem->initNodeSystem(m_octree);
 #endif
@@ -166,7 +148,7 @@ GameState::GameState(StateStack& stack)
 		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 	}
 
-	
+
 	// Spawn other players
 	for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
 		if (p.team != SPECTATOR_TEAM && p.id != playerID) {
@@ -235,8 +217,12 @@ GameState::GameState(StateStack& stack)
 
 	
 	//This will create all torch particles before players report done loading which will remove the freazing after waiting for players. 
-	m_componentSystems.particleSystem->addQueuedEntities();
-	m_componentSystems.particleSystem->update(0);
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
+		m_componentSystems.particleSystem->addQueuedEntities();
+		m_componentSystems.particleSystem->update(0);
+	}
+
+
 
 	// Keep this at the bottom
 	if (!m_isSingleplayer) {
@@ -318,7 +304,7 @@ bool GameState::processInput(float dt) {
 
 
 	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
-		m_componentSystems.spotLightSystem->toggleONOFF();
+		m_componentSystems.hazardLightSystem->toggleONOFF();
 	}
 
 
@@ -456,7 +442,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
-	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<HazardLightSystem>();
+	m_componentSystems.hazardLightSystem = ECS::Instance()->createSystem<HazardLightSystem>();
 
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
@@ -522,7 +508,11 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.playerSystem = ECS::Instance()->createSystem<PlayerSystem>();
 
 	//Create particle system
-	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
+		m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
+	}
+
+
 
 	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
 	m_componentSystems.sprinklerSystem->setOctree(m_octree);
@@ -788,7 +778,9 @@ bool GameState::render(float dt, float alpha) {
 		m_componentSystems.killCamMetaballSubmitSystem->submitAll(killCamAlpha);
 	} else {
 		m_componentSystems.modelSubmitSystem->submitAll(alpha);
-		m_componentSystems.particleSystem->submitAll();
+		if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
+			m_componentSystems.particleSystem->submitAll();
+		}
 		m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 		m_componentSystems.boundingboxSubmitSystem->submitAll();
 	}
@@ -963,7 +955,26 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 	runSystem(dt, m_componentSystems.teamColorSystem);
-	runSystem(dt, m_componentSystems.particleSystem);
+
+	// Only run particle system if particles are enabled.
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
+		// If the particleSystem was disabled at the start of the game, and is now enabled the particle system is created and all emitters are added to the system
+		if (!ECS::Instance()->getSystem<ParticleSystem>()) {
+			m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
+			for (int i = 0; i < m_player->getChildEntities().size(); i++) {
+				if (m_player->getChildEntities().at(i)->hasComponent<ParticleEmitterComponent>()) {
+					m_componentSystems.particleSystem->addEntity(m_player->getChildEntities().at(i));
+					break;
+				}
+			}
+			for (int i = 0; i < m_componentSystems.hazardLightSystem->getEntities().size(); i++) {
+				m_componentSystems.particleSystem->addEntity(m_componentSystems.hazardLightSystem->getEntities().at(i));
+			}
+		}
+		runSystem(dt, m_componentSystems.particleSystem);
+	}
+
+
 	runSystem(dt, m_componentSystems.sanitySystem);
 	runSystem(dt, m_componentSystems.sanitySoundSystem);
 
@@ -971,7 +982,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	for (auto& fut : m_runningSystemJobs) {
 		fut.get();
 	}
-	m_componentSystems.spotLightSystem->enableHazardLights(m_componentSystems.sprinklerSystem->getActiveRooms());
+	m_componentSystems.hazardLightSystem->enableHazardLights(m_componentSystems.sprinklerSystem->getActiveRooms());
 
 	// Send out your entity info to the rest of the players
 	// DON'T MOVE, should happen at the end of each tick
@@ -1008,7 +1019,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 			m_componentSystems.lightSystem->updateLights(&m_lights, alpha);
 		}
 		m_componentSystems.lightListSystem->updateLights(&m_lights);
-		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha, dt);
+		m_componentSystems.hazardLightSystem->updateLights(&m_lights, alpha, dt);
 	}
 	
 	m_componentSystems.crosshairSystem->update(dt);

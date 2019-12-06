@@ -222,6 +222,10 @@ void SettingStorage::createApplicationDefaultGraphics() {
 		{ "off", 0.0f },
 		{ "on", 1.0f }
 	}));
+	applicationSettingsS["particles"] = Setting(0, std::vector<Setting::Option>({
+		{"off", 0.0f },
+		{ "on", 1.0f},
+	}));
 }
 void SettingStorage::createApplicationDefaultSound() {
 	auto& applicationSettingsD = applicationSettingsDynamic["sound"] = std::unordered_map<std::string, DynamicSetting>();
