@@ -47,6 +47,9 @@ void BaseComponentSystem::removeEntity(Entity* entity) {
 	entitiesQueuedToAdd.erase(std::remove(entitiesQueuedToAdd.begin(), entitiesQueuedToAdd.end(), entity), entitiesQueuedToAdd.end());
 
 	entitiesQueuedToAdd_set.erase(entity->getID());
+	if (entity->getName() == "projectile") {
+		int asdf = 3;
+	}
 	entities_set.erase(entity->getID());
 }
 

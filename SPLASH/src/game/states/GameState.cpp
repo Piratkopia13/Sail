@@ -1017,7 +1017,9 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 		m_cam.setPosition(glm::vec3(100.f, 100.f, 100.f));
 	}
 	
-	m_componentSystems.audioSystem->update(m_cam, dt, alpha);
+	if (m_componentSystems.audioSystem) {
+		m_componentSystems.audioSystem->update(m_cam, dt, alpha);
+	}
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
 
 	if (m_isInKillCamMode) {

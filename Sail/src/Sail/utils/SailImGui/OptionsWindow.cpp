@@ -4,11 +4,14 @@
 #include "Sail/KeyBinds.h"
 #include "Sail/utils/SailImGui/SailImGui.h"
 #include "Sail/entities/ECS.h"
+#include "../Sail/src/API/Audio/AudioEngine.h"
+#include "Sail/entities/systems/Audio/AudioSystem.h"
 
 OptionsWindow::OptionsWindow(bool showWindow) {
 	m_app = Application::getInstance();
 	m_settings = &m_app->getSettings();
 	m_levelSystem = ECS::Instance()->getSystem<LevelSystem>();
+	m_audioSystem = ECS::Instance()->getSystem<AudioSystem>();
 
 	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 	auto& stat = m_app->getSettings().gameSettingsStatic;
@@ -88,6 +91,25 @@ void OptionsWindow::renderWindow() {
 		float val = dopt->value * 100.0f;
 		if (ImGui::SliderFloat(std::string("##"+settingName).c_str(), &val, dopt->minVal, dopt->maxVal * 100.0f, "%.1f%%")) {
 			dopt->setValue(val * 0.01f);
+
+			AudioEngine* AEptr = m_audioSystem->getAudioEngine();
+
+			if (val == 0) {
+				// Do thing
+				if (AEptr != nullptr) {
+					// deleting engine
+					//AEptr->stopAllSounds();
+					//delete AEptr;
+
+					m_audioSystem->stop();
+					m_audioSystem->~AudioSystem();
+
+					// delete system ( or empty system ) 
+				}
+			}
+			else if (AEptr == nullptr) {
+				// Deal with later
+			}
 		}
 	}	
 	
@@ -364,6 +386,10 @@ void OptionsWindow::updateMap() {
 
 	m_levelSystem->generateMap();
 }
+
+//void OptionsWindow::provide(AudioEngine* ae) {
+//	m_audioEngine = ae;
+//}
 
 void OptionsWindow::drawCrosshair() {
 	// Fetch current settings from settingsStorage

@@ -71,10 +71,8 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInActiveGameComponent>>();
 	ECS::Instance()->createSystem<ModelSubmitSystem<RenderInActiveGameComponent>>();
 	ECS::Instance()->createSystem<GUISubmitSystem>();
+	ECS::Instance()->createSystem<AudioSystem>();
 	ECS::Instance()->createSystem<LevelSystem>()->generateMap();
-
-
-
 
 	// Initialize imgui
 	m_imguiHandler->init();
