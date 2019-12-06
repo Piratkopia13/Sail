@@ -65,7 +65,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	PointLight pl;
 	pl.setColor(glm::vec3(0.55f, 0.5f, 0.45f));
 	pl.setPosition(glm::vec3(lightPos.x, lightPos.y + .5f, lightPos.z));
-	pl.setAttenuation(0.f, 0.f, 0.2f);
+	pl.setRadius(10.f);
 	pl.setIndex(lightIndex);
 	candle->addComponent<LightComponent>(pl);
 }
