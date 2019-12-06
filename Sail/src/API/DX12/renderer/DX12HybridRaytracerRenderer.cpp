@@ -78,11 +78,6 @@ bool DX12HybridRaytracerRenderer::checkIfOnWater(const glm::vec3& pos) {
 	return m_rendererRaytrace->checkIfOnWater(pos);
 }
 
-void DX12HybridRaytracerRenderer::newGame(unsigned int numPlayers) {
-	getDXRBase()->rebuildWater();
-	m_rendererRaytrace->createSoftShadowsTextures(numPlayers);
-}
-
 DX12GBufferRenderer* DX12HybridRaytracerRenderer::getGBufferRenderer() const {
 	return m_rendererGbuffer.get();
 }

@@ -294,7 +294,7 @@ void rayGen() {
 	motionVector.y = 1.f - motionVector.y;
 	motionVector = motionVector * 2.f - 1.0f;
 
-	// float totalShadowAmount = 0.f;
+	float totalShadowAmount = 0.f;
 	float2 reprojectedTexCoord = screenTexCoord - motionVector;
 
 	uint shadowTextureIndex = 0;
@@ -311,10 +311,10 @@ void rayGen() {
 		float2 shadow = float2(firstBounceShadow, finalPayload.shadowTwo[shadowTextureIndex]);
 		shadow = alpha * (1.0f - shadow) + (1.0f - alpha) * cLast;
 		lOutputShadows[uint3(launchIndex, shadowTextureIndex)] = shadow;
-		// totalShadowAmount += firstBounceShadow;
+		totalShadowAmount += firstBounceShadow;
 		shadowTextureIndex++;
 	}
-	// totalShadowAmount /= max(CB_SceneData.numShadowTextures, 1);
+	totalShadowAmount /= max(NUM_SHADOW_TEXTURES, 1);
 
 	// Interpolation to shade water in shadows nicely, currently done in shadepass instead
 	// totalShadowAmount = 1 - totalShadowAmount * totalShadowAmount;

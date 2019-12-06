@@ -24,7 +24,6 @@ public:
 	virtual void setTeamColors(const std::vector<glm::vec3>& teamColors) override;
 	virtual bool checkIfOnWater(const glm::vec3& pos) override;
 
-	void newGame(unsigned int numPlayers);
 	DX12GBufferRenderer* getGBufferRenderer() const;
 	DXRBase* getDXRBase();
 

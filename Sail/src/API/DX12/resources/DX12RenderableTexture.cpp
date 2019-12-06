@@ -34,7 +34,6 @@ DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width,
 		m_dsvHeapCDHs[i] = m_cpuDsvDescHeap.getCPUDescriptorHandleForIndex(i);
 	}
 	createTextures();
-	//renameBuffer(name);
 }
 
 DX12RenderableTexture::~DX12RenderableTexture() {

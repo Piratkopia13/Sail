@@ -82,8 +82,8 @@ GameState::GameState(StateStack& stack)
 	}
 	m_app->getRenderWrapper()->getCurrentRenderer()->setTeamColors(m_teamColors);
 
-	// Tell renderer to initialize everything needed for a new session
-	static_cast<DX12HybridRaytracerRenderer*>(m_app->getRenderWrapper()->getCurrentRenderer())->newGame(NWrapperSingleton::getInstance().getPlayers().size());
+	// Update water voxel grid
+	static_cast<DX12HybridRaytracerRenderer*>(m_app->getRenderWrapper()->getCurrentRenderer())->getDXRBase()->rebuildWater();
 
 	//----Octree creation----
 	//Wireframe shader
@@ -326,7 +326,6 @@ bool GameState::processInput(float dt) {
 		m_showcaseProcGen = m_lightDebugWindow.isManualOverrideOn();
 		if (m_showcaseProcGen) {
 			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
-			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
 		} else {
 			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
 		}
@@ -932,7 +931,6 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.spectateInputSystem->fixedUpdate(dt);
 
 	m_componentSystems.prepareUpdateSystem->fixedUpdate(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
-	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	m_componentSystems.lightSystem->prepareFixedUpdate();
 
 	
