@@ -12,7 +12,7 @@
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 
-//#define NO_MULTI_THREADED_LOADING
+#define MULTI_THREADED_LOADING
 
 SplashScreenState::SplashScreenState(StateStack& stack)
 	: State(stack)
@@ -28,11 +28,10 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 	byteSize = rm->getTextureByteSize();
 
 	rm->loadShaderSet<AnimationUpdateComputeShader>();
-	rm->loadShaderSet<ParticleComputeShader>();
+	rm->loadShaderSet<GBufferWireframe>();
 	rm->setDefaultShader(&rm->getShaderSet<GBufferOutShader>());
-	rm->loadShaderSet<WireframeShader>();
 
-#ifndef NO_MULTI_THREADED_LOADING
+#ifdef MULTI_THREADED_LOADING
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 #else
 	loadModels(m_app);
@@ -64,7 +63,7 @@ bool SplashScreenState::loadModels(Application* app) {
 
 	ResourceManager* rm = &app->getResourceManager();
 
-#ifndef NO_MULTI_THREADED_LOADING
+#ifdef MULTI_THREADED_LOADING
 	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
 #else
 	loadTextures(m_app);
@@ -92,7 +91,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Clutter/Notepad.fbx");
 	rm->loadModel("Clutter/Saftblandare.fbx");
 	rm->loadModel("WaterPistol.fbx");
-	rm->loadModel("boundingBox.fbx", &rm->getShaderSet<WireframeShader>());
+	rm->loadModel("boundingBox.fbx", &rm->getShaderSet<GBufferWireframe>());
 	rm->loadModel("Clutter/Microscope.fbx");
 	rm->loadModel("Clutter/CloningVats.fbx");
 	rm->loadModel("Clutter/ControlStation.fbx");
@@ -131,7 +130,7 @@ bool SplashScreenState::loadModels(Application* app) {
 //	}
 //#endif
 
-#ifndef NO_MULTI_THREADED_LOADING
+#ifdef MULTI_THREADED_LOADING
 	textureThread.get();
 #endif
 	return true;
