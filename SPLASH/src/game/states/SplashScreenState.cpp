@@ -1,4 +1,3 @@
-
 #include "Sail/../../Sail/src/Network/NetworkModule.hpp"
 #include "SplashScreenState.h"
 
@@ -13,6 +12,7 @@
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 
+//#define NO_MULTI_THREADED_LOADING
 
 SplashScreenState::SplashScreenState(StateStack& stack)
 	: State(stack)
@@ -21,37 +21,41 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 	m_app = Application::getInstance();
 	ResourceManager* rm = &m_app->getResourceManager();
 
+	unsigned int byteSize = rm->getTextureByteSize();
+
 	rm->loadTexture("splash_logo_smaller.tga");
+
+	byteSize = rm->getTextureByteSize();
+
 	rm->loadShaderSet<AnimationUpdateComputeShader>();
 	rm->loadShaderSet<ParticleComputeShader>();
 	rm->setDefaultShader(&rm->getShaderSet<GBufferOutShader>());
 	rm->loadShaderSet<WireframeShader>();
+
+#ifndef NO_MULTI_THREADED_LOADING
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
+#else
+	loadModels(m_app);
+#endif
 
 	//Sleep(5000000);
 }
-
 SplashScreenState::~SplashScreenState() {
 	m_modelThread.get();
 }
 
-
 bool SplashScreenState::processInput(float dt) {
 	return true;
 }
-
 bool SplashScreenState::update(float dt, float alpha) {
 	return true;
 }
-
 bool SplashScreenState::render(float dt, float alpha) {
 	return true;
 }
-
 bool SplashScreenState::renderImgui(float dt) {
 	return true;
 }
-
 bool SplashScreenState::onEvent(const Event& event) {
 	return true;
 }
@@ -60,11 +64,13 @@ bool SplashScreenState::loadModels(Application* app) {
 
 	ResourceManager* rm = &app->getResourceManager();
 
+#ifndef NO_MULTI_THREADED_LOADING
 	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
+#else
+	loadTextures(m_app);
+#endif
 
 	//Sleep(1000000);		// Used for observing when the RAM spike happens
-
-	//loadTextures(m_app);
 
 //#ifndef _DEBUG
 	rm->loadModel("Doc.fbx");
@@ -92,7 +98,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Clutter/ControlStation.fbx");
 	rm->loadModel("CleaningBot.fbx");
 
-
+	rm->clearSceneData();
 
 
 	//LEAVE THIS FOR A MULTITHREADED FUTURE
@@ -125,14 +131,15 @@ bool SplashScreenState::loadModels(Application* app) {
 //	}
 //#endif
 
-
+#ifndef NO_MULTI_THREADED_LOADING
 	textureThread.get();
-	rm->clearSceneData();
+#endif
 	return true;
 }
-
 bool SplashScreenState::loadTextures(Application* app) {
 	ResourceManager* rm = &app->getResourceManager();
+
+	unsigned int byteSize = rm->getTextureByteSize();
 
 	rm->loadTexture("pbr/DDS/Torch/Torch_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Torch/Torch_NM.dds");
@@ -246,6 +253,8 @@ bool SplashScreenState::loadTextures(Application* app) {
 
 	// Load the missing texture texture
 	rm->loadTexture("missing.tga");
+
+	byteSize = rm->getTextureByteSize();
 
 	return true;
 }
