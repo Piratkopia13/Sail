@@ -50,6 +50,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
 	particleEmitterComp->spawnRate = 0.01f;
 	particleEmitterComp->lifeTime = 0.13f;
+	particleEmitterComp->maxNumberOfParticles = 100;
 	std::string particleTextureName = "particles/animFire.dds";
 	particleEmitterComp->atlasSize = glm::uvec2(8U, 4U);
 	if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
