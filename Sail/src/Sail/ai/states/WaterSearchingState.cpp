@@ -46,8 +46,9 @@ void WaterSearchingState::update(float dt, Entity* entity) {
 
 			aiComp->posTarget = m_targetPos;
 			aiComp->updatePath = true;
+			m_doSwitch = true;
 		}
-	} else if ((aiComp->currPath.size() > 0 && aiComp->currNodeIndex == aiComp->currPath.size() - 1) || aiComp->currPath.size() == 0){
+	} else if ((aiComp->currPath.size() > 0 && aiComp->currNodeIndex >= aiComp->currPath.size() - 1)) {
 		m_movingTowardWater = false;
 	} else if (m_stateTimer > 10.f) {
 		m_stateTimer = 0.f;

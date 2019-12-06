@@ -405,7 +405,7 @@ bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
 	return returnValue;
 }
 
-// THIS WAS IMPLEMENTED SPECIFICALLY FOR CLEANING STATE!
+// THIS WAS IMPLEMENTED SPECIFICALLY FOR CLEANING BOTS!
 std::pair<bool, glm::vec3> DXRBase::getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) {
 	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
 	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
@@ -421,33 +421,36 @@ std::pair<bool, glm::vec3> DXRBase::getNearestWaterPosition(const glm::vec3& pos
 	int xOffset = maxOffset.x / mapSize.x * m_waterArrSizes.x;
 	int zOffset = maxOffset.z / mapSize.z * m_waterArrSizes.z;
 
+	auto daRand = glm::diskRand(maxOffset.x);
+	glm::vec3 closestPos = glm::vec3(daRand.x, 0.f, daRand.y);
+	float leastDist = FLT_MAX;
+	bool found = false;
 	for (int x = -xOffset; x < xOffset + 1; x++) {
 		for (int z = -zOffset; z < zOffset + 1; z++) {
 			int quarterIndex = origQuarterIndex + x;
 			glm::i32vec3 ind = origInd;
-			if (quarterIndex < 0) {
-				ind.x -= 1;
-				quarterIndex = 4 + quarterIndex;
-			} else if (quarterIndex > 3) {
-				ind.x += 1;
-				quarterIndex = quarterIndex - 4;
-			}
+			ind.x += quarterIndex / 4;
+			quarterIndex = quarterIndex % 4;
 			ind.x = glm::clamp(ind.x, 0, int(m_waterArrSizes.x));
 			ind.z = glm::clamp(ind.z + z, 0, int(m_waterArrSizes.z));
 			int arrIndex = Utils::to1D(ind, m_waterArrSizes.x, m_waterArrSizes.y);
+
 			// Ignore water points that are outside the map
 			if (arrIndex >= 0 && arrIndex < m_waterArrSize) {
 				// Make sure to update this water
-				if (m_waterDataCPU[arrIndex] > 0U) {
-					glm::vec3 ind3d = Utils::to3D(arrIndex, m_waterArrSizes.x, m_waterArrSizes.y);
-					return std::pair(true, (ind3d / m_waterArrSizes) * m_mapSize + m_mapStart);
+				if (Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], quarterIndex) > 0U) {
+					ind.x = ind.x * 4 + quarterIndex;
+					auto currPos = (glm::vec3(ind) / glm::vec3(m_waterArrSizes.x * 4, m_waterArrSizes.y, m_waterArrSizes.z)) * m_mapSize + m_mapStart;
+					if (glm::distance2(glm::vec2(currPos.x, currPos.z), glm::vec2(position.x, position.z)) < leastDist) {
+						closestPos = currPos;
+						found = true;
+					}
 				}
 			}
 		}
 	}
 
-	auto daRand = glm::diskRand(maxOffset.x);
-	return std::pair(false, position + glm::vec3(daRand.x, 0.f, daRand.y));
+	return std::pair(found, closestPos);
 }
 
 void DXRBase::updateWaterData() {

@@ -9,7 +9,8 @@ CleaningState::CleaningState(NodeSystem* nodeSystem)
 	, m_rendererWrapperRef(Application::getInstance()->getRenderWrapper())
 	, m_targetPos(0.f, 0.f, 0.f)
 	, m_searchingClock(4.f)
-	, m_doSwitch(false) {
+	, m_doSwitch(false)
+	, m_maxStateTime(5.f) {
 	m_stateTimer = 0.f;
 }
 
@@ -23,7 +24,7 @@ void CleaningState::update(float dt, Entity* entity) {
 	
 	aiComp->doWalk = true;
 
-	if (aiComp->currNodeIndex == aiComp->currPath.size() - 1) {
+	if (m_stateTimer > m_maxStateTime) {
 		m_doSwitch = true;
 	}
 }
@@ -46,80 +47,65 @@ void CleaningState::init(Entity* entity) {
 	if (aiComp) {
 		aiComp->automaticallyUpdatePath = false;
 	}
-
+	m_maxStateTime = glm::linearRand(5.f, 15.f);
 	// Create a path for the bot to walk
+	createCleaningPath(entity);
+}
+
+bool* CleaningState::getDoSwitch() {
+	return &m_doSwitch;
+}
+
+void CleaningState::createCleaningPath(Entity* entity) {// First try to walk to the left-bottom most index of the water
+	glm::vec3 maxOffset(30.f, 0.f, 30.f);
+	auto aiComp = entity->getComponent<AiComponent>();
+	glm::vec3 aiPos = entity->getComponent<TransformComponent>()->getMatrixWithUpdate()[3];
+	auto found = m_rendererWrapperRef->getNearestWaterPosition(aiPos, maxOffset);
+	aiComp->posTarget = found.second;
+
+	/* TODO: Should probably be improved so we don't need to copy this code */
 	{
-		// First try to walk to the left-bottom most index of the water
-		glm::vec3 maxOffset(30.f, 0.f, 30.f);
-		glm::vec3 aiPos = entity->getComponent<TransformComponent>()->getMatrixWithUpdate()[3];
-		auto found = m_rendererWrapperRef->getNearestWaterPosition(aiPos, maxOffset);
-		aiComp->posTarget = found.second;
-
-		/* TODO: Should probably be improved so we don't need to copy this code */
-		{
 #ifdef _DEBUG_NODESYSTEM
-			m_nodeSystemRef->colorPath(aiComp->currPath, m_nodeSystemRef->getMaxColourID());
+		m_nodeSystemRef->colorPath(aiComp->currPath, m_nodeSystemRef->getMaxColourID());
 #endif
-			aiComp->timeTakenOnPath = 0.f;
-			aiComp->reachedPathingTarget = false;
+		aiComp->timeTakenOnPath = 0.f;
+		aiComp->reachedPathingTarget = false;
 
-			// aiComp->posTarget is updated in each FSM state
-			aiComp->lastTargetPos = aiComp->posTarget;
+		// aiComp->posTarget is updated in each FSM state
+		aiComp->lastTargetPos = aiComp->posTarget;
 
-			auto tempPath = m_nodeSystemRef->getPath(aiPos, aiComp->posTarget);
+		auto tempPath = m_nodeSystemRef->getPath(aiPos, aiComp->posTarget);
 
-			aiComp->currNodeIndex = 0;
+		aiComp->currNodeIndex = 0;
 
-			// Fix problem of always going toward closest node
-			if (tempPath.size() > 1 && glm::distance(tempPath[1].position, aiPos) < glm::distance(tempPath[1].position, tempPath[0].position)) {
-				aiComp->currNodeIndex += 1;
-			}
-
-			aiComp->currPath = tempPath;
-
-			aiComp->updatePath = false;
+		// Fix problem of always going toward closest node
+		if (tempPath.size() > 1 && glm::distance(tempPath[1].position, aiPos) < glm::distance(tempPath[1].position, tempPath[0].position)) {
+			aiComp->currNodeIndex += 1;
 		}
 
-		auto nodes = m_nodeSystemRef->getNodes();
-		//auto connections = m_nodeSystemRef->getConnections();
-		auto currNode = aiComp->lastVisitedNode;
+		aiComp->currPath = tempPath;
 
-		// Get a direction in which there is water
-		float rad = 0.5f;
-		glm::vec3 dir = glm::vec3(glm::linearRand(-1.f, 1.f), 0.f, glm::linearRand(-1.f, 1.f));
-		for (auto x = -1; x < 2; x++) {
-			for (auto z = -1; z < 2; z++) {
-				if (x != 0 && z != 0) {
-					auto offset = glm::vec3(x * rad * 2.f, 0.f, z * rad * 2.f);
-					auto currFound = m_rendererWrapperRef->getNearestWaterPosition(aiComp->posTarget + offset, glm::vec3(rad, 0.f, rad));
-					if (currFound.first) {
-						dir = offset;
-						x = 5555;
-						break;
-					}
-				}
-			}
-		}
+		aiComp->updatePath = false;
+	}
 
-
-		auto xSign = Utils::testSign(dir.x);
-		auto zSign = Utils::testSign(dir.z);
-		
-		// Find a suitable path to clean an area near the found water
-		auto cleaningSize = glm::ivec2((std::rand() % 3) + 1, (std::rand() % 3) + 1);
-		for (auto z = 0; z < cleaningSize.y; z++) {
-			int multiplier = 0;
-			if (z % 2 == 0) {
-				multiplier = 1;
-			}
+	auto nodes = m_nodeSystemRef->getNodes();
+	auto cleaningSize = glm::ivec2((std::rand() % 2) + 2, (std::rand() % 2) + 2);
+	int x, y, dx, dy;
+	x = y = dx = 0;
+	dy = -1;
+	int t = std::max(cleaningSize.x, cleaningSize.y);
+	int maxI = t * t;
+	for (int i = 0; i < maxI; i++) {
+		if ((-cleaningSize.x / 2 <= x) && (x <= cleaningSize.x / 2) && (-cleaningSize.y / 2 <= y) && (y <= cleaningSize.y / 2)) {
 			int currIndex;
 			if (aiComp->currPath.size() > 0) {
-				 currIndex = aiComp->currPath[aiComp->currPath.size() - 1].index;
+				currIndex = aiComp->currPath[aiComp->currPath.size() - 1].index;
 			} else {
 				currIndex = m_nodeSystemRef->getNearestNode(aiPos).index;
 			}
+
 			std::vector<NodeSystem::Node> shortPath;
-			int pathEndIndex = currIndex + xSign * cleaningSize.x * multiplier + zSign * z * m_nodeSystemRef->getXMax();
+			int pathEndIndex = currIndex + x + y * m_nodeSystemRef->getXMax();
 			if (currIndex > -1 && pathEndIndex > -1 && pathEndIndex < nodes.size()) {
 				shortPath = m_nodeSystemRef->getPath(nodes[currIndex], nodes[pathEndIndex]);
 
@@ -128,13 +114,16 @@ void CleaningState::init(Entity* entity) {
 				}
 			}
 		}
+		if ((x == y) || ((x < 0) && (x == -y)) || ((x > 0) && (x == 1 - y))) {
+			t = dx;
+			dx = -dy;
+			dy = t;
+		}
+		x += dx;
+		y += dy;
+	}
 
 #ifdef _DEBUG_NODESYSTEM
-		m_nodeSystemRef->colorPath(aiComp->currPath, entity->getID() % (m_nodeSystemRef->getMaxColourID() - 1));
+	m_nodeSystemRef->colorPath(aiComp->currPath, entity->getID() % (m_nodeSystemRef->getMaxColourID() - 1));
 #endif
- 	}
-}
-
-bool* CleaningState::getDoSwitch() {
-	return &m_doSwitch;
 }

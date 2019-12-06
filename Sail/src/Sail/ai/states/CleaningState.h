@@ -16,6 +16,8 @@ public:
 
 	bool* getDoSwitch();
 
+	void createCleaningPath(Entity* entity);
+
 private:
 	NodeSystem* m_nodeSystemRef;
 	RendererWrapper* m_rendererWrapperRef;
@@ -24,4 +26,6 @@ private:
 	float m_searchingClock;
 
 	bool m_doSwitch;
+
+	float m_maxStateTime;
 };
