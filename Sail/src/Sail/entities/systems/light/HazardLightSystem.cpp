@@ -14,7 +14,7 @@
 HazardLightSystem::HazardLightSystem() : BaseComponentSystem() {
 	registerComponent<SpotlightComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, false);
-	registerComponent<ParticleEmitterComponent>(true, true, true);
+	registerComponent<ParticleEmitterComponent>(false, true, true);
 }
 
 HazardLightSystem::~HazardLightSystem() {
@@ -30,21 +30,6 @@ void HazardLightSystem::updateLights(LightSetup* lightSetup, float alpha, float 
 		MovementComponent* mc = e->getComponent<MovementComponent>();
 		ParticleEmitterComponent* emitter = e->getComponent<ParticleEmitterComponent>();
 		mc->rotation.y = 0.f;
-
-		// Set particle emitter settings
-		if (emitter) {
-			auto* level = ECS::Instance()->getSystem<LevelSystem>();
-			auto& roomSize = level->getRoomInfo(sc->roomID).size;
-			float sprinklerXspread = roomSize.x * level->tileSize * 0.8f;
-			float sprinklerZspread = roomSize.y * level->tileSize * 0.8f;
-
-			emitter->size = 0.1f;
-			emitter->constantVelocity = { 0.0f, -3.0f, 0.0f };
-			emitter->acceleration = { 0.0f, -40.0f, 0.0f };
-			emitter->spread = { sprinklerXspread, 0.0f, sprinklerZspread };
-			emitter->spawnRate = 1.f / (80.f * roomSize.x * roomSize.y);
-			emitter->lifeTime = 1.0f;
-		}
 
 		// Update active lights
 		if (!sc->isOn) {
