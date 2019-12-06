@@ -27,6 +27,7 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 	assert(computeShader.getPipeline()->isComputeShader()); // Not a compute shader
 	auto* dxShaderPipeline = static_cast<DX12ShaderPipeline*>(computeShader.getPipeline());
 	
+
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	const auto& settings = computeShader.getComputeSettings();
 
