@@ -38,9 +38,6 @@ public:
 	void updatePerFrame(float dt, float alpha);
 	void stop() override;
 
-	void initEntities();
-	bool startKillCam();
-	void stopMyKillCam();
 
 	void prepareUpdate();
 	void processReplayData(float dt);
@@ -55,6 +52,10 @@ public:
 	}
 #endif
 private:
+	void initEntities();
+	bool startKillCam();
+	void stopMyKillCam();
+
 	bool onEvent(const Event& event) override;
 
 
@@ -149,6 +150,7 @@ private:
 	bool m_hasInitialized = false;
 	bool m_isPlaying      = false;
 	bool m_isFinalKillCam = false;
+	bool m_trackingProjectile  = false;
 
 	SlowMotionSetting m_slowMotionState = SlowMotionSetting::DISABLE;
 	size_t m_killCamTickCounter = 0; // Counts ticks in the range [ 0, SLOW_MO_MULTIPLIER )
@@ -157,7 +159,6 @@ private:
 
 	Entity* m_killerPlayer     = nullptr;
 	Entity* m_killerProjectile = nullptr;
-	bool m_trackingProjectile  = false;
 
 	CameraController* m_cam = nullptr;
 

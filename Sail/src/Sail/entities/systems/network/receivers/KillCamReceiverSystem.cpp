@@ -39,6 +39,7 @@ KillCamReceiverSystem::KillCamReceiverSystem() : ReceiverBase() {
 	EventDispatcher::Instance().subscribe(Event::Type::TOGGLE_SLOW_MOTION, this);
 	EventDispatcher::Instance().subscribe(Event::Type::TORCH_NOT_HELD, this);
 	EventDispatcher::Instance().subscribe(Event::Type::START_KILLCAM, this);
+	EventDispatcher::Instance().subscribe(Event::Type::STOP_KILLCAM, this);
 
 }
 
@@ -46,6 +47,7 @@ KillCamReceiverSystem::~KillCamReceiverSystem() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_SLOW_MOTION, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::TORCH_NOT_HELD, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::START_KILLCAM, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_KILLCAM, this);
 
 	stop();
 }
@@ -78,19 +80,25 @@ void KillCamReceiverSystem::stop() {
 	m_replayData.clear();
 	m_myKillCamData.clear();
 
-	m_slowMotionState = SlowMotionSetting::DISABLE;
 	m_hasInitialized     = false;
 	m_isPlaying         = false;
 	m_isFinalKillCam     = false;
+	m_trackingProjectile = false;
+
+	m_slowMotionState = SlowMotionSetting::DISABLE;
 	m_killCamTickCounter = 0;
+
 	m_killingProjectileID = Netcode::UNINITIALIZED;
+	
 	m_killerPlayer       = nullptr;
 	m_killerProjectile   = nullptr;
-	m_trackingProjectile = false;
+	
 	Memory::SafeDelete(m_cam);
 
 	m_projectilePos = { 0,0,0 };
 	m_killerHeadPos = { 0,0,0 };
+
+	SAIL_LOG_WARNING("STOP CALLED");
 }
 
 // Only needs to be done once
@@ -112,6 +120,7 @@ bool KillCamReceiverSystem::startKillCam() {
 	// Copy the past few seconds to data that we'll read from for our own killcam
 	m_myKillCamData = m_replayData;
 
+
 	for (auto e : entities) {
 		const Netcode::ComponentID compID = e->getComponent<ReplayReceiverComponent>()->m_id;
 
@@ -129,6 +138,7 @@ bool KillCamReceiverSystem::startKillCam() {
 			}
 		}
 	}
+
 	m_isPlaying = true;
 
 	return true;
@@ -136,11 +146,13 @@ bool KillCamReceiverSystem::startKillCam() {
 
 void KillCamReceiverSystem::stopMyKillCam() {
 	m_slowMotionState = SlowMotionSetting::DISABLE;
+
 	m_isPlaying = false;
+	m_trackingProjectile = false;
+
 	m_killingProjectileID = Netcode::UNINITIALIZED;
 	m_killerPlayer = nullptr;
 	m_killerProjectile = nullptr;
-	m_trackingProjectile = false;
 
 	m_projectilePos = { 0,0,0 };
 	m_killerHeadPos = { 0,0,0 };
@@ -148,6 +160,7 @@ void KillCamReceiverSystem::stopMyKillCam() {
 
 	// Make all players pick their candles up so that they'll be in the correct state in the final killcam
 	for (auto e : entities) {
+		e->getComponent<ReplayReceiverComponent>()->m_wasAlive = true;
 		if (e->hasComponent<PlayerComponent>()) {
 			setCandleState(e->getComponent<ReplayReceiverComponent>()->m_id, true);
 		}
@@ -157,6 +170,9 @@ void KillCamReceiverSystem::stopMyKillCam() {
 			transform->setStartTranslation(glm::vec3(0.f, -10.f, 0.f));
 		}
 	}
+
+	SAIL_LOG_WARNING("STOPMYKILLCAM CALLED");
+
 }
 
 
@@ -201,7 +217,7 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 	AnimationComponent* animation = m_killerPlayer->getComponent<AnimationComponent>();
 	TransformComponent* transform = m_killerPlayer->getComponent<TransformComponent>();
 
-	if (m_killerPlayer != nullptr) {
+	if (m_killerPlayer != nullptr && m_killerPlayer->getComponent<ReplayReceiverComponent>()->m_wasAlive) {
 		m_killerHeadPos = transform->getRenderMatrix(alpha) * glm::vec4(animation->headPositionLocalCurrent, 1.f);
 	}
 
@@ -282,6 +298,12 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 		m_killingProjectileID = e.killingProjectile;
 		m_isFinalKillCam = e.finalKillCam;
 
+		if (m_isFinalKillCam) {
+			SAIL_LOG_WARNING("FINAL KILLCAM STARTED");
+		} else {
+			SAIL_LOG_WARNING("NORMAL KILLCAM STARTED");
+		}
+
 		startKillCam();
 	};
 
@@ -297,6 +319,7 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 	case Event::Type::TOGGLE_SLOW_MOTION: onToggleSlowMotion((const ToggleSlowMotionReplayEvent&)event); break;
 	case Event::Type::TORCH_NOT_HELD:     onTorchNotHeld((const TorchNotHeldEvent&)event); break;
 	case Event::Type::START_KILLCAM:      onStartKillCam((const StartKillCamEvent&)event); break;
+	case Event::Type::STOP_KILLCAM:       stopMyKillCam(); break;
 	default: break;
 	}
 
@@ -368,7 +391,18 @@ void KillCamReceiverSystem::igniteCandle(const Netcode::ComponentID candleID) {
 void KillCamReceiverSystem::matchEnded() {}
 
 void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const KillInfo& info) {
-	//destroyEntity(networkIdOfKilled);
+	// Move dead replay copies of players and their torches/guns under the map and ignore all their future messages
+	if (auto e = findFromNetID(networkIdOfKilled); e) {
+		for (auto c : e->getChildEntities()) {
+			if (ReplayReceiverComponent* rrc = c->getComponent<ReplayReceiverComponent>(); rrc)
+			rrc->m_wasAlive = false;
+			c->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.f, -10.f, 0.f));
+
+		}
+		e->getComponent<ReplayReceiverComponent>()->m_wasAlive = false;
+		e->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.f, -10.f, 0.f));
+	}
+	SAIL_LOG_WARNING("playerDied called but no matching entity found");
 	
 	//if (auto e = findFromNetID(networkIdOfKilled); e) {
 	//	EventDispatcher::Instance().emit(PlayerDiedEvent(
@@ -383,7 +417,7 @@ void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKil
 }
 
 void KillCamReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
-	if (auto e = findFromNetID(id); e) {
+	if (auto e = findFromNetID(id); e && e->getComponent<ReplayReceiverComponent>()->m_wasAlive) {
 		auto animation = e->getComponent<AnimationComponent>();
 		if (animation) {
 			animation->setAnimation(info.index);
@@ -471,27 +505,27 @@ void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const 
 
 // Might need some optimization (like sorting) if we have a lot of networked entities
 void KillCamReceiverSystem::setLocalPosition(const Netcode::ComponentID id, const glm::vec3& translation) {
-	if (auto e = findFromNetID(id); e) {
+	if (auto e = findFromNetID(id); e && e->getComponent<ReplayReceiverComponent>()->m_wasAlive) {
 		e->getComponent<TransformComponent>()->setTranslation(translation);
 		return;
 	}
-	SAIL_LOG_WARNING("setLocalPosition called but no matching entity found");
+	//SAIL_LOG_WARNING("setLocalPosition called but no matching entity found");
 }
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rotation) {
-	if (auto e = findFromNetID(id); e) {
+	if (auto e = findFromNetID(id); e && e->getComponent<ReplayReceiverComponent>()->m_wasAlive) {
 		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
 	}
-	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
+	//SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::quat& rotation) {
-	if (auto e = findFromNetID(id); e) {
+	if (auto e = findFromNetID(id); e && e->getComponent<ReplayReceiverComponent>()->m_wasAlive) {
 		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
 	}
-	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
+	//SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
 // SHOULD REMAIN EMPTY FOR THE KILLCAM

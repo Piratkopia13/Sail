@@ -685,11 +685,6 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 }
 
 void GameState::onStartKillCam(const StartKillCamEvent& event) {
-	// Stop our killcam if it's playing (either because we stopped it or because the final killcam is starting)
-	if (m_isInKillCamMode) {
-		m_componentSystems.killCamReceiverSystem->stopMyKillCam();
-	}
-	
 	m_isInKillCamMode = true;
 
 	const Netcode::PlayerID killer = Netcode::getComponentOwner(event.killingProjectile);
@@ -706,7 +701,6 @@ void GameState::onStartKillCam(const StartKillCamEvent& event) {
 }
 
 void GameState::onStopKillCam(const StopKillCamEvent& event) {
-	m_componentSystems.killCamReceiverSystem->stopMyKillCam();
 	m_isInKillCamMode = false;
 }
 

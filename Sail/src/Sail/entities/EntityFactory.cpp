@@ -522,6 +522,9 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* 
 	fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);*/
 	// =========[END] Create states and transitions===========
 
+	// REPLAY COPY OF THE ENTITY
+	CreateReplayCleaningBot(compID);
+
 	return e;
 }
 
@@ -591,6 +594,30 @@ Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const Project
 	e->addComponent<RenderInReplayComponent>();
 
 	return e;
+}
+
+Entity::SPtr EntityFactory::CreateReplayCleaningBot(Netcode::ComponentID compID) {
+	Entity::SPtr replayBot = ECS::Instance()->createEntity("ReplayBot");
+	replayBot->tryToAddToSystems = false;
+
+	std::string modelName = "CleaningBot.fbx";
+	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
+	botModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
+	botModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
+	botModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/CleaningRobot/CleaningBot_NM.dds");
+	botModel->setIsAnimated(false);
+
+	replayBot->addComponent<ModelComponent>(botModel);
+	replayBot->addComponent<TransformComponent>(glm::vec3(0.f, -10.f, 0.f));
+
+	replayBot->addComponent<ReplayReceiverComponent>(compID, Netcode::EntityType::PLAYER_ENTITY);
+
+	ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(replayBot.get());
+
+	// Note: The RenderInReplayComponent is added to these entities once KillCamReceiverSystem start running so don't
+	//       add those components here
+	
+	return Entity::SPtr();
 }
 
 Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size) {

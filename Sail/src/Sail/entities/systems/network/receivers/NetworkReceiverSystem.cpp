@@ -29,6 +29,11 @@ static std::ofstream out("LogFiles/NetworkReceiverSystem.cpp.log");
 #endif
 
 
+// FOR DEBUGGING: Disable warnings in this file
+#undef SAIL_LOG_WARNING
+#define SAIL_LOG_WARNING( message ) ;
+
+
 // TODO: register more components
 NetworkReceiverSystem::NetworkReceiverSystem() : ReceiverBase() {
 	registerComponent<NetworkReceiverComponent>(true, true, true);
