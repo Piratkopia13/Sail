@@ -463,6 +463,12 @@ unsigned int ResourceManager::calculateMiscByteSize() const {
 unsigned int ResourceManager::calculateShaderByteSize() const {
 	unsigned int size = 0;
 
+	size += sizeof(std::pair<std::string, Shader*>) * m_shaderSets.size();
+	for (auto& [key, val] : m_shaderSets) {
+		size += sizeof(unsigned char) * key.capacity();
+		size += val->getByteSize();	// TODO: Make this work
+	}
+
 	return size;
 }
 
