@@ -83,7 +83,7 @@ bool DX12API::init(Window* window) {
 void DX12API::createDevice() {
 
 	DWORD dxgiFactoryFlags = 0;
-#ifdef _DEBUG
+//#ifdef _DEBUG
 	//Enable the D3D12 debug layer.
 	wComPtr<ID3D12Debug1> debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
@@ -102,8 +102,8 @@ void DX12API::createDevice() {
 	);
 	// PIX programmic capture control
 	// Will fail if program is not launched from pix
-	DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pixGa));
-#endif
+	//DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pixGa));
+//#endif
 
 
 	// 2. Find comlient adapter and create device
