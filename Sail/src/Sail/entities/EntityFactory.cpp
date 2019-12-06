@@ -239,12 +239,12 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 	replayPlayer->addComponent<ReplayReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 
 	// Remove components that shouldn't be used by entities in the killcam
-	replayPlayer->removeComponent<CollidableComponent>();
+	//replayPlayer->removeComponent<CollidableComponent>();
 	replayPlayer->removeComponent<SpeedLimitComponent>();
 	replayPlayer->removeComponent<SanityComponent>();
 	replayPlayer->removeComponent<AudioComponent>(); // TODO: Remove this line when we start having audio in the killcam
 	replayPlayer->removeComponent<GunComponent>();
-	replayPlayer->removeComponent<BoundingBoxComponent>();
+	//replayPlayer->removeComponent<BoundingBoxComponent>();
 
 
 	// So that we can get their camera positions in the replay
@@ -260,12 +260,12 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 		if (c->getName() == replayPlayer->getName() + "WaterGun") {
 			c->addComponent<ReplayReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
 			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
-			c->removeComponent<BoundingBoxComponent>();
+			//c->removeComponent<BoundingBoxComponent>();
 		}
 		if (c->hasComponent<CandleComponent>()) {
 			c->addComponent<ReplayReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
-			c->removeComponent<CollidableComponent>();
-			c->removeComponent<BoundingBoxComponent>();
+			//c->removeComponent<CollidableComponent>();
+			//c->removeComponent<BoundingBoxComponent>();
 			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
 		}
 	}
@@ -568,6 +568,8 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 	movement->velocity = info.velocity;
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
+
+	// IF YOU CHANGE THIS PLEASE CHANGE IT FOR THE REPLAYPROJECTILE TOO
 	CollisionComponent* collision = e->addComponent<CollisionComponent>();
 	collision->drag = 15.0f;
 	// NOTE: 0.0f <= Bounciness <= 1.0f
@@ -580,6 +582,8 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 }
 
 Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const ProjectileArguments& info) {
+	constexpr float radius = 0.075f; // the radius of the projectile's hitbox (in meters)
+
 	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
@@ -590,6 +594,12 @@ Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const Project
 	MovementComponent* movement = e->addComponent<MovementComponent>();
 	movement->velocity = info.velocity;
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
+
+	CollisionComponent* collision = e->addComponent<CollisionComponent>();
+	collision->drag = 15.0f;
+	// NOTE: 0.0f <= Bounciness <= 1.0f
+	collision->bounciness = 0.0f;
+	collision->padding = radius;
 
 	e->addComponent<RenderInReplayComponent>();
 

@@ -337,7 +337,8 @@ void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
 
 		// Only destroy projectiles atm
-		if (e->hasComponent<ProjectileComponent>()) {
+		if (e->getComponent<ReplayReceiverComponent>()->m_entityType == Netcode::EntityType::PROJECTILE_ENTITY) {
+			e->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(100.f, -10.f, 0.f));
 			e->queueDestruction();
 		}
 		

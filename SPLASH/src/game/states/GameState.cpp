@@ -97,6 +97,7 @@ GameState::GameState(StateStack& stack)
 
 	//Create octree
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
+	m_killCamOctree = SAIL_NEW Octree(boundingBoxModel);
 	//-----------------------
 
 	m_renderSettingsWindow.activateMaterialPicking(&m_cam, m_octree);
@@ -276,7 +277,9 @@ GameState::~GameState() {
 
 	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("GameState");
 	shutDownGameState();
-	delete m_octree;
+
+	Memory::SafeDelete(m_octree);
+	Memory::SafeDelete(m_killCamOctree);
 
 	m_app->getChatWindow()->setFadeThreshold(-1.0f);
 	m_app->getChatWindow()->setFadeTime(-1.0f);
@@ -447,7 +450,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.powerUpUpdateSystem = ECS::Instance()->createSystem<PowerUpUpdateSystem>();
 
-	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
+	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
 
 	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<RenderInActiveGameComponent>>();
@@ -459,7 +462,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
 
-	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
+	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
 	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
 
@@ -558,6 +561,13 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.killCamModelSubmitSystem           = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementSystem              = ECS::Instance()->createSystem<MovementSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<RenderInReplayComponent>>();
+
+	m_componentSystems.killCamCollisionSystem = ECS::Instance()->createSystem<CollisionSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamCollisionSystem->provideOctree(m_killCamOctree);
+
+	m_componentSystems.killCamOctreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamOctreeAddRemoverSystem->provideOctree(m_killCamOctree);
+	m_componentSystems.killCamOctreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
 }
 
 void GameState::initConsole() {
@@ -689,14 +699,30 @@ void GameState::onStartKillCam(const StartKillCamEvent& event) {
 
 	const Netcode::PlayerID killer = Netcode::getComponentOwner(event.killingProjectile);
 
+	SettingStorage& settings = m_app->getSettings();
+	NWrapperSingleton& NW = NWrapperSingleton::getInstance();
+
+	char killerTeam = NW.getPlayer(killer)->team;
+	glm::vec3 col = settings.getColor(settings.teamColorIndex(killer));
+	m_killerColor = ImVec4(col.r, col.g, col.b, 1.f);
+	m_killCamKillerText = NW.getPlayer(killer)->name;
+
 	// TODO: player colors
 	if (event.finalKillCam) {
+		m_isFinalKillCam = true;
 		m_killCamTitle = "ROUND WINNING SPLASH";
-		m_killCamText = NWrapperSingleton::getInstance().getPlayer(killer)->name + " eliminated " 
-			+ NWrapperSingleton::getInstance().getPlayer(event.deadPlayer)->name + " and won the match!";
+		m_killCamVictimText = NW.getPlayer(event.deadPlayer)->name;
+
+		char victimTeam = NW.getPlayer(event.deadPlayer)->team;
+		col = settings.getColor(settings.teamColorIndex(event.deadPlayer));
+		m_victimColor = ImVec4(col.r, col.g, col.b, 1.f);
+		//m_killCamText = NW.getPlayer(killer)->name + " eliminated " 
+		//	+ NW.getPlayer(event.deadPlayer)->name + " and won the match!";
 	} else {
+		m_isFinalKillCam = false;
 		m_killCamTitle = "SPLASHCAM";
-		m_killCamText = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(killer)->name;
+		//m_killCamText = "You were eliminated by " + NW.getPlayer(killer)->name;
+
 	}
 }
 
@@ -884,11 +910,37 @@ bool GameState::renderImgui(float dt) {
 		ImGui::End();
 
 
+		const ImVec4 textColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 		if (ImGui::Begin("##KILLCAMKILLEDBY", nullptr, m_standaloneButtonflags)) {
 			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb30"));
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.f));
-			ImGui::Text(m_killCamText.c_str());
-			ImGui::PopStyleColor(1);
+
+
+			if (m_isFinalKillCam) {
+				ImGui::PushStyleColor(ImGuiCol_Text, m_killerColor);
+				ImGui::Text(m_killCamKillerText.c_str());
+				ImGui::PopStyleColor(1);
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text, textColor);
+				ImGui::Text("eliminated");
+				ImGui::PopStyleColor(1);
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text, m_victimColor);
+				ImGui::Text(m_killCamVictimText.c_str());
+				ImGui::PopStyleColor(1);
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text, textColor);
+				ImGui::Text("and won the round!");
+				ImGui::PopStyleColor(1);
+			} else {
+				ImGui::PushStyleColor(ImGuiCol_Text, textColor);
+				ImGui::Text("You were eliminated by");
+				ImGui::PopStyleColor(1);
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text, m_killerColor);
+				ImGui::Text(m_killCamKillerText.c_str());
+				ImGui::PopStyleColor(1);
+			}
+			
 			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, m_app->getWindow()->getWindowHeight() - height / 2 - (ImGui::GetWindowSize().y / 2)));
 			ImGui::PopFont();
 		}
@@ -930,7 +982,9 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
 	m_componentSystems.killCamMovementSystem->update(dt);
+	m_componentSystems.killCamCollisionSystem->update(dt);
 	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
+	m_componentSystems.killCamOctreeAddRemoverSystem->update(dt);
 }
 
 // HERE BE DRAGONS

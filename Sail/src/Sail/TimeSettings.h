@@ -3,8 +3,7 @@
 #ifdef _DEBUG
 constexpr size_t TICKRATE = 32;
 #else
-constexpr size_t TICKRATE = 64/2;
-//constexpr size_t TICKRATE = 16;
+constexpr size_t TICKRATE = 64;
 #endif
 
 

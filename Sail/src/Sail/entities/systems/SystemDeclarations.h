@@ -13,7 +13,6 @@ class BoundingboxSubmitSystem;
 class CandleHealthSystem;
 class CandlePlacementSystem;
 class CandleReignitionSystem;
-class CollisionSystem;
 class EndFrameSystem;
 class EntityAdderSystem;
 class EntityRemovalSystem;
@@ -28,7 +27,6 @@ class LifeTimeSystem;
 class LightListSystem;
 class NetworkReceiverSystem;
 class NetworkSenderSystem;
-class OctreeAddRemoverSystem;
 class ParticleSystem;
 class PlayerSystem;
 class PowerUpUpdateSystem;
@@ -52,6 +50,8 @@ class CrosshairSystem;
 template <typename T>
 class AnimationSystem;
 template <typename T>
+class CollisionSystem;
+template <typename T>
 class LightSystem;
 template <typename T>
 class MetaballSubmitSystem;
@@ -61,6 +61,8 @@ template <typename T>
 class MovementSystem;
 template <typename T>
 class MovementPostCollisionSystem;
+template <typename T>
+class OctreeAddRemoverSystem;
 
 struct Systems {
 	AnimationChangerSystem*    animationChangerSystem    = nullptr;
@@ -72,7 +74,6 @@ struct Systems {
 	CandlePlacementSystem*     candlePlacementSystem     = nullptr;
 	CandleReignitionSystem*    candleReignitionSystem    = nullptr;
 	CandleThrowingSystem*      candleThrowingSystem      = nullptr;
-	CollisionSystem*           collisionSystem           = nullptr;
 	CrosshairSystem*           crosshairSystem           = nullptr;
 	EndFrameSystem*            endFrameSystem            = nullptr;
 	EntityAdderSystem*         entityAdderSystem         = nullptr;
@@ -87,7 +88,6 @@ struct Systems {
 	LightListSystem*           lightListSystem           = nullptr;
 	NetworkReceiverSystem*     networkReceiverSystem     = nullptr;
 	NetworkSenderSystem*       networkSenderSystem       = nullptr;
-	OctreeAddRemoverSystem*    octreeAddRemoverSystem    = nullptr;
 	ParticleSystem*            particleSystem            = nullptr;
 	PlayerSystem*              playerSystem              = nullptr;
 	PowerUpUpdateSystem*       powerUpUpdateSystem       = nullptr;
@@ -108,6 +108,8 @@ struct Systems {
 	// Systems that need duplicate versions for the killcam
 	AnimationSystem<RenderInActiveGameComponent>*             animationSystem                    = nullptr;
 	AnimationSystem<RenderInReplayComponent>*                 killCamAnimationSystem             = nullptr;
+	CollisionSystem<RenderInActiveGameComponent>*             collisionSystem                    = nullptr;
+	CollisionSystem<RenderInReplayComponent>*                 killCamCollisionSystem             = nullptr;
 	LightSystem<RenderInActiveGameComponent>*                 lightSystem                        = nullptr;
 	LightSystem<RenderInReplayComponent>*                     killCamLightSystem                 = nullptr;
 	MetaballSubmitSystem<RenderInActiveGameComponent>*        metaballSubmitSystem               = nullptr;
@@ -118,4 +120,6 @@ struct Systems {
 	MovementSystem<RenderInReplayComponent>*                  killCamMovementSystem              = nullptr;
 	MovementPostCollisionSystem<RenderInActiveGameComponent>* movementPostCollisionSystem        = nullptr;
 	MovementPostCollisionSystem<RenderInReplayComponent>*     killCamMovementPostCollisionSystem = nullptr;
+	OctreeAddRemoverSystem<RenderInActiveGameComponent>*      octreeAddRemoverSystem             = nullptr;
+	OctreeAddRemoverSystem<RenderInReplayComponent>*          killCamOctreeAddRemoverSystem      = nullptr;
 };
