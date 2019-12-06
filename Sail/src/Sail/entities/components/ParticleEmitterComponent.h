@@ -33,6 +33,7 @@ public:
 	float lifeTime;
 	float spawnRate;
 	float spawnTimer;
+	bool isActive;
 
 
 #ifdef DEVELOPMENT

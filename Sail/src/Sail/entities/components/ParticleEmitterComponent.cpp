@@ -23,6 +23,7 @@ ParticleEmitterComponent::ParticleEmitterComponent()
 	spawnRate = 0.1f;
 	spawnTimer = 0.0f;
 	atlasSize = glm::uvec2(1U, 1U);
+	isActive = false;
 
 	init();
 }
@@ -124,7 +125,7 @@ void ParticleEmitterComponent::updateTimers(float dt) {
 		}
 	}
 
-	if (spawnTimer >= spawnRate) {
+	if (spawnTimer >= spawnRate && isActive) {
 		//Spawn the correct number of particles
 		int particlesToSpawn = (int)glm::floor(spawnTimer / glm::max(spawnRate, 0.0001f));
 		spawnParticles(particlesToSpawn);

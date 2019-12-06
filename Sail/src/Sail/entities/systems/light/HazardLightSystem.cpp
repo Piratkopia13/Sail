@@ -47,6 +47,9 @@ void HazardLightSystem::updateLights(LightSetup* lightSetup, float alpha, float 
 		}
 
 		// Update active lights
+		if (emitter->isActive) {
+			continue;
+		}
 		if (!sc->isOn) {
 			continue;
 		}
@@ -62,6 +65,8 @@ void HazardLightSystem::updateLights(LightSetup* lightSetup, float alpha, float 
 		}
 		else {
 			ac->m_sounds[Audio::SoundType::SPRINKLER_WATER].isPlaying = true;
+			emitter->isActive = true;
+			sc->isOn = false;
 		}
 
 
