@@ -1,3 +1,4 @@
+CleaningBot.fbx
 Clutter/Books1.fbx
 Clutter/Books1.fbx1
 Clutter/Boxes.fbx

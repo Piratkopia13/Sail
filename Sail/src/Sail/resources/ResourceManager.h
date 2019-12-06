@@ -96,6 +96,7 @@ public:
 		SAIL_LOG("Reloaded shader " + name);
 	}
 
+	FBXLoader* getFBXLoader() const;
 
 	const unsigned int numberOfModels() const;
 	const unsigned int numberOfTextures() const;

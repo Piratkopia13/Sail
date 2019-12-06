@@ -14,7 +14,7 @@
 #include <iostream>
 #include <fstream>
 
-#define USE_ONLY_THIS_TEXTURE "missing.tga"
+//#define USE_ONLY_THIS_TEXTURE "missing.tga"
 
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
@@ -272,6 +272,10 @@ AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) 
 
 bool ResourceManager::hasAnimationStack(const std::string& fileName) {
 	return false;
+}
+
+FBXLoader* ResourceManager::getFBXLoader() const {
+	return m_fbxLoader.get();
 }
 
 const unsigned int ResourceManager::numberOfModels() const {

@@ -28,7 +28,7 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 	rm->loadShaderSet<WireframeShader>();
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 
-	//Sleep(1000000);
+	//Sleep(5000000);
 }
 
 SplashScreenState::~SplashScreenState() {
@@ -57,13 +57,14 @@ bool SplashScreenState::onEvent(const Event& event) {
 }
 
 bool SplashScreenState::loadModels(Application* app) {
-	Sleep(2000);		// Used for observing when the RAM spike happens
 
 	ResourceManager* rm = &app->getResourceManager();
 
 	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
 
-	Sleep(2000);		// Used for observing when the RAM spike happens
+	//Sleep(1000000);		// Used for observing when the RAM spike happens
+
+	//loadTextures(m_app);
 
 //#ifndef _DEBUG
 	rm->loadModel("Doc.fbx");
@@ -90,6 +91,8 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Clutter/CloningVats.fbx");
 	rm->loadModel("Clutter/ControlStation.fbx");
 	rm->loadModel("CleaningBot.fbx");
+
+
 
 
 	//LEAVE THIS FOR A MULTITHREADED FUTURE

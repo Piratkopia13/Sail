@@ -67,6 +67,9 @@ pbr/DDS/Clutter/CloningVats_NM.dds
 pbr/DDS/Clutter/ControlStation_Albedo.dds
 pbr/DDS/Clutter/ControlStation_MRAO.dds
 pbr/DDS/Clutter/ControlStation_NM.dds
+pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds
+pbr/DDS/CleaningRobot/CleaningBot_NM.dds
+pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds
 pbr/DDS/Doc/Doc_Albedo.dds
 pbr/DDS/Doc/Doc_MRAO.dds
 pbr/DDS/Doc/Doc_NM.dds
@@ -74,6 +77,7 @@ pbr/DDS/WaterGun/Watergun_Albedo.dds
 pbr/DDS/WaterGun/Watergun_MRAO.dds
 pbr/DDS/WaterGun/Watergun_NM.dds
 particles/animFire.dds
+particles/animSmoke.dds
 Icons/TorchLeft.tga
 Icons/TorchThrow2.tga
 Icons/PlayersLeft.tga
