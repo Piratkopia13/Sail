@@ -37,6 +37,7 @@ void DX12VertexBuffer::init(void* data) {
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	auto numSwapBuffers = m_context->getNumGPUBuffers();
 
+	m_initFrameCount = 0;
 	m_hasBeenUpdated.resize(numSwapBuffers, false);
 	m_hasBeenInitialized.resize(numSwapBuffers, false);
 	m_uploadVertexBuffers.resize(numSwapBuffers);
@@ -128,14 +129,10 @@ void DX12VertexBuffer::resetHasBeenUpdated() {
 bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 	// This method is called at least once every frame that this texture is used for rendering
 
-	static unsigned int frameNumber = 0;
-	frameNumber++;
-	static unsigned int initFrameNumber = 0;
-
 	for (unsigned int i = 0; i < m_context->getNumGPUBuffers(); i++) {
 		if (m_hasBeenInitialized[i]) {
-			// Release the upload heap as soon as the texture has been uploaded to the GPU
-			if (!m_allowCpuUpdates && m_uploadVertexBuffers[i] && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
+			// Release the upload heap as soon as the texture has been uploaded to the GPU, but make sure it doesnt happen on the same frame as the upload
+			if (!m_allowCpuUpdates && m_uploadVertexBuffers[i] && m_initFrameCount != m_context->getFrameCount() && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
 				m_uploadVertexBuffers[i].ReleaseAndGetAddressOf();
 			}
 			continue;
@@ -156,6 +153,7 @@ bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 			m_queueUsedForUpload->scheduleSignal([this](UINT64 signaledValue) {
 				m_initFenceVal = signaledValue;
 			});
+			m_initFrameCount = m_context->getFrameCount();
 		}
 
 		m_hasBeenInitialized[i] = true;

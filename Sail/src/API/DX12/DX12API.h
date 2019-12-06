@@ -12,11 +12,11 @@
 #include <d3d12.h>
 #include <dxgi1_6.h> // Only used for initialization of the device and swap chain
 #include <d3dcompiler.h>
-//#ifdef _DEBUG
+#ifdef _DEBUG
 #include <initguid.h>
 #include <DXGIDebug.h>
 #include <DXProgrammableCapture.h>
-//#endif
+#endif
 #include "Sail/api/GraphicsAPI.h"
 #include <map>
 
@@ -118,6 +118,7 @@ public:
 	const D3D12_RECT* getScissorRect() const;
 	CommandQueue* getComputeQueue() const;
 	CommandQueue* getDirectQueue() const;
+	unsigned int getFrameCount() const; // Returns the number of elapsed frames
 
 #ifdef _DEBUG
 	void beginPIXCapture() const;
@@ -156,12 +157,13 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentRenderTargetCDH;
 	ID3D12Resource* m_currentRenderTargetResource;
 	float m_clearColor[4];
+	unsigned int m_frameCount;
 
 	wComPtr<ID3D12Device5> m_device;
-//#ifdef _DEBUG
+#ifdef _DEBUG
 	wComPtr<IDXGIFactory2> m_dxgiFactory;
 	wComPtr<IDXGraphicsAnalysis> m_pixGa;
-//#endif
+#endif
 	// Only used for initialization
 	IDXGIFactory6* m_factory;
 	IDXGIAdapter3* m_adapter3;

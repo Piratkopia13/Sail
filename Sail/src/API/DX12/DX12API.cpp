@@ -23,6 +23,7 @@ DX12API::DX12API()
 	, m_windowedMode(true)
 	, m_directQueueFenceValues()
 	, m_computeQueueFenceValues()
+	, m_frameCount(0)
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
 }
@@ -83,7 +84,7 @@ bool DX12API::init(Window* window) {
 void DX12API::createDevice() {
 
 	DWORD dxgiFactoryFlags = 0;
-//#ifdef _DEBUG
+#ifdef _DEBUG
 	//Enable the D3D12 debug layer.
 	wComPtr<ID3D12Debug1> debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
@@ -102,8 +103,8 @@ void DX12API::createDevice() {
 	);
 	// PIX programmic capture control
 	// Will fail if program is not launched from pix
-	//DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pixGa));
-//#endif
+	DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pixGa));
+#endif
 
 
 	// 2. Find comlient adapter and create device
@@ -457,6 +458,7 @@ void DX12API::nextFrame() {
 		getComputeGPUDescriptorHeap()->setIndex(0);
 	}
 	EventDispatcher::Instance().emit(NewFrameEvent());
+	m_frameCount++;
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {
@@ -684,6 +686,10 @@ DX12API::CommandQueue* DX12API::getComputeQueue() const {
 
 DX12API::CommandQueue* DX12API::getDirectQueue() const {
 	return m_directCommandQueue.get();
+}
+
+unsigned int DX12API::getFrameCount() const {
+	return m_frameCount;
 }
 
 #ifdef _DEBUG

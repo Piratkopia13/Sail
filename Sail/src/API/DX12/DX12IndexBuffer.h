@@ -18,6 +18,7 @@ private:
 	std::vector<wComPtr<ID3D12Resource>> m_uploadIndexBuffers;
 	DX12API::CommandQueue* m_queueUsedForUpload;
 	UINT64 m_initFenceVal;
+	unsigned int m_initFrameCount;
 
 	std::vector<wComPtr<ID3D12Resource>> m_defaultIndexBuffers;
 	std::vector<bool> m_hasBeenInitialized;

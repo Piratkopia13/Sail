@@ -75,8 +75,8 @@ bool DX12IndexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 
 	for (unsigned int i = 0; i < m_context->getNumGPUBuffers(); i++) {
 		if (m_hasBeenInitialized[i]) {
-			// Release the upload heap as soon as the texture has been uploaded to the GPU
-			if (m_uploadIndexBuffers[i] && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
+			// Release the upload heap as soon as the texture has been uploaded to the GPU, but make sure it doesnt happen on the same frame as the upload
+			if (m_uploadIndexBuffers[i] && m_initFrameCount != m_context->getFrameCount() && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
 				m_uploadIndexBuffers[i].ReleaseAndGetAddressOf();
 			}
 			continue;
@@ -96,6 +96,7 @@ bool DX12IndexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 			m_queueUsedForUpload->scheduleSignal([this](UINT64 signaledValue) {
 				m_initFenceVal = signaledValue;
 			});
+			m_initFrameCount = m_context->getFrameCount();
 		}
 
 		m_hasBeenInitialized[i] = true;
