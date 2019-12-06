@@ -40,7 +40,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer(DX12RenderableTexture** inputs)
 	// Initialize textures used for soft shadows if setting is enabled
 	m_hardShadowsLastFrame = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 0.f;
 	if (!m_hardShadowsLastFrame) {
-		createSoftShadowsTextures();
+		createSoftShadowsTextures(0);
 	}
 
 	m_brdfTexture = static_cast<DX12Texture*>(&app->getResourceManager().getTexture("pbr/brdfLUT.tga"));
@@ -210,8 +210,8 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 			m_shadowsLastFrame.reset();
 			
 		} else {
-			// Create all textures
-			createSoftShadowsTextures();
+			// Create all textures§§
+			createSoftShadowsTextures(m_numShadowTextures);
 		}
 	}
 	m_hardShadowsLastFrame = hardShadows;
