@@ -92,7 +92,7 @@ void EntityFactory::AddCandleComponentsToPlayer(Entity::SPtr& player, const size
 	for (Entity* c : player->getChildEntities()) {
 		if (c->getName() == player->getName() + "Candle") {
 			c->addComponent<CandleComponent>()->playerEntityID = playerID;
-			c->addComponent<CollidableComponent>();
+			c->addComponent<CollidableComponent>(true);
 			c->addComponent<TeamComponent>()->team = NWrapperSingleton::getInstance().getPlayer(playerID)->team;
 		}
 	}
@@ -343,7 +343,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<TransformComponent>(spawnLocation);
 	playerEntity->addComponent<CullingComponent>();
 	playerEntity->addComponent<ModelComponent>(characterModel);
-	playerEntity->addComponent<CollidableComponent>();
+	playerEntity->addComponent<CollidableComponent>(true);
 	playerEntity->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
 	playerEntity->addComponent<SanityComponent>()->sanity = 100.0f;
 	playerEntity->addComponent<SprintingComponent>();
