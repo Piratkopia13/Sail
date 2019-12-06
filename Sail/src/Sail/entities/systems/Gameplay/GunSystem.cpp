@@ -103,7 +103,7 @@ unsigned int GunSystem::getByteSize() const {
 #endif
 
 void GunSystem::alterProjectileSpeed(GunComponent* gun) {
-	gun->projectileSpeed = gun->baseProjectileSpeed + (gun->projectileSpeedRange * (gun->gunOverloadvalue/gun->gunOverloadThreshold));
+	gun->projectileSpeed = gun->baseProjectileSpeed;// +(gun->projectileSpeedRange * (gun->gunOverloadvalue / gun->gunOverloadThreshold));
 }
 
 void GunSystem::fireGun(Entity* e, GunComponent* gun, PowerUpComponent* powC) {

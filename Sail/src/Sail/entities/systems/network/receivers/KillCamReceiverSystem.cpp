@@ -79,10 +79,11 @@ void KillCamReceiverSystem::stop() {
 	m_myKillCamData.clear();
 
 	m_slowMotionState = SlowMotionSetting::DISABLE;
-	m_hasStarted      = false;
-	m_isFinalKillCam    = false;
+	m_hasInitialized     = false;
+	m_isPlaying         = false;
+	m_isFinalKillCam     = false;
 	m_killCamTickCounter = 0;
-	m_idOfKillingProjectile = Netcode::UNINITIALIZED;
+	m_killingProjectileID = Netcode::UNINITIALIZED;
 	m_killerPlayer       = nullptr;
 	m_killerProjectile   = nullptr;
 	m_trackingProjectile = false;
@@ -92,18 +93,27 @@ void KillCamReceiverSystem::stop() {
 	m_killerHeadPos = { 0,0,0 };
 }
 
+// Only needs to be done once
+// This will add the replay entities to all relevant systems. Before this function is called the entities only exist
+// in this system.
+void KillCamReceiverSystem::initEntities() {
+	for (auto e : entities) {
+		e->tryToAddToSystems = true;
+		e->addComponent<RenderInReplayComponent>();
+	}
+	m_hasInitialized = true;
+}
+
+
+// Needs to be done when the killcam starts (both the player's own and the final one)
 bool KillCamReceiverSystem::startKillCam() {
-	const Netcode::PlayerID killerID = Netcode::getComponentOwner(m_idOfKillingProjectile);
+	const Netcode::PlayerID killerID = Netcode::getComponentOwner(m_killingProjectileID);
 
 	// Copy the past few seconds to data that we'll read from for our own killcam
 	m_myKillCamData = m_replayData;
 
 	for (auto e : entities) {
 		const Netcode::ComponentID compID = e->getComponent<ReplayReceiverComponent>()->m_id;
-
-		e->tryToAddToSystems = true;
-		e->addComponent<RenderInReplayComponent>();
-
 
 		if (e->hasComponent<PlayerComponent>()) {
 			if (killerID == Netcode::getComponentOwner(compID)) {
@@ -119,21 +129,34 @@ bool KillCamReceiverSystem::startKillCam() {
 			}
 		}
 	}
-	m_hasStarted = true;
+	m_isPlaying = true;
 
 	return true;
 }
 
 void KillCamReceiverSystem::stopMyKillCam() {
 	m_slowMotionState = SlowMotionSetting::DISABLE;
-	m_hasStarted = false;
-	m_idOfKillingProjectile = Netcode::UNINITIALIZED;
+	m_isPlaying = false;
+	m_killingProjectileID = Netcode::UNINITIALIZED;
 	m_killerPlayer = nullptr;
 	m_killerProjectile = nullptr;
 	m_trackingProjectile = false;
 
 	m_projectilePos = { 0,0,0 };
 	m_killerHeadPos = { 0,0,0 };
+
+
+	// Make all players pick their candles up so that they'll be in the correct state in the final killcam
+	for (auto e : entities) {
+		if (e->hasComponent<PlayerComponent>()) {
+			setCandleState(e->getComponent<ReplayReceiverComponent>()->m_id, true);
+		}
+
+		// Move all entities back under the map so that "ghosts" don't appear in the final killcam
+		if (TransformComponent* transform = e->getComponent<TransformComponent>(); transform) {
+			transform->setStartTranslation(glm::vec3(0.f, -10.f, 0.f));
+		}
+	}
 }
 
 
@@ -171,7 +194,7 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 	};
 
 	// only update the camera's position if a player killed us
-	if (m_idOfKillingProjectile == Netcode::UNINITIALIZED || m_killerPlayer == nullptr) {
+	if (m_killingProjectileID == Netcode::UNINITIALIZED || m_killerPlayer == nullptr) {
 		return;
 	}
 
@@ -216,6 +239,7 @@ void KillCamReceiverSystem::processReplayData(float dt) {
 	// If we've reached the end of the killcam we should end it
 	if (m_myKillCamData.readIndex == m_myKillCamData.writeIndex) {
 		m_myKillCamData.clear();
+		m_isPlaying = false;
 
 		EventDispatcher::Instance().emit(StopKillCamEvent(m_isFinalKillCam));
 	}
@@ -240,6 +264,51 @@ unsigned int KillCamReceiverSystem::getByteSize() const {
 #endif
 
 
+
+
+
+
+bool KillCamReceiverSystem::onEvent(const Event& event) {
+	auto onStartKillCam = [&](const StartKillCamEvent& e) {
+		if (m_isFinalKillCam) { return; } // Ignore this event if we're already in the final killcam
+
+		if (!m_hasInitialized) {
+			initEntities();
+		} else {
+			stopMyKillCam();
+		}
+
+		// Note: PlayerSystem will have checked that this is the ID of a projectile for us
+		m_killingProjectileID = e.killingProjectile;
+		m_isFinalKillCam = e.finalKillCam;
+
+		startKillCam();
+	};
+
+	auto onToggleSlowMotion = [&](const ToggleSlowMotionReplayEvent& e) {
+		m_slowMotionState = e.setting;
+	};
+
+	auto onTorchNotHeld = [&](const TorchNotHeldEvent& e) {
+		m_notHoldingTorches[m_replayData.writeIndex].push_back(e.netCompID);
+	};
+
+	switch (event.type) {
+	case Event::Type::TOGGLE_SLOW_MOTION: onToggleSlowMotion((const ToggleSlowMotionReplayEvent&)event); break;
+	case Event::Type::TORCH_NOT_HELD:     onTorchNotHeld((const TorchNotHeldEvent&)event); break;
+	case Event::Type::START_KILLCAM:      onStartKillCam((const StartKillCamEvent&)event); break;
+	default: break;
+	}
+
+	return true;
+}
+
+
+
+
+
+
+
 // TODO: Move dead entities to under the map
 void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	if (auto e = findFromNetID(entityID); e) {
@@ -249,7 +318,7 @@ void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 			e->queueDestruction();
 		}
 		
-		if (entityID == m_idOfKillingProjectile) {
+		if (entityID == m_killingProjectileID) {
 			m_killerProjectile = nullptr;
 		}
 
@@ -455,7 +524,7 @@ void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	EntityFactory::CreateReplayProjectile(e, args);
 
 	// Start the slow motion when the killing projectile spawns
-	if (info.projectileID == m_idOfKillingProjectile) {
+	if (info.projectileID == m_killingProjectileID) {
 		m_slowMotionState = SlowMotionSetting::ENABLE;
 		m_trackingProjectile = true;
 		m_killerProjectile = e.get();
@@ -564,35 +633,3 @@ Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) cons
 }
 
 
-bool KillCamReceiverSystem::onEvent(const Event& event) {
-	auto onStartKillCam = [&](const StartKillCamEvent& e) {
-		if (m_isFinalKillCam) { return; } // Ignore this event if we're already in the final killcam
-
-		stopMyKillCam();
-
-		// Note: PlayerSystem will have checked that this is the ID of a projectile for us
-		m_idOfKillingProjectile = e.killingProjectile;
-		m_isFinalKillCam = e.finalKillCam;
-
-		startKillCam();
-	};
-
-	auto onToggleSlowMotion = [&](const ToggleSlowMotionReplayEvent& e) {
-		m_slowMotionState = e.setting;
-	};
-
-	auto onTorchNotHeld = [&](const TorchNotHeldEvent& e) {
-		if (!m_hasStarted) {
-			m_notHoldingTorches[m_replayData.writeIndex].push_back(e.netCompID);
-		}
-	};
-
-	switch (event.type) {
-	case Event::Type::TOGGLE_SLOW_MOTION: onToggleSlowMotion((const ToggleSlowMotionReplayEvent&)event); break;
-	case Event::Type::TORCH_NOT_HELD:     onTorchNotHeld((const TorchNotHeldEvent&)event); break;
-	case Event::Type::START_KILLCAM:      onStartKillCam((const StartKillCamEvent&)event); break;
-	default: break;
-	}
-
-	return true;
-}

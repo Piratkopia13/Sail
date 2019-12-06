@@ -38,6 +38,7 @@ public:
 	void updatePerFrame(float dt, float alpha);
 	void stop() override;
 
+	void initEntities();
 	bool startKillCam();
 	void stopMyKillCam();
 
@@ -54,6 +55,9 @@ public:
 	}
 #endif
 private:
+	bool onEvent(const Event& event) override;
+
+
 	void destroyEntity   (const Netcode::ComponentID entityID)                                       override;
 	void enableSprinklers()                                                                          override;
 	void endMatch        (const GameDataForOthersInfo& info)                                         override;
@@ -101,7 +105,6 @@ private:
 	Entity* findFromNetID(const Netcode::ComponentID id) const override;
 
 
-	bool onEvent(const Event& event) override;
 
 private:
 	struct NetcodeDataRingBuffer {
@@ -143,13 +146,14 @@ private:
 	// the same time
 	NetcodeDataRingBuffer m_myKillCamData;	
 
-	bool m_hasStarted   = false;
+	bool m_hasInitialized = false;
+	bool m_isPlaying      = false;
 	bool m_isFinalKillCam = false;
 
 	SlowMotionSetting m_slowMotionState = SlowMotionSetting::DISABLE;
 	size_t m_killCamTickCounter = 0; // Counts ticks in the range [ 0, SLOW_MO_MULTIPLIER )
 
-	Netcode::ComponentID m_idOfKillingProjectile = Netcode::UNINITIALIZED;
+	Netcode::ComponentID m_killingProjectileID = Netcode::UNINITIALIZED;
 
 	Entity* m_killerPlayer     = nullptr;
 	Entity* m_killerProjectile = nullptr;

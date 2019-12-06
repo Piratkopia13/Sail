@@ -408,7 +408,8 @@ void GameInputSystem::processMouseInput(const float& dt) {
 		}
 
 		// Manage the firing of the gun
-		if (Input::IsMouseButtonPressed(KeyBinds::SHOOT) && !e->hasComponent<SpectatorComponent>() && !e->getComponent<SprintingComponent>()->sprintedLastFrame) {
+		//if (Input::IsMouseButtonPressed(KeyBinds::SHOOT) && !e->hasComponent<SpectatorComponent>() && !e->getComponent<SprintingComponent>()->sprintedLastFrame) {
+		if (!e->hasComponent<SpectatorComponent>() && !e->getComponent<SprintingComponent>()->sprintedLastFrame) {
 
 			// Check if the player's candle is lit
 			bool isLit = true;

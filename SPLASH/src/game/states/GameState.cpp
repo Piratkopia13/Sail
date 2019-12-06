@@ -182,6 +182,15 @@ GameState::GameState(StateStack& stack)
 		}
 
 		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
+
+
+		// FOR DEBUGGING KILLCAM
+		if (id == 0) {
+			//m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, -10.f);
+			//m_player->getComponent<MovementComponent>()->rotation = glm::vec3(0.f, 0.5f, 0.0f);
+			//m_player->getComponent<MovementComponent>().constantAcceleration = glm::vec3(0.f, 1.0f, 0.0f);
+		}
+		// !FOR DEBUGGING KILLCAM
 	}
 
 	
@@ -428,7 +437,7 @@ bool GameState::processInput(float dt) {
 		m_componentSystems.lightListSystem->removePointLightFromDebugEntity();
 	}
 #endif
-#endif
+#endif //! DEVELOPMENT
 
 	return true;
 }
@@ -685,10 +694,13 @@ void GameState::onStartKillCam(const StartKillCamEvent& event) {
 
 	const Netcode::PlayerID killer = Netcode::getComponentOwner(event.killingProjectile);
 
+	// TODO: player colors
 	if (event.finalKillCam) {
+		m_killCamTitle = "ROUND WINNING SPLASH";
 		m_killCamText = NWrapperSingleton::getInstance().getPlayer(killer)->name + " eliminated " 
 			+ NWrapperSingleton::getInstance().getPlayer(event.deadPlayer)->name + " and won the match!";
 	} else {
+		m_killCamTitle = "SPLASHCAM";
 		m_killCamText = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(killer)->name;
 	}
 }
@@ -870,7 +882,7 @@ bool GameState::renderImgui(float dt) {
 		if (ImGui::Begin("##KILLCAMWINDOW", nullptr, m_standaloneButtonflags)) {
 			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb70"));
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.f));
-			ImGui::Text("SPLASHCAM");
+			ImGui::Text(m_killCamTitle.c_str());
 			ImGui::PopStyleColor(1);
 			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, height / 2 - (ImGui::GetWindowSize().y / 2)));
 			ImGui::PopFont();

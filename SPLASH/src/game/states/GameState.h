@@ -110,6 +110,7 @@ private:
 
 	bool m_isInKillCamMode = false;
 	std::string m_killCamText = {};
+	std::string m_killCamTitle = {};
 
 #ifdef _PERFORMANCE_TEST
 	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);

@@ -3,9 +3,10 @@
 #ifdef _DEBUG
 constexpr size_t TICKRATE = 32;
 #else
-constexpr size_t TICKRATE = 64;
+constexpr size_t TICKRATE = 64/2;
+//constexpr size_t TICKRATE = 16;
 #endif
 
 
 //const float TIMESTEP = 1.0f / (5.0f*TICKRATE); // if you want slow-motion
-constexpr float TIMESTEP = 1.0f / static_cast<float>(TICKRATE);
+constexpr float TIMESTEP = 1.0f / static_cast<float>(TICKRATE);	
