@@ -4,6 +4,7 @@
 #include "Sail/events/types/PlayerDiedEvent.h"
 #include "Sail/../Network/NWrapperSingleton.h"
 #include "Sail/entities/components/TransformComponent.h"
+#include "Sail/entities/components/RenderInActiveGameComponent.h"
 #include "Sail/entities/components/NoEntityComponent.h"
 #include "Sail/entities/Entity.h"
 
@@ -14,6 +15,7 @@
 
 PlayerSystem::PlayerSystem() {
 	registerComponent<PlayerComponent>(true, true, true);
+	registerComponent<RenderInActiveGameComponent>(true, false, false);
 	EventDispatcher::Instance().subscribe(Event::Type::PLAYER_DEATH, this);
 }
 
