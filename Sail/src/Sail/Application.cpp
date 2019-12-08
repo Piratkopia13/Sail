@@ -89,6 +89,8 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	ImVec2 size(400, 300);
 	m_chatWindow->setSize(size);
 	m_chatWindow->setPosition(ImVec2(30,m_window->getWindowHeight()-size.y-30));
+	loadKeybinds();
+
 }
 
 Application::~Application() {
@@ -284,5 +286,18 @@ float Application::getDelta() const {
 
 float Application::getFixedUpdateDelta() const {
 	return m_fixedUpdateDelta;
+}
+
+void Application::loadKeybinds() {
+
+	KeyBinds::MOVE_FORWARD = (int)m_settingStorage.applicationSettingsDynamic["keybindings"]["forward"].value;
+	KeyBinds::MOVE_BACKWARD = (int)m_settingStorage.applicationSettingsDynamic["keybindings"]["backward"].value;
+	KeyBinds::MOVE_RIGHT = (int)m_settingStorage.applicationSettingsDynamic["keybindings"]["right"].value;
+	KeyBinds::MOVE_LEFT = (int)m_settingStorage.applicationSettingsDynamic["keybindings"]["left"].value;
+	KeyBinds::MOVE_UP = (int)m_settingStorage.applicationSettingsDynamic["keybindings"]["up"].value;
+	KeyBinds::MOVE_DOWN = (int)m_settingStorage.applicationSettingsDynamic["keybindings"]["down"].value;
+	KeyBinds::SPRINT = (int)m_settingStorage.applicationSettingsDynamic["keybindings"]["sprint"].value;
+	KeyBinds::THROW_CHARGE = (int)m_settingStorage.applicationSettingsDynamic["keybindings"]["throw"].value;
+	KeyBinds::LIGHT_CANDLE = (int)m_settingStorage.applicationSettingsDynamic["keybindings"]["light"].value;
 }
 
