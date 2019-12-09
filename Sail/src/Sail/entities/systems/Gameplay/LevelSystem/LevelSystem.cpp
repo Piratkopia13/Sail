@@ -1775,7 +1775,7 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		float sprinklerXspread = room.sizex * tileSize * 1.3f;
 		float sprinklerZspread = room.sizey * tileSize * 1.3f;
 
-		particleEmitterComp->size = 0.1f;
+		particleEmitterComp->size = 0.03f;
 		particleEmitterComp->offset = { 0, tileHeight * 6, 0 };
 		particleEmitterComp->constantVelocity = { 0.0f, -0.5f, 0.0f };
 		particleEmitterComp->acceleration = { 0.0f, -30.0f, 0.0f };
