@@ -51,6 +51,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->spawnRate = 0.01f;
 	particleEmitterComp->lifeTime = 0.13f;
 	particleEmitterComp->maxNumberOfParticles = 100;
+	particleEmitterComp->isActive = true;
 	particleEmitterComp->atlasSize = glm::uvec2(8U, 4U);
 	particleEmitterComp->setTexture("particles/animFire.dds");
 
