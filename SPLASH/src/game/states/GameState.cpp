@@ -968,8 +968,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 					break;
 				}
 			}
-			for (int i = 0; i < m_componentSystems.hazardLightSystem->getEntities().size(); i++) {
-				m_componentSystems.particleSystem->addEntity(m_componentSystems.hazardLightSystem->getEntities().at(i));
+			for (int i = 0; i < m_componentSystems.hazardLightSystem->getHazardLightEntities()->size(); i++) {
+				m_componentSystems.particleSystem->addEntity(m_componentSystems.hazardLightSystem->getHazardLightEntities()->at(i));
 			}
 		}
 		runSystem(dt, m_componentSystems.particleSystem);
