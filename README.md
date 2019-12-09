@@ -12,7 +12,7 @@ A game developed by 12 people during the course of 14 weeks as part of the cours
 - Raytraced soft shadows from many light sources
     - Using spatiotemporal filtering for denoising
 - Water "blob" rendering
-    - Using metaball calculations though an intersection shader
+    - Using metaball calculations through an intersection shader
 - Water rendering on surfaces
     - Using a voxel grid and metaball calculations which modifies surface materials
 - Post processing
