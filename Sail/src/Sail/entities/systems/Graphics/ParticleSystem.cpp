@@ -38,7 +38,7 @@ void ParticleSystem::setEnabled(bool state) {
 			m_dispatcher = std::unique_ptr<ComputeShaderDispatcher>(ComputeShaderDispatcher::Create());
 		}
 
-		//Application::getInstance()->getResourceManager().getShaderSet<ParticleComputeShader>();
+		Application::getInstance()->getResourceManager().getShaderSet<ParticleComputeShader>();
 	}
 	else {
 		//Disable
