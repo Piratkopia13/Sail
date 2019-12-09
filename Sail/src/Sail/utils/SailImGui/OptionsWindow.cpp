@@ -181,6 +181,8 @@ void OptionsWindow::renderWindow() {
 		{"light candle", "light",		 &KeyBinds::LIGHT_CANDLE},
 	};
 
+	static bool splf = false, cplf = false;
+
 	ImGui::Columns(2,"keybindcolumns",false);
 	for (auto& [name, setting, value] : keybinds) {
 		ImGui::Text(name.c_str());
@@ -200,8 +202,24 @@ void OptionsWindow::renderWindow() {
 			ImGui::Columns(1);
 
 			//ImGui::Text("WAITING ON KEY INPUT");
+			int c = 0;
+
+
+			bool pressed = false;
 			if (ImGui::GetIO().InputQueueCharacters.size() > 0) {
-				auto c = ImGui::GetIO().InputQueueCharacters.front();
+				c = ImGui::GetIO().InputQueueCharacters.front();
+				pressed = true;
+			}
+			if (!cplf && ImGui::GetIO().KeyCtrl) {
+				pressed = true;
+				c = SAIL_KEY_CONTROL;
+			}
+			if (!splf && ImGui::GetIO().KeyShift) {
+				pressed = true;
+				c = SAIL_KEY_SHIFT;
+			}
+
+			if(pressed) {
 				if (c > 96 && c < 123) {
 					c -= 32;
 				}
@@ -226,6 +244,11 @@ void OptionsWindow::renderWindow() {
 	if (ImGui::Button("Reset")) {
 		resetKeyBind();
 	}
+
+
+	cplf = ImGui::GetIO().KeyCtrl;
+	splf = ImGui::GetIO().KeyShift;
+
 
 #pragma endregion
 

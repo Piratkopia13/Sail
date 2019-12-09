@@ -89,7 +89,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	ImVec2 size(400, 300);
 	m_chatWindow->setSize(size);
 	m_chatWindow->setPosition(ImVec2(30,m_window->getWindowHeight()-size.y-30));
-	loadKeybinds();
 
 }
 
@@ -110,6 +109,7 @@ int Application::startGameLoop() {
 
 	// Initialize key bindings
 	KeyBinds::init();
+	loadKeybinds();
 
 	m_delta = 0.0f;
 	float currentTime = m_timer.getTimeSince<float>(startTime);
