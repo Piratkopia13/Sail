@@ -81,3 +81,7 @@ void HazardLightSystem::enableHazardLights(std::vector<int> activeRooms) {
 		}
 	}
 }
+
+const std::vector<Entity*>* HazardLightSystem::getHazardLightEntities() {
+	return &entities;
+}
