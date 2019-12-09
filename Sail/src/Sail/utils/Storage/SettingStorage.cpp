@@ -109,9 +109,9 @@ const int SettingStorage::teamColorIndex(const int team) {
 	}
 }
 
-glm::vec3 SettingStorage::getColor(const int team) {
-	if (team < 12 && team >= -1) {
-		auto& gameSettingsD = gameSettingsDynamic["Color" + std::to_string(team)];
+glm::vec3 SettingStorage::getColor(const int colorIndex) {
+	if (colorIndex < 12 && colorIndex >= -1) {
+		auto& gameSettingsD = gameSettingsDynamic["Color" + std::to_string(colorIndex)];
 
 		return glm::vec3(
 			gameSettingsD["r"].value,

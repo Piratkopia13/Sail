@@ -87,6 +87,7 @@ private:
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
 	InGameGui m_inGameGui;
+	PlayerNamesImGui m_playerNamesinGameGui;
 	ImGuiWindowFlags m_standaloneButtonflags;
 	ImGuiWindowFlags m_backgroundOnlyflags;
 	NetworkInfoWindow m_networkInfoImGuiWindow;

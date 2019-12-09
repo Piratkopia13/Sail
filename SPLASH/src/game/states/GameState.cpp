@@ -230,6 +230,9 @@ GameState::GameState(StateStack& stack)
 
 	m_inGameGui.setPlayer(m_player);
 	m_inGameGui.setCrosshair(crosshairEntity.get());
+	m_playerNamesinGameGui.setCamera(&m_cam);
+	m_playerNamesinGameGui.setLocalPlayer(m_player);
+
 	m_componentSystems.projectileSystem->setCrosshair(crosshairEntity.get());
 	m_componentSystems.sprintingSystem->setCrosshair(crosshairEntity.get());
 
@@ -817,6 +820,7 @@ bool GameState::render(float dt, float alpha) {
 }
 
 bool GameState::renderImgui(float dt) {
+	m_playerNamesinGameGui.renderWindow();
 	m_inGameGui.renderWindow();
 	m_killFeedWindow.renderWindow();
 	if (m_wasDropped) {
@@ -973,6 +977,34 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 // HERE BE DRAGONS
 // Make sure things are updated in the correct order or things will behave strangely
 void GameState::updatePerTickComponentSystems(float dt) {
+	
+	m_playerNamesinGameGui.clearPlayersToDraw();
+	if (!m_player->getComponent<SpectatorComponent>()) {
+		m_playerNamesinGameGui.setMaxDistance(10);
+
+		Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo, m_player, 0.0, true);
+		if (tempInfo.closestHitIndex != -1) {
+			NetworkReceiverComponent* nrc = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<NetworkReceiverComponent>();			
+			if (nrc) {
+				CandleComponent* candleComp = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<CandleComponent>();
+
+				Netcode::PlayerID owner = Netcode::getComponentOwner(nrc->m_id);
+				Player* p = NWrapperSingleton::getInstance().getPlayer(owner);
+
+				if (p) {
+					m_playerNamesinGameGui.addPlayerToDraw(tempInfo.info[tempInfo.closestHitIndex].entity);
+				}
+			}
+		}
+	} else {
+		m_playerNamesinGameGui.setMaxDistance(-1);
+		for (auto p : *m_componentSystems.playerSystem->getPlayers()) {
+			m_playerNamesinGameGui.addPlayerToDraw(p);
+		}
+	}
+	
+	///////////////////////////////////////
 	m_currentlyReadingMask = 0;
 	m_currentlyWritingMask = 0;
 	m_runningSystemJobs.clear();
