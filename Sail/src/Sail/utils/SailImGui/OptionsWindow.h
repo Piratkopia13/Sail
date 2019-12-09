@@ -22,8 +22,6 @@ private:
 	LevelSystem* m_levelSystem = nullptr;
 	AudioSystem* m_audioSystem = nullptr;
 
-	//void provide(AudioEngine* ae);
-
 	void drawCrosshair();
 	void drawMap();
 };

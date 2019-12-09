@@ -282,14 +282,15 @@ float Application::getFixedUpdateDelta() const {
 
 void Application::startAudio() {
 	// Create the system if it doesn't exist.
-	if (!ECS::Instance()->getSystem<AudioSystem>()) {
-		ECS::Instance()->createSystem<AudioSystem>();
+	ECS* ecsPtr = ECS::Instance();
+	if (!ecsPtr->getSystem<AudioSystem>()) {
+		ecsPtr->createSystem<AudioSystem>();
 
-		while (acQueue.size() != 0) {
+		while (audioEntitiesQueue.size() != 0) {
 			// Add the one in the back
-			ECS::Instance()->addEntityToSystems(acQueue.back());
+			ecsPtr->addEntityToSystems(audioEntitiesQueue.back());
 			// Pop it
-			acQueue.pop_back();
+			audioEntitiesQueue.pop_back();
 		}
 		
 		SAIL_LOG("Audio was created successfully");
@@ -297,6 +298,6 @@ void Application::startAudio() {
 }
 
 void Application::addToAudioComponentQueue(Entity* ac) {
-	this->acQueue.push_back(ac);
+	this->audioEntitiesQueue.push_back(ac);
 }
 

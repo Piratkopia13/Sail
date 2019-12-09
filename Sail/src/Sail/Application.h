@@ -123,6 +123,7 @@ private:
 	float m_fixedUpdateDelta;
 
 	static std::atomic_bool s_isRunning;
-
-	std::vector<Entity*> acQueue;
+	// Vector with entities that have audioComponents on them, as these
+	// need to be attached to the audiosystem if it is created later.
+	std::vector<Entity*> audioEntitiesQueue;
 };

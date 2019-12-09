@@ -407,10 +407,6 @@ void AudioEngine::updateInsanityVolume(float volume) {
 	m_insanitySound.sourceVoice->SetVolume(volume);
 }
 
-void AudioEngine::stopEverything() {
-
-}
-
 void AudioEngine::stopSpecificSound(int index) {
 	if (this->checkSoundIndex(index) && m_sound[index].sourceVoice != nullptr) {
 		m_sound[index].sourceVoice->Stop(0);

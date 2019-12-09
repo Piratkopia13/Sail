@@ -100,8 +100,6 @@ public:
 	void startInsanitySound(const std::string& filename, float volume);
 	void updateInsanityVolume(float volume);
 
-	void stopEverything();
-
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const;
 	void logDebugData();

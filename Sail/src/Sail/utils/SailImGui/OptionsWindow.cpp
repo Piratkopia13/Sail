@@ -440,10 +440,6 @@ void OptionsWindow::updateMap() {
 
 }
 
-//void OptionsWindow::provide(AudioEngine* ae) {
-//	m_audioEngine = ae;
-//}
-
 void OptionsWindow::drawCrosshair() {
 	// Fetch current settings from settingsStorage
 	auto& stat = m_settings->applicationSettingsStatic;
