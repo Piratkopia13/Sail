@@ -21,7 +21,7 @@ void RendererWrapper::initialize() {
 	m_rendererParticles = std::unique_ptr<Renderer>(Renderer::Create(Renderer::PARTICLES));
 	m_postProcessPipeline = std::make_unique<PostProcessPipeline>();
 
-	m_doPostProcessing = true;
+	m_doPostProcessing = true; // Should always be true, will cause dx errors if not
 }
 
 /*

@@ -25,3 +25,4 @@
 #include "types/WaterHitPlayerEvent.h"
 #include "types/WindowFocusChangedEvent.h"
 #include "types/WindowResizeEvent.h"
+#include "types/SpawnPowerUp.h"

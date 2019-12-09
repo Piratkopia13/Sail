@@ -23,9 +23,9 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 
 	rm->loadTexture("splash_logo_smaller.tga");
 	rm->loadShaderSet<AnimationUpdateComputeShader>();
-	rm->loadShaderSet<ParticleComputeShader>();
+	rm->loadShaderSet<GBufferWireframe>();
 	rm->setDefaultShader(&rm->getShaderSet<GBufferOutShader>());
-	rm->loadShaderSet<WireframeShader>();
+
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
 }
 
@@ -83,10 +83,11 @@ bool SplashScreenState::loadModels(Application* app) {
 	rm->loadModel("Clutter/Notepad.fbx");
 	rm->loadModel("Clutter/Saftblandare.fbx");
 	rm->loadModel("WaterPistol.fbx");
-	rm->loadModel("boundingBox.fbx", &rm->getShaderSet<WireframeShader>());
+	rm->loadModel("boundingBox.fbx", &rm->getShaderSet<GBufferWireframe>());
 	rm->loadModel("Clutter/Microscope.fbx");
 	rm->loadModel("Clutter/CloningVats.fbx");
 	rm->loadModel("Clutter/ControlStation.fbx");
+	rm->loadModel("Clutter/PowerUp.fbx");
 	rm->loadModel("CleaningBot.fbx");
 
 
@@ -217,6 +218,10 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/DDS/Clutter/ControlStation_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Clutter/ControlStation_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/ControlStation_NM.dds");
+
+	rm->loadTexture("pbr/DDS/Clutter/powerUp.dds");
+	rm->loadTexture("pbr/DDS/Clutter/powerUp_MRAO.dds");
+
 
 	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
 	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_NM.dds");

@@ -24,6 +24,9 @@
 #include "API/DX12/renderer/DX12HybridRaytracerRenderer.h"
 #include "API/DX12/dxr/DXRBase.h"
 #include "../Sail/src/API/Audio/AudioEngine.h"
+#include "Sail/graphics/shader/postprocess/BilateralBlurHorizontal.h"
+#include "Sail/graphics/shader/postprocess/BilateralBlurVertical.h"
+#include "Sail/graphics/shader/dxr/ShadePassShader.h"
 
 
 
@@ -85,9 +88,7 @@ GameState::GameState(StateStack& stack)
 	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<GBufferWireframe>();
 
 	//Wireframe bounding box model
-	
 	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
-	//boundingBoxModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 	boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
@@ -96,6 +97,8 @@ GameState::GameState(StateStack& stack)
 
 	//Create octree
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
+
+
 	//-----------------------
 
 	m_renderSettingsWindow.activateMaterialPicking(&m_cam, m_octree);
@@ -114,34 +117,16 @@ GameState::GameState(StateStack& stack)
 	// Initialize the component systems
 	initSystems(playerID);
 
-	// Add a directional light which is used in forward rendering
-	glm::vec3 color(0.0f, 0.0f, 0.0f);
-	glm::vec3 direction(0.4f, -0.2f, 1.0f);
-	direction = glm::normalize(direction);
-	m_lights.setDirectionalLight(DirectionalLight(color, direction));
+
 	m_app->getRenderWrapper()->getCurrentRenderer()->setLightSetup(&m_lights);
-
 	m_lightDebugWindow.setLightSetup(&m_lights);
-
-	// Disable culling for testing purposes
-	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
-
-	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
-
-	m_app->getResourceManager().setDefaultShader(shader);
-
-	// Create/load models
-	Model* lightModel = &m_app->getResourceManager().getModel("Torch.fbx", shader);
-	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Torch/Torch_Albedo.dds");
-	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Torch/Torch_NM.dds");
-	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Torch/Torch_MRAO.dds");
 
 	// Crosshair
 	auto crosshairEntity = EntityFactory::CreateCrosshairEntity("crosshairEntity");
 
 	// Level Creation
 	
-	createLevel(shader, boundingBoxModel);
+	createLevel(&m_app->getResourceManager().getShaderSet<GBufferOutShader>(), boundingBoxModel);
 #ifndef _DEBUG
 	m_componentSystems.aiSystem->initNodeSystem(m_octree);
 #endif
@@ -166,7 +151,7 @@ GameState::GameState(StateStack& stack)
 		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 	}
 
-	
+
 	// Spawn other players
 	for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
 		if (p.team != SPECTATOR_TEAM && p.id != playerID) {
@@ -237,8 +222,12 @@ GameState::GameState(StateStack& stack)
 
 	
 	//This will create all torch particles before players report done loading which will remove the freazing after waiting for players. 
-	m_componentSystems.particleSystem->addQueuedEntities();
-	m_componentSystems.particleSystem->update(0);
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
+		m_componentSystems.particleSystem->addQueuedEntities();
+		m_componentSystems.particleSystem->update(0);
+	}
+
+
 
 	// Keep this at the bottom
 	if (!m_isSingleplayer) {
@@ -319,7 +308,6 @@ bool GameState::processInput(float dt) {
 		m_showcaseProcGen = m_lightDebugWindow.isManualOverrideOn();
 		if (m_showcaseProcGen) {
 			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
-			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
 		} else {
 			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
 		}
@@ -327,7 +315,7 @@ bool GameState::processInput(float dt) {
 
 
 	if (Input::WasKeyJustPressed(KeyBinds::TOGGLE_ROOM_LIGHTS)) {
-		m_componentSystems.spotLightSystem->toggleONOFF();
+		m_componentSystems.hazardLightSystem->toggleONOFF();
 	}
 
 
@@ -342,16 +330,6 @@ bool GameState::processInput(float dt) {
 		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
 		if (tempInfo.closestHitIndex != -1) {
 			SAIL_LOG("Ray intersection with " + tempInfo.info[tempInfo.closestHitIndex].entity->getName() + ", " + std::to_string(tempInfo.closestHit) + " meters away");
-		}
-	}
-
-	if (Input::WasKeyJustPressed(KeyBinds::SPRAY)) {
-		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.closestHit >= 0.0f) {
-			// size (the size you want) = 0.3
-			// halfSize = (1 / 0.3) * 0.5 = 1.667
-			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(1.667f));
 		}
 	}
 
@@ -370,6 +348,9 @@ bool GameState::processInput(float dt) {
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_SHADER)) {
 		m_app->getAPI<DX12API>()->waitForGPU();
+		m_app->getResourceManager().reloadShader<ShadePassShader>();
+		m_app->getResourceManager().reloadShader<BilateralBlurHorizontal>();
+		m_app->getResourceManager().reloadShader<BilateralBlurVertical>();
 		m_app->getResourceManager().reloadShader<BlendShader>();
 		m_app->getResourceManager().reloadShader<GaussianBlurHorizontal>();
 		m_app->getResourceManager().reloadShader<GaussianBlurVertical>();
@@ -435,7 +416,6 @@ bool GameState::processInput(float dt) {
 void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
 	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem<RenderInActiveGameComponent>>();
-	m_componentSystems.powerUpUpdateSystem = ECS::Instance()->createSystem<PowerUpUpdateSystem>();
 
 	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
@@ -465,7 +445,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
-	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<HazardLightSystem>();
+	m_componentSystems.hazardLightSystem = ECS::Instance()->createSystem<HazardLightSystem>();
 
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
@@ -533,9 +513,18 @@ void GameState::initSystems(const unsigned char playerID) {
 //	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
 	m_componentSystems.playerSystem = ECS::Instance()->createSystem<PlayerSystem>();
+	m_componentSystems.powerUpUpdateSystem = ECS::Instance()->createSystem<PowerUpUpdateSystem>();
+	m_componentSystems.powerUpCollectibleSystem = ECS::Instance()->createSystem<PowerUpCollectibleSystem>();
+	m_componentSystems.powerUpCollectibleSystem->init(m_componentSystems.playerSystem->getPlayers());
+
+
 
 	//Create particle system
-	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
+		m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
+	}
+
+
 
 	m_componentSystems.sprinklerSystem = ECS::Instance()->createSystem<SprinklerSystem>();
 	m_componentSystems.sprinklerSystem->setOctree(m_octree);
@@ -801,7 +790,9 @@ bool GameState::render(float dt, float alpha) {
 		m_componentSystems.killCamMetaballSubmitSystem->submitAll(killCamAlpha);
 	} else {
 		m_componentSystems.modelSubmitSystem->submitAll(alpha);
-		m_componentSystems.particleSystem->submitAll();
+		if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
+			m_componentSystems.particleSystem->submitAll();
+		}
 		m_componentSystems.metaballSubmitSystem->submitAll(alpha);
 		m_componentSystems.boundingboxSubmitSystem->submitAll();
 	}
@@ -949,9 +940,10 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.gameInputSystem->fixedUpdate(dt);
 	m_componentSystems.spectateInputSystem->fixedUpdate(dt);
 
-	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
+	m_componentSystems.prepareUpdateSystem->fixedUpdate(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	m_componentSystems.lightSystem->prepareFixedUpdate();
 
+	
 	// Update entities with info from the network and from ourself
 	// DON'T MOVE, should happen at the start of each tick
 	m_componentSystems.networkReceiverSystem->update(dt);
@@ -962,6 +954,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.collisionSystem->update(dt);
 	m_componentSystems.movementPostCollisionSystem->update(dt);
 	m_componentSystems.powerUpUpdateSystem->update(dt);
+	m_componentSystems.powerUpCollectibleSystem->update(dt);
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	runSystem(dt, m_componentSystems.aiSystem);
@@ -976,7 +969,26 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.gunSystem); // Run after animationSystem to make shots more in sync
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 	runSystem(dt, m_componentSystems.teamColorSystem);
-	runSystem(dt, m_componentSystems.particleSystem);
+
+	// Only run particle system if particles are enabled.
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
+		// If the particleSystem was disabled at the start of the game, and is now enabled, the particle system is created and all emitters are added to the system
+		if (!ECS::Instance()->getSystem<ParticleSystem>()) {
+			m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
+			for (int i = 0; i < m_player->getChildEntities().size(); i++) {
+				if (m_player->getChildEntities().at(i)->hasComponent<ParticleEmitterComponent>()) {
+					m_componentSystems.particleSystem->addEntity(m_player->getChildEntities().at(i));
+					break;
+				}
+			}
+			for (int i = 0; i < m_componentSystems.hazardLightSystem->getHazardLightEntities()->size(); i++) {
+				m_componentSystems.particleSystem->addEntity(m_componentSystems.hazardLightSystem->getHazardLightEntities()->at(i));
+			}
+		}
+		runSystem(dt, m_componentSystems.particleSystem);
+	}
+
+
 	runSystem(dt, m_componentSystems.sanitySystem);
 	runSystem(dt, m_componentSystems.sanitySoundSystem);
 
@@ -984,7 +996,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	for (auto& fut : m_runningSystemJobs) {
 		fut.get();
 	}
-	m_componentSystems.spotLightSystem->enableHazardLights(m_componentSystems.sprinklerSystem->getActiveRooms());
+	m_componentSystems.hazardLightSystem->enableHazardLights(m_componentSystems.sprinklerSystem->getActiveRooms());
 
 	// Send out your entity info to the rest of the players
 	// DON'T MOVE, should happen at the end of each tick
@@ -997,6 +1009,10 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	const float killCamDelta = m_componentSystems.killCamReceiverSystem->getKillCamDelta(dt);
 
 	// TODO? move to its own thread
+	
+	m_cam.newFrame(); // Has to run before the camera update
+	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
+	
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 
 	m_componentSystems.gameInputSystem->processMouseInput(dt);
@@ -1011,6 +1027,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 	m_componentSystems.spectateInputSystem->update(dt, alpha);
 
+
 	// There is an imgui debug toggle to override lights
 	if (!m_lightDebugWindow.isManualOverrideOn()) {
 		m_lights.clearPointLights();
@@ -1021,7 +1038,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 			m_componentSystems.lightSystem->updateLights(&m_lights, alpha);
 		}
 		m_componentSystems.lightListSystem->updateLights(&m_lights);
-		m_componentSystems.spotLightSystem->updateLights(&m_lights, alpha, dt);
+		m_componentSystems.hazardLightSystem->updateLights(&m_lights, alpha, dt);
 	}
 	
 	m_componentSystems.crosshairSystem->update(dt);
@@ -1183,6 +1200,9 @@ void GameState::createBots() {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
 			auto e = EntityFactory::CreateCleaningBot(spawnLocation, m_componentSystems.aiSystem->getNodeSystem());
+			if (NWrapperSingleton::getInstance().isHost()) {	
+				m_componentSystems.powerUpCollectibleSystem->spawnPowerUp(glm::vec3(0, 1, 0), 0, 0, 0, e.get());
+			}
 		}
 		else {
 			SAIL_LOG_ERROR("Bot not spawned because all spawn points are already used for this map.");
@@ -1355,6 +1375,23 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	m_componentSystems.levelSystem->createWorld(tileModels, boundingBoxModel);
 	m_componentSystems.levelSystem->addClutterModel(clutterModels, boundingBoxModel);
 	m_componentSystems.gameInputSystem->m_mapPointer = m_componentSystems.levelSystem;
+
+	// SPAWN POWERUPS IF ENABLED
+	if (settings.gameSettingsStatic["map"]["Powerup"].getSelected().value == 0.0f) {
+
+
+		m_componentSystems.powerUpCollectibleSystem->setSpawnPoints(m_componentSystems.levelSystem->powerUpSpawnPoints);
+		m_componentSystems.powerUpCollectibleSystem->
+			setDuration(settings.gameSettingsDynamic["powerup"]["duration"].value);
+		m_componentSystems.powerUpCollectibleSystem->setRespawnTime(settings.gameSettingsDynamic["powerup"]["respawnTime"].value);
+		if (NWrapperSingleton::getInstance().isHost()) {
+			m_componentSystems.powerUpCollectibleSystem->spawnPowerUps(settings.gameSettingsDynamic["powerup"]["count"].value);
+		}
+	}
+
+
+
+
 }
 
 #ifdef _PERFORMANCE_TEST
