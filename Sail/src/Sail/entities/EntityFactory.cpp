@@ -330,7 +330,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	characterModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Doc/Doc_Albedo.dds");
 	characterModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Doc/Doc_NM.dds");
 	characterModel->setIsAnimated(true);
-	AnimationStack* stack = &Application::getInstance()->getResourceManager().getAnimationStack(modelName + ".fbx");
+	AnimationStack* stack = &Application::getInstance()->getResourceManager().getAnimationStack(modelName);
 
 	// All players have a bounding box
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();

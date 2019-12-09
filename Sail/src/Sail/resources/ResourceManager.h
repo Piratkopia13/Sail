@@ -9,7 +9,6 @@
 #include "loaders/AssimpLoader.h"
 #include "loaders/FBXLoader.h"
 
-//#define CREATE_NOT_FBX
 #define LOAD_NOT_FBX
 
 //class DeferredGeometryShader;

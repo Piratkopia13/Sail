@@ -8,6 +8,10 @@
 #include <filesystem>
 #include "loaders/NotFBXLoader.h"
 
+
+//#define CREATE_NOT_FBX
+
+
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
 const std::string ResourceManager::SAIL_DEFAULT_TEXTURE_LOCATION = "res/textures/";
@@ -156,8 +160,8 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 
 		if (animationStack) {
 			m_animationStacks.insert({ nameOnly, std::unique_ptr<AnimationStack>(animationStack) });
-			SAIL_LOG("Animation size of '" + filename + "' : " + std::to_string((float)m_animationStacks[filename]->getByteSize() / (1024.f * 1024.f)) + "MB");
-			m_byteSize[RMDataType::Animations] += m_animationStacks[filename]->getByteSize();
+			SAIL_LOG("Animation size of '" + filename + "' : " + std::to_string((float)m_animationStacks[nameOnly]->getByteSize() / (1024.f * 1024.f)) + "MB");
+			m_byteSize[RMDataType::Animations] += m_animationStacks[nameOnly]->getByteSize();
 		} else {
 			//SAIL_LOG_ERROR("Could not Load model: (" + filename + ")");
 		}

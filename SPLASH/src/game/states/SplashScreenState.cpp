@@ -9,6 +9,7 @@
 #include <string>
 
 #include "Sail/resources/loaders/NotFBXLoader.h"
+//#define CREATE_NOT_FBX
 
 SplashScreenState::SplashScreenState(StateStack& stack)
 	: State(stack)
@@ -51,7 +52,6 @@ bool SplashScreenState::loadModels(Application* app) {
 	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
 
 //#ifndef _DEBUG
-	rm->loadModel("Doc.fbx");
 
 	//NotFBXLoader::Save("Doc.notfbx", &rm->getModel("Doc"), &rm->getAnimationStack("Doc"));
 
@@ -71,6 +71,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	type = ResourceManager::ImporterType::SAIL_NOT_FBXSDK;
 #endif // CREATE_NOT_FBX
 
+	rm->loadModel("Doc" + extension, nullptr, type);
 	rm->loadModel("Torch" + extension, nullptr, type);
 	rm->loadModel("candleExported" + extension, nullptr, type);
 	rm->loadModel("Tiles/RoomWall" + extension, nullptr, type);
