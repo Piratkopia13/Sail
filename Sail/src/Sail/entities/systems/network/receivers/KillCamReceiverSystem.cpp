@@ -97,8 +97,6 @@ void KillCamReceiverSystem::stop() {
 
 	m_projectilePos = { 0,0,0 };
 	m_killerHeadPos = { 0,0,0 };
-
-	SAIL_LOG_WARNING("STOP CALLED");
 }
 
 // Only needs to be done once
@@ -170,9 +168,6 @@ void KillCamReceiverSystem::stopMyKillCam() {
 			transform->setStartTranslation(glm::vec3(0.f, -10.f, 0.f));
 		}
 	}
-
-	SAIL_LOG_WARNING("STOPMYKILLCAM CALLED");
-
 }
 
 
