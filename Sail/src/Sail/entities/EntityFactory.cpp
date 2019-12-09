@@ -50,6 +50,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->spread = { 0.1f, 0.1f, 0.1f };
 	particleEmitterComp->spawnRate = 0.01f;
 	particleEmitterComp->lifeTime = 0.13f;
+	particleEmitterComp->maxNumberOfParticles = 100;
 	particleEmitterComp->isActive = true;
 	std::string particleTextureName = "particles/animFire.dds";
 	particleEmitterComp->atlasSize = glm::uvec2(8U, 4U);
@@ -127,7 +128,6 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<RealTimeComponent>();
 	myPlayer->addComponent<ThrowingComponent>();
 	myPlayer->addComponent<RenderInActiveGameComponent>();
-	myPlayer->addComponent<PowerUpComponent>();
 
 
 
@@ -348,6 +348,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
 	playerEntity->addComponent<SanityComponent>()->sanity = 100.0f;
 	playerEntity->addComponent<SprintingComponent>();
+	playerEntity->addComponent<PowerUpComponent>();
 
 	// Give playerEntity a bounding box
 	playerEntity->addComponent<BoundingBoxComponent>(boundingBoxModel);
@@ -392,6 +393,33 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	ac->leftHandPosition = glm::translate(ac->leftHandPosition, glm::vec3(0.563f, 1.059f, 0.110f));
 	ac->leftHandPosition = ac->leftHandPosition * glm::toMat4(glm::quat(glm::vec3(1.178f, -0.462f, 0.600f)));
 }
+
+Entity::SPtr EntityFactory::CreatePowerUp(glm::vec3& spawn, const int type, Netcode::ComponentID comID) {
+	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
+	Model* powerUpModel = &Application::getInstance()->getResourceManager().getModel("Clutter/PowerUp.fbx", shader);
+	powerUpModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/powerUp_MRAO.dds");
+	powerUpModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/powerUp.dds");
+
+	auto powerUp = ECS::Instance()->createEntity("powerup" + Utils::toStr(spawn) + ":" + std::to_string(type));
+	powerUp->addComponent<ModelComponent>(powerUpModel)->teamColorID = type;
+	
+	powerUp->addComponent<TransformComponent>(spawn);
+	powerUp->addComponent<RenderInActiveGameComponent>();
+	powerUp->addComponent<PowerUpCollectibleComponent>()->powerUp = type;
+	
+	if (NWrapperSingleton::getInstance().isHost()) {
+		Netcode::ComponentID id = powerUp->addComponent<NetworkSenderComponent>(Netcode::EntityType::POWER_UP, Netcode::NEUTRAL_OWNER_ID)->m_id;
+		powerUp->addComponent<NetworkReceiverComponent>(id, Netcode::EntityType::POWER_UP);
+	} else {
+		powerUp->addComponent<NetworkReceiverComponent>(comID, Netcode::EntityType::POWER_UP);
+	}
+
+	auto* moveC = powerUp->addComponent<MovementComponent>();
+	moveC->rotation = glm::vec3(1, 1, 1);
+	
+	return powerUp;
+}
+
 
 Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterModel, const glm::vec3& pos, Model* lightModel, size_t lightIndex, NodeSystem* ns) {
 
