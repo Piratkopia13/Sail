@@ -190,6 +190,7 @@ bool SplashScreenState::loadTextures(Application* app) {
 	loadTexture(rm, "pbr/DDS/Clutter/Book_MRAO.dds");
 	loadTexture(rm, "pbr/DDS/Clutter/Book_NM.dds");
 	loadTexture(rm, "pbr/DDS/Clutter/Book1_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Book2_Albedo.dds");
 	loadTexture(rm, "pbr/DDS/Clutter/SquareBox_MRAO.dds");
 	loadTexture(rm, "pbr/DDS/Clutter/SquareBox_NM.dds");
 	loadTexture(rm, "pbr/DDS/Clutter/SquareBox_Albedo.dds");
