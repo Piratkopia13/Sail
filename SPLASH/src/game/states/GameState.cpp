@@ -952,7 +952,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 		}
 	} else {
 		m_playerNamesinGameGui.setMaxDistance(-1);
-		for (auto p : m_componentSystems.playerSystem->getEntities()) {
+		for (auto p : *m_componentSystems.playerSystem->getPlayers()) {
 			m_playerNamesinGameGui.addPlayerToDraw(p);
 		}
 	}
