@@ -238,8 +238,9 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 		// Show the killer's perspective
 		m_cam->setCameraPosition(m_killerHeadPos);
 
-		const glm::quat rot = glm::angleAxis(interpolate(-animation->prevPitch, -animation->pitch, alpha), glm::vec3(1, 0, 0));
-		const glm::quat rotated = glm::normalize(rot * transform->getInterpolatedRotation(alpha));
+		const glm::vec3 rotAxis = transform->getInterpolatedRotation(alpha) * glm::vec3(1.f, 0.f, 0.f);
+		const glm::quat vertical = glm::angleAxis(interpolate(animation->prevPitch, animation->pitch, alpha), rotAxis);
+		const glm::quat rotated = glm::normalize(vertical * transform->getInterpolatedRotation(alpha));
 
 		const glm::vec3 forwards = rotated * glm::vec3(0.f, 0.f, 1.f);
 
