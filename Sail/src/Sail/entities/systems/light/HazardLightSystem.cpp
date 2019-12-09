@@ -32,7 +32,7 @@ void HazardLightSystem::updateLights(LightSetup* lightSetup, float alpha, float 
 		mc->rotation.y = 0.f;
 
 		// Update active lights
-		if (emitter->isActive) {
+		if (emitter && emitter->isActive) {
 			continue;
 		}
 		if (!sc->isOn) {
@@ -50,7 +50,9 @@ void HazardLightSystem::updateLights(LightSetup* lightSetup, float alpha, float 
 		}
 		else {
 			ac->m_sounds[Audio::SoundType::SPRINKLER_WATER].isPlaying = true;
-			emitter->isActive = true;
+			if (emitter) {
+				emitter->isActive = true;
+			}
 			sc->isOn = false;
 		}
 
@@ -85,8 +87,4 @@ void HazardLightSystem::enableHazardLights(std::vector<int> activeRooms) {
 			sc->isOn = true;
 		}
 	}
-}
-
-const std::vector<Entity*>* HazardLightSystem::getHazardLightEntities() {
-	return &entities;
 }
