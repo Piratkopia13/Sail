@@ -443,6 +443,7 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 		ar(data->playerWhoDied); // Send
 		ar(data->killingEntity);
+		ar(data->isFinalKill);
 	}
 	break;
 	case Netcode::MessageType::PLAYER_JUMPED:
@@ -545,6 +546,24 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 
 		ar(data->playerWhoWasHitID);
 		ar(data->projectileThatHitID);
+	}
+	break;
+	case Netcode::MessageType::SPAWN_POWER_UP:
+	{
+		Netcode::MessageSpawnPowerUp* data = static_cast<Netcode::MessageSpawnPowerUp*>(event->data);
+
+		ar(data->powerUpType);
+		ArchiveHelpers::saveVec3(ar, data->translation);
+		ar(data->powerUpComponentID);
+		ar(data->parentComponentID);
+	}
+	break;
+	case Netcode::MessageType::DESTROY_POWER_UP:
+	{
+		Netcode::MessageDestroyPowerUp* data = static_cast<Netcode::MessageDestroyPowerUp*>(event->data);
+
+		ar(data->powerUpComponentID);
+		ar(data->pickedByPlayer);
 	}
 	break;
 	default:

@@ -23,6 +23,9 @@
 #include "API/DX12/renderer/DX12HybridRaytracerRenderer.h"
 #include "API/DX12/dxr/DXRBase.h"
 #include "../Sail/src/API/Audio/AudioEngine.h"
+#include "Sail/graphics/shader/postprocess/BilateralBlurHorizontal.h"
+#include "Sail/graphics/shader/postprocess/BilateralBlurVertical.h"
+#include "Sail/graphics/shader/dxr/ShadePassShader.h"
 
 
 
@@ -41,7 +44,8 @@ GameState::GameState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
-	EventDispatcher::Instance().subscribe(Event::Type::TOGGLE_KILLCAM, this);
+	EventDispatcher::Instance().subscribe(Event::Type::START_KILLCAM, this);
+	EventDispatcher::Instance().subscribe(Event::Type::STOP_KILLCAM, this);
 
 	// Reset the counter used to generate unique ComponentIDs for the network
 	Netcode::resetIDCounter();
@@ -125,9 +129,6 @@ GameState::GameState(StateStack& stack)
 
 	m_lightDebugWindow.setLightSetup(&m_lights);
 
-	// Disable culling for testing purposes
-	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
-
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 
 	m_app->getResourceManager().setDefaultShader(shader);
@@ -158,10 +159,11 @@ GameState::GameState(StateStack& stack)
 	// Level Creation
 	
 	createLevel(shader, boundingBoxModel);
+#ifndef _DEBUG
 	if (NWrapperSingleton::getInstance().isHost()) {
 		m_componentSystems.aiSystem->initNodeSystem(m_octree);
 	}
-
+#endif
 	// Player creation
 	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
 		
@@ -200,7 +202,9 @@ GameState::GameState(StateStack& stack)
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #else
-	createBots();
+	#ifndef _DEBUG
+		createBots();
+	#endif
 #endif
 	
 #ifdef _DEBUG
@@ -211,7 +215,8 @@ GameState::GameState(StateStack& stack)
 	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
 	m_ambiance->addComponent<AudioComponent>();
 	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, 1.0f, false, true);
+	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value, false, true);
+
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 
@@ -275,7 +280,8 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
-	EventDispatcher::Instance().unsubscribe(Event::Type::TOGGLE_KILLCAM, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::START_KILLCAM, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_KILLCAM, this);
 }
 
 // Process input for the state
@@ -294,6 +300,7 @@ bool GameState::processInput(float dt) {
 	// Unpause Game
 	if (m_readyRestartAmbiance) {
 		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(false);
+		this->m_ambiance->getComponent<AudioComponent>()->streamSetVolume_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 		m_readyRestartAmbiance = false;
 	}
 
@@ -320,7 +327,6 @@ bool GameState::processInput(float dt) {
 		m_showcaseProcGen = m_lightDebugWindow.isManualOverrideOn();
 		if (m_showcaseProcGen) {
 			m_lights.getPLs()[0].setPosition(glm::vec3(100.f, 20.f, 100.f));
-			m_lights.getPLs()[0].setAttenuation(0.2f, 0.f, 0.f);
 		} else {
 			m_cam.setPosition(glm::vec3(0.f, 1.f, 0.f));
 		}
@@ -346,16 +352,6 @@ bool GameState::processInput(float dt) {
 		}
 	}
 
-	if (Input::WasKeyJustPressed(KeyBinds::SPRAY)) {
-		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo);
-		if (tempInfo.closestHit >= 0.0f) {
-			// size (the size you want) = 0.3
-			// halfSize = (1 / 0.3) * 0.5 = 1.667
-			m_app->getRenderWrapper()->getCurrentRenderer()->submitDecal(m_cam.getPosition() + m_cam.getDirection() * tempInfo.closestHit, glm::identity<glm::mat4>(), glm::vec3(1.667f));
-		}
-	}
-
 	//Test frustum culling
 	if (Input::IsKeyPressed(KeyBinds::TEST_FRUSTUMCULLING)) {
 		int nrOfDraws = m_octree->frustumCulledDraw(m_cam);
@@ -371,6 +367,9 @@ bool GameState::processInput(float dt) {
 	// Reload shaders
 	if (Input::WasKeyJustPressed(KeyBinds::RELOAD_SHADER)) {
 		m_app->getAPI<DX12API>()->waitForGPU();
+		m_app->getResourceManager().reloadShader<ShadePassShader>();
+		m_app->getResourceManager().reloadShader<BilateralBlurHorizontal>();
+		m_app->getResourceManager().reloadShader<BilateralBlurVertical>();
 		m_app->getResourceManager().reloadShader<BlendShader>();
 		m_app->getResourceManager().reloadShader<GaussianBlurHorizontal>();
 		m_app->getResourceManager().reloadShader<GaussianBlurVertical>();
@@ -463,7 +462,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
-	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<SpotLightSystem>();
+	m_componentSystems.spotLightSystem = ECS::Instance()->createSystem<HazardLightSystem>();
 
 	m_componentSystems.candleHealthSystem = ECS::Instance()->createSystem<CandleHealthSystem>();
 	m_componentSystems.candleReignitionSystem = ECS::Instance()->createSystem<CandleReignitionSystem>();
@@ -527,6 +526,11 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
 	m_componentSystems.playerSystem = ECS::Instance()->createSystem<PlayerSystem>();
+	m_componentSystems.powerUpUpdateSystem = ECS::Instance()->createSystem<PowerUpUpdateSystem>();
+	m_componentSystems.powerUpCollectibleSystem = ECS::Instance()->createSystem<PowerUpCollectibleSystem>();
+	m_componentSystems.powerUpCollectibleSystem->init(m_componentSystems.playerSystem->getPlayers());
+
+
 
 	//Create particle system
 	m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
@@ -622,7 +626,8 @@ bool GameState::onEvent(const Event& event) {
 		case Event::Type::NETWORK_DROPPED:                  onPlayerDropped((const NetworkDroppedEvent&)event); break;
 		case Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS: onPlayerStateStatusChanged((const NetworkUpdateStateLoadStatus&)event); break;
 		case Event::Type::NETWORK_JOINED:                   onPlayerJoined((const NetworkJoinedEvent&)event); break;
-		case Event::Type::TOGGLE_KILLCAM:                   onToggleKillCam((const ToggleKillCamEvent&)event); break;
+		case Event::Type::START_KILLCAM:                    onStartKillCam((const StartKillCamEvent&)event); break;
+		case Event::Type::STOP_KILLCAM:                     onStopKillCam((const StopKillCamEvent&)event); break;
 		default: break;
 	}
 
@@ -671,12 +676,27 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	return true;
 }
 
-void GameState::onToggleKillCam(const ToggleKillCamEvent& event) {
-	m_isInKillCamMode = event.isActive;
-	m_wasKilledBy = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(event.killedBy)->name;
-	if (!m_isInKillCamMode) {
-		m_componentSystems.killCamReceiverSystem->stop();
+void GameState::onStartKillCam(const StartKillCamEvent& event) {
+	// Stop our killcam if it's playing (either because we stopped it or because the final killcam is starting)
+	if (m_isInKillCamMode) {
+		m_componentSystems.killCamReceiverSystem->stopMyKillCam();
 	}
+	
+	m_isInKillCamMode = true;
+
+	const Netcode::PlayerID killer = Netcode::getComponentOwner(event.killingProjectile);
+
+	if (event.finalKillCam) {
+		m_killCamText = NWrapperSingleton::getInstance().getPlayer(killer)->name + " eliminated " 
+			+ NWrapperSingleton::getInstance().getPlayer(event.deadPlayer)->name + " and won the match!";
+	} else {
+		m_killCamText = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(killer)->name;
+	}
+}
+
+void GameState::onStopKillCam(const StopKillCamEvent& event) {
+	m_componentSystems.killCamReceiverSystem->stopMyKillCam();
+	m_isInKillCamMode = false;
 }
 
 
@@ -862,7 +882,7 @@ bool GameState::renderImgui(float dt) {
 		if (ImGui::Begin("##KILLCAMKILLEDBY", nullptr, m_standaloneButtonflags)) {
 			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb30"));
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.f));
-			ImGui::Text(m_wasKilledBy.c_str());
+			ImGui::Text(m_killCamText.c_str());
 			ImGui::PopStyleColor(1);
 			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, m_app->getWindow()->getWindowHeight() - height / 2 - (ImGui::GetWindowSize().y / 2)));
 			ImGui::PopFont();
@@ -919,9 +939,10 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.gameInputSystem->fixedUpdate(dt);
 	m_componentSystems.spectateInputSystem->fixedUpdate(dt);
 
-	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
+	m_componentSystems.prepareUpdateSystem->fixedUpdate(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
 	m_componentSystems.lightSystem->prepareFixedUpdate();
 
+	
 	// Update entities with info from the network and from ourself
 	// DON'T MOVE, should happen at the start of each tick
 	m_componentSystems.networkReceiverSystem->update(dt);
@@ -931,7 +952,8 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.speedLimitSystem->update();
 	m_componentSystems.collisionSystem->update(dt);
 	m_componentSystems.movementPostCollisionSystem->update(dt);
-
+	m_componentSystems.powerUpUpdateSystem->update(dt);
+	m_componentSystems.powerUpCollectibleSystem->update(dt);
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
 	if (NWrapperSingleton::getInstance().isHost()) {
@@ -970,6 +992,10 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	const float killCamDelta = m_componentSystems.killCamReceiverSystem->getKillCamDelta(dt);
 
 	// TODO? move to its own thread
+	
+	m_cam.newFrame(); // Has to run before the camera update
+	m_componentSystems.prepareUpdateSystem->update(); // HAS TO BE RUN BEFORE OTHER SYSTEMS WHICH USE TRANSFORM
+	
 	m_componentSystems.sprintingSystem->update(dt, alpha);
 
 	m_componentSystems.gameInputSystem->processMouseInput(dt);
@@ -983,6 +1009,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	// Updates keyboard/mouse input and the camera
 	m_componentSystems.gameInputSystem->updateCameraPosition(alpha);
 	m_componentSystems.spectateInputSystem->update(dt, alpha);
+
 
 	// There is an imgui debug toggle to override lights
 	if (!m_lightDebugWindow.isManualOverrideOn()) {
@@ -1377,6 +1404,23 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 	m_componentSystems.levelSystem->createWorld(tileModels, boundingBoxModel);
 	m_componentSystems.levelSystem->addClutterModel(clutterModels, boundingBoxModel);
 	m_componentSystems.gameInputSystem->m_mapPointer = m_componentSystems.levelSystem;
+
+	// SPAWN POWERUPS IF ENABLED
+	if (settings.gameSettingsStatic["map"]["Powerup"].getSelected().value == 0.0f) {
+
+
+		m_componentSystems.powerUpCollectibleSystem->setSpawnPoints(m_componentSystems.levelSystem->powerUpSpawnPoints);
+		m_componentSystems.powerUpCollectibleSystem->
+			setDuration(settings.gameSettingsDynamic["powerup"]["duration"].value);
+		m_componentSystems.powerUpCollectibleSystem->setRespawnTime(settings.gameSettingsDynamic["powerup"]["respawnTime"].value);
+		if (NWrapperSingleton::getInstance().isHost()) {
+			m_componentSystems.powerUpCollectibleSystem->spawnPowerUps(settings.gameSettingsDynamic["powerup"]["count"].value);
+		}
+	}
+
+
+
+
 }
 
 #ifdef _PERFORMANCE_TEST

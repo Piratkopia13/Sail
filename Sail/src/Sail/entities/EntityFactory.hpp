@@ -41,6 +41,7 @@ namespace EntityFactory {
 	
 	Entity::SPtr CreateCleaningBotHost(const glm::vec3& pos, NodeSystem* ns, const Netcode::ComponentID compID);
 	Entity::SPtr CreateCleaningBot(const glm::vec3& pos, const Netcode::ComponentID compID);
+	Entity::SPtr CreatePowerUp(glm::vec3& spawn, const int type, Netcode::ComponentID comID = 0);
 	Entity::SPtr CreateStaticMapObject(const std::string& name, Model * model, Model* boundingBoxModel, const glm::vec3& pos = glm::vec3(0,0,0), const glm::vec3& rot = glm::vec3(0,0,0), const glm::vec3& scale = glm::vec3(1,1,1));
 	
 	Entity::SPtr CreateProjectile(Entity::SPtr projectileEntity, const ProjectileArguments& info);

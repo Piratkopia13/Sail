@@ -143,13 +143,14 @@ void NetworkReceiverSystem::matchEnded() {
 	EventDispatcher::Instance().emit(GameOverEvent());
 }
 
-void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const Netcode::ComponentID killerID) {
+void NetworkReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKilled, const KillInfo& info) {
 	if (auto e = findFromNetID(networkIdOfKilled); e) {
 		EventDispatcher::Instance().emit(PlayerDiedEvent(
 			e,
 			m_playerEntity,
-			killerID,
-			networkIdOfKilled)
+			info.killerCompID,
+			networkIdOfKilled,
+			info.isFinal)
 		);
 		return;
 	}
@@ -212,8 +213,8 @@ void NetworkReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 	SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
-void NetworkReceiverSystem::setPlayerStats(Netcode::PlayerID player, int nrOfKills, int placement, int nDeaths, int damage, int damageTaken) {
-	GameDataTracker::getInstance().setStatsForPlayer(player, nrOfKills, placement, nDeaths, damage, damageTaken);
+void NetworkReceiverSystem::setPlayerStats(const PlayerStatsInfo& info) {
+	GameDataTracker::getInstance().setStatsForPlayer(info.player, info.nrOfKills, info.placement, info.nDeaths, info.damage, info.damageTaken);
 }
 
 void NetworkReceiverSystem::updateSanity(const Netcode::ComponentID id, const float sanity) {
@@ -276,7 +277,24 @@ void NetworkReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const 
 	SAIL_LOG_WARNING("waterHitPLayer called but no matching entity found");
 }
 
+void NetworkReceiverSystem::spawnPowerup(const int type, const glm::vec3& pos, const Netcode::ComponentID compID, const Netcode::ComponentID parentCompID) {
+	
+	Entity* parent = nullptr;
+	if (parentCompID != Netcode::UNINITIALIZED) {
+		for (auto e : entities) {
+			if (e->getComponent<NetworkReceiverComponent>()->m_id == parentCompID) {
+				parent = e;
+				break;
+			}
+		}
+	}
+	
+	EventDispatcher::Instance().emit(SpawnPowerUp(type, pos, compID, parent));
+}
 
+void NetworkReceiverSystem::destroyPowerup(const Netcode::ComponentID compID, const Netcode::ComponentID pickedByPlayer) {
+	EventDispatcher::Instance().emit(DestroyPowerUp(compID, pickedByPlayer));
+}
 
 // AUDIO
 

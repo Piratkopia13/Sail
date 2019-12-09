@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "SpotLightSystem.h"
+#include "HazardLightSystem.h"
 
 #include "Sail.h"
 #include "Sail/entities/components/SpotlightComponent.h"
@@ -9,26 +9,32 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/graphics/light/LightSetup.h"
 #include "Sail/utils/Storage/SettingStorage.h"
+#include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 
-SpotLightSystem::SpotLightSystem() : BaseComponentSystem() {
+HazardLightSystem::HazardLightSystem() : BaseComponentSystem() {
 	registerComponent<SpotlightComponent>(true, true, true);
 	registerComponent<TransformComponent>(true, true, false);
+	registerComponent<ParticleEmitterComponent>(false, true, true);
 }
 
-SpotLightSystem::~SpotLightSystem() {
+HazardLightSystem::~HazardLightSystem() {
 }
 
 
 //check and update all lights for all entities
-void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt) {
+void HazardLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt) {
 	int id = 0;
 	lightSetup->getSLs().clear();
 	for (auto e : entities) {
 		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
 		MovementComponent* mc = e->getComponent<MovementComponent>();
+		ParticleEmitterComponent* emitter = e->getComponent<ParticleEmitterComponent>();
 		mc->rotation.y = 0.f;
 
 		// Update active lights
+		if (emitter->isActive) {
+			continue;
+		}
 		if (!sc->isOn) {
 			continue;
 		}
@@ -44,6 +50,8 @@ void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt
 		}
 		else {
 			ac->m_sounds[Audio::SoundType::SPRINKLER_WATER].isPlaying = true;
+			emitter->isActive = true;
+			sc->isOn = false;
 		}
 
 
@@ -62,14 +70,14 @@ void SpotLightSystem::updateLights(LightSetup* lightSetup, float alpha, float dt
 	}
 }
 
-void SpotLightSystem::toggleONOFF() {
+void HazardLightSystem::toggleONOFF() {
 	for (auto e : entities) {
 		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
 		sc->isOn = !sc->isOn;
 	}
 }
 
-void SpotLightSystem::enableHazardLights(std::vector<int> activeRooms) {
+void HazardLightSystem::enableHazardLights(std::vector<int> activeRooms) {
 	for (auto e : entities) {
 		SpotlightComponent* sc = e->getComponent<SpotlightComponent>();
 		std::vector<int>::iterator it = std::find(activeRooms.begin(), activeRooms.end(), sc->roomID);
