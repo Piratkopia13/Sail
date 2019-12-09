@@ -1,15 +1,16 @@
 # SPLASH<sub>2</sub>0
 [![Build Status](https://dev.azure.com/BTH-StoraSpel-DXR/Stora%20Spel/_apis/build/status/Master%20pipeline?branchName=master)](https://dev.azure.com/BTH-StoraSpel-DXR/Stora%20Spel/_build/latest?definitionId=1&branchName=master)
-> ***S**cientists **P**acking **L**ights **A**nd **S**hooting **H<sub>2</sub>0***
-
+***S**cientists **P**acking **L**ights **A**nd **S**hooting **H<sub>2</sub>0***
 > *"A fluid first person shooter"*
 
 A game developed by 12 people during 14 weeks as part of the course PA2526 Large Game Project at [Blekinge Tekniska Högskola](https://www.bth.se/) in Sweden 2019.
 
 ## Features and used techniques
-- Hybrid raytracer (tracing from GBuffers)
-    - With reflections for one bounce
-- Raytraced soft shadows from many light sources
+- Hybrid raytracer
+    - Tracing from GBuffers
+    - Reflections for one bounce
+- Raytraced soft shadows
+    - Support for many light sources
     - Using spatiotemporal filtering for denoising
 - Water "blob" rendering
     - Using metaball calculations through an intersection shader
@@ -30,7 +31,8 @@ A game developed by 12 people during 14 weeks as part of the course PA2526 Large
     - Swept sphere collision detection for fast moving objects
     - Ragdoll physics for torch
 - Entity Component System
-- Multiplayer network (with state interpolation)
+- Multiplayer network
+    - With state interpolation
 - Audio
     - Stream-from-file
     - Spatial sound (HRTF)
