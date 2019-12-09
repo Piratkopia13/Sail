@@ -45,7 +45,7 @@ public:
 	void updateSceneData(Camera& cam, LightSetup& lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors, bool doToneMapping = true);
 	void updateDecalData(DXRShaderCommon::DecalData* decals, size_t size);
 	void addWaterAtWorldPosition(const glm::vec3& position);
-	void removeWaterAtWorldPosition(const glm::vec3& position, const glm::ivec3& posOffset, const glm::ivec3& negOffset);
+	unsigned int removeWaterAtWorldPosition(const glm::vec3& position, const glm::ivec3& posOffset, const glm::ivec3& negOffset);
 	bool checkWaterAtWorldPosition(const glm::vec3& position);
 	// THIS WAS IMPLEMENTED SPECIFICALLY FOR CLEANING STATE!
 	std::pair<bool, glm::vec3> getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset);

@@ -10,7 +10,8 @@ CleaningState::CleaningState(NodeSystem* nodeSystem)
 	, m_targetPos(0.f, 0.f, 0.f)
 	, m_searchingClock(4.f)
 	, m_doSwitch(false)
-	, m_maxStateTime(5.f) {
+	, m_maxStateTime(10.f)
+	, m_cleaningPathStart(0) {
 	m_stateTimer = 0.f;
 }
 
@@ -24,8 +25,15 @@ void CleaningState::update(float dt, Entity* entity) {
 	
 	aiComp->doWalk = true;
 
-	if (m_stateTimer > m_maxStateTime) {
+	if (m_stateTimer > m_maxStateTime || aiComp->currPath.size() == 0 || aiComp->currNodeIndex >= aiComp->currPath.size() - 1) {
 		m_doSwitch = true;
+	}
+
+	if (aiComp->currNodeIndex >= m_cleaningPathStart) {
+		auto speedLC = entity->getComponent<SpeedLimitComponent>();
+		if (speedLC) {
+			speedLC->maxSpeed = speedLC->normalMaxSpeed;
+		}
 	}
 }
 
@@ -35,7 +43,11 @@ void CleaningState::reset(Entity* entity) {
 	if (aiComp) {
 		aiComp->automaticallyUpdatePath = true;
 	}
-	m_stateTimer = 0.f;
+
+	auto speedLC = entity->getComponent<SpeedLimitComponent>();
+	if (speedLC) {
+		speedLC->maxSpeed = speedLC->normalMaxSpeed;
+	}
 }
 
 void CleaningState::init(Entity* entity) {
@@ -47,9 +59,14 @@ void CleaningState::init(Entity* entity) {
 	if (aiComp) {
 		aiComp->automaticallyUpdatePath = false;
 	}
-	m_maxStateTime = glm::linearRand(5.f, 15.f);
+	m_maxStateTime = glm::linearRand(3.f, 10.f);
 	// Create a path for the bot to walk
 	createCleaningPath(entity);
+
+	auto speedLC = entity->getComponent<SpeedLimitComponent>();
+	if (speedLC) {
+		speedLC->maxSpeed = glm::linearRand(1.2f, 2.f) * speedLC->normalMaxSpeed;
+	}
 }
 
 bool* CleaningState::getDoSwitch() {
@@ -69,10 +86,6 @@ void CleaningState::createCleaningPath(Entity* entity) {// First try to walk to 
 		m_nodeSystemRef->colorPath(aiComp->currPath, m_nodeSystemRef->getMaxColourID());
 #endif
 		aiComp->timeTakenOnPath = 0.f;
-		aiComp->reachedPathingTarget = false;
-
-		// aiComp->posTarget is updated in each FSM state
-		aiComp->lastTargetPos = aiComp->posTarget;
 
 		auto tempPath = m_nodeSystemRef->getPath(aiPos, aiComp->posTarget);
 
@@ -87,6 +100,8 @@ void CleaningState::createCleaningPath(Entity* entity) {// First try to walk to 
 
 		aiComp->updatePath = false;
 	}
+
+	m_cleaningPathStart = aiComp->currPath.size();
 
 	auto nodes = m_nodeSystemRef->getNodes();
 	auto cleaningSize = glm::ivec2((std::rand() % 2) + 2, (std::rand() % 2) + 2);

@@ -57,7 +57,11 @@ private:
 
 	Octree* m_octree;
 
+	float m_targetReachedThreshold;
+
+#ifdef DEVELOPMENT
 	const static unsigned int NUM_UPDATE_TIMES = 10;
 	float m_updateTimes[NUM_UPDATE_TIMES];
 	unsigned int m_currUpdateTimeIndex = 0;
+#endif
 };

@@ -394,13 +394,21 @@ Entity::SPtr EntityFactory::CreateCleaningBotHost(const glm::vec3& pos, NodeSyst
 		auto sendC = e->addComponent<NetworkSenderComponent>(Netcode::EntityType::MECHA_ENTITY, compID);
 		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_POSITION);
 		sendC->addMessageType(Netcode::MessageType::CHANGE_LOCAL_ROTATION);
-		e->addComponent<SpeedLimitComponent>();
-		e->addComponent<CollisionComponent>(true);
+		e->addComponent<SpeedLimitComponent>(glm::linearRand(1.8f, 2.5f));
 		e->addComponent<AiComponent>();
 		e->addComponent<MovementComponent>();
 
+		/*// All cleaning bots have a bounding box
+		auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();
+		Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+		boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+		boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
+		boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
+		boundingBoxModel->getMesh(0)->getMaterial()->setRoughnessScale(0.5);
+		e->addComponent<BoundingBoxComponent>(boundingBoxModel);
+		e->addComponent<CollisionComponent>();*/
+
 		e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, 0.f, 0.0f);
-		e->getComponent<SpeedLimitComponent>()->maxSpeed = 2.0f;
 
 		auto fsmComp = e->addComponent<FSMComponent>();
 
@@ -425,7 +433,8 @@ Entity::SPtr EntityFactory::CreateCleaningBotHost(const glm::vec3& pos, NodeSyst
 }
 
 Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, const Netcode::ComponentID compID) {
-	auto e = ECS::Instance()->createEntity("Cleaning Bot");
+	auto e = ECS::Instance()->createEntity();
+	e->setName("Cleaning Bot #" + std::to_string(e->getID()));
 
 	std::string modelName = "CleaningBot.fbx";
 	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());

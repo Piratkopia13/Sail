@@ -3,7 +3,6 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/Systems.h"
-#include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 #include "Sail/graphics/shader/postprocess/BlendShader.h"
@@ -1195,7 +1194,7 @@ void GameState::createBots() {
 		botCount = 0;
 	}
 
-	botCount = 15;
+	botCount = 10;
 
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();

@@ -28,4 +28,6 @@ private:
 	bool m_doSwitch;
 
 	float m_maxStateTime;
+	
+	unsigned int m_cleaningPathStart;
 };
