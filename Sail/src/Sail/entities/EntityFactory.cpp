@@ -634,7 +634,7 @@ Entity::SPtr EntityFactory::CreateReplayCleaningBot(Netcode::ComponentID compID)
 	Entity::SPtr replayBot = ECS::Instance()->createEntity("ReplayBot");
 	replayBot->tryToAddToSystems = false;
 
-	std::string modelName = "CleaningBot.fbx";
+	std::string modelName = "CleaningBot";
 	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
 	botModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
 	botModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
