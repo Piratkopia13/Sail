@@ -21,17 +21,17 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 {
 	m_input = Input::GetInstance();
 	m_app = Application::getInstance();
-	ResourceManager* rm = &m_app->getResourceManager();
+	ResourceManager& rm = m_app->getResourceManager();
 
-	unsigned int byteSize = rm->getTextureByteSize();
+	unsigned int byteSize = rm.getTextureByteSize();
 
-	rm->loadTexture("splash_logo_smaller.tga");
+	loadTexture(rm, "splash_logo_smaller.tga");
 
-	byteSize = rm->getTextureByteSize();
+	byteSize = rm.getTextureByteSize();
 
-	rm->loadShaderSet<AnimationUpdateComputeShader>();
-	rm->loadShaderSet<GBufferWireframe>();
-	rm->setDefaultShader(&rm->getShaderSet<GBufferOutShader>());
+	rm.loadShaderSet<AnimationUpdateComputeShader>();
+	rm.loadShaderSet<GBufferWireframe>();
+	rm.setDefaultShader(&rm.getShaderSet<GBufferOutShader>());
 
 #ifdef MULTI_THREADED_LOADING
 	m_modelThread = m_app->pushJobToThreadPool([&](int id) {return loadModels(m_app); });
@@ -63,7 +63,7 @@ bool SplashScreenState::onEvent(const Event& event) {
 
 bool SplashScreenState::loadModels(Application* app) {
 
-	ResourceManager* rm = &app->getResourceManager();
+	ResourceManager& rm = app->getResourceManager();
 
 #ifdef MULTI_THREADED_LOADING
 	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
@@ -76,48 +76,32 @@ bool SplashScreenState::loadModels(Application* app) {
 //#ifndef _DEBUG
 	constexpr size_t UPPER_LIMIT_MB = 230;
 
-	rm->loadModel("Doc.fbx");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
+	loadModel(rm, "Doc.fbx");
+	loadModel(rm, "Torch.fbx");
+	loadModel(rm, "Tiles/RoomWall.fbx");
+	loadModel(rm, "Tiles/RoomDoor.fbx");
+	loadModel(rm, "Tiles/CorridorDoor.fbx");
+	loadModel(rm, "Tiles/CorridorWall.fbx");
+	loadModel(rm, "Tiles/RoomCeiling.fbx");
+	loadModel(rm, "Tiles/RoomFloor.fbx");
+	loadModel(rm, "Tiles/CorridorCorner.fbx");
+	loadModel(rm, "Tiles/RoomCorner.fbx");
+	loadModel(rm, "Clutter/Table.fbx");
+	loadModel(rm, "Clutter/Boxes.fbx");
+	loadModel(rm, "Clutter/MediumBox.fbx");
+	loadModel(rm, "Clutter/SquareBox.fbx");
+	loadModel(rm, "Clutter/Books1.fbx");
+	loadModel(rm, "Clutter/Screen.fbx");
+	loadModel(rm, "Clutter/Notepad.fbx");
+	loadModel(rm, "Clutter/Saftblandare.fbx");
+	loadModel(rm, "WaterPistol.fbx");
+	loadModel(rm, "boundingBox.fbx", &rm.getShaderSet<GBufferWireframe>());
+	loadModel(rm, "Clutter/Microscope.fbx");
+	loadModel(rm, "Clutter/CloningVats.fbx");
+	loadModel(rm, "Clutter/ControlStation.fbx");
+	loadModel(rm, "CleaningBot.fbx");
 
-	rm->loadModel("Torch.fbx");
-	rm->loadModel("Tiles/RoomWall.fbx");
-	rm->loadModel("Tiles/RoomDoor.fbx");
-	rm->loadModel("Tiles/CorridorDoor.fbx");
-	rm->loadModel("Tiles/CorridorWall.fbx");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadModel("Tiles/RoomCeiling.fbx");
-	rm->loadModel("Tiles/RoomFloor.fbx");
-	rm->loadModel("Tiles/CorridorCorner.fbx");
-	rm->loadModel("Tiles/RoomCorner.fbx");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadModel("Clutter/Table.fbx");
-	rm->loadModel("Clutter/Boxes.fbx");
-	rm->loadModel("Clutter/MediumBox.fbx");
-	rm->loadModel("Clutter/SquareBox.fbx");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadModel("Clutter/Books1.fbx");
-	rm->loadModel("Clutter/Screen.fbx");
-	rm->loadModel("Clutter/Notepad.fbx");
-	rm->loadModel("Clutter/Saftblandare.fbx");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadModel("WaterPistol.fbx");
-	rm->loadModel("boundingBox.fbx", &rm->getShaderSet<GBufferWireframe>());
-	rm->loadModel("Clutter/Microscope.fbx");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadModel("Clutter/CloningVats.fbx");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadModel("Clutter/ControlStation.fbx");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadModel("CleaningBot.fbx");
-
-	rm->clearSceneData();
+	rm.clearSceneData();
 
 
 	//LEAVE THIS FOR A MULTITHREADED FUTURE
@@ -125,23 +109,23 @@ bool SplashScreenState::loadModels(Application* app) {
 //
 //	std::vector <std::future<bool>> modelThreads;
 //	
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Doc.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("candleExported.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/tileFlat.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomWall.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/tileDoor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomDoor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorDoor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorWall.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomCeiling.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorFloor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomFloor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorCeiling.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorCorner.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomCorner.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Clutter/SmallObject.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Clutter/MediumObject.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Clutter/LargeObject.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Doc.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "candleExported.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/tileFlat.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/RoomWall.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/tileDoor.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/RoomDoor.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/CorridorDoor.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/CorridorWall.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/RoomCeiling.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/CorridorFloor.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/RoomFloor.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/CorridorCeiling.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/CorridorCorner.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/RoomCorner.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Clutter/SmallObject.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Clutter/MediumObject.fbx"); }));
+//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Clutter/LargeObject.fbx"); }));
 //
 //
 //
@@ -159,157 +143,116 @@ bool SplashScreenState::loadModels(Application* app) {
 	return true;
 }
 bool SplashScreenState::loadTextures(Application* app) {
-	ResourceManager* rm = &app->getResourceManager();
+	ResourceManager& rm = app->getResourceManager();
 
-	constexpr size_t UPPER_LIMIT_MB = 230;
-
-	rm->loadTexture("pbr/DDS/Torch/Torch_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Torch/Torch_NM.dds");
-	rm->loadTexture("pbr/DDS/Torch/Torch_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Tiles/RoomWallMRAO.dds");
-	rm->loadTexture("pbr/DDS/Tiles/RoomWallNM.dds");
-	rm->loadTexture("pbr/DDS/Tiles/RoomWallAlbedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Tiles/RS_MRAo.dds");
-	rm->loadTexture("pbr/DDS/Tiles/RS_NM.dds");
-	rm->loadTexture("pbr/DDS/Tiles/RS_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Tiles/RD_MRAo.dds");
-	rm->loadTexture("pbr/DDS/Tiles/RD_NM.dds");
-	rm->loadTexture("pbr/DDS/Tiles/RD_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Tiles/CD_MRAo.dds");
-	rm->loadTexture("pbr/DDS/Tiles/CD_NM.dds");
-	rm->loadTexture("pbr/DDS/Tiles/CD_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Tiles/CW_MRAo.dds");
-	rm->loadTexture("pbr/DDS/Tiles/CW_NM.dds");
-	rm->loadTexture("pbr/DDS/Tiles/CW_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Tiles/F_MRAo.dds");
-	rm->loadTexture("pbr/DDS/Tiles/F_NM.dds");
-	rm->loadTexture("pbr/DDS/Tiles/F_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Tiles/CF_MRAo.dds");
-	rm->loadTexture("pbr/DDS/Tiles/CF_NM.dds");
-	rm->loadTexture("pbr/DDS/Tiles/CF_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Tiles/CC_MRAo.dds");
-	rm->loadTexture("pbr/DDS/Tiles/CC_NM.dds");
-	rm->loadTexture("pbr/DDS/Tiles/CC_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Tiles/RC_MRAo.dds");
-	rm->loadTexture("pbr/DDS/Tiles/RC_NM.dds");
-	rm->loadTexture("pbr/DDS/Tiles/RC_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Tiles/Corner_MRAo.dds");
-	rm->loadTexture("pbr/DDS/Tiles/Corner_NM.dds");
-	rm->loadTexture("pbr/DDS/Tiles/Corner_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/Saftblandare_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Saftblandare_NM.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Saftblandare_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/Boxes_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Boxes_NM.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Boxes_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/Table_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Table_NM.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Table_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/Book_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Book_NM.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Book1_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/SquareBox_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/SquareBox_NM.dds");
-	rm->loadTexture("pbr/DDS/Clutter/SquareBox_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/MediumBox_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/MediumBox_NM.dds");
-	rm->loadTexture("pbr/DDS/Clutter/MediumBox_Albedo.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/Screen_Albedo.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Screen_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Screen_NM.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/Notepad_Albedo.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Notepad_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Notepad_NM.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/Microscope_Albedo.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Microscope_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Microscope_NM.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/CloningVats_Albedo.dds");
-	rm->loadTexture("pbr/DDS/Clutter/CloningVats_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/CloningVats_NM.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Clutter/ControlStation_Albedo.dds");
-	rm->loadTexture("pbr/DDS/Clutter/ControlStation_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Clutter/ControlStation_NM.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
-	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_NM.dds");
-	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/Doc/Doc_Albedo.dds");
-	rm->loadTexture("pbr/DDS/Doc/Doc_MRAO.dds");
-	rm->loadTexture("pbr/DDS/Doc/Doc_NM.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("pbr/DDS/WaterGun/Watergun_Albedo.dds");
-	rm->loadTexture("pbr/DDS/WaterGun/Watergun_MRAO.dds");
-	rm->loadTexture("pbr/DDS/WaterGun/Watergun_NM.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("particles/animFire.dds");
-	rm->loadTexture("particles/animSmoke.dds");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
-	rm->loadTexture("Icons/TorchLeft.tga");
-	rm->loadTexture("Icons/TorchThrow2.tga");
-	rm->loadTexture("Icons/PlayersLeft.tga");
-	rm->loadTexture("Icons/CantShootIcon1.tga");
-	rm->loadTexture("Icons/CantShootIcon2.tga");
-	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
-
+	loadTexture(rm, "pbr/DDS/Torch/Torch_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Torch/Torch_NM.dds");
+	loadTexture(rm, "pbr/DDS/Torch/Torch_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RoomWallMRAO.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RoomWallNM.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RoomWallAlbedo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RS_MRAo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RS_NM.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RS_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RD_MRAo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RD_NM.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RD_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CD_MRAo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CD_NM.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CD_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CW_MRAo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CW_NM.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CW_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/F_MRAo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/F_NM.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/F_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CF_MRAo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CF_NM.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CF_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CC_MRAo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CC_NM.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/CC_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RC_MRAo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RC_NM.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/RC_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/Corner_MRAo.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/Corner_NM.dds");
+	loadTexture(rm, "pbr/DDS/Tiles/Corner_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Saftblandare_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Saftblandare_NM.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Saftblandare_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Boxes_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Boxes_NM.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Boxes_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Table_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Table_NM.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Table_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Book_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Book_NM.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Book1_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/SquareBox_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/SquareBox_NM.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/SquareBox_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/MediumBox_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/MediumBox_NM.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/MediumBox_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Screen_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Screen_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Screen_NM.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Notepad_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Notepad_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Notepad_NM.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Microscope_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Microscope_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/Microscope_NM.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/CloningVats_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/CloningVats_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/CloningVats_NM.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/ControlStation_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/ControlStation_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/ControlStation_NM.dds");
+	loadTexture(rm, "pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/CleaningRobot/CleaningBot_NM.dds");
+	loadTexture(rm, "pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Doc/Doc_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/Doc/Doc_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/Doc/Doc_NM.dds");
+	loadTexture(rm, "pbr/DDS/WaterGun/Watergun_Albedo.dds");
+	loadTexture(rm, "pbr/DDS/WaterGun/Watergun_MRAO.dds");
+	loadTexture(rm, "pbr/DDS/WaterGun/Watergun_NM.dds");
+	loadTexture(rm, "particles/animFire.dds");
+	loadTexture(rm, "particles/animSmoke.dds");
+	
+	loadTexture(rm, "Icons/TorchLeft.tga");
+	loadTexture(rm, "Icons/TorchThrow2.tga");
+	loadTexture(rm, "Icons/PlayersLeft.tga");
+	loadTexture(rm, "Icons/CantShootIcon1.tga");
+	loadTexture(rm, "Icons/CantShootIcon2.tga");
+	
 	// Load the missing texture texture
-	rm->loadTexture("missing.tga");
+	loadTexture(rm, "missing.tga");
 
 	return true;
 }
 
-void SplashScreenState::waitUntilMemoryIsBelow(size_t size) {
+void SplashScreenState::loadModel(ResourceManager& rm, const char* filename, Shader* shader) {
 #ifdef WAIT_FOR_MEMORY
-	
+	constexpr size_t UPPER_LIMIT_MB = 230;
+	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
+#endif
+	rm.loadModel(filename, shader);
+}
+
+void SplashScreenState::loadTexture(ResourceManager& rm, const char* filename) {
+#ifdef WAIT_FOR_MEMORY
+	constexpr size_t UPPER_LIMIT_MB = 230;
+	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
+#endif
+	rm.loadTexture(filename);
+}
+
+void SplashScreenState::waitUntilMemoryIsBelow(size_t size) {
 	PROCESS_MEMORY_COUNTERS pmc;
-	
 	int waitCount = 0;
 
 	while (true) {
@@ -323,14 +266,14 @@ void SplashScreenState::waitUntilMemoryIsBelow(size_t size) {
 				m_nrOfWaits++;
 			}
 
-			// Prevents infinite waiting
+			// Prevents infinite waiting on a single resource
 			if (waitCount++ > 1'000'000) {
+				waitCount = 0;
 				break;
 			}
 			continue;
 		}
 	}
-#endif
 }
 
 size_t SplashScreenState::MB_to_Byte(size_t sizeMB) {

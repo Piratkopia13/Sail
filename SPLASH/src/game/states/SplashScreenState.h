@@ -28,8 +28,11 @@ public:
 private:
 	bool loadModels(Application* app);
 	bool loadTextures(Application* app);
-	void waitUntilMemoryIsBelow(size_t size);
 
+	void loadModel(ResourceManager& rm, const char* filename, Shader* shader = nullptr);
+	void loadTexture(ResourceManager& rm, const char* filename);
+
+	void waitUntilMemoryIsBelow(size_t size);
 	size_t MB_to_Byte(size_t sizeMB);
 
 private:
