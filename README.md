@@ -6,7 +6,7 @@
 
 > *"A fluid first person shooter"*
 
-A game developed by 12 people as part of a 14 week-long course under the name *Large Game Project (PA2526)* at [Blekinge Tekniska Högskola](https://www.bth.se/) in Sweden, 2019.
+A game developed by 12 people as part of a 14 week-long course under the name *Large Game Project (PA2526)* at [Blekinge Institute of Technology](https://www.bth.se/) in Sweden, 2019.
 
 ## Features and used techniques
 - Hybrid raytracer
