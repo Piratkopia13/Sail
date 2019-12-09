@@ -14,6 +14,7 @@
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 
 #define MULTI_THREADED_LOADING
+//#define WAIT_FOR_MEMORY
 
 SplashScreenState::SplashScreenState(StateStack& stack)
 	: State(stack)
@@ -73,7 +74,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	//Sleep(1000000);		// Used for observing when the RAM spike happens
 
 //#ifndef _DEBUG
-	constexpr size_t UPPER_LIMIT_MB = 240;
+	constexpr size_t UPPER_LIMIT_MB = 230;
 
 	rm->loadModel("Doc.fbx");
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
@@ -160,162 +161,135 @@ bool SplashScreenState::loadModels(Application* app) {
 bool SplashScreenState::loadTextures(Application* app) {
 	ResourceManager* rm = &app->getResourceManager();
 
-	constexpr size_t UPPER_LIMIT_MB = 240;
+	constexpr size_t UPPER_LIMIT_MB = 230;
 
 	rm->loadTexture("pbr/DDS/Torch/Torch_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Torch/Torch_NM.dds");
 	rm->loadTexture("pbr/DDS/Torch/Torch_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Tiles/RoomWallMRAO.dds");
 	rm->loadTexture("pbr/DDS/Tiles/RoomWallNM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/RoomWallAlbedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Tiles/RS_MRAo.dds");
 	rm->loadTexture("pbr/DDS/Tiles/RS_NM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/RS_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Tiles/RD_MRAo.dds");
 	rm->loadTexture("pbr/DDS/Tiles/RD_NM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/RD_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Tiles/CD_MRAo.dds");
 	rm->loadTexture("pbr/DDS/Tiles/CD_NM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/CD_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Tiles/CW_MRAo.dds");
 	rm->loadTexture("pbr/DDS/Tiles/CW_NM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/CW_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Tiles/F_MRAo.dds");
 	rm->loadTexture("pbr/DDS/Tiles/F_NM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/F_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Tiles/CF_MRAo.dds");
 	rm->loadTexture("pbr/DDS/Tiles/CF_NM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/CF_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Tiles/CC_MRAo.dds");
 	rm->loadTexture("pbr/DDS/Tiles/CC_NM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/CC_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Tiles/RC_MRAo.dds");
 	rm->loadTexture("pbr/DDS/Tiles/RC_NM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/RC_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Tiles/Corner_MRAo.dds");
 	rm->loadTexture("pbr/DDS/Tiles/Corner_NM.dds");
 	rm->loadTexture("pbr/DDS/Tiles/Corner_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/Saftblandare_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Saftblandare_NM.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Saftblandare_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/Boxes_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Boxes_NM.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Boxes_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/Table_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Table_NM.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Table_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/Book_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Book_NM.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Book1_Albedo.dds");
-	rm->loadTexture("pbr/DDS/Clutter/Book2_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/SquareBox_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/SquareBox_NM.dds");
 	rm->loadTexture("pbr/DDS/Clutter/SquareBox_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/MediumBox_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/MediumBox_NM.dds");
 	rm->loadTexture("pbr/DDS/Clutter/MediumBox_Albedo.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/Screen_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Screen_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Screen_NM.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/Notepad_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Notepad_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Notepad_NM.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/Microscope_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Microscope_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/Microscope_NM.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/CloningVats_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Clutter/CloningVats_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/CloningVats_NM.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Clutter/ControlStation_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Clutter/ControlStation_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Clutter/ControlStation_NM.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
 	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_NM.dds");
 	rm->loadTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/Doc/Doc_Albedo.dds");
 	rm->loadTexture("pbr/DDS/Doc/Doc_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Doc/Doc_NM.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("pbr/DDS/WaterGun/Watergun_Albedo.dds");
 	rm->loadTexture("pbr/DDS/WaterGun/Watergun_MRAO.dds");
 	rm->loadTexture("pbr/DDS/WaterGun/Watergun_NM.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("particles/animFire.dds");
 	rm->loadTexture("particles/animSmoke.dds");
-
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	rm->loadTexture("Icons/TorchLeft.tga");
@@ -323,6 +297,7 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("Icons/PlayersLeft.tga");
 	rm->loadTexture("Icons/CantShootIcon1.tga");
 	rm->loadTexture("Icons/CantShootIcon2.tga");
+	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 
 	// Load the missing texture texture
 	rm->loadTexture("missing.tga");
@@ -331,6 +306,8 @@ bool SplashScreenState::loadTextures(Application* app) {
 }
 
 void SplashScreenState::waitUntilMemoryIsBelow(size_t size) {
+#ifdef WAIT_FOR_MEMORY
+	
 	PROCESS_MEMORY_COUNTERS pmc;
 	
 	int waitCount = 0;
@@ -353,6 +330,7 @@ void SplashScreenState::waitUntilMemoryIsBelow(size_t size) {
 			continue;
 		}
 	}
+#endif
 }
 
 size_t SplashScreenState::MB_to_Byte(size_t sizeMB) {
