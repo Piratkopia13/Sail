@@ -318,7 +318,7 @@ void DXRBase::addWaterAtWorldPosition(const glm::vec3& position) {
 	}
 }
 
-void DXRBase::removeWaterAtWorldPosition(const glm::vec3& position, const glm::ivec3& posOffset, const glm::ivec3& negOffset) {
+unsigned int DXRBase::removeWaterAtWorldPosition(const glm::vec3& position, const glm::ivec3& posOffset, const glm::ivec3& negOffset) {
 	static auto& mapSettings = Application::getInstance()->getSettings().gameSettingsDynamic["map"];
 	auto mapSize = glm::vec3(mapSettings["sizeX"].value, 0.8f, mapSettings["sizeY"].value) * (float)mapSettings["tileSize"].value;
 	auto mapStart = -glm::vec3((float)mapSettings["tileSize"].value / 2.0f, 0.f, (float)mapSettings["tileSize"].value / 2.0f);
@@ -330,6 +330,7 @@ void DXRBase::removeWaterAtWorldPosition(const glm::vec3& position, const glm::i
 	// Convert triple-number (float) to triple-number (int)
 	glm::i32vec3 origInd = floor(floatInd);
 
+	unsigned int numRemovedWater = 0;
 	for (int x = negOffset.x; x < posOffset.x + 1; x++) {
 		for (int y = negOffset.y; y < posOffset.y + 1; y++) {
 			for (int z = negOffset.z; z < posOffset.z + 1; z++) {
@@ -357,15 +358,19 @@ void DXRBase::removeWaterAtWorldPosition(const glm::vec3& position, const glm::i
 
 						switch (quarterIndex) {
 						case 0:
+							numRemovedWater += up0;
 							m_waterDeltas[arrIndex] = Utils::packQuarterFloat(0U, up1, up2, up3);
 							break;
 						case 1:
+							numRemovedWater += up1;
 							m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, 0U, up2, up3);
 							break;
 						case 2:
+							numRemovedWater += up2;
 							m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, 0U, up3);
 							break;
 						case 3:
+							numRemovedWater += up3;
 							m_waterDeltas[arrIndex] = Utils::packQuarterFloat(up0, up1, up2, 0U);
 							break;
 						}
@@ -381,6 +386,8 @@ void DXRBase::removeWaterAtWorldPosition(const glm::vec3& position, const glm::i
 			}
 		}
 	}
+
+	return numRemovedWater;
 }
 
 bool DXRBase::checkWaterAtWorldPosition(const glm::vec3& position) {
@@ -422,7 +429,7 @@ std::pair<bool, glm::vec3> DXRBase::getNearestWaterPosition(const glm::vec3& pos
 	int zOffset = maxOffset.z / mapSize.z * m_waterArrSizes.z;
 
 	auto daRand = glm::diskRand(maxOffset.x);
-	glm::vec3 closestPos = glm::vec3(daRand.x, 0.f, daRand.y);
+	glm::vec3 closestPos = position + glm::vec3(daRand.x, 0.f, daRand.y);
 	float leastDist = FLT_MAX;
 	bool found = false;
 	for (int x = -xOffset; x < xOffset + 1; x++) {

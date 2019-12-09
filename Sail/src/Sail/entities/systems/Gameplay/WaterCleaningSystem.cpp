@@ -1,7 +1,8 @@
 #include "pch.h"
 #include "WaterCleaningSystem.h"
+#include "Sail.h"
 
-#include <Sail.h>
+#include <iomanip>
 
 WaterCleaningSystem::WaterCleaningSystem()
 	: m_rendererWrapperRef(Application::getInstance()->getRenderWrapper()) 
@@ -34,7 +35,9 @@ void WaterCleaningSystem::update(float dt) {
 				negOffset.z += int(velNorm.z * 3.f) - 1;
 			}
 
-			m_rendererWrapperRef->removeWaterPoint(transC->getTranslation(), posOffset, negOffset);
+			float amountOfWaterRemoved = m_rendererWrapperRef->removeWaterPoint(transC->getTranslation(), posOffset, negOffset);
+			amountOfWaterRemoved *= 0.00392156862f;
+			cleanC->amountCleaned += amountOfWaterRemoved;
 		}
 	}
 }

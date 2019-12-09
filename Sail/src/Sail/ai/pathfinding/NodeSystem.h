@@ -47,7 +47,7 @@ public:
 	NodeSystem();
 	~NodeSystem();
 
-	void setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections, unsigned int xMax, unsigned int zMax);
+	void setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections, const unsigned int xMax, const unsigned int zMax);
 
 	std::vector<NodeSystem::Node> getPath(const NodeSystem::Node& from, const NodeSystem::Node& to);
 	std::vector<NodeSystem::Node> getPath(const glm::vec3& from, const glm::vec3& to);
@@ -85,9 +85,11 @@ private:
 	std::vector<std::vector<unsigned int>> m_connections;
 	std::vector<NodeSystem::Node> m_nodes;
 
+#ifdef DEVELOPMENT
 	const static unsigned int NUM_SEARCH_TIMES = 10;
 	float m_pathSearchTimes[NUM_SEARCH_TIMES];
 	unsigned int m_currSearchTimeIndex = 0;
+#endif
 
 	unsigned int m_xMax = 0;
 	unsigned int m_zMax = 0;

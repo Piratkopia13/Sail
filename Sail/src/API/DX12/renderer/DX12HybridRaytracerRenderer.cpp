@@ -69,7 +69,7 @@ void DX12HybridRaytracerRenderer::setTeamColors(const std::vector<glm::vec3>& te
 	m_rendererRaytrace->setTeamColors(teamColors);
 }
 
-void DX12HybridRaytracerRenderer::removeWaterPoint(const glm::vec3& pos, const glm::ivec3& posOffset, const glm::ivec3& negOffset) {
+unsigned int DX12HybridRaytracerRenderer::removeWaterPoint(const glm::vec3& pos, const glm::ivec3& posOffset, const glm::ivec3& negOffset) {
 	return m_rendererRaytrace->removeWaterPoint(pos, posOffset, negOffset);
 }
 

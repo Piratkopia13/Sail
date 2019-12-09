@@ -23,44 +23,43 @@ void WaterSearchingState::update(float dt, Entity* entity) {
 	auto aiPos = entity->getComponent<TransformComponent>()->getMatrixWithUpdate()[3];
 
 	m_searchingClock += dt;
-	if ((m_stateTimer < 4.f && aiComp->currNodeIndex >= aiComp->currPath.size() - 1) || aiComp->currPath.size() == 0) {
+	if ((aiComp->currNodeIndex >= aiComp->currPath.size() - 1) || aiComp->currPath.size() == 0) {
 		int index = -1;
 		if (aiComp->currPath.size() > 0) {
 			index = aiComp->currPath[aiComp->currNodeIndex].index;
 		} else {
 			index = m_nodeSystemRef->getNearestNode(aiPos).index;
 		}
+
 		findRandomNodeIndex(-1);
 		aiComp->updatePath = true;
 		aiComp->posTarget = m_targetPos;
-	} else if (!m_movingTowardWater) {
-		if (m_searchingClock > 2.f && aiComp->currPath.size() / 2 <= aiComp->currNodeIndex) {
-			int index = -1;
-			if (aiComp->currPath.size() > 0) {
-				index = aiComp->currPath[aiComp->currNodeIndex].index;
-			}
+	} if (m_searchingClock > 2.f && aiComp->currPath.size() / 2 <= aiComp->currNodeIndex || m_searchingClock > 5.f) {
+		int index = -1;
+		if (aiComp->currPath.size() > 0) {
+			index = aiComp->currPath[aiComp->currNodeIndex].index;
+		} else {
+			index = m_nodeSystemRef->getNearestNode(aiPos).index;
+		}
 
-			m_searchingClock = glm::linearRand(-2.f, 1.f);
-			m_movingTowardWater = searchForWater(aiPos, index);
-			findRandomNodeIndex(m_nodeSystemRef->getNearestNode(m_targetPos).index, 1, 1);
+		m_searchingClock = glm::linearRand(-2.f, 1.f);
+		m_movingTowardWater = searchForWater(m_nodeSystemRef->getNodes()[index].position, index);
+		//findRandomNodeIndex(m_nodeSystemRef->getNearestNode(m_targetPos).index, 1, 1);
 
-			aiComp->posTarget = m_targetPos;
-			aiComp->updatePath = true;
+		aiComp->posTarget = m_targetPos;
+		aiComp->updatePath = true;
+		if (m_movingTowardWater) {
 			m_doSwitch = true;
 		}
 	} else if ((aiComp->currPath.size() > 0 && aiComp->currNodeIndex >= aiComp->currPath.size() - 1)) {
 		m_movingTowardWater = false;
-	} else if (m_stateTimer > 10.f) {
-		m_stateTimer = 0.f;
 	}
 
 	aiComp->doWalk = true;
 }
 
 void WaterSearchingState::reset(Entity* entity) {
-	m_stateTimer = 0.f;
 	m_doSwitch = false;
-	m_movingTowardWater = false;
 	auto aiComp = entity->getComponent<AiComponent>();
 	if (aiComp) {
 		aiComp->automaticallyUpdatePath = true;
@@ -70,13 +69,18 @@ void WaterSearchingState::reset(Entity* entity) {
 void WaterSearchingState::init(Entity* entity) {
 	m_stateTimer = 0.f;
 	m_targetPos = glm::vec3(0.f, 0.f, 0.f);
-	m_searchingClock = 4.f;
+	m_searchingClock = 0.f;
 	auto aiComp = entity->getComponent<AiComponent>();
 	if (aiComp) {
 		aiComp->automaticallyUpdatePath = false;
 	}
 	m_doSwitch = false;
 	m_movingTowardWater = false;
+
+	findRandomNodeIndex(-1);
+	aiComp->updatePath = true;
+	aiComp->posTarget = m_targetPos;
+	aiComp->currNodeIndex = 0;
 }
 
 bool* WaterSearchingState::getDoSwitch() {

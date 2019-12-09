@@ -14,7 +14,7 @@ NodeSystem::~NodeSystem() {
 
 }
 
-void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections, unsigned int xMax, unsigned int zMax) {
+void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std::vector<unsigned int>>& connections, const unsigned int xMax, const unsigned int zMax) {
 #ifdef _DEBUG_NODESYSTEM
 	if ( m_shader == nullptr ) {
 		SAIL_LOG_ERROR("Shader need to be set in the node system during debug.");
@@ -84,17 +84,19 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 std::vector<NodeSystem::Node> NodeSystem::getPath(const NodeSystem::Node& from, const NodeSystem::Node& to) {
 	std::vector<NodeSystem::Node> nPath;
 	if (from.index != to.index && !m_nodes[to.index].blocked && !m_nodes[from.index].blocked && m_connections[to.index].size() > 0 && m_connections[from.index].size() > 0) {
+#ifdef DEVELOPMENT
 		auto start = std::chrono::high_resolution_clock::now();
+#endif
 		auto path = aStar(from.index, to.index);
+#ifdef DEVELOPMENT
 		m_pathSearchTimes[m_currSearchTimeIndex % NUM_SEARCH_TIMES] = 
 			static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
-
 		if (m_pathSearchTimes[m_currSearchTimeIndex % NUM_SEARCH_TIMES] > 5000) {
 			SAIL_LOG("Finding a path (" + Utils::toStr(from.position) + "->" + Utils::toStr(to.position) + ") took " + 
 					 std::to_string(static_cast<float>(m_pathSearchTimes[m_currSearchTimeIndex % NUM_SEARCH_TIMES]) / 1000.f) + "ms, size of path: " + std::to_string(path.size()));
 		}
 		m_currSearchTimeIndex++;
-		//auto path = BFS(from.index, to.index);
+#endif
 		
 		size_t size = path.size();
 		for ( size_t i = size - 1; i < size; i-- ) {
@@ -196,13 +198,13 @@ void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	for (int i = 0; i < m_maxColourID; i++) {
 		m_pathNodes.emplace_back(&Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall.fbx", m_shader));
 		m_pathNodes[i]->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
-		m_pathNodes[i]->getMesh(0)->getMaterial()->setColor(glm::vec4(glm::linearRand(0.f, 1.f), glm::linearRand(0.f, 1.f), glm::linearRand(0.f, 1.f), 1.f));
+		m_pathNodes[i]->getMesh(0)->getMaterial()->setColor(glm::vec4(glm::linearRand(0.5f, 1.f), glm::linearRand(0.5f, 1.f), glm::linearRand(0.5f, 1.f), 1.f));
 		m_pathNodes[i]->setCastShadows(false);
 	}
 
 	m_pathNodes.emplace_back(&Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall.fbx", m_shader));
 	m_pathNodes[m_maxColourID]->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
-	m_pathNodes[m_maxColourID]->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 1.f, 1.f, 1.f));
+	m_pathNodes[m_maxColourID]->getMesh(0)->getMaterial()->setColor(glm::vec4(0.3f, 0.3f, 0.3f, 1.f));
 	m_pathNodes[m_maxColourID]->setCastShadows(false);
 }
 #endif
