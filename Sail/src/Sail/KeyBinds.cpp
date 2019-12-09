@@ -119,3 +119,51 @@ void KeyBinds::init() {
 	// Debugging
 	SPECTATOR_DEBUG = SAIL_KEY_M;
 }
+
+std::string KeyBinds::getName(const int value) {
+	
+	if (value >= SAIL_KEY_A && value <= SAIL_KEY_Z) {
+		return std::string({(char)value});
+	}
+	else if (value >= SAIL_KEY_0 && value <= SAIL_KEY_9) {
+		return std::string({ (char)value });
+	}
+	else if (value == SAIL_KEY_TAB) {
+		return "Tab";
+	}
+	else if (value == SAIL_KEY_SHIFT) {
+		return "Shift";
+	}	
+	else if (value == SAIL_KEY_SPACE) {
+		return "Space";
+	}
+	else if (value == SAIL_KEY_CONTROL) {
+		return "Ctrl";
+	}
+
+	return "N/A";
+}
+
+bool KeyBinds::allowed(const int value) {
+
+	if (value >= SAIL_KEY_A && value <= SAIL_KEY_Z) {
+		return true;
+	}
+	else if (value >= SAIL_KEY_0 && value <= SAIL_KEY_9) {
+		return true;
+	}
+	else if (value == SAIL_KEY_TAB) {
+		return true;
+	}
+	else if (value == SAIL_KEY_SHIFT) {
+		return true;
+	}
+	else if (value == SAIL_KEY_SPACE) {
+		return true;
+	}
+	else if (value == SAIL_KEY_CONTROL) {
+		return true;
+	}
+
+	return false;
+}
