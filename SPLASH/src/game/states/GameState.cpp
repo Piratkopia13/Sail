@@ -959,7 +959,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	// Only run particle system if particles are enabled.
 	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
-		// If the particleSystem was disabled at the start of the game, and is now enabled the particle system is created and all emitters are added to the system
+		// If the particleSystem was disabled at the start of the game, and is now enabled, the particle system is created and all emitters are added to the system
 		if (!ECS::Instance()->getSystem<ParticleSystem>()) {
 			m_componentSystems.particleSystem = ECS::Instance()->createSystem<ParticleSystem>();
 			for (int i = 0; i < m_player->getChildEntities().size(); i++) {
