@@ -87,8 +87,60 @@ void DX12ShaderPipeline::instanceFinished() {
 
 void* DX12ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
 
+	// TODO: make this work
 	DXILShaderCompiler::Desc shaderDesc;
+	
+	switch (shaderType) {
+	case ShaderComponent::VS:
+		shaderDesc.entryPoint = L"VSMain";
+		shaderDesc.targetProfile = L"vs_6_0";
+		break;
+	case ShaderComponent::PS:
+		shaderDesc.entryPoint = L"PSMain";
+		shaderDesc.targetProfile = L"ps_6_0";
+		break;
+	case ShaderComponent::GS:
+		shaderDesc.entryPoint = L"GSMain";
+		shaderDesc.targetProfile = L"gs_6_0";
+		break;
+	case ShaderComponent::CS:
+		shaderDesc.entryPoint = L"CSMain";
+		shaderDesc.targetProfile = L"cs_6_0";
+		break;
+	case ShaderComponent::DS:
+		shaderDesc.entryPoint = L"DSMain";
+		shaderDesc.targetProfile = L"ds_6_0";
+		break;
+	case ShaderComponent::HS:
+		shaderDesc.entryPoint = L"HSMain";
+		shaderDesc.targetProfile = L"hs_6_0";
+		break;
+	}
+	
+#ifdef _DEBUG
+	shaderDesc.compileArguments.push_back(L"/Zi"); // Debug info
+#endif
+	shaderDesc.compileArguments.push_back(L"/Gis"); // Declare all variables and values as precise
+	shaderDesc.source = source.c_str();
+	shaderDesc.sourceSize = source.length();
+	auto wfilepath = std::wstring(filepath.begin(), filepath.end());
+	shaderDesc.filePath = wfilepath.c_str();
 
+	IDxcBlob* pShaders = nullptr;
+	ThrowIfFailed(m_dxilCompiler->compile(&shaderDesc, &pShaders));
+
+	// "Old" compilation
+
+/*
+	ID3DBlob* pShaders = nullptr;
+	ID3DBlob* errorBlob = nullptr;
+	UINT flags = 0;
+	flags |= D3DCOMPILE_DEBUG; // TODO: move back into define below
+#if defined( DEBUG ) || defined( _DEBUG )
+	flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+	flags |= D3DCOMPILE_ALL_RESOURCES_BOUND;
+#endif
+	HRESULT hr;
 	switch (shaderType) {
 	case ShaderComponent::VS:
 		shaderDesc.entryPoint = L"VSMain";
@@ -116,17 +168,26 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 		break;
 	}
 
-#ifdef _DEBUG
-	shaderDesc.compileArguments.push_back(L"/Zi"); // Debug info
-#endif
-	shaderDesc.compileArguments.push_back(L"/Gis"); // Declare all variables and values as precise
-	shaderDesc.source = source.c_str();
-	shaderDesc.sourceSize = source.length();
-	auto wfilepath = std::wstring(filepath.begin(), filepath.end());
-	shaderDesc.filePath = wfilepath.c_str();
-
-	IDxcBlob* pShaders = nullptr;
-	ThrowIfFailed(m_dxilCompiler->compile(&shaderDesc, &pShaders));
+	if (FAILED(hr)) {
+		// Print shader compilation error
+		if (errorBlob) {
+			char* msg = (char*)(errorBlob->GetBufferPointer());
+			std::stringstream ss;
+			ss << "Failed to compile shader (" << filepath << ")\n";
+			for (size_t i = 0; i < errorBlob->GetBufferSize(); i++) {
+				ss << msg[i];
+			}
+			OutputDebugStringA(ss.str().c_str());
+			OutputDebugStringA("\n");
+			MessageBoxA(0, ss.str().c_str(), "", 0);
+			errorBlob->Release();
+		}
+		if (pShaders) {
+			pShaders->Release();
+		}
+		ThrowIfFailed(hr);
+	}
+*/
 
 	return pShaders;
 
@@ -274,7 +335,11 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 
 	// Specify render target and depthstencil usage
 	for (unsigned int i = 0; i < numRenderTargets; i++) {
-		gpsd.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		if (m_rtFormats.find(i) != m_rtFormats.end()) {
+			gpsd.RTVFormats[i] = m_rtFormats[i];
+		} else {
+			gpsd.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
 	}
 	gpsd.NumRenderTargets = numRenderTargets;
 
@@ -379,6 +444,10 @@ void DX12ShaderPipeline::createComputePipelineState() {
 	cpsd.CS.BytecodeLength = csD3DBlob->GetBufferSize();
 
 	ThrowIfFailed(m_context->getDevice()->CreateComputePipelineState(&cpsd, IID_PPV_ARGS(&m_pipelineState)));
+}
+
+void DX12ShaderPipeline::setRenderTargetFormat(unsigned rtIndex, DXGI_FORMAT format) {
+	m_rtFormats[rtIndex] = format;
 }
 
 unsigned DX12ShaderPipeline::getMeshIndex() {
