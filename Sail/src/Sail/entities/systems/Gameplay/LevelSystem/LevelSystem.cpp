@@ -1787,6 +1787,6 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		particleEmitterComp->maxNumberOfParticles = (int)glm::ceil((1.0f / particleEmitterComp->spawnRate) * particleEmitterComp->lifeTime);
 		particleEmitterComp->isActive = false;
 		particleEmitterComp->setTexture("particles/animSmoke.dds");
-#endif
+
 	}
 }
