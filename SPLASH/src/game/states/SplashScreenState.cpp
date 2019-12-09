@@ -14,7 +14,7 @@
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 
 #define MULTI_THREADED_LOADING
-//#define WAIT_FOR_MEMORY
+#define WAIT_FOR_MEMORY
 
 SplashScreenState::SplashScreenState(StateStack& stack)
 	: State(stack)
@@ -74,9 +74,6 @@ bool SplashScreenState::loadModels(Application* app) {
 	//Sleep(1000000);		// Used for observing when the RAM spike happens
 
 //#ifndef _DEBUG
-	constexpr size_t UPPER_LIMIT_MB = 230;
-
-	loadModel(rm, "Doc.fbx");
 	loadModel(rm, "Torch.fbx");
 	loadModel(rm, "Tiles/RoomWall.fbx");
 	loadModel(rm, "Tiles/RoomDoor.fbx");
@@ -97,6 +94,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	loadModel(rm, "WaterPistol.fbx");
 	loadModel(rm, "boundingBox.fbx", &rm.getShaderSet<GBufferWireframe>());
 	loadModel(rm, "Clutter/Microscope.fbx");
+	loadModel(rm, "Doc.fbx");
 	loadModel(rm, "Clutter/CloningVats.fbx");
 	loadModel(rm, "Clutter/ControlStation.fbx");
 	loadModel(rm, "CleaningBot.fbx");
