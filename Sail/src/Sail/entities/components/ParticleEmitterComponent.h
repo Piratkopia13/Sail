@@ -73,7 +73,7 @@ private:
 
 	// Used in ParticleSystem
 	bool hasBeenCreatedInSystem();
-	void setAsCreatedInSystem();
+	void setAsCreatedInSystem(bool created);
 	const std::string& getTextureName() const;
 
 public:
