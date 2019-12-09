@@ -47,6 +47,8 @@ namespace EntityFactory {
 	
 	Entity::SPtr CreateProjectile(Entity::SPtr projectileEntity, const ProjectileArguments& info);
 	Entity::SPtr CreateReplayProjectile(Entity::SPtr projectileEntity, const ProjectileArguments& info);
+	Entity::SPtr CreateReplayCleaningBot(Netcode::ComponentID compID);
+
 
 	Entity::SPtr CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size);
 
