@@ -35,6 +35,7 @@ public:
 	float spawnRate;
 	float spawnTimer;
 	int maxNumberOfParticles;
+	bool isActive;
 
 
 #ifdef DEVELOPMENT
