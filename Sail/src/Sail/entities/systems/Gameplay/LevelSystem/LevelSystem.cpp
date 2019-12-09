@@ -1770,13 +1770,12 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		sc->isOn = true;
 #endif
 
-#ifdef DEVELOPMENT
 		auto* particleEmitterComp = e2->addComponent<ParticleEmitterComponent>();
 
 		float sprinklerXspread = room.sizex * tileSize * 1.3f;
 		float sprinklerZspread = room.sizey * tileSize * 1.3f;
 
-		particleEmitterComp->size = 0.1f;
+		particleEmitterComp->size = 0.055f;
 		particleEmitterComp->offset = { 0, tileHeight * 6, 0 };
 		particleEmitterComp->constantVelocity = { 0.0f, -0.5f, 0.0f };
 		particleEmitterComp->acceleration = { 0.0f, -30.0f, 0.0f };
@@ -1786,11 +1785,11 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		particleEmitterComp->atlasSize = glm::uvec2(8U, 3U);
 		particleEmitterComp->drag = 30.0f;
 		particleEmitterComp->maxNumberOfParticles = (int)glm::ceil((1.0f / particleEmitterComp->spawnRate) * particleEmitterComp->lifeTime);
+		particleEmitterComp->isActive = false;
 		std::string particleTextureName = "particles/animSmoke.dds";
 		if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
 			Application::getInstance()->getResourceManager().loadTexture(particleTextureName);
 		}
 		particleEmitterComp->setTexture(particleTextureName);
-#endif
 	}
 }
