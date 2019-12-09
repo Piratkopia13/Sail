@@ -329,9 +329,7 @@ void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
 	SAIL_LOG_WARNING("destoryEntity called but no matching entity found");
 }
 
-void KillCamReceiverSystem::enableSprinklers() {
-	//ECS::Instance()->getSystem<SprinklerSystem>()->enableSprinklers();
-}
+void KillCamReceiverSystem::enableSprinklers() {}
 
 // SHOULD REMAIN EMPTY FOR THE KILLCAM
 void KillCamReceiverSystem::endMatch(const GameDataForOthersInfo& info) {}
@@ -382,17 +380,6 @@ void KillCamReceiverSystem::playerDied(const Netcode::ComponentID networkIdOfKil
 		e->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0.f, -10.f, 0.f));
 	}
 	SAIL_LOG_WARNING("playerDied called but no matching entity found");
-	
-	//if (auto e = findFromNetID(networkIdOfKilled); e) {
-	//	EventDispatcher::Instance().emit(PlayerDiedEvent(
-	//		e,
-	//		m_playerEntity,
-	//		playerIdOfShooter,
-	//		networkIdOfKilled)
-	//	);
-	//	return;
-	//}
-	//SAIL_LOG_WARNING("playerDied called but no matching entity found");
 }
 
 void KillCamReceiverSystem::setAnimation(const Netcode::ComponentID id, const AnimationInfo& info) {
@@ -406,7 +393,6 @@ void KillCamReceiverSystem::setAnimation(const Netcode::ComponentID id, const An
 		}
 		return;
 	}
-	SAIL_LOG_WARNING("setAnimation called but no matching entity found");
 }
 
 void KillCamReceiverSystem::setCandleHealth(const Netcode::ComponentID candleId, const float health) {
@@ -482,13 +468,11 @@ void KillCamReceiverSystem::setCandleState(const Netcode::ComponentID id, const 
 	}
 }
 
-// Might need some optimization (like sorting) if we have a lot of networked entities
 void KillCamReceiverSystem::setLocalPosition(const Netcode::ComponentID id, const glm::vec3& translation) {
 	if (auto e = findFromNetID(id); e && e->getComponent<ReplayReceiverComponent>()->m_wasAlive) {
 		e->getComponent<TransformComponent>()->setTranslation(translation);
 		return;
 	}
-	//SAIL_LOG_WARNING("setLocalPosition called but no matching entity found");
 }
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::vec3& rotation) {
@@ -496,7 +480,6 @@ void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
 	}
-	//SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
 void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, const glm::quat& rotation) {
@@ -504,7 +487,6 @@ void KillCamReceiverSystem::setLocalRotation(const Netcode::ComponentID id, cons
 		e->getComponent<TransformComponent>()->setRotations(rotation);
 		return;
 	}
-	//SAIL_LOG_WARNING("setLocalRotation called but no matching entity found");
 }
 
 // SHOULD REMAIN EMPTY FOR THE KILLCAM
@@ -544,77 +526,25 @@ void KillCamReceiverSystem::spawnProjectile(const ProjectileInfo& info) {
 	}
 }
 
-void KillCamReceiverSystem::submitWaterPoint(const glm::vec3& point) {
-}
-
+// Killcam doesn't accurately show the water on the map and just shows what it looks like in the active game
+void KillCamReceiverSystem::submitWaterPoint(const glm::vec3& point) {}
 
 // kill player when water hits it
-void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID killerID) {
-	//EventDispatcher::Instance().emit(WaterHitPlayerEvent(id, senderId));
-	//if (killerID == m_idOfKillingProjectile && Netcode::getComponentOwner(id) == m_playerID) {
-	//	destroyEntity(id);
-	//}
-}
+void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID killerID) {}
 
-
-// AUDIO
-void KillCamReceiverSystem::playerJumped(const Netcode::ComponentID id) {
-	//EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
-}
-
-void KillCamReceiverSystem::playerLanded(const Netcode::ComponentID id) {
-	//EventDispatcher::Instance().emit(PlayerLandedEvent(id));
-}
-
-void KillCamReceiverSystem::shootStart(const Netcode::ComponentID id, float frequency) {
-	// Only called when another player shoots
-	//EventDispatcher::Instance().emit(StartShootingEvent(id));
-}
-
-void KillCamReceiverSystem::shootLoop(const Netcode::ComponentID id, float frequency) {
-	// Only called when another player shoots
-	//if (auto e = findFromNetID(id); e) {
-	//	e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_START].isPlaying = false;
-	//	e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].isPlaying = true;
-	//	e->getComponent<AudioComponent>()->m_sounds[Audio::SoundType::SHOOT_LOOP].playOnce = true;
-	//	return;
-	//}
-	//SAIL_LOG_WARNING("shootLoop called but no matching entity found");
-}
-
-void KillCamReceiverSystem::shootEnd(const Netcode::ComponentID id, float frequency) {
-	// Only called when another player shoots
-	//EventDispatcher::Instance().emit(StopShootingEvent(id));
-}
-
-void KillCamReceiverSystem::runningMetalStart(const Netcode::ComponentID id) {
-	//EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_METAL));
-}
-
-void KillCamReceiverSystem::runningWaterMetalStart(const Netcode::ComponentID id) {
-	//EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_METAL));
-}
-
-void KillCamReceiverSystem::runningTileStart(const Netcode::ComponentID id) {
-	//EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
-}
-
-void KillCamReceiverSystem::runningWaterTileStart(const Netcode::ComponentID id) {
-	//EventDispatcher::Instance().emit(ChangeWalkingSoundEvent(id, Audio::SoundType::RUN_TILE));
-}
-
-void KillCamReceiverSystem::runningStopSound(const Netcode::ComponentID id) {
-	//EventDispatcher::Instance().emit(StopWalkingEvent(id));
-}
-
-void KillCamReceiverSystem::throwingStartSound(const Netcode::ComponentID id) {
-	//EventDispatcher::Instance().emit(StartThrowingEvent(id));
-}
-
-void KillCamReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {
-	//EventDispatcher::Instance().emit(StopThrowingEvent(id));
-}
-
+// AUDIO (no audio in the killcam)
+void KillCamReceiverSystem::playerJumped(const Netcode::ComponentID id) {}
+void KillCamReceiverSystem::playerLanded(const Netcode::ComponentID id) {}
+void KillCamReceiverSystem::shootStart(const Netcode::ComponentID id, float frequency) {}
+void KillCamReceiverSystem::shootLoop(const Netcode::ComponentID id, float frequency) {}
+void KillCamReceiverSystem::shootEnd(const Netcode::ComponentID id, float frequency) {}
+void KillCamReceiverSystem::runningMetalStart(const Netcode::ComponentID id) {}
+void KillCamReceiverSystem::runningWaterMetalStart(const Netcode::ComponentID id) {}
+void KillCamReceiverSystem::runningTileStart(const Netcode::ComponentID id) {}
+void KillCamReceiverSystem::runningWaterTileStart(const Netcode::ComponentID id) {}
+void KillCamReceiverSystem::runningStopSound(const Netcode::ComponentID id) {}
+void KillCamReceiverSystem::throwingStartSound(const Netcode::ComponentID id) {}
+void KillCamReceiverSystem::throwingEndSound(const Netcode::ComponentID id) {}
 
 
 // These functions are only used by NetworkReceiverSystemHost so their implementations are empty here
@@ -623,16 +553,12 @@ void KillCamReceiverSystem::prepareEndScreen(const Netcode::PlayerID sender, con
 void KillCamReceiverSystem::mergeHostsStats() {}
 
 
-
-// NOT FROM SERIALIZED MESSAGES
+/////// NOT FROM SERIALIZED MESSAGES ///////
 
 // NOTE: This is not called on the host, since the host receives the disconnect through NWrapperHost::playerDisconnected()
-void KillCamReceiverSystem::playerDisconnect(const Netcode::PlayerID playerID) 
-{}
-
+void KillCamReceiverSystem::playerDisconnect(const Netcode::PlayerID playerID) {}
 
 // Helper function
-
 Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) const {
 	for (auto e : entities) {
 		if (e->getComponent<ReplayReceiverComponent>()->m_id == id) {
@@ -641,5 +567,3 @@ Entity* KillCamReceiverSystem::findFromNetID(const Netcode::ComponentID id) cons
 	}
 	return nullptr;
 }
-
-
