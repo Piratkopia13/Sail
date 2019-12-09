@@ -97,10 +97,10 @@ bool SplashScreenState::loadModels(Application* app) {
 	loadModel(rm, "Doc.fbx");
 	loadModel(rm, "Clutter/CloningVats.fbx");
 	loadModel(rm, "Clutter/ControlStation.fbx");
+	loadModel(rm, "Clutter/PowerUp.fbx");
 	loadModel(rm, "CleaningBot.fbx");
 
 	rm.clearSceneData();
-
 
 	//LEAVE THIS FOR A MULTITHREADED FUTURE
 //#else
@@ -221,6 +221,8 @@ bool SplashScreenState::loadTextures(Application* app) {
 	loadTexture(rm, "pbr/DDS/WaterGun/Watergun_NM.dds");
 	loadTexture(rm, "particles/animFire.dds");
 	loadTexture(rm, "particles/animSmoke.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/powerUp.dds");
+	loadTexture(rm, "pbr/DDS/Clutter/powerUp_MRAO.dds");
 	
 	loadTexture(rm, "Icons/TorchLeft.tga");
 	loadTexture(rm, "Icons/TorchThrow2.tga");

@@ -8,7 +8,7 @@ public:
 	IndexBuffer(Mesh::Data& modelData);
 	virtual ~IndexBuffer() { }
 
-	virtual void bind(void* cmdList = nullptr) const = 0;
+	virtual void bind(void* cmdList = nullptr) = 0;
 
 	virtual unsigned int getByteSize() const = 0;
 
