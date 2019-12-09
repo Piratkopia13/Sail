@@ -466,7 +466,7 @@ unsigned int ResourceManager::calculateShaderByteSize() const {
 	size += sizeof(std::pair<std::string, Shader*>) * m_shaderSets.size();
 	for (auto& [key, val] : m_shaderSets) {
 		size += sizeof(unsigned char) * key.capacity();
-		size += val->getByteSize();	// TODO: Make this work
+		//size += val->getByteSize();	// TODO: Make this work
 	}
 
 	return size;
