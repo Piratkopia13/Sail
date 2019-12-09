@@ -350,6 +350,8 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 
 	// Adding audio component and adding all sounds attached to the playerEntity entity
 	playerEntity->addComponent<AudioComponent>();
+	SAIL_LOG("Adding Generic Player to AudioQueue");
+	Application::getInstance()->addToAudioComponentQueue(&*playerEntity);
 
 	playerEntity->addComponent<GunComponent>();
 	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0, 0.9f, 0) + spawnLocation);
@@ -402,6 +404,8 @@ Entity::SPtr EntityFactory::CreateBot(Model* boundingBoxModel, Model* characterM
 	e->addComponent<CullingComponent>();
 
 	e->addComponent<AudioComponent>();
+	SAIL_LOG("Adding Bot to AudioQueue");
+	Application::getInstance()->addToAudioComponentQueue(&*e);
 
 	e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	e->getComponent<SpeedLimitComponent>()->maxSpeed = 3.0f;
@@ -478,6 +482,8 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* 
 	e->addComponent<RenderInActiveGameComponent>();
 
 	e->addComponent<AudioComponent>();
+	SAIL_LOG("Adding Cleaning Bot to AudioQueue");
+	Application::getInstance()->addToAudioComponentQueue(&*e);
 
 	e->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.0f, 0.f, 0.0f);
 	e->getComponent<SpeedLimitComponent>()->maxSpeed = 2.0f;

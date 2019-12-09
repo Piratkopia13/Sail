@@ -2,6 +2,8 @@
 #include "ECS.h"
 #include "systems/entityManagement/EntityAdderSystem.h"
 #include "systems/entityManagement/EntityRemovalSystem.h"
+#include "systems/Audio/AudioSystem.h"
+#include "Sail.h"
 
 void ECS::addAllQueuedEntities() {
 	for (auto& s : m_systems) {

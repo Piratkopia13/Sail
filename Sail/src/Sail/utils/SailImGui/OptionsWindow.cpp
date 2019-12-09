@@ -92,23 +92,9 @@ void OptionsWindow::renderWindow() {
 		if (ImGui::SliderFloat(std::string("##"+settingName).c_str(), &val, dopt->minVal, dopt->maxVal * 100.0f, "%.1f%%")) {
 			dopt->setValue(val * 0.01f);
 
-			AudioEngine* AEptr = m_audioSystem->getAudioEngine();
-
-			if (val == 0) {
-				// Do thing
-				if (AEptr != nullptr) {
-					// deleting engine
-					//AEptr->stopAllSounds();
-					//delete AEptr;
-
-					m_audioSystem->stop();
-					m_audioSystem->~AudioSystem();
-
-					// delete system ( or empty system ) 
-				}
-			}
-			else if (AEptr == nullptr) {
-				// Deal with later
+			// If the sound is set to '0'
+			if (val > 0) {
+				m_app->startAudio();
 			}
 		}
 	}	

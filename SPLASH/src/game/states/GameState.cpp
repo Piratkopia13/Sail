@@ -195,6 +195,8 @@ GameState::GameState(StateStack& stack)
 
 	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
 	m_ambiance->addComponent<AudioComponent>();
+	SAIL_LOG("Adding ambiance to AudioQueue");
+	Application::getInstance()->addToAudioComponentQueue(m_ambiance);
 	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
 	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value, false, true);
 
@@ -281,16 +283,23 @@ bool GameState::processInput(float dt) {
 #endif
 
 	// Unpause Game
-	if (m_readyRestartAmbiance) {
-		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(false);
-		this->m_ambiance->getComponent<AudioComponent>()->streamSetVolume_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
-		m_readyRestartAmbiance = false;
+	if (ECS::Instance()->getSystem<AudioSystem>()) {
+		m_componentSystems.audioSystem = ECS::Instance()->getSystem<AudioSystem>();
+
+		if (m_readyRestartAmbiance) {
+			m_componentSystems.audioSystem->getAudioEngine()->pause_unpause_AllStreams(false);
+			this->m_ambiance->getComponent<AudioComponent>()->streamSetVolume_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
+			m_readyRestartAmbiance = false;
+		}
 	}
 
 	// Pause game
 	if (!InGameMenuState::IsOpen() && Input::WasKeyJustPressed(KeyBinds::SHOW_IN_GAME_MENU)) {
-		m_readyRestartAmbiance = true;
-		ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(true);
+		if (m_componentSystems.audioSystem) {
+			m_readyRestartAmbiance = true;
+			ECS::Instance()->getSystem<AudioSystem>()->getAudioEngine()->pause_unpause_AllStreams(true);
+			
+		}
 		requestStackPush(States::InGameMenu);
 	}
 
@@ -515,9 +524,13 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.hostSendToSpectatorSystem = ECS::Instance()->createSystem<HostSendToSpectatorSystem>();
 	m_componentSystems.hostSendToSpectatorSystem->init(playerID);
 
-
-	// Create system for handling and updating sounds
-	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
+	// Create system for handling and updating sounds | Disabled by default to save RAM
+	if (ECS::Instance()->getSystem<AudioSystem>()) {
+		// If audiosystem exists
+		m_componentSystems.audioSystem = ECS::Instance()->getSystem<AudioSystem>();
+	}
+	/* Old code for when audiosystem isn't removed at start because of RAM reasons. */
+//	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
 
 	m_componentSystems.playerSystem = ECS::Instance()->createSystem<PlayerSystem>();
 

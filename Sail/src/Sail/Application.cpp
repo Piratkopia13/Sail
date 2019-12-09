@@ -10,8 +10,6 @@
 #include "entities/systems/Systems.h"
 #include "events/EventDispatcher.h"
 
-
-
 // If this is defined then fixed update will run every frame which speeds up/slows down
 // the game depending on how fast the program can run
 //#define PERFORMANCE_SPEED_TEST
@@ -71,7 +69,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	ECS::Instance()->createSystem<MetaballSubmitSystem<RenderInActiveGameComponent>>();
 	ECS::Instance()->createSystem<ModelSubmitSystem<RenderInActiveGameComponent>>();
 	ECS::Instance()->createSystem<GUISubmitSystem>();
-	ECS::Instance()->createSystem<AudioSystem>();
 	ECS::Instance()->createSystem<LevelSystem>()->generateMap();
 
 	// Initialize imgui
@@ -87,6 +84,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 }
 
 Application::~Application() {
+	m_settingStorage.gameSettingsDynamic["sound"]["global"].setValue(0);
 	m_settingStorage.saveToFile("res/data/settings.saildata");
 	delete Input::GetInstance();
 }
@@ -279,5 +277,25 @@ float Application::getDelta() const {
 
 float Application::getFixedUpdateDelta() const {
 	return m_fixedUpdateDelta;
+}
+
+void Application::startAudio() {
+	// Create the system if it doesn't exist.
+	if (!ECS::Instance()->getSystem<AudioSystem>()) {
+		ECS::Instance()->createSystem<AudioSystem>();
+
+		while (acQueue.size() != 0) {
+			// Add the one in the back
+			ECS::Instance()->addEntityToSystems(acQueue.back());
+			// Pop it
+			acQueue.pop_back();
+		}
+		
+		SAIL_LOG("Audio was created successfully");
+	}
+}
+
+void Application::addToAudioComponentQueue(Entity* ac) {
+	this->acQueue.push_back(ac);
 }
 
