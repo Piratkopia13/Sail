@@ -8,6 +8,8 @@
 #include "Sail/ai/pathfinding/NodeSystem.h"
 #include "Sail/entities/components/MapComponent.h"
 #include "Sail/entities/components/NetworkSenderComponent.h"
+#include "Sail/entities/components/RenderInActiveGameComponent.h"
+
 
 #include "../../../ECS.h"
 #include "../../../components/BoundingBoxComponent.h"
@@ -81,7 +83,7 @@ void AiSystem::initNodeSystem(Octree* octree) {
 
 	/*Nodesystem*/
 	ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.f);
-	ECS::Instance()->getSystem<OctreeAddRemoverSystem>()->update(0.f);
+	ECS::Instance()->getSystem<OctreeAddRemoverSystem<RenderInActiveGameComponent>>()->update(0.f);
 
 
 	std::vector<NodeSystem::Node> nodes;
