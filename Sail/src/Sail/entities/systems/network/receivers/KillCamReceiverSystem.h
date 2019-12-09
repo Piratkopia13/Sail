@@ -20,7 +20,7 @@ public:
 	// Packets from the past five seconds are saved so that they can be replayed in the killcam.
 	static constexpr size_t KILLCAM_DURATION   = 3;
 	static constexpr size_t REPLAY_BUFFER_SIZE = TICKRATE * KILLCAM_DURATION;
-	static constexpr size_t SLOW_MO_MULTIPLIER = 16;
+	static constexpr size_t SLOW_MO_MULTIPLIER = 20;
 
 public:
 	KillCamReceiverSystem();

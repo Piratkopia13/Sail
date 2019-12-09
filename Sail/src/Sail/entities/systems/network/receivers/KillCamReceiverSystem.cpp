@@ -238,7 +238,7 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 		// Show the killer's perspective
 		m_cam->setCameraPosition(m_killerHeadPos);
 
-		const glm::quat rot = glm::angleAxis(-interpolate(animation->prevPitch, animation->pitch, alpha), glm::vec3(1, 0, 0));
+		const glm::quat rot = glm::angleAxis(interpolate(-animation->prevPitch, -animation->pitch, alpha), glm::vec3(1, 0, 0));
 		const glm::quat rotated = glm::normalize(rot * transform->getInterpolatedRotation(alpha));
 
 		const glm::vec3 forwards = rotated * glm::vec3(0.f, 0.f, 1.f);
@@ -278,11 +278,6 @@ unsigned int KillCamReceiverSystem::getByteSize() const {
 	return size;
 }
 #endif
-
-
-
-
-
 
 bool KillCamReceiverSystem::onEvent(const Event& event) {
 	auto onStartKillCam = [&](const StartKillCamEvent& e) {
@@ -325,12 +320,6 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 
 	return true;
 }
-
-
-
-
-
-
 
 // TODO: Move dead entities to under the map
 void KillCamReceiverSystem::destroyEntity(const Netcode::ComponentID entityID) {
@@ -579,9 +568,7 @@ void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const 
 }
 
 
-
 // AUDIO
-
 void KillCamReceiverSystem::playerJumped(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(PlayerJumpedEvent(id));
 }
@@ -589,7 +576,6 @@ void KillCamReceiverSystem::playerJumped(const Netcode::ComponentID id) {
 void KillCamReceiverSystem::playerLanded(const Netcode::ComponentID id) {
 	//EventDispatcher::Instance().emit(PlayerLandedEvent(id));
 }
-
 
 void KillCamReceiverSystem::shootStart(const Netcode::ComponentID id, float frequency) {
 	// Only called when another player shoots
