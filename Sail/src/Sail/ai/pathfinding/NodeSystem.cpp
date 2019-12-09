@@ -36,13 +36,13 @@ void NodeSystem::setNodes(const std::vector<Node>& nodes, const std::vector<std:
 		m_nodeEntities[currNodeEntity]->addComponent<CullingComponent>();
 		m_nodeEntities[currNodeEntity]->addComponent<RenderInActiveGameComponent>();
 		if (m_nodes[i].blocked) {
-			auto blockedNodeModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
+			auto blockedNodeModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere", m_shader);
 			blockedNodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 			blockedNodeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 0.f, 0.f, 1.f));
 			blockedNodeModel->setCastShadows(false);
 			m_nodeEntities[currNodeEntity++]->addComponent<ModelComponent>(blockedNodeModel);
 		} else {
-			auto nodeModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
+			auto nodeModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere", m_shader);
 			nodeModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 			nodeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.f, 1.f, 0.f, 1.f));
 			nodeModel->setCastShadows(false);
@@ -152,7 +152,7 @@ void NodeSystem::stop() {
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_shader = shader;
 
-	m_connectionModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere.fbx", m_shader);
+	m_connectionModel = &Application::getInstance()->getResourceManager().getModelCopy("sphere", m_shader);
 	m_connectionModel->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 	m_connectionModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 1.f, 1.f, 1.f));
 	m_connectionModel->setCastShadows(false);

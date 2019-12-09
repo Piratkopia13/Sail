@@ -90,7 +90,7 @@ GameState::GameState(StateStack& stack)
 	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<GBufferWireframe>();
 
 	//Wireframe bounding box model
-	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox", wireframeShader);
 	//boundingBoxModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/candleBasicTexture.tga");
 
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
@@ -133,14 +133,14 @@ GameState::GameState(StateStack& stack)
 	auto* shader = &m_app->getResourceManager().getShaderSet<GBufferOutShader>();
 
 	m_app->getResourceManager().setDefaultShader(shader);
-	std::string playerModelName = "Doc.fbx";
+	std::string playerModelName = "Doc";
 
 
 	// Create/load models
-	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1.fbx", shader);
+	Model* cubeModel = &m_app->getResourceManager().getModel("cubeWidth1", shader);
 	cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
-	Model* lightModel = &m_app->getResourceManager().getModel("Torch.fbx", shader);
+	Model* lightModel = &m_app->getResourceManager().getModel("Torch", shader);
 	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Torch/Torch_Albedo.dds");
 	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Torch/Torch_NM.dds");
 	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Torch/Torch_MRAO.dds");
@@ -1139,11 +1139,11 @@ void GameState::waitForOtherPlayers() {
 const std::string GameState::createCube(const glm::vec3& position) {
 
 	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
-		"cubeWidth1.fbx", &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
+		"cubeWidth1", &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* tmpbbModel = &m_app->getResourceManager().getModel(
-		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<GBufferWireframe>());
+		"boundingBox", &m_app->getResourceManager().getShaderSet<GBufferWireframe>());
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	auto e = ECS::Instance()->createEntity("new cube");
@@ -1163,22 +1163,22 @@ const std::string GameState::createCube(const glm::vec3& position) {
 
 void GameState::createTestLevel(Shader* shader, Model* boundingBoxModel) {
 	// Load models used for test level
-	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic.fbx", shader);
+	Model* arenaModel = &m_app->getResourceManager().getModel("arenaBasic", shader);
 	arenaModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/arenaBasicTexture.tga");
 	arenaModel->getMesh(0)->getMaterial()->setMetalnessScale(0.570f);
 	arenaModel->getMesh(0)->getMaterial()->setRoughnessScale(0.593f);
 	arenaModel->getMesh(0)->getMaterial()->setAOScale(0.023f);
 
-	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic.fbx", shader);
+	Model* barrierModel = &m_app->getResourceManager().getModel("barrierBasic", shader);
 	barrierModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/barrierBasicTexture.tga");
 
-	Model* containerModel = &m_app->getResourceManager().getModel("containerBasic.fbx", shader);
+	Model* containerModel = &m_app->getResourceManager().getModel("containerBasic", shader);
 	containerModel->getMesh(0)->getMaterial()->setMetalnessScale(0.778f);
 	containerModel->getMesh(0)->getMaterial()->setRoughnessScale(0.394f);
 	containerModel->getMesh(0)->getMaterial()->setAOScale(0.036f);
 	containerModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/containerBasicTexture.tga");
 
-	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic.fbx", shader);
+	Model* rampModel = &m_app->getResourceManager().getModel("rampBasic", shader);
 	rampModel->getMesh(0)->getMaterial()->setAlbedoTexture("sponza/textures/rampBasicTexture.tga");
 	rampModel->getMesh(0)->getMaterial()->setMetalnessScale(0.0f);
 	rampModel->getMesh(0)->getMaterial()->setRoughnessScale(1.0f);
@@ -1235,117 +1235,117 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	//Load tileset for world
 	{
-		Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
+		Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall", shader);
 		roomWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/RoomWallMRAO.dds");
 		roomWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/RoomWallNM.dds");
 		roomWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/RoomWallAlbedo.dds");
 
-		Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor.fbx", shader);
+		Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor", shader);
 		roomDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/RD_MRAo.dds");
 		roomDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/RD_NM.dds");
 		roomDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/RD_Albedo.dds");
 
-		Model* corridorDoor = &m_app->getResourceManager().getModel("Tiles/CorridorDoor.fbx", shader);
+		Model* corridorDoor = &m_app->getResourceManager().getModel("Tiles/CorridorDoor", shader);
 		corridorDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/CD_MRAo.dds");
 		corridorDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/CD_NM.dds");
 		corridorDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/CD_Albedo.dds");
 
-		Model* corridorWall = &m_app->getResourceManager().getModel("Tiles/CorridorWall.fbx", shader);
+		Model* corridorWall = &m_app->getResourceManager().getModel("Tiles/CorridorWall", shader);
 		corridorWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/CW_MRAo.dds");
 		corridorWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/CW_NM.dds");
 		corridorWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/CW_Albedo.dds");
 
-		Model* roomCeiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling.fbx", shader);
+		Model* roomCeiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling", shader);
 		roomCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/RC_MRAo.dds");
 		roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/RC_NM.dds");
 		roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/RC_Albedo.dds");
 
-		Model* roomServer = &m_app->getResourceManager().getModelCopy("Tiles/RoomWall.fbx", shader);
+		Model* roomServer = &m_app->getResourceManager().getModelCopy("Tiles/RoomWall", shader);
 		roomServer->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/RS_MRAo.dds");
 		roomServer->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/RS_NM.dds");
 		roomServer->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/RS_Albedo.dds");
 
-		Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
+		Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor", shader);
 		corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/CF_MRAo.dds");
 		corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/CF_NM.dds");
 		corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/CF_Albedo.dds");
 
-		Model* roomFloor = &m_app->getResourceManager().getModelCopy("Tiles/RoomFloor.fbx", shader);
+		Model* roomFloor = &m_app->getResourceManager().getModelCopy("Tiles/RoomFloor", shader);
 		roomFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/F_MRAo.dds");
 		roomFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/F_NM.dds");
 		roomFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/F_Albedo.dds");
 
-		Model* corridorCeiling = &m_app->getResourceManager().getModelCopy("Tiles/RoomCeiling.fbx", shader);
+		Model* corridorCeiling = &m_app->getResourceManager().getModelCopy("Tiles/RoomCeiling", shader);
 		corridorCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/CC_MRAo.dds");
 		corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/CC_NM.dds");
 		corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/CC_Albedo.dds");
 
-		Model* corridorCorner = &m_app->getResourceManager().getModel("Tiles/CorridorCorner.fbx", shader);
+		Model* corridorCorner = &m_app->getResourceManager().getModel("Tiles/CorridorCorner", shader);
 		corridorCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/Corner_MRAo.dds");
 		corridorCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/Corner_NM.dds");
 		corridorCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/Corner_Albedo.dds");
 
-		Model* roomCorner = &m_app->getResourceManager().getModel("Tiles/RoomCorner.fbx", shader);
+		Model* roomCorner = &m_app->getResourceManager().getModel("Tiles/RoomCorner", shader);
 		roomCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/Corner_MRAo.dds");
 		roomCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/Corner_NM.dds");
 		roomCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/Corner_Albedo.dds");
 
-		Model* cTable = &m_app->getResourceManager().getModel("Clutter/Table.fbx", shader);
+		Model* cTable = &m_app->getResourceManager().getModel("Clutter/Table", shader);
 		cTable->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Table_MRAO.dds");
 		cTable->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Table_NM.dds");
 		cTable->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Table_Albedo.dds");
 
-		Model* cBoxes = &m_app->getResourceManager().getModel("Clutter/Boxes.fbx", shader);
+		Model* cBoxes = &m_app->getResourceManager().getModel("Clutter/Boxes", shader);
 		cBoxes->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Boxes_MRAO.dds");
 		cBoxes->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Boxes_NM.dds");
 		cBoxes->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Boxes_Albedo.dds");
 
-		Model* cMediumBox = &m_app->getResourceManager().getModel("Clutter/MediumBox.fbx", shader);
+		Model* cMediumBox = &m_app->getResourceManager().getModel("Clutter/MediumBox", shader);
 		cMediumBox->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/MediumBox_MRAO.dds");
 		cMediumBox->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/MediumBox_NM.dds");
 		cMediumBox->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/MediumBox_Albedo.dds");
 
-		Model* cSquareBox = &m_app->getResourceManager().getModel("Clutter/SquareBox.fbx", shader);
+		Model* cSquareBox = &m_app->getResourceManager().getModel("Clutter/SquareBox", shader);
 		cSquareBox->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/SquareBox_MRAO.dds");
 		cSquareBox->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/SquareBox_NM.dds");
 		cSquareBox->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/SquareBox_Albedo.dds");
 
-		Model* cBooks1 = &m_app->getResourceManager().getModel("Clutter/Books1.fbx", shader);
+		Model* cBooks1 = &m_app->getResourceManager().getModel("Clutter/Books1", shader);
 		cBooks1->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Book_MRAO.dds");
 		cBooks1->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Book_NM.dds");
 		cBooks1->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Book1_Albedo.dds");
 
-		Model* cBooks2 = &m_app->getResourceManager().getModelCopy("Clutter/Books1.fbx", shader);
+		Model* cBooks2 = &m_app->getResourceManager().getModelCopy("Clutter/Books1", shader);
 		cBooks2->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Book_MRAO.dds");
 		cBooks2->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Book_NM.dds");
 		cBooks2->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Book2_Albedo.dds");
 
-		Model* cScreen = &m_app->getResourceManager().getModel("Clutter/Screen.fbx", shader);
+		Model* cScreen = &m_app->getResourceManager().getModel("Clutter/Screen", shader);
 		cScreen->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Screen_MRAO.dds");
 		cScreen->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Screen_NM.dds");
 		cScreen->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Screen_Albedo.dds");
 
-		Model* cNotepad = &m_app->getResourceManager().getModel("Clutter/Notepad.fbx", shader);
+		Model* cNotepad = &m_app->getResourceManager().getModel("Clutter/Notepad", shader);
 		cNotepad->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Notepad_MRAO.dds");
 		cNotepad->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Notepad_NM.dds");
 		cNotepad->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Notepad_Albedo.dds");
 
-		Model* cMicroscope= &m_app->getResourceManager().getModel("Clutter/Microscope.fbx", shader);
+		Model* cMicroscope= &m_app->getResourceManager().getModel("Clutter/Microscope", shader);
 		cMicroscope->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Microscope_MRAO.dds");
 		cMicroscope->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Microscope_NM.dds");
 		cMicroscope->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Microscope_Albedo.dds");
 
-		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
+		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare", shader);
 		saftblandare->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Saftblandare_MRAO.dds");
 		saftblandare->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Saftblandare_NM.dds");
 		saftblandare->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Saftblandare_Albedo.dds");
 
-		Model* cloningVats = &m_app->getResourceManager().getModel("Clutter/CloningVats.fbx", shader);
+		Model* cloningVats = &m_app->getResourceManager().getModel("Clutter/CloningVats", shader);
 		cloningVats->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/CloningVats_MRAO.dds");
 		cloningVats->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/CloningVats_NM.dds");
 		cloningVats->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/CloningVats_Albedo.dds");
 
-		Model* controlStation = &m_app->getResourceManager().getModel("Clutter/ControlStation.fbx", shader);
+		Model* controlStation = &m_app->getResourceManager().getModel("Clutter/ControlStation", shader);
 		controlStation->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/ControlStation_MRAO.dds");
 		controlStation->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/ControlStation_NM.dds");
 		controlStation->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/ControlStation_Albedo.dds");
