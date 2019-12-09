@@ -9,6 +9,8 @@ WaterCleaningSystem::WaterCleaningSystem()
 {
 	registerComponent<WaterCleaningComponent>(true, true, false);
 	registerComponent<TransformComponent>(true, true, false);
+
+	m_powerUpThreshold = 0.5f;
 }
 
 WaterCleaningSystem::~WaterCleaningSystem() {}
@@ -38,6 +40,9 @@ void WaterCleaningSystem::update(float dt) {
 			float amountOfWaterRemoved = m_rendererWrapperRef->removeWaterPoint(transC->getTranslation(), posOffset, negOffset);
 			amountOfWaterRemoved *= 0.00392156862f;
 			cleanC->amountCleaned += amountOfWaterRemoved;
+			if (cleanC->amountCleaned > m_powerUpThreshold) {
+				// Spawn power-up here
+			}
 		}
 	}
 }
