@@ -43,7 +43,7 @@ Shader::ComputeShaderOutput& DX12ComputeShaderDispatcher::dispatch(Shader& compu
 	// Bind input textures
 	for (unsigned int i = 0; i < settings->numInputTextures; i++) {
 		auto& tex = computeShader.getComputeInputForIndex(input, i);
-		DX12ATexture* texture = static_cast<DX12ATexture*>(tex.second);
+		DX12ATexture* texture = (DX12ATexture*)tex.second;
 		
 		if (texture->isRenderable()) {
 			dxShaderPipeline->setTexture2D(tex.first, (RenderableTexture*)texture, dxCmdList);

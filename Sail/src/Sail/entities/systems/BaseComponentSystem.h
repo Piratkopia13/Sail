@@ -53,9 +53,10 @@ public:
 	virtual void stop() {}
 	virtual void clearEntities();
 	virtual size_t getNumEntities();
-	const std::vector<Entity*>& getEntities() const;
+
 
 #ifdef DEVELOPMENT
+	const std::vector<Entity*>& getEntities() const;
 	virtual void imguiPrint(Entity** selectedEntity = nullptr);
 	virtual unsigned int getByteSize() const;
 #endif
