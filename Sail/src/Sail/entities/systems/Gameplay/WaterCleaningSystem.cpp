@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "WaterCleaningSystem.h"
 #include "Sail.h"
+#include "network/NWrapperSingleton.h"
 
 #include <iomanip>
 
@@ -10,7 +11,7 @@ WaterCleaningSystem::WaterCleaningSystem()
 	registerComponent<WaterCleaningComponent>(true, true, false);
 	registerComponent<TransformComponent>(true, true, false);
 
-	m_powerUpThreshold = 0.5f;
+	m_powerUpThreshold = 100.f;
 }
 
 WaterCleaningSystem::~WaterCleaningSystem() {}
@@ -19,7 +20,7 @@ void WaterCleaningSystem::update(float dt) {
 	for (auto& e : entities) {
 		auto cleanC = e->getComponent<WaterCleaningComponent>();
 		auto transC = e->getComponent<TransformComponent>();
-		if (cleanC && cleanC->isCleaning && transC) {
+		if (cleanC && cleanC->isCleaning && transC && e->getChildEntities().size() == 0) {
 			auto dir = glm::vec3(glm::sin(transC->getRotations().y), 0.f, glm::cos(transC->getRotations().y));
 			glm::ivec3 posOffset, negOffset;
 			posOffset = glm::ivec3(1, 1, 1);
@@ -38,10 +39,14 @@ void WaterCleaningSystem::update(float dt) {
 			}
 
 			float amountOfWaterRemoved = m_rendererWrapperRef->removeWaterPoint(transC->getTranslation(), posOffset, negOffset);
-			amountOfWaterRemoved *= 0.00392156862f;
-			cleanC->amountCleaned += amountOfWaterRemoved;
-			if (cleanC->amountCleaned > m_powerUpThreshold) {
-				// Spawn power-up here
+			if (NWrapperSingleton::getInstance().isHost()) {
+				amountOfWaterRemoved *= 0.00098039f;
+				cleanC->amountCleaned += amountOfWaterRemoved;
+				if (cleanC->amountCleaned >= m_powerUpThreshold) {
+					// Spawn power-up here
+					EventDispatcher::Instance().emit(SpawnPowerUp(rand() % PowerUps::NUMPOWUPS, glm::vec3(0.f, 1.f, 0.f), 0, e));
+					cleanC->amountCleaned -= m_powerUpThreshold;
+				}
 			}
 		}
 	}

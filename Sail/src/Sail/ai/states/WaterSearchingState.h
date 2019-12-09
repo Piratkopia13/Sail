@@ -22,10 +22,9 @@ private:
 
 	NodeSystem* m_nodeSystemRef;
 	RendererWrapper* m_rendererWrapperRef;
-	//int m_targetNode;
+
 	glm::vec3 m_targetPos;
 	float m_searchingClock;
 
-	bool m_movingTowardWater;
 	bool m_doSwitch;
 };
