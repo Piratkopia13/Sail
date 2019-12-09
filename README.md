@@ -1,9 +1,10 @@
 # SPLASH<sub>2</sub>0
 [![Build Status](https://dev.azure.com/BTH-StoraSpel-DXR/Stora%20Spel/_apis/build/status/Master%20pipeline?branchName=master)](https://dev.azure.com/BTH-StoraSpel-DXR/Stora%20Spel/_build/latest?definitionId=1&branchName=master)
 > ***S**cientists **P**acking **L**ights **A**nd **S**hooting **H<sub>2</sub>0***
+
 > *"A fluid first person shooter"*
 
-A game developed by 12 people during the course of 14 weeks as part of the course PA2526 Large Game Project at Blekinge Tekniska Högskola in Sweden 2019.
+A game developed by 12 people during the course of 14 weeks as part of the course PA2526 Large Game Project at [Blekinge Tekniska Högskola](https://www.bth.se/) in Sweden 2019.
 
 ## Features and used techniques
 - Hybrid raytracer (tracing from GBuffers)
