@@ -78,6 +78,8 @@ pbr/DDS/WaterGun/Watergun_MRAO.dds
 pbr/DDS/WaterGun/Watergun_NM.dds
 particles/animFire.dds
 particles/animSmoke.dds
+pbr/DDS/Clutter/powerUp.dds
+pbr/DDS/Clutter/powerUp_MRAO.dds
 Icons/TorchLeft.tga
 Icons/TorchThrow2.tga
 Icons/PlayersLeft.tga

@@ -1,4 +1,9 @@
 CleaningBot.fbx
+CleaningBot.fbx1
+CleaningBot.fbx2
+CleaningBot.fbx3
+CleaningBot.fbx4
+CleaningBot.fbx5
 Clutter/Books1.fbx
 Clutter/Books1.fbx1
 Clutter/Boxes.fbx
@@ -7,6 +12,7 @@ Clutter/ControlStation.fbx
 Clutter/MediumBox.fbx
 Clutter/Microscope.fbx
 Clutter/Notepad.fbx
+Clutter/PowerUp.fbx
 Clutter/Saftblandare.fbx
 Clutter/Screen.fbx
 Clutter/SquareBox.fbx
