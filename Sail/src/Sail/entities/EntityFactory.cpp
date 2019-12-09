@@ -239,12 +239,10 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 	replayPlayer->addComponent<ReplayReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 
 	// Remove components that shouldn't be used by entities in the killcam
-	//replayPlayer->removeComponent<CollidableComponent>();
 	replayPlayer->removeComponent<SpeedLimitComponent>();
 	replayPlayer->removeComponent<SanityComponent>();
 	replayPlayer->removeComponent<AudioComponent>(); // TODO: Remove this line when we start having audio in the killcam
 	replayPlayer->removeComponent<GunComponent>();
-	//replayPlayer->removeComponent<BoundingBoxComponent>();
 
 
 	// So that we can get their camera positions in the replay
@@ -260,12 +258,9 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 		if (c->getName() == replayPlayer->getName() + "WaterGun") {
 			c->addComponent<ReplayReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
 			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
-			//c->removeComponent<BoundingBoxComponent>();
 		}
 		if (c->hasComponent<CandleComponent>()) {
 			c->addComponent<ReplayReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
-			//c->removeComponent<CollidableComponent>();
-			//c->removeComponent<BoundingBoxComponent>();
 			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
 		}
 	}

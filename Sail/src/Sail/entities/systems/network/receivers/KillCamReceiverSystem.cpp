@@ -238,10 +238,9 @@ void KillCamReceiverSystem::updatePerFrame(float dt, float alpha) {
 		// Show the killer's perspective
 		m_cam->setCameraPosition(m_killerHeadPos);
 
-		const glm::vec3 rotAxis = transform->getInterpolatedRotation(alpha) * glm::vec3(1.f, 0.f, 0.f);
+		const glm::vec3 rotAxis  = transform->getInterpolatedRotation(alpha) * glm::vec3(1.f, 0.f, 0.f);
 		const glm::quat vertical = glm::angleAxis(interpolate(animation->prevPitch, animation->pitch, alpha), rotAxis);
-		const glm::quat rotated = glm::normalize(vertical * transform->getInterpolatedRotation(alpha));
-
+		const glm::quat rotated  = glm::normalize(vertical * transform->getInterpolatedRotation(alpha));
 		const glm::vec3 forwards = rotated * glm::vec3(0.f, 0.f, 1.f);
 
 		m_cam->setCameraDirection(forwards);
@@ -293,12 +292,6 @@ bool KillCamReceiverSystem::onEvent(const Event& event) {
 		// Note: PlayerSystem will have checked that this is the ID of a projectile for us
 		m_killingProjectileID = e.killingProjectile;
 		m_isFinalKillCam = e.finalKillCam;
-
-		if (m_isFinalKillCam) {
-			SAIL_LOG_WARNING("FINAL KILLCAM STARTED");
-		} else {
-			SAIL_LOG_WARNING("NORMAL KILLCAM STARTED");
-		}
 
 		startKillCam();
 	};

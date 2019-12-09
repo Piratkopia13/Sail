@@ -214,9 +214,9 @@ void Logger::Log(const std::string& msg, const std::string& file, const std::str
 
 	SetConsoleTextAttribute(hstdout, 0x0F);
 	std::string message = ("LOG: " + msg);
-//#ifdef _DEBUG
+#ifdef _DEBUG
 	message = std::filesystem::path(file).filename().string() + "@" + line + " - " + message;
-//#endif
+#endif
 	std::cout << message << std::endl;
 
 	// Revert color
@@ -235,9 +235,9 @@ void Logger::Warning(const std::string& msg, const std::string& file, const std:
 
 	SetConsoleTextAttribute(hstdout, 0xE0);
 	std::string message = ("WARNING: " + msg);
-//#ifdef _DEBUG
+#ifdef _DEBUG
 	message = std::filesystem::path(file).filename().string() + "@" + line + " - " + message;
-//#endif
+#endif
 	std::cout << message << std::endl;
 
 	// Revert color
@@ -260,9 +260,9 @@ void Logger::Error(const std::string& msg, const std::string& file, const std::s
 
 	SetConsoleTextAttribute(hstdout, 0xC0);
 	std::string message = ("ERROR: " + msg);
-//#ifdef _DEBUG
+#ifdef _DEBUG
 	message = std::filesystem::path(file).filename().string() + "@" + line + " - " + message;
-//#endif
+#endif
 	std::cout << message << std::endl;
 
 	// Revert color

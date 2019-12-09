@@ -183,15 +183,6 @@ GameState::GameState(StateStack& stack)
 		}
 
 		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
-
-
-		// FOR DEBUGGING KILLCAM
-		if (id == 0) {
-			//m_player->getComponent<MovementComponent>()->constantAcceleration = glm::vec3(0.f, 0.f, -10.f);
-			//m_player->getComponent<MovementComponent>()->rotation = glm::vec3(0.f, 0.5f, 0.0f);
-			//m_player->getComponent<MovementComponent>().constantAcceleration = glm::vec3(0.f, 1.0f, 0.0f);
-		}
-		// !FOR DEBUGGING KILLCAM
 	}
 
 	
@@ -703,22 +694,18 @@ void GameState::onStartKillCam(const StartKillCamEvent& event) {
 	m_killerColor = ImVec4(col.r, col.g, col.b, 1.f);
 	m_killCamKillerText = NW.getPlayer(killer)->name;
 
-	// TODO: player colors
+
 	if (event.finalKillCam) {
 		m_isFinalKillCam = true;
 		m_killCamTitle = "ROUND WINNING SPLASH";
 		m_killCamVictimText = NW.getPlayer(event.deadPlayer)->name;
 
-		char victimTeam = NW.getPlayer(event.deadPlayer)->team;
+		const char victimTeam = NW.getPlayer(event.deadPlayer)->team;
 		col = settings.getColor(settings.teamColorIndex(event.deadPlayer));
 		m_victimColor = ImVec4(col.r, col.g, col.b, 1.f);
-		//m_killCamText = NW.getPlayer(killer)->name + " eliminated " 
-		//	+ NW.getPlayer(event.deadPlayer)->name + " and won the match!";
 	} else {
 		m_isFinalKillCam = false;
 		m_killCamTitle = "SPLASHCAM";
-		//m_killCamText = "You were eliminated by " + NW.getPlayer(killer)->name;
-
 	}
 }
 
