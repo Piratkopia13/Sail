@@ -53,7 +53,7 @@ void ParticleSystem::update(float dt) {
 		for (auto& e : entities) {
 			auto* partComponent = e->getComponent<ParticleEmitterComponent>();
 
-			if (!partComponent->hasBeenCreatedInSystem()) {
+			if (!partComponent->hasBeenCreatedInSystem() && partComponent->isActive) {
 				initEmitter(e, partComponent);
 			}
 
