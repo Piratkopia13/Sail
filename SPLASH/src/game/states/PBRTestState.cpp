@@ -84,7 +84,7 @@ PBRTestState::PBRTestState(StateStack& stack)
 	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
 
 	// Create system for handling octree
-	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
+	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
 
 
