@@ -91,7 +91,7 @@ bool SettingStorage::deSerialize(const std::string& content, std::unordered_map<
 				if (dynamic.find(currentArea) != dynamic.end()) {
 					if (dynamic[currentArea].find(name) != dynamic[currentArea].end()) {
 						float value = std::stof(temp);
-						dynamic[currentArea][name].value = value;
+						dynamic[currentArea][name].setValue(value);
 					}
 				}
 			}
@@ -256,16 +256,16 @@ void SettingStorage::createApplicationDefaultMisc() {
 	applicationSettingsDynamic["keybindings"]["light"] = DynamicSetting(SAIL_KEY_R, 0.0f, 256.0f);
 
 
-	gameSettingsDynamic["keybindingsDEFAULT"] = std::unordered_map<std::string, DynamicSetting>();
-	gameSettingsDynamic["keybindingsDEFAULT"]["forward"] = DynamicSetting(SAIL_KEY_W, SAIL_KEY_W, SAIL_KEY_W);
-	gameSettingsDynamic["keybindingsDEFAULT"]["backward"] = DynamicSetting(SAIL_KEY_S, SAIL_KEY_S, SAIL_KEY_S);
-	gameSettingsDynamic["keybindingsDEFAULT"]["left"] = DynamicSetting(SAIL_KEY_A, SAIL_KEY_A, SAIL_KEY_A);
-	gameSettingsDynamic["keybindingsDEFAULT"]["right"] = DynamicSetting(SAIL_KEY_D, SAIL_KEY_D, SAIL_KEY_D);
-	gameSettingsDynamic["keybindingsDEFAULT"]["up"] = DynamicSetting(SAIL_KEY_SPACE, SAIL_KEY_SPACE, SAIL_KEY_SPACE);
-	gameSettingsDynamic["keybindingsDEFAULT"]["down"] = DynamicSetting(SAIL_KEY_CONTROL, SAIL_KEY_CONTROL, SAIL_KEY_CONTROL);
-	gameSettingsDynamic["keybindingsDEFAULT"]["sprint"] = DynamicSetting(SAIL_KEY_SHIFT, SAIL_KEY_SHIFT, SAIL_KEY_SHIFT);
-	gameSettingsDynamic["keybindingsDEFAULT"]["throw"] = DynamicSetting(SAIL_KEY_F, SAIL_KEY_F, SAIL_KEY_F);
-	gameSettingsDynamic["keybindingsDEFAULT"]["light"] = DynamicSetting(SAIL_KEY_R, SAIL_KEY_R, SAIL_KEY_R);
+	applicationSettingsDynamic["keybindingsDEFAULT"] = std::unordered_map<std::string, DynamicSetting>();
+	applicationSettingsDynamic["keybindingsDEFAULT"]["forward"] = DynamicSetting(SAIL_KEY_W, SAIL_KEY_W, SAIL_KEY_W);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["backward"] = DynamicSetting(SAIL_KEY_S, SAIL_KEY_S, SAIL_KEY_S);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["left"] = DynamicSetting(SAIL_KEY_A, SAIL_KEY_A, SAIL_KEY_A);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["right"] = DynamicSetting(SAIL_KEY_D, SAIL_KEY_D, SAIL_KEY_D);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["up"] = DynamicSetting(SAIL_KEY_SPACE, SAIL_KEY_SPACE, SAIL_KEY_SPACE);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["down"] = DynamicSetting(SAIL_KEY_CONTROL, SAIL_KEY_CONTROL, SAIL_KEY_CONTROL);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["sprint"] = DynamicSetting(SAIL_KEY_SHIFT, SAIL_KEY_SHIFT, SAIL_KEY_SHIFT);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["throw"] = DynamicSetting(SAIL_KEY_F, SAIL_KEY_F, SAIL_KEY_F);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["light"] = DynamicSetting(SAIL_KEY_R, SAIL_KEY_R, SAIL_KEY_R);
 
 }
 

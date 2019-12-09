@@ -201,7 +201,7 @@ void OptionsWindow::renderWindow() {
 		if (m_keyToChange == value) {
 			ImGui::Columns(1);
 
-			//ImGui::Text("WAITING ON KEY INPUT");
+			//TODO: Add popup for rebinding
 			int c = 0;
 
 
@@ -236,19 +236,14 @@ void OptionsWindow::renderWindow() {
 			}
 			ImGui::Columns(2, "keybindcolumns", false);
 		}
-		
-
-
 	}
 	ImGui::Columns(1);
 	if (ImGui::Button("Reset")) {
 		resetKeyBind();
 	}
 
-
 	cplf = ImGui::GetIO().KeyCtrl;
 	splf = ImGui::GetIO().KeyShift;
-
 
 #pragma endregion
 
@@ -812,7 +807,7 @@ void OptionsWindow::drawMap() {
 
 void OptionsWindow::resetKeyBind(int key) {
 
-	for (auto& [bind, value] : m_settings->gameSettingsDynamic["keybindingsDEFAULT"]) {
+	for (auto& [bind, value] : m_settings->applicationSettingsDynamic["keybindingsDEFAULT"]) {
 		m_settings->applicationSettingsDynamic["keybindings"][bind].setValue(value.value);
 
 	}
