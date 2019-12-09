@@ -42,7 +42,7 @@ DX12GBufferRenderer::DX12GBufferRenderer() {
 
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
 		m_gbufferTextures[i] = static_cast<DX12RenderableTexture*>(RenderableTexture::Create(windowWidth, windowHeight, "GBuffer renderer output " + std::to_string(i),
-			(i == NUM_GBUFFERS - 1) ? Texture::R16G16_FLOAT : Texture::R8G8B8A8, (i == 0), false, 1U, false)); // Last gbuffer output is motion vectors which needs more precision but only two channels
+			(i == NUM_GBUFFERS - 1) ? Texture::R16G16_FLOAT : Texture::R8G8B8A8, (i == 0))); // Last gbuffer output is motion vectors which needs more precision but only two channels
 	}
 }
 

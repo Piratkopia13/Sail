@@ -98,7 +98,7 @@ void DX12RenderableTexture::resize(int width, int height) {
 }
 
 ID3D12Resource* DX12RenderableTexture::getResource(int frameIndex) const {
-	unsigned int i = (frameIndex == -1) ? getSwapIndex() : frameIndex;
+	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
 	return textureDefaultBuffers[i].Get();
 }
 
@@ -108,17 +108,17 @@ ID3D12Resource* DX12RenderableTexture::getDepthResource() const {
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDepthSrvCDH(int frameIndex) const {
 	assert(m_hasDepthTextures); // Tried to get depth srv without a valid depth stencil resource
-	unsigned int i = (frameIndex == -1) ? getSwapIndex() : frameIndex;
+	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
 	return depthSrvHeapCDHs[i];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getRtvCDH(int frameIndex) const {
-	unsigned int i = (frameIndex == -1) ? getSwapIndex() : frameIndex;
+	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
 	return m_rtvHeapCDHs[i];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDsvCDH(int frameIndex) const {
-	unsigned int i = (frameIndex == -1) ? getSwapIndex() : frameIndex;
+	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
 	return m_dsvHeapCDHs[i];
 }
 
