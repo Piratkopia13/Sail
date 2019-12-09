@@ -305,6 +305,8 @@ bool SplashScreenState::loadTextures(Application* app) {
 	rm->loadTexture("pbr/DDS/Doc/Doc_MRAO.dds");
 	rm->loadTexture("pbr/DDS/Doc/Doc_NM.dds");
 
+	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
+
 	rm->loadTexture("pbr/DDS/WaterGun/Watergun_Albedo.dds");
 	rm->loadTexture("pbr/DDS/WaterGun/Watergun_MRAO.dds");
 	rm->loadTexture("pbr/DDS/WaterGun/Watergun_NM.dds");
