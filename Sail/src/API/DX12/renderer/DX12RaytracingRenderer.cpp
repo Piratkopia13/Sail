@@ -464,6 +464,10 @@ void DX12RaytracingRenderer::submitWaterPoint(const glm::vec3& pos) {
 	m_dxr.addWaterAtWorldPosition(pos);
 }
 
+unsigned int DX12RaytracingRenderer::removeWaterPoint(const glm::vec3& pos, const glm::ivec3& posOffset, const glm::ivec3& negOffset) {
+	return m_dxr.removeWaterAtWorldPosition(pos, posOffset, negOffset);
+}
+
 void DX12RaytracingRenderer::setTeamColors(const std::vector<glm::vec3>& teamColors) {
 	Renderer::setTeamColors(teamColors);
 }
@@ -471,6 +475,10 @@ void DX12RaytracingRenderer::setTeamColors(const std::vector<glm::vec3>& teamCol
 bool DX12RaytracingRenderer::checkIfOnWater(const glm::vec3& pos) {
 
 	return m_dxr.checkWaterAtWorldPosition(pos);
+}
+
+std::pair<bool, glm::vec3> DX12RaytracingRenderer::getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) {
+	return m_dxr.getNearestWaterPosition(position, maxOffset);
 }
 
 void DX12RaytracingRenderer::updateMetaballAABB() {

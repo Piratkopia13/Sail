@@ -20,7 +20,9 @@ public:
 	Renderer* getParticleRenderer();
 	Renderer* getScreenSpaceRenderer();
 	PostProcessPipeline* getPostProcessPipeline();
+	unsigned int removeWaterPoint(const glm::vec3& worldPos, const glm::ivec3& posOffset, const glm::ivec3& negOffset);
 	bool checkIfOnWater(const glm::vec3& worldPos) const;
+	virtual std::pair<bool, glm::vec3> getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset);
 	bool onEvent(const Event& event) override;
 
 private:
