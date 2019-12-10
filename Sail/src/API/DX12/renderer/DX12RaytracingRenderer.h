@@ -33,7 +33,7 @@ public:
 	DXRBase* getDXRBase();
 
 private:
-	void createSoftShadowsTextures();
+	void createSoftShadowsTextures(unsigned int numPlayers);
 	DX12RenderableTexture* runDenoising(ID3D12GraphicsCommandList4* cmdList);
 	DX12RenderableTexture* runShading(ID3D12GraphicsCommandList4* cmdList, DX12RenderableTexture* shadows);
 	bool onResize(const WindowResizeEvent& event);
@@ -50,6 +50,7 @@ private:
 	DX12API::Command m_commandDirectCopy;
 	DX12API::Command m_commandCompute;
 	DX12API::Command m_commandComputePostProcess;
+	unsigned int m_numShadowTextures;
 
 	DX12RenderableTexture** m_gbufferTextures;
 	DX12Texture* m_brdfTexture;

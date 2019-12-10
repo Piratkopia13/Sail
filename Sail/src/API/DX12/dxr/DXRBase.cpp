@@ -221,7 +221,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 
 }
 
-void DXRBase::updateSceneData(Camera* cam, LightSetup* lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors) {
+void DXRBase::updateSceneData(Camera* cam, LightSetup* lights, const std::vector<DXRBase::MetaballGroup*>& metaballGroups, const std::vector<glm::vec3>& teamColors, unsigned int numShadowTextures) {
 
 	updateMetaballpositions(metaballGroups);
 
@@ -242,6 +242,7 @@ void DXRBase::updateSceneData(Camera* cam, LightSetup* lights, const std::vector
 	newData.mapStart = m_mapStart;
 	newData.frameCount = m_frameCount++;
 	newData.nMetaballGroups = metaballGroups.size();
+	newData.numShadowTextures = numShadowTextures;
 
 	for (auto& group : metaballGroups) {
 		newData.metaballGroup[group->index].start = group->gpuGroupStartOffset;
