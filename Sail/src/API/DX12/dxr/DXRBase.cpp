@@ -414,6 +414,7 @@ std::pair<bool, glm::vec3> DXRBase::getNearestWaterPosition(const glm::vec3& pos
 	int origQuarterIndex = glm::floor((int)glm::floor(floatInd.x * 4.f) % 4);
 	// Convert triple-number (float) to triple-number (int)
 	glm::i32vec3 origInd = floor(floatInd);
+	origInd.y = 0;
 
 	int xOffset = maxOffset.x / mapSize.x * m_waterArrSizes.x;
 	int zOffset = maxOffset.z / mapSize.z * m_waterArrSizes.z;
@@ -438,7 +439,9 @@ std::pair<bool, glm::vec3> DXRBase::getNearestWaterPosition(const glm::vec3& pos
 				if (Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], quarterIndex) > 0U) {
 					ind.x = ind.x * 4 + quarterIndex;
 					auto currPos = (glm::vec3(ind) / glm::vec3(m_waterArrSizes.x * 4, m_waterArrSizes.y, m_waterArrSizes.z)) * m_mapSize + m_mapStart;
-					if (glm::distance2(glm::vec2(currPos.x, currPos.z), glm::vec2(position.x, position.z)) < leastDist) {
+					auto currDist = glm::distance2(glm::vec2(currPos.x, currPos.z), glm::vec2(position.x, position.z));
+					if (currDist < leastDist) {
+						leastDist = currDist;
 						closestPos = currPos;
 						found = true;
 					}
