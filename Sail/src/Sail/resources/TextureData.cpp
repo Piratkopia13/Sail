@@ -47,7 +47,7 @@ glm::vec4 TextureData::getPixel(unsigned int x, unsigned int y) {
 
 }
 
-unsigned int  TextureData::getByteSize() const {
+unsigned int TextureData::getByteSize() const {
 	return sizeof(*this) + sizeof(unsigned char) * m_data.width * m_data.height * m_data.channels;
 }
 

@@ -9,6 +9,8 @@
 #include "loaders/AssimpLoader.h"
 #include "loaders/FBXLoader.h"
 
+//#define INCLUDE_ASSIMP_LOADER
+
 //class DeferredGeometryShader;
 class ShaderPipeline;
 class Shader;
@@ -96,7 +98,6 @@ public:
 		SAIL_LOG("Reloaded shader " + name);
 	}
 
-
 	const unsigned int numberOfModels() const;
 	const unsigned int numberOfTextures() const;
 	const unsigned int getByteSize() const;
@@ -104,7 +105,8 @@ public:
 	const unsigned int getAnimationsByteSize() const;
 	const unsigned int getAudioByteSize() const;
 	const unsigned int getTextureByteSize() const;
-	const unsigned int getGenericByteSize() const;
+	const unsigned int getShaderByteSize() const;
+	const unsigned int getMiscByteSize() const;
 	// SoundManager
 	//SoundManager* getSoundManager();
 
@@ -120,6 +122,12 @@ public:
 
 private:
 	unsigned int calculateTextureByteSize() const;
+	unsigned int calculateAnimationByteSize() const;
+	unsigned int calculateModelByteSize() const;
+	unsigned int calculateAudioByteSize() const;
+	unsigned int calculateMiscByteSize() const;
+	unsigned int calculateShaderByteSize() const;
+
 	const std::string getSuitableName(const std::string& name);
 
 	enum RMDataType {
@@ -127,9 +135,10 @@ private:
 		Animations,
 		Audio,
 		Textures,
-		Generic
+		Shaders,
+		N_dataTypes
 	};
-	unsigned int m_byteSize[5];
+	unsigned int m_byteSize[static_cast<size_t>(N_dataTypes)];
 
 private:
 	// Audio files/data mapped to their filenames
@@ -154,7 +163,9 @@ private:
 	mutable std::mutex m_textureDatasMutex;
 	std::vector<Texture*> m_finishedTextures;
 
+#ifdef INCLUDE_ASSIMP_LOADER
 	std::unique_ptr<AssimpLoader> m_assimpLoader;
+#endif
 	std::unique_ptr<FBXLoader> m_fbxLoader;
 	Shader* m_defaultShader;
 

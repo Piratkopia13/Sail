@@ -17,8 +17,8 @@
 #include "Sail/utils/SailImGui/SailImGui.h"
 
 // Mainly used in progress bar
-#define TOTAL_NR_OF_MODELS 23
-#define TOTAL_NR_OF_TEXTURES 83
+#define TOTAL_NR_OF_MODELS 25
+#define TOTAL_NR_OF_TEXTURES 88
 
 
 MenuState::MenuState(StateStack& stack) 

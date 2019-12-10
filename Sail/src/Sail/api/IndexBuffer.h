@@ -10,6 +10,8 @@ public:
 
 	virtual void bind(void* cmdList = nullptr) = 0;
 
+	virtual unsigned int getByteSize() const = 0;
+
 protected:
 	unsigned long* getIndexData(Mesh::Data& modelData);
 	unsigned int getIndexDataSize() const;

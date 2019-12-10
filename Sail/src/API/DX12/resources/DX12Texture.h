@@ -19,6 +19,8 @@ public:
 	const std::string& getFilename() const;
 	ID3D12Resource* getResource() const;
 	
+	unsigned int getByteSize() const override;
+
 	void clearDDSData();
 
 private:
@@ -45,5 +47,6 @@ private:
 	bool m_isDDSTexture;
 
 	TextureData* m_tgaData;
+
 	std::unique_ptr<uint8_t[]> m_ddsData;
 };

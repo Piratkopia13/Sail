@@ -134,6 +134,27 @@ ID3D12Resource* DX12Texture::getResource() const {
 	return textureDefaultBuffers[0].Get();
 }
 
+unsigned int DX12Texture::getByteSize() const {
+	unsigned int size = 0;
+
+	size += sizeof(*this);
+
+	size += sizeof(unsigned char) * m_fileName.capacity();
+
+	size += sizeof(D3D12_SUBRESOURCE_DATA) * m_subresources.capacity();
+
+	if (m_isDDSTexture) {
+		if (m_ddsData != nullptr) {
+			size += sizeof(uint8_t) * m_textureDesc.Width * m_textureDesc.Height * m_textureDesc.DepthOrArraySize;
+		}
+	}
+	// tga data is stored in ResourceManager.
+	// Do not calculate it here.
+	// It may be null if the data has been uploaded to VRAM and removed from RAM.
+
+	return size;
+}
+
 void DX12Texture::clearDDSData() {
 	m_ddsData.reset(nullptr);
 }
