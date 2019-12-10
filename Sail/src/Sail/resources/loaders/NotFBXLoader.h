@@ -6,7 +6,7 @@
 
 namespace NotFBXLoader {
 
-	void Load(std::string filename, Model*& model, Shader* shader, AnimationStack*& animationStack);
-	void Save(std::string filename, Model* model, AnimationStack* animationStack);
+	void Load(const std::string& filename, Model*& model, Shader* shader, AnimationStack*& animationStack);
+	void Save(const std::string& filename, Model* model, AnimationStack* animationStack);
 
 }

@@ -2,10 +2,10 @@
 #include "NotFBXLoader.h"
 #include <fstream>
 
-void NotFBXLoader::Load(std::string filename, Model*& model, Shader* shader,  AnimationStack*& animationStack) {
+void NotFBXLoader::Load(const std::string& filename, Model*& model, Shader* shader,  AnimationStack*& animationStack) {
 	std::ifstream out(filename, std::fstream::binary);
-	char m = 'm';
-	char a = 'a';
+	const char m = 'm';
+	const char a = 'a';
 
 	char type;
 
@@ -110,11 +110,11 @@ void NotFBXLoader::Load(std::string filename, Model*& model, Shader* shader,  An
 	out.close();
 }
 
-void NotFBXLoader::Save(std::string filename, Model* model, AnimationStack* animationStack) {
+void NotFBXLoader::Save(const std::string& filename, Model* model, AnimationStack* animationStack) {
 	std::ofstream out(filename, std::fstream::binary);
 
-	char m = 'm';
-	char a = 'a';
+	const char m = 'm';
+	const char a = 'a';
 
 	if (model) {
 		out.write((char*)&m, sizeof(m));
@@ -170,9 +170,9 @@ void NotFBXLoader::Save(std::string filename, Model* model, AnimationStack* anim
 		out.write((char*)& nAnimations, sizeof(nAnimations));
 		for (size_t i = 0; i < nAnimations; i++) {
 			animation = animationStack->getAnimation(i);
-			std::string name = animation->getName();
-			size_t stringLen = name.length();
-			unsigned int maxFrame = animation->getMaxAnimationFrame();
+			const std::string& name = animation->getName();
+			const size_t stringLen = name.length();
+			const unsigned int maxFrame = animation->getMaxAnimationFrame();
 
 			out.write((char*)& stringLen, sizeof(stringLen));
 			out.write((char*)name.data(), name.length());		

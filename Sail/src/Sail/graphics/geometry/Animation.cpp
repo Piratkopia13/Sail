@@ -155,7 +155,7 @@ void Animation::addFrame(const unsigned int frame, const float time, Animation::
 void Animation::setName(const std::string& name) {
 	m_name = name;
 }
-const std::string Animation::getName() {
+const std::string& Animation::getName() {
 	return m_name;
 }
 

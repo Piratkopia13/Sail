@@ -43,7 +43,7 @@ public:
 	void addFrame(const unsigned int frame, const float time, Animation::Frame* data);
 
 	void setName(const std::string& name);
-	const std::string getName();
+	const std::string& getName();
 	
 private:
 	
