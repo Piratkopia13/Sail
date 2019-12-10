@@ -188,21 +188,21 @@ void NodeSystem::colorPath(const std::vector<NodeSystem::Node>& path, const unsi
 void NodeSystem::setDebugModelAndScene(Shader* shader) {
 	m_shader = shader;
 
-	Application::getInstance()->getResourceManager().getModel("NodeSystemBall.fbx", m_shader);
+	Application::getInstance()->getResourceManager().getModel("NodeSystemBall", m_shader);
 
-	m_blockedNode = &Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall.fbx", m_shader);
+	m_blockedNode = &Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall", m_shader);
 	m_blockedNode->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 	m_blockedNode->getMesh(0)->getMaterial()->setColor(glm::vec4(1.f, 0.f, 0.f, 1.f));
 	m_blockedNode->setCastShadows(false);
 
 	for (int i = 0; i < m_maxColourID; i++) {
-		m_pathNodes.emplace_back(&Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall.fbx", m_shader));
+		m_pathNodes.emplace_back(&Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall", m_shader));
 		m_pathNodes[i]->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 		m_pathNodes[i]->getMesh(0)->getMaterial()->setColor(glm::vec4(glm::linearRand(0.5f, 1.f), glm::linearRand(0.5f, 1.f), glm::linearRand(0.5f, 1.f), 1.f));
 		m_pathNodes[i]->setCastShadows(false);
 	}
 
-	m_pathNodes.emplace_back(&Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall.fbx", m_shader));
+	m_pathNodes.emplace_back(&Application::getInstance()->getResourceManager().getModelCopy("NodeSystemBall", m_shader));
 	m_pathNodes[m_maxColourID]->getMesh(0)->getMaterial()->setAlbedoTexture("missing.tga");
 	m_pathNodes[m_maxColourID]->getMesh(0)->getMaterial()->setColor(glm::vec4(0.3f, 0.3f, 0.3f, 1.f));
 	m_pathNodes[m_maxColourID]->setCastShadows(false);

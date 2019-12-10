@@ -9,6 +9,8 @@
 #include "loaders/AssimpLoader.h"
 #include "loaders/FBXLoader.h"
 
+#define LOAD_NOT_FBX
+
 //class DeferredGeometryShader;
 class ShaderPipeline;
 class Shader;
@@ -21,6 +23,7 @@ public:
 
 	enum ImporterType {
 		SAIL_FBXSDK,
+		SAIL_NOT_FBXSDK,
 		SAIL_ASSIMP
 	};
 	bool setDefaultShader(Shader* shader);
