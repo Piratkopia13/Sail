@@ -19,6 +19,11 @@ private:
 	SettingStorage* m_settings;
 	LevelSystem* m_levelSystem;
 
+	int* m_keyToChange;
+
+
+private:
 	void drawCrosshair();
 	void drawMap();
+	void resetKeyBind(int key = -1); // -1 to reset all
 };
