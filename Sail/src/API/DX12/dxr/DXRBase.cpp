@@ -949,9 +949,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 				hasTexture = (textureNum == 2) ? materialSettings.hasMetalnessRoughnessAOTexture : hasTexture;
 				if (hasTexture) {
 					// Make sure textures have initialized / uploaded their data to its default buffer
-					if (!texture->hasBeenInitialized()) {
-						texture->initBuffers(cmdList);
-					}
+					texture->initBuffers(cmdList);
 
 						// Copy SRV to DXR heap
 						m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

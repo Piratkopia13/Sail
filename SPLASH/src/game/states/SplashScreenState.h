@@ -29,10 +29,18 @@ private:
 	bool loadModels(Application* app);
 	bool loadTextures(Application* app);
 
+	void loadModel(ResourceManager& rm, const char* filename, Shader* shader = nullptr);
+	void loadTexture(ResourceManager& rm, const char* filename);
+
+	void waitUntilMemoryIsBelow(size_t size);
+	size_t MB_to_Byte(size_t sizeMB);
 
 private:
 	Input* m_input = nullptr;
 	Application* m_app = nullptr;
 	std::future<bool> m_modelThread;
+
+	std::mutex m_waitMutex;
+	size_t m_nrOfWaits = 0;
 };
 

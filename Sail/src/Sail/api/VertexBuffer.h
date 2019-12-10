@@ -15,6 +15,8 @@ public:
 	virtual void update(Mesh::Data& data) = 0;
 	unsigned int getVertexDataStride() const;
 
+	virtual unsigned int getByteSize() const = 0;
+
 protected:
 	void* getVertexData(const Mesh::Data& modelData);
 	unsigned int getVertexDataSize() const;

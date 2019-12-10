@@ -954,10 +954,11 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.lifeTimeSystem);
 	runSystem(dt, m_componentSystems.teamColorSystem);
 
-	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f && !m_componentSystems.particleSystem->isEnabled()) {
+	auto& particleSettingSelectedValue = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value;
+	if (particleSettingSelectedValue > 0.0f && !m_componentSystems.particleSystem->isEnabled()) {
 		// Enable the particle system if previously disabled
 		m_componentSystems.particleSystem->setEnabled(true);
-	} else if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value <= 0.0f && m_componentSystems.particleSystem->isEnabled()) {
+	} else if (particleSettingSelectedValue <= 0.0f && m_componentSystems.particleSystem->isEnabled()) {
 		//Disable particle system if previously enabled
 		m_componentSystems.particleSystem->setEnabled(false);
 	}

@@ -17,6 +17,7 @@ DX12IndexBuffer::DX12IndexBuffer(Mesh::Data& modelData)
 	auto numSwapBuffers = m_context->getNumGPUBuffers();
 
 	m_hasBeenInitialized.resize(numSwapBuffers, false);
+	m_stillInRAM.resize(numSwapBuffers, true);
 	m_uploadIndexBuffers.resize(numSwapBuffers);
 	m_defaultIndexBuffers.resize(numSwapBuffers);
 
@@ -78,6 +79,7 @@ bool DX12IndexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 			// Release the upload heap as soon as the texture has been uploaded to the GPU, but make sure it doesnt happen on the same frame as the upload
 			if (m_uploadIndexBuffers[i] && m_initFrameCount != m_context->getFrameCount() && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
 				m_uploadIndexBuffers[i].ReleaseAndGetAddressOf();
+				m_stillInRAM[i] = false;
 			}
 			continue;
 		}
@@ -103,4 +105,23 @@ bool DX12IndexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 	}
 
 	return true;
+}
+
+unsigned int DX12IndexBuffer::getByteSize() const {
+	unsigned int size = 0;
+
+	size += sizeof(*this);
+
+	size += sizeof(bool) * m_stillInRAM.capacity();
+	size += sizeof(wComPtr<ID3D12Resource>) * m_uploadIndexBuffers.capacity();
+	for (size_t i = 0; i < m_uploadIndexBuffers.size(); i++) {
+		if (m_stillInRAM[i]) {
+			size += getIndexDataSize();
+		}
+	}
+
+	size += sizeof(bool) * m_hasBeenInitialized.capacity();
+	size += sizeof(wComPtr<ID3D12Resource>) * m_defaultIndexBuffers.capacity();
+
+	return size;
 }
