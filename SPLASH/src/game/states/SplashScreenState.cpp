@@ -8,7 +8,8 @@
 #include "Sail/entities/systems/render/BeginEndFrameSystem.h"
 #include <string>
 
-
+#include "Sail/resources/loaders/NotFBXLoader.h"
+//#define CREATE_NOT_FBX
 
 SplashScreenState::SplashScreenState(StateStack& stack)
 	: State(stack)
@@ -51,65 +52,52 @@ bool SplashScreenState::loadModels(Application* app) {
 	std::future<bool> textureThread = m_app->pushJobToThreadPool([&](int id) {return loadTextures(m_app); });
 
 //#ifndef _DEBUG
-	rm->loadModel("Doc.fbx");
-	rm->loadModel("Torch.fbx");
-	rm->loadModel("candleExported.fbx");
-	rm->loadModel("Tiles/RoomWall.fbx");
-	rm->loadModel("Tiles/RoomDoor.fbx");
-	rm->loadModel("Tiles/CorridorDoor.fbx");
-	rm->loadModel("Tiles/CorridorWall.fbx"); 
-	rm->loadModel("Tiles/RoomCeiling.fbx");
-	rm->loadModel("Tiles/RoomFloor.fbx");
-	rm->loadModel("Tiles/CorridorCorner.fbx");
-	rm->loadModel("Tiles/RoomCorner.fbx"); 
-	rm->loadModel("Clutter/Table.fbx");
-	rm->loadModel("Clutter/Boxes.fbx");
-	rm->loadModel("Clutter/MediumBox.fbx");
-	rm->loadModel("Clutter/SquareBox.fbx");
-	rm->loadModel("Clutter/Books1.fbx");
-	rm->loadModel("Clutter/Screen.fbx");
-	rm->loadModel("Clutter/Notepad.fbx");
-	rm->loadModel("Clutter/Saftblandare.fbx");
-	rm->loadModel("WaterPistol.fbx");
-	rm->loadModel("boundingBox.fbx", &rm->getShaderSet<WireframeShader>());
-	rm->loadModel("cubeWidth1.fbx");
-	rm->loadModel("Clutter/Microscope.fbx");
-	rm->loadModel("Clutter/CloningVats.fbx");
-	rm->loadModel("Clutter/ControlStation.fbx");
-	rm->loadModel("Clutter/PowerUp.fbx");
-	rm->loadModel("CleaningBot.fbx");
+
+	//NotFBXLoader::Save("Doc.notfbx", &rm->getModel("Doc"), &rm->getAnimationStack("Doc"));
+
+	//Model* m = nullptr;
+	//AnimationStack* a = nullptr;
+	//NotFBXLoader::Load("Doc.notfbx", m, a);	
+
+	std::string extension = "";
+	ResourceManager::ImporterType type;
 
 
-	//LEAVE THIS FOR A MULTITHREADED FUTURE
-//#else
-//
-//	std::vector <std::future<bool>> modelThreads;
-//	
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Doc.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("candleExported.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/tileFlat.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomWall.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/tileDoor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomDoor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorDoor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorWall.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomCeiling.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorFloor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomFloor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorCeiling.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/CorridorCorner.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Tiles/RoomCorner.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Clutter/SmallObject.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Clutter/MediumObject.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return rm->loadModel("Clutter/LargeObject.fbx"); }));
-//
-//
-//
-//	for (auto& modelThread : modelThreads) {
-//		modelThread.get();
-//	}
-//#endif
+#ifdef CREATE_NOT_FBX
+	extension = ".fbx";	
+	type = ResourceManager::ImporterType::SAIL_FBXSDK;
+#else
+	extension = ".notfbx";
+	type = ResourceManager::ImporterType::SAIL_NOT_FBXSDK;
+#endif // CREATE_NOT_FBX
 
+	rm->loadModel("Doc" + extension, nullptr, type);
+	rm->loadModel("Torch" + extension, nullptr, type);
+	rm->loadModel("candleExported" + extension, nullptr, type);
+	rm->loadModel("Tiles/RoomWall" + extension, nullptr, type);
+	rm->loadModel("Tiles/RoomDoor" + extension, nullptr, type);
+	rm->loadModel("Tiles/CorridorDoor" + extension, nullptr, type);
+	rm->loadModel("Tiles/CorridorWall" + extension, nullptr, type); 
+	rm->loadModel("Tiles/RoomCeiling" + extension, nullptr, type);
+	rm->loadModel("Tiles/RoomFloor" + extension, nullptr, type);
+	rm->loadModel("Tiles/CorridorCorner" + extension, nullptr, type);
+	rm->loadModel("Tiles/RoomCorner" + extension, nullptr, type); 
+	rm->loadModel("Clutter/Table" + extension, nullptr, type);
+	rm->loadModel("Clutter/Boxes" + extension, nullptr, type);
+	rm->loadModel("Clutter/MediumBox" + extension, nullptr, type);
+	rm->loadModel("Clutter/SquareBox" + extension, nullptr, type);
+	rm->loadModel("Clutter/Books1" + extension, nullptr, type);
+	rm->loadModel("Clutter/Screen" + extension, nullptr, type);
+	rm->loadModel("Clutter/Notepad" + extension, nullptr, type);
+	rm->loadModel("Clutter/Saftblandare" + extension, nullptr, type);
+	rm->loadModel("WaterPistol" + extension, nullptr, type);
+	rm->loadModel("boundingBox" + extension, &rm->getShaderSet<WireframeShader>(), type);
+	rm->loadModel("cubeWidth1" + extension, nullptr, type);
+	rm->loadModel("Clutter/Microscope" + extension, nullptr, type);
+	rm->loadModel("Clutter/CloningVats" + extension, nullptr, type);
+	rm->loadModel("Clutter/ControlStation" + extension, nullptr, type);
+	rm->loadModel("Clutter/PowerUp" + extension, nullptr, type);
+	rm->loadModel("CleaningBot" + extension, nullptr, type);
 
 	textureThread.get();
 	rm->clearSceneData();
