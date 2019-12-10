@@ -358,7 +358,7 @@ void ResourceManager::clearModelCopies() {
 
 	// Find which models has a number after ".fbx"
 	for (auto& model : m_models) {
-		if (model.first.back() != 'x') {
+		if (model.first.find("-copy") != std::string::npos) {
 			modelsToRemove.push_back(model.first);
 		}
 	}
@@ -508,7 +508,7 @@ unsigned int ResourceManager::calculateShaderByteSize() const {
 const std::string ResourceManager::getSuitableName(const std::string& name) {
 	unsigned int iterator = 1;
 	while (iterator < 1000) {
-		std::string tempName = name + std::to_string(iterator++);
+		std::string tempName = name + "-copy" + std::to_string(iterator++);
 		if (m_models.find(tempName) == m_models.end()) {
 			return tempName;
 		}

@@ -42,10 +42,10 @@ SplashScreenState::SplashScreenState(StateStack& stack)
 	loadModels(m_app);
 #endif
 
-	//Sleep(5000000);
 }
 SplashScreenState::~SplashScreenState() {
 	m_modelThread.get();
+	m_app->getResourceManager().releaseTextureUploadBuffers();
 }
 
 bool SplashScreenState::processInput(float dt) {
@@ -94,35 +94,35 @@ bool SplashScreenState::loadModels(Application* app) {
 	type = ResourceManager::ImporterType::SAIL_NOT_FBXSDK;
 #endif // CREATE_NOT_FBX
 
-	rm->loadModel("Doc" + extension, nullptr, type);
-	rm->loadModel("Torch" + extension, nullptr, type);
-	rm->loadModel("candleExported" + extension, nullptr, type);
-	rm->loadModel("Tiles/RoomWall" + extension, nullptr, type);
-	rm->loadModel("Tiles/RoomDoor" + extension, nullptr, type);
-	rm->loadModel("Tiles/CorridorDoor" + extension, nullptr, type);
-	rm->loadModel("Tiles/CorridorWall" + extension, nullptr, type); 
-	rm->loadModel("Tiles/RoomCeiling" + extension, nullptr, type);
-	rm->loadModel("Tiles/RoomFloor" + extension, nullptr, type);
-	rm->loadModel("Tiles/CorridorCorner" + extension, nullptr, type);
-	rm->loadModel("Tiles/RoomCorner" + extension, nullptr, type); 
-	rm->loadModel("Clutter/Table" + extension, nullptr, type);
-	rm->loadModel("Clutter/Boxes" + extension, nullptr, type);
-	rm->loadModel("Clutter/MediumBox" + extension, nullptr, type);
-	rm->loadModel("Clutter/SquareBox" + extension, nullptr, type);
-	rm->loadModel("Clutter/Books1" + extension, nullptr, type);
-	rm->loadModel("Clutter/Screen" + extension, nullptr, type);
-	rm->loadModel("Clutter/Notepad" + extension, nullptr, type);
-	rm->loadModel("Clutter/Saftblandare" + extension, nullptr, type);
-	rm->loadModel("WaterPistol" + extension, nullptr, type);
-	rm->loadModel("boundingBox" + extension, &rm->getShaderSet<WireframeShader>(), type);
-	rm->loadModel("cubeWidth1" + extension, nullptr, type);
-	rm->loadModel("Clutter/Microscope" + extension, nullptr, type);
-	rm->loadModel("Clutter/CloningVats" + extension, nullptr, type);
-	rm->loadModel("Clutter/ControlStation" + extension, nullptr, type);
-	rm->loadModel("Clutter/PowerUp" + extension, nullptr, type);
-	rm->loadModel("CleaningBot" + extension, nullptr, type);
+	loadModel(rm, "Doc" + extension, nullptr, type);
+	loadModel(rm, "Torch" + extension, nullptr, type);
+	loadModel(rm, "candleExported" + extension, nullptr, type);
+	loadModel(rm, "Tiles/RoomWall" + extension, nullptr, type);
+	loadModel(rm, "Tiles/RoomDoor" + extension, nullptr, type);
+	loadModel(rm, "Tiles/CorridorDoor" + extension, nullptr, type);
+	loadModel(rm, "Tiles/CorridorWall" + extension, nullptr, type); 
+	loadModel(rm, "Tiles/RoomCeiling" + extension, nullptr, type);
+	loadModel(rm, "Tiles/RoomFloor" + extension, nullptr, type);
+	loadModel(rm, "Tiles/CorridorCorner" + extension, nullptr, type);
+	loadModel(rm, "Tiles/RoomCorner" + extension, nullptr, type); 
+	loadModel(rm, "Clutter/Table" + extension, nullptr, type);
+	loadModel(rm, "Clutter/Boxes" + extension, nullptr, type);
+	loadModel(rm, "Clutter/MediumBox" + extension, nullptr, type);
+	loadModel(rm, "Clutter/SquareBox" + extension, nullptr, type);
+	loadModel(rm, "Clutter/Books1" + extension, nullptr, type);
+	loadModel(rm, "Clutter/Screen" + extension, nullptr, type);
+	loadModel(rm, "Clutter/Notepad" + extension, nullptr, type);
+	loadModel(rm, "Clutter/Saftblandare" + extension, nullptr, type);
+	loadModel(rm, "WaterPistol" + extension, nullptr, type);
+	loadModel(rm, "boundingBox" + extension, &rm.getShaderSet<WireframeShader>(), type);
+	loadModel(rm, "cubeWidth1" + extension, nullptr, type);
+	loadModel(rm, "Clutter/Microscope" + extension, nullptr, type);
+	loadModel(rm, "Clutter/CloningVats" + extension, nullptr, type);
+	loadModel(rm, "Clutter/ControlStation" + extension, nullptr, type);
+	loadModel(rm, "Clutter/PowerUp" + extension, nullptr, type);
+	loadModel(rm, "CleaningBot" + extension, nullptr, type);
 
-	rm.releaseTextureUploadBuffers();
+
 
 	rm.clearSceneData();
 #ifdef MULTI_THREADED_LOADING
@@ -229,12 +229,12 @@ bool SplashScreenState::loadTextures(Application* app) {
 	return true;
 }
 
-void SplashScreenState::loadModel(ResourceManager& rm, const char* filename, Shader* shader) {
+void SplashScreenState::loadModel(ResourceManager& rm, std::string filename, Shader* shader, const ResourceManager::ImporterType type) {
 #ifdef WAIT_FOR_MEMORY
 	constexpr size_t UPPER_LIMIT_MB = 230;
 	waitUntilMemoryIsBelow(MB_to_Byte(UPPER_LIMIT_MB));
 #endif
-	rm.loadModel(filename, shader);
+	rm.loadModel(filename, shader, type);
 }
 
 void SplashScreenState::loadTexture(ResourceManager& rm, const char* filename) {

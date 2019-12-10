@@ -2,7 +2,7 @@
 #include "ImGuiHandler.h"
 #include "imgui.h"
 
-//#define USE_ONLY_ONE_FONT
+#define USE_ONLY_ONE_FONT
 
 void ImGuiHandler::applySailStyle() {
 	auto& style = ImGui::GetStyle();
