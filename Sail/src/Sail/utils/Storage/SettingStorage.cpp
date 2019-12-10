@@ -304,6 +304,16 @@ void SettingStorage::createGameDefaultMap() {
 	gameSettingsDynamic["powerup"]["count"] = DynamicSetting(1.0f, 1.0f, 1.0f);
 
 
+	gameSettingsStatic["map"]["bots"] = Setting(0, std::vector<Setting::Option>({
+		{ "on", 0.0f },
+		{ "off",1.0f }
+	}));
+	gameSettingsDynamic["bots"] = std::unordered_map<std::string, DynamicSetting>();
+
+	gameSettingsDynamic["bots"]["count"] = DynamicSetting(5.0f, 1.0f, 100.0f);
+	gameSettingsDynamic["bots"]["waterStorage"] = DynamicSetting(100.0f, 1.0f, 500.0f);
+
+
 	defaultMaps["Deathmatch"] = Setting(0, std::vector<Setting::Option>({
 		{"Random",		-1},
 		{"Berlin",		0},
