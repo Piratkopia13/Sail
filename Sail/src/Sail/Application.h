@@ -96,6 +96,9 @@ public:
 	float getDelta() const;
 	float getFixedUpdateDelta() const;
 
+	void startAudio();
+	void addToAudioComponentQueue(Entity* ac);
+
 private:
 
 	static Application* s_instance;
@@ -120,4 +123,7 @@ private:
 	float m_fixedUpdateDelta;
 
 	static std::atomic_bool s_isRunning;
+	// Vector with entities that have audioComponents on them, as these
+	// need to be attached to the audiosystem if it is created later.
+	std::vector<Entity*> audioEntitiesQueue;
 };

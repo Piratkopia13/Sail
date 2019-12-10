@@ -476,6 +476,10 @@ void AudioSystem::hotFixAmbiance(Entity* e, AudioComponent* audioC) {
 	}
 }
 
+AudioEngine* AudioSystem::getEngine() {
+	return m_audioEngine;
+}
+
 AudioEngine* AudioSystem::getAudioEngine() {
 	return m_audioEngine;
 }

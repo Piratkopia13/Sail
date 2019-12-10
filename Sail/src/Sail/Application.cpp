@@ -10,8 +10,6 @@
 #include "entities/systems/Systems.h"
 #include "events/EventDispatcher.h"
 
-
-
 // If this is defined then fixed update will run every frame which speeds up/slows down
 // the game depending on how fast the program can run
 //#define PERFORMANCE_SPEED_TEST
@@ -73,9 +71,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	ECS::Instance()->createSystem<GUISubmitSystem>();
 	ECS::Instance()->createSystem<LevelSystem>()->generateMap();
 	m_settingStorage.gameSettingsDynamic["map"]["count"].maxVal = ECS::Instance()->getSystem<LevelSystem>()->powerUpSpawnPoints.size();
-
-
-
 
 	// Initialize imgui
 	m_imguiHandler->init();
@@ -282,5 +277,26 @@ float Application::getDelta() const {
 
 float Application::getFixedUpdateDelta() const {
 	return m_fixedUpdateDelta;
+}
+
+void Application::startAudio() {
+	// Create the system if it doesn't exist.
+	ECS* ecsPtr = ECS::Instance();
+	if (!ecsPtr->getSystem<AudioSystem>()) {
+		ecsPtr->createSystem<AudioSystem>();
+
+		while (audioEntitiesQueue.size() != 0) {
+			// Add the one in the back
+			ecsPtr->addEntityToSystems(audioEntitiesQueue.back());
+			// Pop it
+			audioEntitiesQueue.pop_back();
+		}
+		
+		SAIL_LOG("Audio was created successfully");
+	}
+}
+
+void Application::addToAudioComponentQueue(Entity* ac) {
+	this->audioEntitiesQueue.push_back(ac);
 }
 
