@@ -45,6 +45,7 @@ class SprintingSystem;
 class TeamColorSystem;
 class CandleThrowingSystem;
 class CrosshairSystem;
+class WaterCleaningSystem;
 
 
 // Systems that need duplicate versions for the killcam (due to slow motion and other reasons)
@@ -105,6 +106,7 @@ struct Systems {
 	SprinklerSystem*           sprinklerSystem           = nullptr;
 	UpdateBoundingBoxSystem*   updateBoundingBoxSystem   = nullptr;
 	SprintingSystem*           sprintingSystem           = nullptr;
+	WaterCleaningSystem*	   waterCleaningSystem		 = nullptr;
 
 
 	// Systems that need duplicate versions for the killcam
