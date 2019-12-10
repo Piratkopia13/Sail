@@ -169,19 +169,13 @@ GameState::GameState(StateStack& stack)
 		
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
-		for (int i = -1; i < id; i++) {
-			spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
-		}
-
+		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint(id);
 		m_player = EntityFactory::CreateMySpectator(playerID, m_currLightIndex++, spawnLocation).get();
 
 	} else {
 		int id = static_cast<int>(playerID);
-		glm::vec3 spawnLocation = glm::vec3(0.f);
-		for (int i = -1; i < id; i++) {
-			spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
-		}
-
+		glm::vec3 spawnLocation = glm::vec3(0.f);	
+		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint(id);
 		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 	}
 
@@ -1295,7 +1289,7 @@ void GameState::createBots() {
 	botCount = 5;
 
 	for (size_t i = 0; i < botCount; i++) {
-		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
+		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getBotSpawnPoint(i);
 		if (spawnLocation.x != -1000.f) {
 			auto e = EntityFactory::CreateCleaningBot(spawnLocation, m_componentSystems.aiSystem->getNodeSystem());
 			if (NWrapperSingleton::getInstance().isHost()) {	
