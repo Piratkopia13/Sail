@@ -3,7 +3,6 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/Systems.h"
-#include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 #include "Sail/graphics/shader/postprocess/BlendShader.h"
@@ -162,7 +161,9 @@ GameState::GameState(StateStack& stack)
 	
 	createLevel(shader, boundingBoxModel);
 #ifndef _DEBUG
-	m_componentSystems.aiSystem->initNodeSystem(m_octree);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.aiSystem->initNodeSystem(m_octree);
+	}
 #endif
 	// Player creation
 	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
@@ -459,7 +460,11 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
 
-	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+	}
+
+	m_componentSystems.waterCleaningSystem = ECS::Instance()->createSystem<WaterCleaningSystem>();
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
@@ -1030,7 +1035,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.powerUpCollectibleSystem->update(dt);
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	runSystem(dt, m_componentSystems.aiSystem);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		runSystem(dt, m_componentSystems.aiSystem);
+	}
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
@@ -1045,6 +1052,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	runSystem(dt, m_componentSystems.particleSystem);
 	runSystem(dt, m_componentSystems.sanitySystem);
 	runSystem(dt, m_componentSystems.sanitySoundSystem);
+	runSystem(dt, m_componentSystems.waterCleaningSystem);
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
@@ -1292,14 +1300,16 @@ void GameState::createBots() {
 		botCount = 0;
 	}
 
-	botCount = 5;
+	botCount = 10;
 
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
-			auto e = EntityFactory::CreateCleaningBot(spawnLocation, m_componentSystems.aiSystem->getNodeSystem());
-			if (NWrapperSingleton::getInstance().isHost()) {	
-				m_componentSystems.powerUpCollectibleSystem->spawnPowerUp(glm::vec3(0, 1, 0), 0, 0, 0, e.get());
+			auto compID = Netcode::generateUniqueBotID();
+			if (NWrapperSingleton::getInstance().isHost()) {
+				EntityFactory::CreateCleaningBotHost(spawnLocation, m_componentSystems.aiSystem->getNodeSystem(), compID);
+			} else {
+				EntityFactory::CreateCleaningBot(spawnLocation, compID);
 			}
 		}
 		else {
