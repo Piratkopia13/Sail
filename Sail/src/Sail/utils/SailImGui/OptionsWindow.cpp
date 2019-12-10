@@ -91,11 +91,6 @@ void OptionsWindow::renderWindow() {
 		float val = dopt->value * 100.0f;
 		if (ImGui::SliderFloat(std::string("##"+settingName).c_str(), &val, dopt->minVal, dopt->maxVal * 100.0f, "%.1f%%")) {
 			dopt->setValue(val * 0.01f);
-
-			// If the sound is set to '0'
-			if (val > 0) {
-				m_app->startAudio();
-			}
 		}
 	}	
 	

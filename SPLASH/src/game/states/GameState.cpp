@@ -114,6 +114,13 @@ GameState::GameState(StateStack& stack)
 	m_cam.setDirection(glm::normalize(glm::vec3(0.48f, -0.16f, 0.85f)));
 #endif
 
+	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
+	m_ambiance->addComponent<AudioComponent>();
+	SAIL_LOG("Adding ambiance to AudioQueue");
+	Application::getInstance()->addToAudioComponentQueue(m_ambiance);
+	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
+
+
 	// Initialize the component systems
 	initSystems(playerID);
 
@@ -178,13 +185,6 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.lightListSystem->setDebugLightListEntity("Map_Candle1");
 #endif
 
-	m_ambiance = ECS::Instance()->createEntity("LabAmbiance").get();
-	m_ambiance->addComponent<AudioComponent>();
-	SAIL_LOG("Adding ambiance to AudioQueue");
-	Application::getInstance()->addToAudioComponentQueue(m_ambiance);
-	m_ambiance->addComponent<TransformComponent>(glm::vec3{ 0.0f, 0.0f, 0.0f });
-	m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value, false, true);
-
 
 	m_playerInfoWindow.setPlayerInfo(m_player, &m_cam);
 
@@ -222,7 +222,7 @@ GameState::GameState(StateStack& stack)
 
 
 	//This will create all torch particles before players report done loading which will remove the freazing after waiting for players. 
-	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
+	if (m_app->getSettings().applicationSettingsStatic["graphics"]["particles"].getSelected().value > 0.0f) {
 		m_componentSystems.particleSystem->addQueuedEntities();
 		m_componentSystems.particleSystem->update(0);
 	}
@@ -272,12 +272,11 @@ bool GameState::processInput(float dt) {
 #endif
 
 	// Unpause Game
-	if (ECS::Instance()->getSystem<AudioSystem>()) {
-		m_componentSystems.audioSystem = ECS::Instance()->getSystem<AudioSystem>();
+	if (m_componentSystems.audioSystem) {
 
 		if (m_readyRestartAmbiance) {
 			m_componentSystems.audioSystem->getAudioEngine()->pause_unpause_AllStreams(false);
-			this->m_ambiance->getComponent<AudioComponent>()->streamSetVolume_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
+			m_ambiance->getComponent<AudioComponent>()->streamSetVolume_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 			m_readyRestartAmbiance = false;
 		}
 	}
@@ -505,9 +504,17 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.hostSendToSpectatorSystem->init(playerID);
 
 	// Create system for handling and updating sounds | Disabled by default to save RAM
-	if (ECS::Instance()->getSystem<AudioSystem>()) {
+
 		// If audiosystem exists
+
+
+	if (m_app->getSettings().applicationSettingsDynamic["sound"]["global"].value > 0.0f) {
+		if (!ECS::Instance()->getSystem<AudioSystem>()) {
+			m_app->startAudio();
+		}
 		m_componentSystems.audioSystem = ECS::Instance()->getSystem<AudioSystem>();
+		m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value, false, true);
+		m_ambiance->getComponent<AudioComponent>()->streamSetVolume_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 	}
 	/* Old code for when audiosystem isn't removed at start because of RAM reasons. */
 //	m_componentSystems.audioSystem = ECS::Instance()->createSystem<AudioSystem>();
@@ -1038,6 +1045,16 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	
 	if (m_componentSystems.audioSystem) {
 		m_componentSystems.audioSystem->update(m_cam, dt, alpha);
+	}
+	else if(!m_componentSystems.audioSystem && m_app->getSettings().applicationSettingsDynamic["sound"]["global"].value > 0.0f) {
+		if (!ECS::Instance()->getSystem<AudioSystem>()) {
+			m_app->startAudio();
+		}
+		m_componentSystems.audioSystem = ECS::Instance()->getSystem<AudioSystem>();
+		m_readyRestartAmbiance = true;
+		m_ambiance->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", true, Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value, false, true);
+
+		m_ambiance->getComponent<AudioComponent>()->streamSetVolume_HELPERFUNC("res/sounds/ambient/ambiance_lab.xwb", Application::getInstance()->getSettings().applicationSettingsDynamic["sound"]["global"].value);
 	}
 	m_componentSystems.octreeAddRemoverSystem->updatePerFrame(dt);
 

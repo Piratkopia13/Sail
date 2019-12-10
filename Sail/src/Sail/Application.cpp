@@ -85,7 +85,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 }
 
 Application::~Application() {
-	m_settingStorage.gameSettingsDynamic["sound"]["global"].setValue(0);
 	m_settingStorage.saveToFile("res/data/settings.saildata");
 	delete Input::GetInstance();
 }
