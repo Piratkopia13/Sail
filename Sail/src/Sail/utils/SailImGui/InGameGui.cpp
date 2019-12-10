@@ -10,6 +10,7 @@
 #include "Sail/entities/components/CandleComponent.h"
 #include "Sail/entities/components/SpectatorComponent.h"
 #include "Sail/entities/components/GunComponent.h"
+#include "Sail/entities/components/PowerUp/PowerUpComponent.h"
 #include "Sail/entities/systems/Gameplay/candles/CandleHealthSystem.h"
 
 InGameGui::InGameGui(bool showWindow) {
@@ -36,6 +37,8 @@ void InGameGui::renderWindow() {
 	flags |= ImGuiWindowFlags_AlwaysAutoResize; 
 	flags |= ImGuiWindowFlags_NoSavedSettings;
 	flags |= ImGuiWindowFlags_NoBackground;
+
+
 	
 	if (m_crosshairEntity && drawCrossHair && !m_player->hasComponent<SpectatorComponent>()) {
 		if (!m_crosshairEntity->getComponent<CrosshairComponent>()->sprinting) {
@@ -58,6 +61,7 @@ void InGameGui::renderWindow() {
 		SprintingComponent* c2 = m_player->getComponent<SprintingComponent>();
 		CandleComponent* c3;
 		GunComponent* c4 = m_player->getComponent<GunComponent>();
+		PowerUpComponent* c5 = m_player->getComponent<PowerUpComponent>();
 		ImGui::Begin("GUI", NULL, flags);
 		for (auto e : m_player->getChildEntities()) {
 			if (!e->isAboutToBeDestroyed() && e->hasComponent<CandleComponent>()) {
@@ -143,6 +147,39 @@ void InGameGui::renderWindow() {
 			ImGui::End();
 		}
 
+		if (c5) {
+			float runspeed = c5->powerUps.at(0).time;
+			float stamina = c5->powerUps.at(1).time;
+			float shower = c5->powerUps.at(2).time;
+			float powerwash = c5->powerUps.at(3).time;
+			float centerX = screenWidth * 0.505f;
+			float centerY = screenHeight * 0.55f;
+
+			ImGuiWindowFlags poFlags = ImGuiWindowFlags_NoCollapse;
+			poFlags |= ImGuiWindowFlags_NoResize;
+			poFlags |= ImGuiWindowFlags_NoMove;
+			poFlags |= ImGuiWindowFlags_NoNav;
+			poFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+			poFlags |= ImGuiWindowFlags_NoTitleBar;
+			poFlags |= ImGuiWindowFlags_NoBackground;
+			ImGui::Begin("PowerUps", NULL, poFlags);
+			ImGui::SetWindowSize(ImVec2(120, 30));
+			ImGui::SetWindowPos(ImVec2(centerX - ImGui::GetWindowSize().x * 0.5f, screenHeight-60));
+			ImDrawList* powerUps = ImGui::GetWindowDrawList();
+			if (runspeed > 3 || ((int)(runspeed * 10)) % 2 == 1) {
+					powerUps->AddCircleFilled(ImVec2(centerX - 45, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(1, 0, 0, 1))));
+			}
+			if (stamina > 3 || ((int)(stamina* 10)) % 2 == 1) {
+				powerUps->AddCircleFilled(ImVec2(centerX - 15, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(0, 0, 1, 1))));
+			}
+			if (shower > 3 || ((int)(shower * 10)) % 2 == 1) {
+				powerUps->AddCircleFilled(ImVec2(centerX + 15, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(0, 1, 0, 1))));
+			}
+			if (powerwash > 3 || ((int)(powerwash * 10)) % 2 == 1) {
+				powerUps->AddCircleFilled(ImVec2(centerX + 45, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(1, 1, 0, 1))));
+			}
+			ImGui::End();
+		}
 	}
 	
 	if (m_player) {
