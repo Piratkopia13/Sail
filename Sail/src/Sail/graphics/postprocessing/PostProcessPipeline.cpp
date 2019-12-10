@@ -45,6 +45,12 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, DX12
 	auto& settings = Application::getInstance()->getSettings();
 	auto context = Application::getInstance()->getAPI<DX12API>();
 
+	auto setOutputTexture = [&](RenderableTexture* texture) {
+		auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
+		cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
+		static_cast<DX12RenderableTexture*>(texture)->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(texture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	};
 
 	// Read from game settings
 	bool enableFXAA = settings.applicationSettingsStatic["graphics"]["fxaa"].getSelected().value > 0.f;
@@ -64,15 +70,6 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, DX12
 	// Stage two - bloom if enabled
 	RenderableTexture* stageTwoOutput = stageOneOutput;
 	if (bloomAmount > 0.f) {
-		auto setOutputTexture = [&](RenderableTexture* texture) {
-			auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
-			cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
-			static_cast<DX12RenderableTexture*>(texture)->transitionStateTo(static_cast<ID3D12GraphicsCommandList4*>(cmdList), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			context->getDevice()->CopyDescriptorsSimple(1, cdh, static_cast<DX12RenderableTexture*>(texture)->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		};
-
-
-
 		// Blur pass one
 		input.inputRenderableTexture = m_bloomTexture;
 		auto* output = runStage(input, m_stages["BloomBlur1V"], cmdList);
@@ -118,12 +115,7 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, DX12
 
 	// Last stage - tonemapping, always runs
 	input.inputRenderableTexture = stageTwoOutput;
-
-	auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
-	cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
-	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-	gbufferTextures[0]->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	context->getDevice()->CopyDescriptorsSimple(1, cdh, gbufferTextures[0]->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	setOutputTexture(gbufferTextures[0]);
 	auto* tonemapOutput = runStage(input, m_stages["Tonemapper"], cmdList);
 	// Step past the output texture in the heap
 	context->getComputeGPUDescriptorHeap()->getAndStepIndex(1);
