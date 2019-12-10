@@ -95,6 +95,7 @@ public:
 	const UINT getFPS() const;
 	float getDelta() const;
 	float getFixedUpdateDelta() const;
+	void loadKeybinds();
 
 	void startAudio();
 	void addToAudioComponentQueue(Entity* ac);
@@ -115,7 +116,6 @@ private:
 	SettingStorage m_settingStorage;
 	std::unique_ptr<ChatWindow> m_chatWindow;
 	Camera* m_cameraRef;
-
 	// Timer
 	Timer m_timer;
 	UINT m_fps;

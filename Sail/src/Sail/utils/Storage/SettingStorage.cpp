@@ -2,6 +2,7 @@
 #include "SettingStorage.h"
 #include "../Utils.h"
 #include "..//Regex/Regex.h"
+#include "Sail/KeyCodes.h"
 
 #pragma region OTIONSSTORAGE
 SettingStorage::SettingStorage(const std::string& file) {
@@ -90,7 +91,7 @@ bool SettingStorage::deSerialize(const std::string& content, std::unordered_map<
 				if (dynamic.find(currentArea) != dynamic.end()) {
 					if (dynamic[currentArea].find(name) != dynamic[currentArea].end()) {
 						float value = std::stof(temp);
-						dynamic[currentArea][name].value = value;
+						dynamic[currentArea][name].setValue(value);
 					}
 				}
 			}
@@ -108,9 +109,9 @@ const int SettingStorage::teamColorIndex(const int team) {
 	}
 }
 
-glm::vec3 SettingStorage::getColor(const int team) {
-	if (team < 12 && team >= -1) {
-		auto& gameSettingsD = gameSettingsDynamic["Color" + std::to_string(team)];
+glm::vec3 SettingStorage::getColor(const int colorIndex) {
+	if (colorIndex < 12 && colorIndex >= -1) {
+		auto& gameSettingsD = gameSettingsDynamic["Color" + std::to_string(colorIndex)];
 
 		return glm::vec3(
 			gameSettingsD["r"].value,
@@ -245,6 +246,31 @@ void SettingStorage::createApplicationDefaultMisc() {
 	crosshairSettings["ColorG"] = DynamicSetting(0.0f, 0.0f, 1.0f);
 	crosshairSettings["ColorB"] = DynamicSetting(0.0f, 0.0f, 1.0f);
 	crosshairSettings["ColorA"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+
+
+	applicationSettingsDynamic["keybindings"] = std::unordered_map<std::string, DynamicSetting>();
+	applicationSettingsDynamic["keybindings"]["forward"] = DynamicSetting(SAIL_KEY_W, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["backward"] = DynamicSetting(SAIL_KEY_S, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["left"] = DynamicSetting(SAIL_KEY_A, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["right"] = DynamicSetting(SAIL_KEY_D, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["up"] = DynamicSetting(SAIL_KEY_SPACE, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["down"] = DynamicSetting(SAIL_KEY_CONTROL, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["sprint"] = DynamicSetting(SAIL_KEY_SHIFT, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["throw"] = DynamicSetting(SAIL_KEY_F, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["light"] = DynamicSetting(SAIL_KEY_R, 0.0f, 256.0f);
+
+
+	applicationSettingsDynamic["keybindingsDEFAULT"] = std::unordered_map<std::string, DynamicSetting>();
+	applicationSettingsDynamic["keybindingsDEFAULT"]["forward"] = DynamicSetting(SAIL_KEY_W, SAIL_KEY_W, SAIL_KEY_W);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["backward"] = DynamicSetting(SAIL_KEY_S, SAIL_KEY_S, SAIL_KEY_S);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["left"] = DynamicSetting(SAIL_KEY_A, SAIL_KEY_A, SAIL_KEY_A);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["right"] = DynamicSetting(SAIL_KEY_D, SAIL_KEY_D, SAIL_KEY_D);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["up"] = DynamicSetting(SAIL_KEY_SPACE, SAIL_KEY_SPACE, SAIL_KEY_SPACE);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["down"] = DynamicSetting(SAIL_KEY_CONTROL, SAIL_KEY_CONTROL, SAIL_KEY_CONTROL);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["sprint"] = DynamicSetting(SAIL_KEY_SHIFT, SAIL_KEY_SHIFT, SAIL_KEY_SHIFT);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["throw"] = DynamicSetting(SAIL_KEY_F, SAIL_KEY_F, SAIL_KEY_F);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["light"] = DynamicSetting(SAIL_KEY_R, SAIL_KEY_R, SAIL_KEY_R);
+
 }
 
 void SettingStorage::createGameDefaultStructure() {

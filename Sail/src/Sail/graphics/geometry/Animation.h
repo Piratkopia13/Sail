@@ -8,6 +8,7 @@ public:
 	class Frame {
 	public:
 		Frame();
+		Frame(glm::mat4* m_limbTransform, const unsigned int size);
 		Frame(const unsigned int size);
 		~Frame();
 		void setTransform(const unsigned int index, const glm::mat4& transform);
@@ -44,7 +45,7 @@ public:
 	void addFrame(const unsigned int frame, const float time, Animation::Frame* data);
 
 	void setName(const std::string& name);
-	const std::string getName();
+	const std::string& getName();
 	
 	unsigned int getByteSize() const;
 
@@ -53,7 +54,6 @@ private:
 	std::string m_name;
 	float m_maxFrameTime;
 	unsigned int m_maxFrame;
-
 
 	inline const bool exists(const unsigned int frame);
 
@@ -129,6 +129,7 @@ public:
 	const glm::mat4* getTransform(const unsigned int index, const unsigned int frame);
 
 	VertConnection* getConnections();
+	void setConnections(VertConnection* con, unsigned int size);
 	const unsigned int getConnectionSize();
 
 	void checkWeights();

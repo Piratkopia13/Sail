@@ -6,8 +6,11 @@
 #include "Sail/entities/ECS.h"
 #include "../Sail/src/API/Audio/AudioEngine.h"
 #include "Sail/entities/systems/Audio/AudioSystem.h"
+#include "Sail/KeyCodes.h"
 
-OptionsWindow::OptionsWindow(bool showWindow) {
+OptionsWindow::OptionsWindow(bool showWindow) : 
+	m_keyToChange(nullptr)
+{
 	m_app = Application::getInstance();
 	m_settings = &m_app->getSettings();
 	m_levelSystem = ECS::Instance()->getSystem<LevelSystem>();
@@ -48,6 +51,7 @@ void OptionsWindow::renderWindow() {
 	ImGui::Spacing();
 	ImGui::Spacing();
 	ImGui::Spacing();
+#pragma region GRAPHICS
 	// GRAPHICS
 	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
 	ImGui::Text("graphics");
@@ -72,10 +76,11 @@ void OptionsWindow::renderWindow() {
 			sopt->setSelected(selected + 1);
 		}
 	}
-
 	ImGui::Spacing();
 	ImGui::Spacing();
 	ImGui::Spacing();
+#pragma endregion
+#pragma region SOUND
 	// SOUND
 	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
 	ImGui::Text("Sound");
@@ -97,6 +102,8 @@ void OptionsWindow::renderWindow() {
 	ImGui::Spacing();
 	ImGui::Spacing();
 	ImGui::Spacing();
+#pragma endregion
+#pragma region XHAIR
 	// CROSSHAIR
 	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
 	ImGui::Text("Crosshair");
@@ -155,6 +162,96 @@ void OptionsWindow::renderWindow() {
 	//	//drawCrosshair();
 	//}
 	//ImGui::EndChild();
+	ImGui::Spacing();
+	ImGui::Spacing();
+	ImGui::Spacing();
+#pragma endregion
+#pragma region KEYBINDS
+	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+	ImGui::Text("Keybinds");
+	ImGui::PopStyleColor();
+	ImGui::Separator();
+
+	std::vector < std::tuple<std::string, std::string, int*>> keybinds = {
+		{"forward",		 "forward",		&KeyBinds::MOVE_FORWARD},
+		{"backward",	 "backward",	&KeyBinds::MOVE_BACKWARD},
+		{"right",		 "right",		&KeyBinds::MOVE_RIGHT},
+		{"left",		 "left",		&KeyBinds::MOVE_LEFT},
+		{"jump",		 "up",			&KeyBinds::MOVE_UP},
+		{"down",		 "down",		&KeyBinds::MOVE_DOWN},
+		{"sprint",		 "sprint",		&KeyBinds::SPRINT},
+		{"throw/drop",	 "throw",		&KeyBinds::THROW_CHARGE},
+		{"light candle", "light",		 &KeyBinds::LIGHT_CANDLE},
+	};
+
+	static bool splf = false, cplf = false;
+
+	ImGui::Columns(2,"keybindcolumns",false);
+	for (auto& [name, setting, value] : keybinds) {
+		ImGui::Text(name.c_str());
+		ImGui::NextColumn();
+		if (m_keyToChange == value) {
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			ImGui::Button("",ImVec2(-1,0));
+			ImGui::PopItemFlag();
+		}
+		else {
+			if (ImGui::Button(std::string(KeyBinds::getName(*value) + "##" + name).c_str(), ImVec2(-1, 0))) {
+				m_keyToChange = value;
+			}
+		}
+		ImGui::NextColumn();
+		if (m_keyToChange == value) {
+			ImGui::Columns(1);
+
+			//TODO: Add popup for rebinding
+			int c = 0;
+
+
+			bool pressed = false;
+			if (ImGui::GetIO().InputQueueCharacters.size() > 0) {
+				c = ImGui::GetIO().InputQueueCharacters.front();
+				pressed = true;
+			}
+			if (!cplf && ImGui::GetIO().KeyCtrl) {
+				pressed = true;
+				c = SAIL_KEY_CONTROL;
+			}
+			if (!splf && ImGui::GetIO().KeyShift) {
+				pressed = true;
+				c = SAIL_KEY_SHIFT;
+			}
+
+			if(pressed) {
+				if (c > 96 && c < 123) {
+					c -= 32;
+				}
+				if (c == SAIL_KEY_ESCAPE) {
+					m_keyToChange = nullptr;
+				}
+				else {
+					if (KeyBinds::allowed(c)) {
+						*m_keyToChange = c;
+						m_keyToChange = nullptr;
+						m_settings->applicationSettingsDynamic["keybindings"][setting].setValue(c);
+					}
+				}
+			}
+			ImGui::Columns(2, "keybindcolumns", false);
+		}
+	}
+	ImGui::Columns(1);
+	if (ImGui::Button("Reset")) {
+		resetKeyBind();
+	}
+
+	cplf = ImGui::GetIO().KeyCtrl;
+	splf = ImGui::GetIO().KeyShift;
+
+#pragma endregion
+
+
+
 }
 
 bool OptionsWindow::renderGameOptions() {
@@ -709,6 +806,16 @@ void OptionsWindow::drawMap() {
 		//	1
 		//);
 	}
+}
+
+void OptionsWindow::resetKeyBind(int key) {
+
+	for (auto& [bind, value] : m_settings->applicationSettingsDynamic["keybindingsDEFAULT"]) {
+		m_settings->applicationSettingsDynamic["keybindings"][bind].setValue(value.value);
+
+	}
+
+	m_app->loadKeybinds();
 }
 
 

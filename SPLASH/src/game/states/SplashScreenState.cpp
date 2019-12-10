@@ -9,6 +9,8 @@
 #include <Psapi.h>
 
 #include "Sail/utils/GUISettings.h"
+#include "Sail/resources/loaders/NotFBXLoader.h"
+//#define CREATE_NOT_FBX
 
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
@@ -72,70 +74,57 @@ bool SplashScreenState::loadModels(Application* app) {
 	loadTextures(m_app);
 #endif
 
-	//Sleep(1000000);		// Used for observing when the RAM spike happens
-
 //#ifndef _DEBUG
-#ifndef DO_NOT_LOAD_MODELS
-	loadModel(rm, "Torch.fbx");
-	loadModel(rm, "Tiles/RoomWall.fbx");
-	loadModel(rm, "Tiles/RoomDoor.fbx");
-	loadModel(rm, "Tiles/CorridorDoor.fbx");
-	loadModel(rm, "Tiles/CorridorWall.fbx");
-	loadModel(rm, "Tiles/RoomCeiling.fbx");
-	loadModel(rm, "Tiles/RoomFloor.fbx");
-	loadModel(rm, "Tiles/CorridorCorner.fbx");
-	loadModel(rm, "Tiles/RoomCorner.fbx");
-	loadModel(rm, "Clutter/Table.fbx");
-	loadModel(rm, "Clutter/Boxes.fbx");
-	loadModel(rm, "Clutter/MediumBox.fbx");
-	loadModel(rm, "Clutter/SquareBox.fbx");
-	loadModel(rm, "Clutter/Books1.fbx");
-	loadModel(rm, "Clutter/Screen.fbx");
-	loadModel(rm, "Clutter/Notepad.fbx");
-	loadModel(rm, "Clutter/Saftblandare.fbx");
-	loadModel(rm, "WaterPistol.fbx");
-	loadModel(rm, "boundingBox.fbx", &rm.getShaderSet<GBufferWireframe>());
-	loadModel(rm, "Clutter/Microscope.fbx");
-	loadModel(rm, "Doc.fbx");
-	loadModel(rm, "Clutter/CloningVats.fbx");
-	loadModel(rm, "Clutter/ControlStation.fbx");
-	loadModel(rm, "Clutter/PowerUp.fbx");
-	loadModel(rm, "CleaningBot.fbx");
-#endif
+
+	//NotFBXLoader::Save("Doc.notfbx", &rm->getModel("Doc"), &rm->getAnimationStack("Doc"));
+
+	//Model* m = nullptr;
+	//AnimationStack* a = nullptr;
+	//NotFBXLoader::Load("Doc.notfbx", m, a);	
+
+	std::string extension = "";
+	ResourceManager::ImporterType type;
+
+
+#ifdef CREATE_NOT_FBX
+	extension = ".fbx";	
+	type = ResourceManager::ImporterType::SAIL_FBXSDK;
+#else
+	extension = ".notfbx";
+	type = ResourceManager::ImporterType::SAIL_NOT_FBXSDK;
+#endif // CREATE_NOT_FBX
+
+	rm->loadModel("Doc" + extension, nullptr, type);
+	rm->loadModel("Torch" + extension, nullptr, type);
+	rm->loadModel("candleExported" + extension, nullptr, type);
+	rm->loadModel("Tiles/RoomWall" + extension, nullptr, type);
+	rm->loadModel("Tiles/RoomDoor" + extension, nullptr, type);
+	rm->loadModel("Tiles/CorridorDoor" + extension, nullptr, type);
+	rm->loadModel("Tiles/CorridorWall" + extension, nullptr, type); 
+	rm->loadModel("Tiles/RoomCeiling" + extension, nullptr, type);
+	rm->loadModel("Tiles/RoomFloor" + extension, nullptr, type);
+	rm->loadModel("Tiles/CorridorCorner" + extension, nullptr, type);
+	rm->loadModel("Tiles/RoomCorner" + extension, nullptr, type); 
+	rm->loadModel("Clutter/Table" + extension, nullptr, type);
+	rm->loadModel("Clutter/Boxes" + extension, nullptr, type);
+	rm->loadModel("Clutter/MediumBox" + extension, nullptr, type);
+	rm->loadModel("Clutter/SquareBox" + extension, nullptr, type);
+	rm->loadModel("Clutter/Books1" + extension, nullptr, type);
+	rm->loadModel("Clutter/Screen" + extension, nullptr, type);
+	rm->loadModel("Clutter/Notepad" + extension, nullptr, type);
+	rm->loadModel("Clutter/Saftblandare" + extension, nullptr, type);
+	rm->loadModel("WaterPistol" + extension, nullptr, type);
+	rm->loadModel("boundingBox" + extension, &rm->getShaderSet<WireframeShader>(), type);
+	rm->loadModel("cubeWidth1" + extension, nullptr, type);
+	rm->loadModel("Clutter/Microscope" + extension, nullptr, type);
+	rm->loadModel("Clutter/CloningVats" + extension, nullptr, type);
+	rm->loadModel("Clutter/ControlStation" + extension, nullptr, type);
+	rm->loadModel("Clutter/PowerUp" + extension, nullptr, type);
+	rm->loadModel("CleaningBot" + extension, nullptr, type);
+
 	rm.releaseTextureUploadBuffers();
 
 	rm.clearSceneData();
-
-	//LEAVE THIS FOR A MULTITHREADED FUTURE
-//#else
-//
-//	std::vector <std::future<bool>> modelThreads;
-//	
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Doc.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "candleExported.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/tileFlat.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/RoomWall.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/tileDoor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/RoomDoor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/CorridorDoor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/CorridorWall.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/RoomCeiling.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/CorridorFloor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/RoomFloor.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/CorridorCeiling.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/CorridorCorner.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Tiles/RoomCorner.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Clutter/SmallObject.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Clutter/MediumObject.fbx"); }));
-//	modelThreads.push_back(m_app->pushJobToThreadPool([&](int id) {return loadModel(rm, "Clutter/LargeObject.fbx"); }));
-//
-//
-//
-//	for (auto& modelThread : modelThreads) {
-//		modelThread.get();
-//	}
-//#endif
-
 #ifdef MULTI_THREADED_LOADING
 	textureThread.get();
 #endif

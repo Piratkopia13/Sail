@@ -73,6 +73,12 @@ void ECS::destroyEntity(int ecsIndex) {
 	// Also removes it from the systems
 	m_entities[ecsIndex]->removeAllComponents();
 
+	// Remove from parents and children
+	m_entities[ecsIndex]->removeAllChildren();
+	if (m_entities[ecsIndex]->getParent()) {
+		m_entities[ecsIndex]->getParent()->removeChildEntity(m_entities[ecsIndex].get());
+	}
+
 	// Move the last entity in the vector
 	m_entities[ecsIndex] = m_entities.back();
 
@@ -84,8 +90,10 @@ void ECS::destroyEntity(int ecsIndex) {
 }
 
 void ECS::destroyAllEntities() {
+	// TODO: Probably also needs to be updated to use destroyEntity instead
 	for (auto& e : m_entities) {
-		e->removeAllComponents();	// Also removes them from systems
+		//e->removeAllComponents();	// Also removes them from systems
+		destroyEntity(e);
 	}
 
 	m_entities.clear();

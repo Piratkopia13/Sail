@@ -3,7 +3,6 @@
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/systems/Systems.h"
-#include "Sail/ai/states/AttackingState.h"
 #include "Sail/graphics/shader/compute/AnimationUpdateComputeShader.h"
 #include "Sail/graphics/shader/compute/ParticleComputeShader.h"
 #include "Sail/graphics/shader/postprocess/BlendShader.h"
@@ -88,7 +87,7 @@ GameState::GameState(StateStack& stack)
 	auto* wireframeShader = &m_app->getResourceManager().getShaderSet<GBufferWireframe>();
 
 	//Wireframe bounding box model
-	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+	Model* boundingBoxModel = &m_app->getResourceManager().getModel("boundingBox", wireframeShader);
 
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 	boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
@@ -97,8 +96,7 @@ GameState::GameState(StateStack& stack)
 
 	//Create octree
 	m_octree = SAIL_NEW Octree(boundingBoxModel);
-
-
+	m_killCamOctree = SAIL_NEW Octree(boundingBoxModel);
 	//-----------------------
 
 	m_renderSettingsWindow.activateMaterialPicking(&m_cam, m_octree);
@@ -135,7 +133,9 @@ GameState::GameState(StateStack& stack)
 
 	createLevel(&m_app->getResourceManager().getShaderSet<GBufferOutShader>(), boundingBoxModel);
 #ifndef _DEBUG
-	m_componentSystems.aiSystem->initNodeSystem(m_octree);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.aiSystem->initNodeSystem(m_octree);
+	}
 #endif
 	// Player creation
 	if (NWrapperSingleton::getInstance().getPlayer(NWrapperSingleton::getInstance().getMyPlayerID())->team == SPECTATOR_TEAM) {
@@ -175,9 +175,9 @@ GameState::GameState(StateStack& stack)
 	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #else
-#ifndef _DEBUG
-	createBots();
-#endif
+	#ifndef _DEBUG
+		createBots();
+	#endif
 #endif
 
 #ifdef _DEBUG
@@ -198,6 +198,9 @@ GameState::GameState(StateStack& stack)
 
 	m_inGameGui.setPlayer(m_player);
 	m_inGameGui.setCrosshair(crosshairEntity.get());
+	m_playerNamesinGameGui.setCamera(&m_cam);
+	m_playerNamesinGameGui.setLocalPlayer(m_player);
+
 	m_componentSystems.projectileSystem->setCrosshair(crosshairEntity.get());
 	m_componentSystems.sprintingSystem->setCrosshair(crosshairEntity.get());
 
@@ -240,7 +243,9 @@ GameState::~GameState() {
 
 	Application::getInstance()->getConsole().removeAllCommandsWithIdentifier("GameState");
 	shutDownGameState();
-	delete m_octree;
+
+	Memory::SafeDelete(m_octree);
+	Memory::SafeDelete(m_killCamOctree);
 
 	m_app->getChatWindow()->setFadeThreshold(-1.0f);
 	m_app->getChatWindow()->setFadeTime(-1.0f);
@@ -416,7 +421,7 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.teamColorSystem = ECS::Instance()->createSystem<TeamColorSystem>();
 	m_componentSystems.movementSystem = ECS::Instance()->createSystem<MovementSystem<RenderInActiveGameComponent>>();
 
-	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem>();
+	m_componentSystems.collisionSystem = ECS::Instance()->createSystem<CollisionSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.collisionSystem->provideOctree(m_octree);
 
 	m_componentSystems.movementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<RenderInActiveGameComponent>>();
@@ -428,7 +433,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.updateBoundingBoxSystem = ECS::Instance()->createSystem<UpdateBoundingBoxSystem>();
 
-	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem>();
+	m_componentSystems.octreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.octreeAddRemoverSystem->provideOctree(m_octree);
 	m_componentSystems.octreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
 
@@ -440,7 +445,11 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
 
-	m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+	if (NWrapperSingleton::getInstance().isHost()) {
+		m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
+	}
+
+	m_componentSystems.waterCleaningSystem = ECS::Instance()->createSystem<WaterCleaningSystem>();
 
 	m_componentSystems.lightSystem = ECS::Instance()->createSystem<LightSystem<RenderInActiveGameComponent>>();
 	m_componentSystems.lightListSystem = ECS::Instance()->createSystem<LightListSystem>();
@@ -545,6 +554,13 @@ void GameState::initSystems(const unsigned char playerID) {
 	m_componentSystems.killCamModelSubmitSystem           = ECS::Instance()->createSystem<ModelSubmitSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementSystem              = ECS::Instance()->createSystem<MovementSystem<RenderInReplayComponent>>();
 	m_componentSystems.killCamMovementPostCollisionSystem = ECS::Instance()->createSystem<MovementPostCollisionSystem<RenderInReplayComponent>>();
+
+	m_componentSystems.killCamCollisionSystem = ECS::Instance()->createSystem<CollisionSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamCollisionSystem->provideOctree(m_killCamOctree);
+
+	m_componentSystems.killCamOctreeAddRemoverSystem = ECS::Instance()->createSystem<OctreeAddRemoverSystem<RenderInReplayComponent>>();
+	m_componentSystems.killCamOctreeAddRemoverSystem->provideOctree(m_killCamOctree);
+	m_componentSystems.killCamOctreeAddRemoverSystem->setCulling(true, &m_cam); // Enable frustum culling
 }
 
 void GameState::initConsole() {
@@ -679,27 +695,36 @@ bool GameState::onPlayerJoined(const NetworkJoinedEvent& event) {
 }
 
 void GameState::onStartKillCam(const StartKillCamEvent& event) {
-	// Stop our killcam if it's playing (either because we stopped it or because the final killcam is starting)
-	if (m_isInKillCamMode) {
-		m_componentSystems.killCamReceiverSystem->stopMyKillCam();
-	}
-
 	m_isInKillCamMode = true;
 
 	const Netcode::PlayerID killer = Netcode::getComponentOwner(event.killingProjectile);
 
+	SettingStorage& settings = m_app->getSettings();
+	NWrapperSingleton& NW = NWrapperSingleton::getInstance();
+
+	char killerTeam = NW.getPlayer(killer)->team;
+	glm::vec3 col = settings.getColor(settings.teamColorIndex(killer));
+	m_killerColor = ImVec4(col.r, col.g, col.b, 1.f);
+	m_killCamKillerText = NW.getPlayer(killer)->name;
+
+
 	if (event.finalKillCam) {
-		m_killCamText = NWrapperSingleton::getInstance().getPlayer(killer)->name + " eliminated "
-			+ NWrapperSingleton::getInstance().getPlayer(event.deadPlayer)->name + " and won the match!";
+		m_isFinalKillCam = true;
+		m_killCamTitle = "ROUND WINNING SPLASH";
+		m_killCamVictimText = NW.getPlayer(event.deadPlayer)->name;
+
+		const char victimTeam = NW.getPlayer(event.deadPlayer)->team;
+		col = settings.getColor(settings.teamColorIndex(event.deadPlayer));
+		m_victimColor = ImVec4(col.r, col.g, col.b, 1.f);
 	} else {
-		m_killCamText = "You were eliminated by " + NWrapperSingleton::getInstance().getPlayer(killer)->name;
+		m_isFinalKillCam = false;
+		m_killCamTitle = "SPLASHCAM";
 	}
 
 	m_isInKillCamMode = true;
 }
 
 void GameState::onStopKillCam(const StopKillCamEvent& event) {
-	m_componentSystems.killCamReceiverSystem->stopMyKillCam();
 	m_isInKillCamMode = false;
 }
 
@@ -808,6 +833,7 @@ bool GameState::render(float dt, float alpha) {
 }
 
 bool GameState::renderImgui(float dt) {
+	m_playerNamesinGameGui.renderWindow();
 	m_inGameGui.renderWindow();
 	m_killFeedWindow.renderWindow();
 	if (m_wasDropped) {
@@ -876,7 +902,7 @@ bool GameState::renderImgui(float dt) {
 		if (ImGui::Begin("##KILLCAMWINDOW", nullptr, m_standaloneButtonflags)) {
 			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb70"));
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.f));
-			ImGui::Text("SPLASHCAM");
+			ImGui::Text(m_killCamTitle.c_str());
 			ImGui::PopStyleColor(1);
 			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, height / 2 - (ImGui::GetWindowSize().y / 2)));
 			ImGui::PopFont();
@@ -884,11 +910,37 @@ bool GameState::renderImgui(float dt) {
 		ImGui::End();
 
 
+		const ImVec4 textColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 		if (ImGui::Begin("##KILLCAMKILLEDBY", nullptr, m_standaloneButtonflags)) {
 			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb30"));
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.f));
-			ImGui::Text(m_killCamText.c_str());
-			ImGui::PopStyleColor(1);
+
+
+			if (m_isFinalKillCam) {
+				ImGui::PushStyleColor(ImGuiCol_Text, m_killerColor);
+				ImGui::Text(m_killCamKillerText.c_str());
+				ImGui::PopStyleColor(1);
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text, textColor);
+				ImGui::Text("eliminated");
+				ImGui::PopStyleColor(1);
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text, m_victimColor);
+				ImGui::Text(m_killCamVictimText.c_str());
+				ImGui::PopStyleColor(1);
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text, textColor);
+				ImGui::Text("and won the round!");
+				ImGui::PopStyleColor(1);
+			} else {
+				ImGui::PushStyleColor(ImGuiCol_Text, textColor);
+				ImGui::Text("You were eliminated by");
+				ImGui::PopStyleColor(1);
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text, m_killerColor);
+				ImGui::Text(m_killCamKillerText.c_str());
+				ImGui::PopStyleColor(1);
+			}
+			
 			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, m_app->getWindow()->getWindowHeight() - height / 2 - (ImGui::GetWindowSize().y / 2)));
 			ImGui::PopFont();
 		}
@@ -930,12 +982,42 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 
 	m_componentSystems.killCamReceiverSystem->processReplayData(dt);
 	m_componentSystems.killCamMovementSystem->update(dt);
+	m_componentSystems.killCamCollisionSystem->update(dt);
 	m_componentSystems.killCamMovementPostCollisionSystem->update(dt);
+	m_componentSystems.killCamOctreeAddRemoverSystem->update(dt);
 }
 
 // HERE BE DRAGONS
 // Make sure things are updated in the correct order or things will behave strangely
 void GameState::updatePerTickComponentSystems(float dt) {
+	
+	m_playerNamesinGameGui.clearPlayersToDraw();
+	if (!m_player->getComponent<SpectatorComponent>()) {
+		m_playerNamesinGameGui.setMaxDistance(10);
+
+		Octree::RayIntersectionInfo tempInfo;
+		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo, m_player, 0.0, true);
+		if (tempInfo.closestHitIndex != -1) {
+			NetworkReceiverComponent* nrc = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<NetworkReceiverComponent>();			
+			if (nrc) {
+				CandleComponent* candleComp = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<CandleComponent>();
+
+				Netcode::PlayerID owner = Netcode::getComponentOwner(nrc->m_id);
+				Player* p = NWrapperSingleton::getInstance().getPlayer(owner);
+
+				if (p) {
+					m_playerNamesinGameGui.addPlayerToDraw(tempInfo.info[tempInfo.closestHitIndex].entity);
+				}
+			}
+		}
+	} else {
+		m_playerNamesinGameGui.setMaxDistance(-1);
+		for (auto p : *m_componentSystems.playerSystem->getPlayers()) {
+			m_playerNamesinGameGui.addPlayerToDraw(p);
+		}
+	}
+	
+	///////////////////////////////////////
 	m_currentlyReadingMask = 0;
 	m_currentlyWritingMask = 0;
 	m_runningSystemJobs.clear();
@@ -961,7 +1043,9 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.powerUpCollectibleSystem->update(dt);
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	runSystem(dt, m_componentSystems.aiSystem);
+	if (NWrapperSingleton::getInstance().isHost()) {
+		runSystem(dt, m_componentSystems.aiSystem);
+	}
 	runSystem(dt, m_componentSystems.projectileSystem);
 	runSystem(dt, m_componentSystems.animationChangerSystem);
 	runSystem(dt, m_componentSystems.sprinklerSystem);
@@ -987,6 +1071,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 
 	runSystem(dt, m_componentSystems.sanitySystem);
 	runSystem(dt, m_componentSystems.sanitySoundSystem);
+	runSystem(dt, m_componentSystems.waterCleaningSystem);
 
 	// Wait for all the systems to finish before starting the removal system
 	for (auto& fut : m_runningSystemJobs) {
@@ -1171,11 +1256,11 @@ void GameState::waitForOtherPlayers() {
 
 const std::string GameState::createCube(const glm::vec3& position) {
 	Model* tmpCubeModel = &m_app->getResourceManager().getModel(
-		"cubeWidth1.fbx", &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
+		"cubeWidth1", &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	Model* tmpbbModel = &m_app->getResourceManager().getModel(
-		"boundingBox.fbx", &m_app->getResourceManager().getShaderSet<GBufferWireframe>());
+		"boundingBox", &m_app->getResourceManager().getShaderSet<GBufferWireframe>());
 	tmpCubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 
 	auto e = ECS::Instance()->createEntity("new cube");
@@ -1200,14 +1285,16 @@ void GameState::createBots() {
 		botCount = 0;
 	}
 
-	botCount = 5;
+	botCount = 10;
 
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
 		if (spawnLocation.x != -1000.f) {
-			auto e = EntityFactory::CreateCleaningBot(spawnLocation, m_componentSystems.aiSystem->getNodeSystem());
+			auto compID = Netcode::generateUniqueBotID();
 			if (NWrapperSingleton::getInstance().isHost()) {
-				m_componentSystems.powerUpCollectibleSystem->spawnPowerUp(glm::vec3(0, 1, 0), 0, 0, 0, e.get());
+				EntityFactory::CreateCleaningBotHost(spawnLocation, m_componentSystems.aiSystem->getNodeSystem(), compID);
+			} else {
+				EntityFactory::CreateCleaningBot(spawnLocation, compID);
 			}
 		}
 		else {
@@ -1222,117 +1309,117 @@ void GameState::createLevel(Shader* shader, Model* boundingBoxModel) {
 
 	//Load tileset for world
 	{
-		Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall.fbx", shader);
+		Model* roomWall = &m_app->getResourceManager().getModel("Tiles/RoomWall", shader);
 		roomWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/RoomWallMRAO.dds");
 		roomWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/RoomWallNM.dds");
 		roomWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/RoomWallAlbedo.dds");
 
-		Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor.fbx", shader);
+		Model* roomDoor = &m_app->getResourceManager().getModel("Tiles/RoomDoor", shader);
 		roomDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/RD_MRAo.dds");
 		roomDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/RD_NM.dds");
 		roomDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/RD_Albedo.dds");
 
-		Model* corridorDoor = &m_app->getResourceManager().getModel("Tiles/CorridorDoor.fbx", shader);
+		Model* corridorDoor = &m_app->getResourceManager().getModel("Tiles/CorridorDoor", shader);
 		corridorDoor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/CD_MRAo.dds");
 		corridorDoor->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/CD_NM.dds");
 		corridorDoor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/CD_Albedo.dds");
 
-		Model* corridorWall = &m_app->getResourceManager().getModel("Tiles/CorridorWall.fbx", shader);
+		Model* corridorWall = &m_app->getResourceManager().getModel("Tiles/CorridorWall", shader);
 		corridorWall->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/CW_MRAo.dds");
 		corridorWall->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/CW_NM.dds");
 		corridorWall->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/CW_Albedo.dds");
 
-		Model* roomCeiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling.fbx", shader);
+		Model* roomCeiling = &m_app->getResourceManager().getModel("Tiles/RoomCeiling", shader);
 		roomCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/RC_MRAo.dds");
 		roomCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/RC_NM.dds");
 		roomCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/RC_Albedo.dds");
 
-		Model* roomServer = &m_app->getResourceManager().getModelCopy("Tiles/RoomWall.fbx", shader);
+		Model* roomServer = &m_app->getResourceManager().getModelCopy("Tiles/RoomWall", shader);
 		roomServer->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/RS_MRAo.dds");
 		roomServer->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/RS_NM.dds");
 		roomServer->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/RS_Albedo.dds");
 
-		Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor.fbx", shader);
+		Model* corridorFloor = &m_app->getResourceManager().getModel("Tiles/RoomFloor", shader);
 		corridorFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/CF_MRAo.dds");
 		corridorFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/CF_NM.dds");
 		corridorFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/CF_Albedo.dds");
 
-		Model* roomFloor = &m_app->getResourceManager().getModelCopy("Tiles/RoomFloor.fbx", shader);
+		Model* roomFloor = &m_app->getResourceManager().getModelCopy("Tiles/RoomFloor", shader);
 		roomFloor->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/F_MRAo.dds");
 		roomFloor->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/F_NM.dds");
 		roomFloor->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/F_Albedo.dds");
 
-		Model* corridorCeiling = &m_app->getResourceManager().getModelCopy("Tiles/RoomCeiling.fbx", shader);
+		Model* corridorCeiling = &m_app->getResourceManager().getModelCopy("Tiles/RoomCeiling", shader);
 		corridorCeiling->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/CC_MRAo.dds");
 		corridorCeiling->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/CC_NM.dds");
 		corridorCeiling->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/CC_Albedo.dds");
 
-		Model* corridorCorner = &m_app->getResourceManager().getModel("Tiles/CorridorCorner.fbx", shader);
+		Model* corridorCorner = &m_app->getResourceManager().getModel("Tiles/CorridorCorner", shader);
 		corridorCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/Corner_MRAo.dds");
 		corridorCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/Corner_NM.dds");
 		corridorCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/Corner_Albedo.dds");
 
-		Model* roomCorner = &m_app->getResourceManager().getModel("Tiles/RoomCorner.fbx", shader);
+		Model* roomCorner = &m_app->getResourceManager().getModel("Tiles/RoomCorner", shader);
 		roomCorner->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Tiles/Corner_MRAo.dds");
 		roomCorner->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Tiles/Corner_NM.dds");
 		roomCorner->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Tiles/Corner_Albedo.dds");
 
-		Model* cTable = &m_app->getResourceManager().getModel("Clutter/Table.fbx", shader);
+		Model* cTable = &m_app->getResourceManager().getModel("Clutter/Table", shader);
 		cTable->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Table_MRAO.dds");
 		cTable->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Table_NM.dds");
 		cTable->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Table_Albedo.dds");
 
-		Model* cBoxes = &m_app->getResourceManager().getModel("Clutter/Boxes.fbx", shader);
+		Model* cBoxes = &m_app->getResourceManager().getModel("Clutter/Boxes", shader);
 		cBoxes->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Boxes_MRAO.dds");
 		cBoxes->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Boxes_NM.dds");
 		cBoxes->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Boxes_Albedo.dds");
 
-		Model* cMediumBox = &m_app->getResourceManager().getModel("Clutter/MediumBox.fbx", shader);
+		Model* cMediumBox = &m_app->getResourceManager().getModel("Clutter/MediumBox", shader);
 		cMediumBox->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/MediumBox_MRAO.dds");
 		cMediumBox->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/MediumBox_NM.dds");
 		cMediumBox->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/MediumBox_Albedo.dds");
 
-		Model* cSquareBox = &m_app->getResourceManager().getModel("Clutter/SquareBox.fbx", shader);
+		Model* cSquareBox = &m_app->getResourceManager().getModel("Clutter/SquareBox", shader);
 		cSquareBox->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/SquareBox_MRAO.dds");
 		cSquareBox->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/SquareBox_NM.dds");
 		cSquareBox->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/SquareBox_Albedo.dds");
 
-		Model* cBooks1 = &m_app->getResourceManager().getModel("Clutter/Books1.fbx", shader);
+		Model* cBooks1 = &m_app->getResourceManager().getModel("Clutter/Books1", shader);
 		cBooks1->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Book_MRAO.dds");
 		cBooks1->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Book_NM.dds");
 		cBooks1->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Book1_Albedo.dds");
 
-		Model* cBooks2 = &m_app->getResourceManager().getModelCopy("Clutter/Books1.fbx", shader);
+		Model* cBooks2 = &m_app->getResourceManager().getModelCopy("Clutter/Books1", shader);
 		cBooks2->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Book_MRAO.dds");
 		cBooks2->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Book_NM.dds");
 		cBooks2->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Book2_Albedo.dds");
 
-		Model* cScreen = &m_app->getResourceManager().getModel("Clutter/Screen.fbx", shader);
+		Model* cScreen = &m_app->getResourceManager().getModel("Clutter/Screen", shader);
 		cScreen->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Screen_MRAO.dds");
 		cScreen->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Screen_NM.dds");
 		cScreen->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Screen_Albedo.dds");
 
-		Model* cNotepad = &m_app->getResourceManager().getModel("Clutter/Notepad.fbx", shader);
+		Model* cNotepad = &m_app->getResourceManager().getModel("Clutter/Notepad", shader);
 		cNotepad->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Notepad_MRAO.dds");
 		cNotepad->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Notepad_NM.dds");
 		cNotepad->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Notepad_Albedo.dds");
 
-		Model* cMicroscope = &m_app->getResourceManager().getModel("Clutter/Microscope.fbx", shader);
+		Model* cMicroscope= &m_app->getResourceManager().getModel("Clutter/Microscope", shader);
 		cMicroscope->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Microscope_MRAO.dds");
 		cMicroscope->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Microscope_NM.dds");
 		cMicroscope->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Microscope_Albedo.dds");
 
-		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare.fbx", shader);
+		Model* saftblandare = &m_app->getResourceManager().getModel("Clutter/Saftblandare", shader);
 		saftblandare->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/Saftblandare_MRAO.dds");
 		saftblandare->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/Saftblandare_NM.dds");
 		saftblandare->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/Saftblandare_Albedo.dds");
 
-		Model* cloningVats = &m_app->getResourceManager().getModel("Clutter/CloningVats.fbx", shader);
+		Model* cloningVats = &m_app->getResourceManager().getModel("Clutter/CloningVats", shader);
 		cloningVats->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/CloningVats_MRAO.dds");
 		cloningVats->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/CloningVats_NM.dds");
 		cloningVats->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/CloningVats_Albedo.dds");
 
-		Model* controlStation = &m_app->getResourceManager().getModel("Clutter/ControlStation.fbx", shader);
+		Model* controlStation = &m_app->getResourceManager().getModel("Clutter/ControlStation", shader);
 		controlStation->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/ControlStation_MRAO.dds");
 		controlStation->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Clutter/ControlStation_NM.dds");
 		controlStation->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/ControlStation_Albedo.dds");

@@ -22,6 +22,11 @@ private:
 	LevelSystem* m_levelSystem = nullptr;
 	AudioSystem* m_audioSystem = nullptr;
 
+	int* m_keyToChange;
+
+
+private:
 	void drawCrosshair();
 	void drawMap();
+	void resetKeyBind(int key = -1); // -1 to reset all
 };
