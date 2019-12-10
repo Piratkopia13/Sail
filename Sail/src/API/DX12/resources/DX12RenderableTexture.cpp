@@ -5,7 +5,7 @@
 #include "../DX12Utils.h"
 
 RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, Texture::FORMAT format, bool createDepthStencilView, bool createOnlyDSV, unsigned int arraySize, bool singleBuffer) {
-	return SAIL_NEW DX12RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, singleBuffer, 0U, 0U, name, arraySize);
+	return SAIL_NEW DX12RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, singleBuffer, 0U, 0U, name, arraySize); // TODO: change singleBuffer back when issues with soft shadows are fixed!!
 }
 
 DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, Texture::FORMAT format, bool createDepthStencilView, bool createOnlyDSV, bool singleBuffer, UINT bindFlags, UINT cpuAccessFlags, const std::string& name, unsigned int arraySize)
@@ -98,7 +98,7 @@ void DX12RenderableTexture::resize(int width, int height) {
 }
 
 ID3D12Resource* DX12RenderableTexture::getResource(int frameIndex) const {
-	unsigned int i = (frameIndex == -1) ? getSwapIndex() : frameIndex;
+	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
 	return textureDefaultBuffers[i].Get();
 }
 
@@ -108,17 +108,17 @@ ID3D12Resource* DX12RenderableTexture::getDepthResource() const {
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDepthSrvCDH(int frameIndex) const {
 	assert(m_hasDepthTextures); // Tried to get depth srv without a valid depth stencil resource
-	unsigned int i = (frameIndex == -1) ? getSwapIndex() : frameIndex;
+	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
 	return depthSrvHeapCDHs[i];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getRtvCDH(int frameIndex) const {
-	unsigned int i = (frameIndex == -1) ? getSwapIndex() : frameIndex;
+	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
 	return m_rtvHeapCDHs[i];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDsvCDH(int frameIndex) const {
-	unsigned int i = (frameIndex == -1) ? getSwapIndex() : frameIndex;
+	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
 	return m_dsvHeapCDHs[i];
 }
 
