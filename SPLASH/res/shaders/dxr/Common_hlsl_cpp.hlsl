@@ -109,7 +109,7 @@ struct SceneCBuffer {
 	bool doHardShadows;
 	float3 cameraDirection;
 	uint nMetaballGroups;
-	uint padding;
+	uint numShadowTextures;
 	float nearZ;
 	float farZ;
 	float padding2;
