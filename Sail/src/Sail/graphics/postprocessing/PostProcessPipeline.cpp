@@ -7,6 +7,9 @@
 #include "Sail/graphics/shader/postprocess/FXAAShader.h"
 #include "Sail/graphics/shader/postprocess/TonemapShader.h"
 #include "Sail/events/EventDispatcher.h"
+#include "API/DX12/DX12API.h"
+#include "API/DX12/resources/DescriptorHeap.h"
+#include "API/DX12/resources/DX12RenderableTexture.h"
 
 PostProcessPipeline::PostProcessPipeline() 
 	: m_bloomTexture(nullptr)
@@ -35,8 +38,10 @@ PostProcessPipeline::~PostProcessPipeline() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 }
 
-RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void* cmdList) {
+RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, DX12RenderableTexture** gbufferTextures, void* cmdList) {
+	assert(gbufferTextures && "gbufferTextures required when running post processing");
 	auto& settings = Application::getInstance()->getSettings();
+	auto context = Application::getInstance()->getAPI<DX12API>();
 
 	// Read from game settings
 	bool enableFXAA = settings.applicationSettingsStatic["graphics"]["fxaa"].getSelected().value > 0.f;
@@ -46,8 +51,6 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void
 
 	// Stage one - fxaa if enabled
 	RenderableTexture* stageOneOutput = baseTexture;
-
-
 	if (enableFXAA) {
 		// FXAA
 		input.inputRenderableTexture = baseTexture;
@@ -91,9 +94,17 @@ RenderableTexture* PostProcessPipeline::run(RenderableTexture* baseTexture, void
 
 	// Last stage - tonemapping, always runs
 	input.inputRenderableTexture = stageTwoOutput;
+
+	auto& cdh = context->getComputeGPUDescriptorHeap()->getCurentCPUDescriptorHandle();
+	cdh.ptr += context->getComputeGPUDescriptorHeap()->getDescriptorIncrementSize() * 10;
+	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+	gbufferTextures[0]->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	context->getDevice()->CopyDescriptorsSimple(1, cdh, gbufferTextures[0]->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	auto* tonemapOutput = runStage(input, m_stages["Tonemapper"], cmdList);
+	// Step past the output texture in the heap
+	context->getComputeGPUDescriptorHeap()->getAndStepIndex(1);
 	
-	return tonemapOutput->outputTexture;
+	return gbufferTextures[0];
 }
 
 void PostProcessPipeline::setBloomInput(RenderableTexture* bloomTexture) {
