@@ -127,13 +127,14 @@ void Entity::removeAllChildren() {
 			auto childTransComp = child->getComponent<TransformComponent>();
 			childTransComp->removeParent();
 		}
+		child->setParent(nullptr);
 	}
 	m_children.clear();
 }
 
 void Entity::removeDeleteAllChildren() {
 	for (auto child : m_children) {
-
+		child->setParent(nullptr);
 		child->queueDestruction();
 		if (child->hasComponent<TransformComponent>()) {
 
