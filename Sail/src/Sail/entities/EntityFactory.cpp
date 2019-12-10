@@ -51,6 +51,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->spawnRate = 0.01f;
 	particleEmitterComp->lifeTime = 0.13f;
 	particleEmitterComp->maxNumberOfParticles = 100;
+	particleEmitterComp->isActive = true;
 	std::string particleTextureName = "particles/animFire.dds";
 	particleEmitterComp->atlasSize = glm::uvec2(8U, 4U);
 	if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
@@ -93,7 +94,7 @@ void EntityFactory::AddCandleComponentsToPlayer(Entity::SPtr& player, const size
 	for (Entity* c : player->getChildEntities()) {
 		if (c->getName() == player->getName() + "Candle") {
 			c->addComponent<CandleComponent>()->playerEntityID = playerID;
-			c->addComponent<CollidableComponent>();
+			c->addComponent<CollidableComponent>(true);
 			c->addComponent<TeamComponent>()->team = NWrapperSingleton::getInstance().getPlayer(playerID)->team;
 		}
 	}
@@ -239,12 +240,10 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 	replayPlayer->addComponent<ReplayReceiverComponent>(playerCompID, Netcode::EntityType::PLAYER_ENTITY);
 
 	// Remove components that shouldn't be used by entities in the killcam
-	replayPlayer->removeComponent<CollidableComponent>();
 	replayPlayer->removeComponent<SpeedLimitComponent>();
 	replayPlayer->removeComponent<SanityComponent>();
 	replayPlayer->removeComponent<AudioComponent>(); // TODO: Remove this line when we start having audio in the killcam
 	replayPlayer->removeComponent<GunComponent>();
-	replayPlayer->removeComponent<BoundingBoxComponent>();
 
 
 	// So that we can get their camera positions in the replay
@@ -260,12 +259,9 @@ Entity::SPtr EntityFactory::CreateReplayPlayer(Netcode::ComponentID playerCompID
 		if (c->getName() == replayPlayer->getName() + "WaterGun") {
 			c->addComponent<ReplayReceiverComponent>(gunCompID, Netcode::EntityType::GUN_ENTITY);
 			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
-			c->removeComponent<BoundingBoxComponent>();
 		}
 		if (c->hasComponent<CandleComponent>()) {
 			c->addComponent<ReplayReceiverComponent>(candleCompID, Netcode::EntityType::CANDLE_ENTITY);
-			c->removeComponent<CollidableComponent>();
-			c->removeComponent<BoundingBoxComponent>();
 			ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(c);
 		}
 	}
@@ -343,7 +339,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	playerEntity->addComponent<TransformComponent>(spawnLocation);
 	playerEntity->addComponent<CullingComponent>();
 	playerEntity->addComponent<ModelComponent>(characterModel);
-	playerEntity->addComponent<CollidableComponent>();
+	playerEntity->addComponent<CollidableComponent>(true);
 	playerEntity->addComponent<SpeedLimitComponent>()->maxSpeed = 6.0f;
 	playerEntity->addComponent<SanityComponent>()->sanity = 100.0f;
 	playerEntity->addComponent<SprintingComponent>();
@@ -550,6 +546,9 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, NodeSystem* 
 	fsmComp->addTransition<FleeingState, SearchingState>(fleeingToSearch);*/
 	// =========[END] Create states and transitions===========
 
+	// REPLAY COPY OF THE ENTITY
+	CreateReplayCleaningBot(compID);
+
 	return e;
 }
 
@@ -593,6 +592,8 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 	movement->velocity = info.velocity;
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
+
+	// IF YOU CHANGE THIS PLEASE CHANGE IT FOR THE REPLAYPROJECTILE TOO
 	CollisionComponent* collision = e->addComponent<CollisionComponent>();
 	collision->drag = 15.0f;
 	// NOTE: 0.0f <= Bounciness <= 1.0f
@@ -605,6 +606,8 @@ Entity::SPtr EntityFactory::CreateProjectile(Entity::SPtr e, const EntityFactory
 }
 
 Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const ProjectileArguments& info) {
+	constexpr float radius = 0.075f; // the radius of the projectile's hitbox (in meters)
+
 	e->addComponent<MetaballComponent>()->renderGroupIndex = info.ownersNetId;
 	e->addComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.15, 0.15, 0.15));
 	e->addComponent<LifeTimeComponent>(info.lifetime);
@@ -616,9 +619,39 @@ Entity::SPtr EntityFactory::CreateReplayProjectile(Entity::SPtr e, const Project
 	movement->velocity = info.velocity;
 	movement->constantAcceleration = glm::vec3(0.f, -9.8f, 0.f);
 
+	CollisionComponent* collision = e->addComponent<CollisionComponent>();
+	collision->drag = 15.0f;
+	// NOTE: 0.0f <= Bounciness <= 1.0f
+	collision->bounciness = 0.0f;
+	collision->padding = radius;
+
 	e->addComponent<RenderInReplayComponent>();
 
 	return e;
+}
+
+Entity::SPtr EntityFactory::CreateReplayCleaningBot(Netcode::ComponentID compID) {
+	Entity::SPtr replayBot = ECS::Instance()->createEntity("ReplayBot");
+	replayBot->tryToAddToSystems = false;
+
+	std::string modelName = "CleaningBot.fbx";
+	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
+	botModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
+	botModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
+	botModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/CleaningRobot/CleaningBot_NM.dds");
+	botModel->setIsAnimated(false);
+
+	replayBot->addComponent<ModelComponent>(botModel);
+	replayBot->addComponent<TransformComponent>(glm::vec3(0.f, -10.f, 0.f));
+
+	replayBot->addComponent<ReplayReceiverComponent>(compID, Netcode::EntityType::PLAYER_ENTITY);
+
+	ECS::Instance()->getSystem<KillCamReceiverSystem>()->instantAddEntity(replayBot.get());
+
+	// Note: The RenderInReplayComponent is added to these entities once KillCamReceiverSystem start running so don't
+	//       add those components here
+	
+	return Entity::SPtr();
 }
 
 Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::vec2 origin, glm::vec2 size) {
