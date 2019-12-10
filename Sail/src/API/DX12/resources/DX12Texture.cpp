@@ -159,6 +159,13 @@ void DX12Texture::clearDDSData() {
 	m_ddsData.reset(nullptr);
 }
 
+void DX12Texture::releaseUploadBuffer() {
+	if (m_textureUploadBuffer.Get()) {
+		m_textureUploadBuffer->Release();
+		m_textureUploadBuffer = nullptr;
+	}
+}
+
 const std::string& DX12Texture::getFilename() const {
 	return m_fileName;
 }

@@ -112,6 +112,7 @@ public:
 
 	void uploadFinishedTextures(ID3D12GraphicsCommandList4* cmdList);
 	void clearModelCopies();
+	void releaseTextureUploadBuffers();
 
 #ifdef DEVELOPMENT
 	void unloadTextures();
@@ -169,9 +170,11 @@ private:
 	std::unique_ptr<FBXLoader> m_fbxLoader;
 	Shader* m_defaultShader;
 
+#ifdef DEVELOPMENT
 	std::vector<std::string> m_loadedTextures;
 	mutable bool m_hasLoggedTextures = false;
 	mutable bool m_hasLoggedModels = false;
+#endif
 };
 
 template <typename T>

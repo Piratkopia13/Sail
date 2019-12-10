@@ -15,6 +15,7 @@
 
 #define MULTI_THREADED_LOADING
 #define WAIT_FOR_MEMORY
+//#define DO_NOT_LOAD_MODELS
 
 SplashScreenState::SplashScreenState(StateStack& stack)
 	: State(stack)
@@ -74,6 +75,7 @@ bool SplashScreenState::loadModels(Application* app) {
 	//Sleep(1000000);		// Used for observing when the RAM spike happens
 
 //#ifndef _DEBUG
+#ifndef DO_NOT_LOAD_MODELS
 	loadModel(rm, "Torch.fbx");
 	loadModel(rm, "Tiles/RoomWall.fbx");
 	loadModel(rm, "Tiles/RoomDoor.fbx");
@@ -99,6 +101,8 @@ bool SplashScreenState::loadModels(Application* app) {
 	loadModel(rm, "Clutter/ControlStation.fbx");
 	loadModel(rm, "Clutter/PowerUp.fbx");
 	loadModel(rm, "CleaningBot.fbx");
+#endif
+	rm.releaseTextureUploadBuffers();
 
 	rm.clearSceneData();
 

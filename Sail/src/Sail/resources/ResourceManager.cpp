@@ -94,7 +94,9 @@ void ResourceManager::loadTexture(const std::string& filename) {
 		if (path.extension().compare(".tga") == 0 || path.extension().compare(".dds") == 0) {
 			
 			auto inserted = m_textures.insert({filename, std::unique_ptr<Texture>(Texture::Create(path.string()))});
+#ifdef DEVELOPMENT
 			m_loadedTextures.push_back(filename);
+#endif
 
 			if (inserted.second) {
 				// Queue upload to GPU
@@ -267,7 +269,7 @@ const unsigned int ResourceManager::numberOfTextures() const {
 
 const unsigned int ResourceManager::getByteSize() const {
 	unsigned int size = 0;
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < N_dataTypes; i++) {
 		size += m_byteSize[i];
 	}
 	return size;
@@ -340,6 +342,13 @@ void ResourceManager::clearModelCopies() {
 	// Remove those models
 	for (auto& modelToRemove : modelsToRemove) {
 		m_models.erase(modelToRemove);
+	}
+}
+
+void ResourceManager::releaseTextureUploadBuffers() {
+	for (auto& [key, texture] : m_textures) {
+		auto* dx12Tex = static_cast<DX12Texture*>(texture.get());
+		dx12Tex->releaseUploadBuffer();
 	}
 }
 
