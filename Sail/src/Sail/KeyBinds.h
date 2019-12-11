@@ -1,9 +1,11 @@
 #pragma once
+#include <string>
 
 namespace KeyBinds {
 	// Initializes the key codes
 	void init();
-
+	std::string getName(const int value);
+	bool allowed(const int value);
 	// Player controls
 	extern int MOVE_FORWARD;
 	extern int MOVE_BACKWARD;

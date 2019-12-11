@@ -24,6 +24,9 @@ public:
 
 	bool onEvent(const Event& event) override;
 
+	// used to remove memory!
+	AudioEngine* getEngine();
+
 #ifdef DEVELOPMENT
 	unsigned int getByteSize() const override;
 #endif
@@ -51,5 +54,6 @@ private:
 	void dealWithDeathSound(AudioComponent* audioC, float dt);
 	void dealwithInsanitySound(AudioComponent* audioC, float dt);
 	void hotFixAmbiance(Entity* e, AudioComponent* audioC);
+
 };
 

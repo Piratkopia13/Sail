@@ -86,6 +86,7 @@ private:
 	KillFeedWindow m_killFeedWindow;
 	ECS_SystemInfoImGuiWindow m_ecsSystemInfoImGuiWindow;
 	InGameGui m_inGameGui;
+	PlayerNamesImGui m_playerNamesinGameGui;
 	ImGuiWindowFlags m_standaloneButtonflags;
 	ImGuiWindowFlags m_backgroundOnlyflags;
 	NetworkInfoWindow m_networkInfoImGuiWindow;
@@ -97,6 +98,7 @@ private:
 	bool m_gameStarted = false;
 
 	Octree* m_octree;
+	Octree* m_killCamOctree;
 	bool m_showcaseProcGen;
 
 	std::bitset<MAX_NUM_COMPONENTS_TYPES> m_currentlyWritingMask;
@@ -108,7 +110,13 @@ private:
 	bool m_wasDropped = false;
 
 	bool m_isInKillCamMode = false;
-	std::string m_killCamText = {};
+	bool m_isFinalKillCam = false;
+	std::string m_killCamTitle = {};
+	std::string m_killCamKillerText = {};
+	std::string m_killCamVictimText = {};
+	ImVec4 m_killerColor = ImVec4(0.f, 0.f, 0.f, 0.f);
+	ImVec4 m_victimColor = ImVec4(0.f, 0.f, 0.f, 0.f);
+
 
 #ifdef _PERFORMANCE_TEST
 	void populateScene(Model* lightModel, Model* bbModel, Model* projectileModel, Shader* shader);

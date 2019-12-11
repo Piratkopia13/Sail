@@ -29,7 +29,7 @@ private:
 	bool loadModels(Application* app);
 	bool loadTextures(Application* app);
 
-	void loadModel(ResourceManager& rm, const char* filename, Shader* shader = nullptr);
+	void loadModel(ResourceManager& rm, std::string filename, Shader* shader = nullptr, const ResourceManager::ImporterType type = ResourceManager::ImporterType::SAIL_FBXSDK);
 	void loadTexture(ResourceManager& rm, const char* filename);
 
 	void waitUntilMemoryIsBelow(size_t size);
