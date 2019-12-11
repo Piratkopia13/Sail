@@ -107,7 +107,6 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 		const char* compressedPtr = data.front().data();
 		std::string decompressedData = gzip::decompress(compressedPtr, data.front().size());
 
-		//std::istringstream is(data.front());
 		std::istringstream is(decompressedData);
 		Netcode::InArchive ar(is);
 

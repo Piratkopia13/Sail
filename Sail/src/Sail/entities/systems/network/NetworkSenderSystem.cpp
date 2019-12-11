@@ -170,40 +170,27 @@ void NetworkSenderSystem::update() {
 	m_nrOfEventsToSendToSelf = 0;
 
 
-	// -+-+-+-+-+-+-+-+ send the serialized archive over the network -+-+-+-+-+-+-+-+ 
-	std::string binaryDataToSendToOthers = osToOthers.str();
-
-
-
-
-
-	// COMPRESSION TEST
-	const char* othersPtr = binaryDataToSendToOthers.data();
-	std::size_t othersSize = binaryDataToSendToOthers.size();
-
-	std::string compressedToOthers = gzip::compress(othersPtr, othersSize);
+	// -+-+-+-+-+-+-+-+ compress and send the serialized archive over the network -+-+-+-+-+-+-+-+ 
+	std::string uncompOthers    = osToOthers.str();
+	const char* uncompOthersPtr = uncompOthers.data();
+	std::string compOthers      = gzip::compress(uncompOthersPtr, uncompOthers.size());
 
 	if (NWrapperSingleton::getInstance().isHost()) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(compressedToOthers);
+		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(compOthers);
 
 		// Host doesn't get their messages sent back to them so we need to send them to the killCamReceiverSystem from here
-		m_killCamSystem->handleIncomingData(compressedToOthers);
+		m_killCamSystem->handleIncomingData(compOthers);
 	} else {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(compressedToOthers);
+		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(compOthers);
 	}
 
 
-	// -+-+-+-+-+-+-+-+ send Events directly to our own ReceiverSystem -+-+-+-+-+-+-+-+ 
-	std::string binaryDataToSendToSelf = osToSelf.str();
-	const char* selfPtr = binaryDataToSendToSelf.data();
-	std::size_t selfSize = binaryDataToSendToSelf.size();
+	// -+-+-+-+-+-+-+-+ compress and send Events directly to our own ReceiverSystem -+-+-+-+-+-+-+-+ 
+	std::string uncompSelf    = osToSelf.str();
+	const char* uncompSelfPtr = uncompSelf.data();
+	std::string compSelf      = gzip::compress(uncompSelfPtr, uncompSelf.size());
 
-	std::string compressedToSelf = gzip::compress(selfPtr, selfSize);
-
-
-	m_receiverSystem->pushDataToBuffer(compressedToSelf);
-
-
+	m_receiverSystem->pushDataToBuffer(compSelf);
 
 	// -+-+-+-+-+-+-+-+ Host forwards all messages to all clients -+-+-+-+-+-+-+-+ 
 	std::scoped_lock lock(m_forwardBufferLock);
