@@ -55,6 +55,7 @@ public:
 
 	void resetWater();
 	void reloadShaders();
+	void enableSoftShadows(bool enable);
 
 	virtual bool onEvent(const Event& event) override;
 
@@ -120,6 +121,7 @@ private:
 	DX12RenderableTexture** m_gbufferInputTextures;
 
 	std::string m_shaderFilename;
+	bool m_enableSoftShadowsInShader;
 
 	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_sceneCB;
 	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_meshCB;
