@@ -4,7 +4,6 @@
 #include "Sail/Application.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 
-class AudioSystem;
 
 class OptionsWindow : public SailImGuiWindow {
 
