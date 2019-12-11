@@ -98,6 +98,7 @@ DXRBase::~DXRBase() {
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::RESET_WATER, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::SETTINGS_UPDATED, this);
 }
 
 void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {

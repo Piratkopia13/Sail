@@ -42,7 +42,7 @@ namespace GlobalRootParam {
 	};
 }
 
-class DX12API : public GraphicsAPI {
+class DX12API : public GraphicsAPI, public EventReceiver {
 public:
 	static const UINT NUM_SWAP_BUFFERS;
 	static const UINT NUM_GPU_BUFFERS;
@@ -100,6 +100,9 @@ public:
 	virtual unsigned int getMemoryBudget() const override;
 	virtual void toggleFullscreen() override;
 	virtual bool onResize(const WindowResizeEvent& event) override;
+
+	// Inherited via EventReceiver
+	virtual bool onEvent(const Event& e) override;
 
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;
