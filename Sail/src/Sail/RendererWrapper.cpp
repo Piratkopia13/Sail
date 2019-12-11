@@ -17,10 +17,9 @@ void RendererWrapper::initialize() {
 	m_rendererRaster = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 	m_rendererRaytrace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::HYBRID));
 	m_rendererScreenSpace = std::unique_ptr<Renderer>(Renderer::Create(Renderer::SCREEN_SPACE));
-	m_currentRenderer = m_rendererRaytrace.get();
+	m_currentRenderer = m_rendererRaytrace.get();		// Needs to be set before creating particle renderer
 	m_rendererParticles = std::unique_ptr<Renderer>(Renderer::Create(Renderer::PARTICLES));
-
-	m_postProcessPipeline = std::make_shared<PostProcessPipeline>();
+	m_postProcessPipeline = std::make_unique<PostProcessPipeline>();
 
 	m_doPostProcessing = true; // Should always be true, will cause dx errors if not
 }
