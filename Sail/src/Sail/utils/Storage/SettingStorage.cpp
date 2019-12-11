@@ -314,7 +314,7 @@ void SettingStorage::createGameDefaultMap() {
 	}));
 	gameSettingsDynamic["bots"] = std::unordered_map<std::string, DynamicSetting>();
 
-	gameSettingsDynamic["bots"]["count"] = DynamicSetting(5.0f, 1.0f, 100.0f);
+	gameSettingsDynamic["bots"]["count"] = DynamicSetting(5.0f, 1.0f, 15.0f);
 	gameSettingsDynamic["bots"]["waterStorage"] = DynamicSetting(100.0f, 1.0f, 500.0f);
 
 
