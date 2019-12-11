@@ -4,6 +4,7 @@
 #include "Sail/Application.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 
+
 class OptionsWindow : public SailImGuiWindow {
 
 public:
@@ -16,11 +17,17 @@ public:
 	void setDisabled(bool b = true);
 
 private:
-	Application* m_app;
-	SettingStorage* m_settings;
-	LevelSystem* m_levelSystem;
 	bool m_disabled = false;
 
+	Application* m_app = nullptr;
+	SettingStorage* m_settings = nullptr;
+	LevelSystem* m_levelSystem = nullptr;
+
+	int* m_keyToChange;
+
+
+private:
 	void drawCrosshair();
 	void drawMap();
+	void resetKeyBind(int key = -1); // -1 to reset all
 };

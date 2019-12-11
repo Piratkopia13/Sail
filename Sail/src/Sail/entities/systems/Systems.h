@@ -16,6 +16,7 @@
 #include "Gameplay/LevelSystem/LevelSystem.h"
 #include "Gameplay/lifetime/LifeTimeSystem.h"
 #include "Gameplay/PlayerSystem.h"
+#include "Gameplay/PowerUps/PowerUpCollectibleSystem.h"
 #include "Gameplay/PowerUps/PowerUpUpdateSystem.h"
 #include "Gameplay/ProjectileSystem.h"
 #include "Gameplay/sanitySoundSystem.h"
@@ -26,6 +27,7 @@
 #include "Graphics/AnimationSystem.h"
 #include "Graphics/AnimationChangerSystem.h"
 #include "Graphics/ParticleSystem.h"
+#include "Gameplay/WaterCleaningSystem.h"
 
 #include "input/GameInputSystem.h"
 #include "input/SprintingSystem.h"

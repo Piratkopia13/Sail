@@ -5,6 +5,7 @@
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/components/MapComponent.h"
 #include <random>
+#include <algorithm>
 
 LevelSystem::LevelSystem():BaseComponentSystem() {
 	registerComponent<MapComponent>(true,true,true);
@@ -71,10 +72,11 @@ void LevelSystem::generateMap() {
 		for (int i = 0; i < tile.sizex; i++) {
 			for (int j = 0; j < tile.sizey; j++) {
 				tileArr[tile.posx + i][tile.posy + j][1] = 0;
+				botSpawnPoints.push_back(glm::vec3((tile.posx + i-0.5f)*tileSize, 0.3f,( tile.posy + j-0.5f)*tileSize));
 			}
 		}
 	}
-
+	std::shuffle(botSpawnPoints.begin(), botSpawnPoints.end(), std::default_random_engine{});
 	//create rooms from blocks
 	splitBlock();
 	//add rooms with individual type to type-layer
@@ -133,6 +135,7 @@ void LevelSystem::destroyWorld() {
 	spawnPoints.clear();
 	extraSpawnPoints.clear();
 	powerUpSpawnPoints.clear();
+	botSpawnPoints.clear();
 	while(chunks.size()>0){
 		chunks.pop();
 	}
@@ -1365,16 +1368,25 @@ glm::vec3 LevelSystem::getPowerUpPosition(int index) {
 	}
 }
 
-glm::vec3 LevelSystem::getSpawnPoint() {
+glm::vec3 LevelSystem::getSpawnPoint(int id) {
 	// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
 	glm::vec3 spawnLocation;
-	if (spawnPoints.size() > 0) {
-		spawnLocation = spawnPoints.front();
-		spawnPoints.erase(spawnPoints.begin());
+	if (spawnPoints.size() > 0 && id<spawnPoints.size()) {
+		spawnLocation = spawnPoints.at(id);
 	}
-	else if (extraSpawnPoints.size() > 0) {
-		spawnLocation = extraSpawnPoints.front();
-		extraSpawnPoints.erase(extraSpawnPoints.begin());
+	else if (extraSpawnPoints.size() > 0 && (id-spawnPoints.size())<extraSpawnPoints.size()) {
+		spawnLocation = extraSpawnPoints.at(id - spawnPoints.size());
+	}
+	else {
+		spawnLocation = glm::vec3(((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (xsize - 1), 1.f, ((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (ysize - 1));
+		SAIL_LOG_ERROR("No more spawn locations available.");
+	}
+	return spawnLocation;
+}
+glm::vec3 LevelSystem::getBotSpawnPoint(int id) {
+	glm::vec3 spawnLocation;
+	if (botSpawnPoints.size() > 0 && id < botSpawnPoints.size()) {
+		spawnLocation = botSpawnPoints.at(id);
 	}
 	else {
 		spawnLocation = glm::vec3(((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (xsize - 1), 1.f, ((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (ysize - 1));
@@ -1464,6 +1476,7 @@ void LevelSystem::stop() {
 	spawnPoints.clear();
 	extraSpawnPoints.clear();
 	powerUpSpawnPoints.clear();
+	botSpawnPoints.clear();
 }
 
 void LevelSystem::generateClutter() {
@@ -1758,10 +1771,12 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 
 		MovementComponent* mc = e2->addComponent<MovementComponent>();
 		AudioComponent* ac = e2->addComponent<AudioComponent>();
+		SAIL_LOG("Adding Saftblandare to AudioQueue");
+		Application::getInstance()->addToAudioComponentQueue(&*e2);
 		SpotlightComponent* sc = e2->addComponent<SpotlightComponent>();
 		sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
 		sc->light.setPosition(glm::vec3(0, tileHeight * 5 - 0.05, 0));
-		sc->light.setAttenuation(1.f, 0.01f, 0.01f);
+		sc->light.setRadius(30.f);
 		sc->light.setDirection(glm::vec3(1, 0, 0));
 		sc->light.setAngle(0.5);
 		sc->roomID = getRoomID(room.posx, room.posy);
@@ -1770,21 +1785,23 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		sc->isOn = true;
 #endif
 
-#ifdef DEVELOPMENT
 		auto* particleEmitterComp = e2->addComponent<ParticleEmitterComponent>();
-		particleEmitterComp->size = 1.0f;
+
+		float sprinklerXspread = room.sizex * tileSize * 1.3f;
+		float sprinklerZspread = room.sizey * tileSize * 1.3f;
+
+		particleEmitterComp->size = 0.055f;
 		particleEmitterComp->offset = { 0, tileHeight * 6, 0 };
-		particleEmitterComp->constantVelocity = { 0.0f, -0.7f, 0.0f };
-		particleEmitterComp->acceleration = { 0.0f, -0.4f, 0.0f };
-		particleEmitterComp->spread = { 5.22f, 1.0f, 5.22f };
-		particleEmitterComp->spawnRate = 1.f / 100.f;
-		particleEmitterComp->lifeTime = 2.0f;
+		particleEmitterComp->constantVelocity = { 0.0f, -0.5f, 0.0f };
+		particleEmitterComp->acceleration = { 0.0f, -30.0f, 0.0f };
+		particleEmitterComp->spread = { sprinklerXspread, 0.5f, sprinklerZspread };
+		particleEmitterComp->spawnRate = 1.f / (100.f * room.sizex * room.sizey);
+		particleEmitterComp->lifeTime = 0.5f;
 		particleEmitterComp->atlasSize = glm::uvec2(8U, 3U);
-		std::string particleTextureName = "particles/animSmoke.dds";
-		if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
-			Application::getInstance()->getResourceManager().loadTexture(particleTextureName);
-		}
-		particleEmitterComp->setTexture(particleTextureName);
-#endif
+		particleEmitterComp->drag = 30.0f;
+		particleEmitterComp->maxNumberOfParticles = (int)glm::ceil((1.0f / particleEmitterComp->spawnRate) * particleEmitterComp->lifeTime);
+		particleEmitterComp->isActive = false;
+		particleEmitterComp->setTexture("particles/animSmoke.dds");
+
 	}
 }

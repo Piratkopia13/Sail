@@ -73,6 +73,7 @@ private:
 	std::vector<std::filesystem::path> m_unsavedReplaysFound;
 
 	void renderDebug();
+	void renderRAM();
 
 	int m_windowToRender;
 	bool m_joiningLobby;
