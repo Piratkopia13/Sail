@@ -1570,23 +1570,17 @@ void LevelSystem::generateClutter() {
 							if (tile / 8 == 1) {
 								xmin += 2.f * tileSize / 10.f;
 							}
+
 							float clutterPosX = ((rand() % 100) / 100.f) * (xmax - xmin) + xmin + (x + room.posx) * tileSize + tileOffset - tileSize / 2.f;
 							float clutterPosY = ((rand() % 100) / 100.f) * (ymax - ymin) + ymin + (y + room.posy) * tileSize + tileOffset - tileSize / 2.f;
-							int rot;
+							int rot = (rand() % 4) * 90;
 							Clutter clutterLarge;
 							clutterLarge.posx = clutterPosX;
 							clutterLarge.posy = clutterPosY;
 							clutterLarge.height = 0;
-							clutterLarge.size = rand() % 2;
-							if (clutterLarge.size == 0) {
-								rot = (rand() % 4) * 90;
-							}
-							else {
-								rot = rand() % 180;
-							}
 							clutterLarge.rot = rot / 1.f;
+							clutterLarge.size = 0;
 							largeClutter.push(clutterLarge);
-
 						}
 					}
 				}
@@ -1715,7 +1709,7 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 	while (largeClutter.size() > 0) {
 		Clutter clut = largeClutter.front();
 		largeClutter.pop();
-		if (clut.size==0) {
+		if (rand() % 2 == 0) {
 			EntityFactory::CreateStaticMapObject("ClutterLarge", clutterModels[ClutterModel::TABLE], bb, glm::vec3(clut.posx, 0.f, clut.posy), glm::vec3(0.f, glm::radians(clut.rot), 0.f), glm::vec3(1, 1, 1));
 		}
 		else {
