@@ -78,6 +78,13 @@ ImFont* ImGuiHandler::getFont(const std::string& font) {
 	return m_fonts[font];
 }
 
+float ImGuiHandler::getFontScaling(const std::string& type) {
+	if (m_scaling.find(type) != m_scaling.end()) {
+		return m_scaling.at(type);
+	}
+	return 1.0f;
+}
+
 void ImGuiHandler::showMetrics(const bool show) {
 	m_showMetrics = show;
 }
@@ -86,7 +93,17 @@ void ImGuiHandler::addFonts() {
 	ImGuiIO& io = ImGui::GetIO();
 	const std::string defaultPath = "res/fonts/";
 
-	m_fonts["Beb20"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 20);
+	m_fonts["Beb60"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 30);
+
+
+	m_scaling["Header0"] = 1.0f		*	2; // 60
+	m_scaling["Header1"] = 0.7f		*	2; // 42
+	m_scaling["Header2"] = 0.66f	*	2; //40
+	m_scaling["text"] = 0.45f		*	2; // 27
+
+
+
+
 
 #ifndef USE_ONLY_ONE_FONT
 	m_fonts["Beb24"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 24);

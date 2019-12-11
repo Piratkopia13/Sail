@@ -131,11 +131,13 @@ if (m_usePercentage) {
 
 	
 
-	static std::string font = "Beb24";
-
+	static std::string font = "Beb60";
+	
 #ifdef DEVELOPMENT
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
 	if (ImGui::Begin("IMGUISETTINGS")) {
+		ImGui::SetWindowFontScale(0.5f);
+
 		if (ImGui::BeginCombo("##FONTS", &font.front())) {
 			for (auto const& [key, val] : m_imGuiHandler->getFontMap()) {
 				ImGui::PushFont(val);
@@ -158,9 +160,9 @@ if (m_usePercentage) {
 
 	ImGui::PopFont();
 #endif
+
+
 	ImGui::PushFont(m_imGuiHandler->getFont(font));
-
-
 	renderMenu();
 
 	ImVec4 col(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
@@ -337,7 +339,6 @@ void MenuState::joinLobby(std::string& ip) {
 }
 
 void MenuState::renderMenu() {
-	ImGui::PushFont(m_imGuiHandler->getFont("Beb60"));
 
 	if (ImGui::Begin("##MAINMENU", nullptr, m_standaloneButtonflags)) {
 #ifdef DEVELOPMENT
@@ -345,6 +346,9 @@ void MenuState::renderMenu() {
 			startSinglePlayer();
 		}
 #endif
+		 
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("Header0"));
+
 		if (m_windowToRender == 1) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 		}
@@ -430,7 +434,6 @@ void MenuState::renderMenu() {
 	}
 	ImGui::End();
 
-	ImGui::PopFont();
 }
 
 void MenuState::renderSingleplayer() {
@@ -447,11 +450,14 @@ void MenuState::renderLobbyCreator() {
 	ImGui::SetNextWindowSize(m_size);
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 	if (ImGui::Begin("##HOSTLOBBY", nullptr, m_backgroundOnlyflags)) {
-		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		//ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("Header2"));
+
 		SailImGui::HeaderText("Lobby Creator");
-		ImGui::PopFont();
+		//ImGui::PopFont();
 		ImGui::Separator();
 
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("text"));
 
 
 
@@ -515,11 +521,14 @@ void MenuState::renderServerBrowser() {
 	ImGui::SetNextWindowSize(m_size);
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 	if (ImGui::Begin("##Hosted Lobbies on LAN", nullptr, m_backgroundOnlyflags)) {
-		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("header2"));
+		//ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
 		SailImGui::HeaderText(windowName.c_str());
-		ImGui::PopFont();
+		//ImGui::PopFont();
 		ImGui::Separator();
 
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("text"));
 		strncpy_s(buf, inputIP.c_str(), inputIP.size());
 		ImGui::InputTextWithHint("##IP:", "127.0.0.1:54000", buf, 100);
 		inputIP = buf;
@@ -651,11 +660,13 @@ void MenuState::renderProfile() {
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 
 	if (ImGui::Begin("##Pause Menu", NULL, m_backgroundOnlyflags)) {
-		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		//ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("header2"));
 		SailImGui::HeaderText(windowName.c_str());
-		ImGui::PopFont();
+		//ImGui::PopFont();
 		ImGui::Separator();
 
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("text"));
 		float innerWidth = ImGui::GetWindowContentRegionWidth();
 
 		ImGui::Text("Name: ");
@@ -745,9 +756,13 @@ void MenuState::renderOptions() {
 
 	if (ImGui::Begin("##Pause Menu", NULL, m_backgroundOnlyflags)) {
 
-		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		//ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("header2"));
 		SailImGui::HeaderText("Options");
-		ImGui::PopFont();
+
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("text"));
+		//ImGui::PopFont();
 		ImGui::Separator();
 		m_optionsWindow.renderWindow();
 	}
