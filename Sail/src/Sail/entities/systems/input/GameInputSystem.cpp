@@ -210,7 +210,9 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					ragdollComp->addContactPoint(glm::vec3(0.0f, 0.4f, 0.0f), glm::vec3(0.4f));
 					ragdollComp->addContactPoint(glm::vec3(0.f, 1.4f, 0.0f), glm::vec3(0.4f));
 
-					movement->constantAcceleration = { 0.f, 0.f, 0.f };
+					movement->rotation = { 10.0f, 0.f, 0.f };
+
+					movement->constantAcceleration = { 0.f, -4.f, 0.f };
 					m_ragdolling = true;
 				}
 #endif
