@@ -22,7 +22,6 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	, m_mapSize(1.f)
 	, m_mapStart(1.f)
 {
-
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::RESET_WATER, this);
 
@@ -337,9 +336,10 @@ unsigned int DXRBase::removeWaterAtWorldPosition(const glm::vec3& position, cons
 				ind.y = glm::clamp(ind.y + y, 0, int(m_waterArrSizes.y));
 				ind.z = glm::clamp(ind.z + z, 0, int(m_waterArrSizes.z));
 				int arrIndex = Utils::to1D(ind, m_waterArrSizes.x, m_waterArrSizes.y);
-				if (m_updateWater[arrIndex]) {
-					// Ignore water points that are outside the map
-					if (arrIndex >= 0 && arrIndex < m_waterArrSize) {
+
+				// Ignore water points that are outside the map
+				if (arrIndex >= 0 && arrIndex < m_waterArrSize) {
+					if (m_updateWater[arrIndex]) {
 						// Make sure to update this water
 						uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
 						uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
@@ -684,8 +684,9 @@ void DXRBase::dispatch(BounceOutput& output, DX12RenderableTexture* outputBloomT
 void DXRBase::resetWater() {
 	// TODO: make faster by updates the whole buffer at once
 	for (unsigned int i = 0; i < m_waterArrSize; i++) {
-		m_waterDataCPU[i] = m_waterDeltas[i] = 0;
+		m_waterDataCPU[i] = 0;
 	}
+	m_waterDeltas.clear();
 	m_waterChanged = true;
 }
 
@@ -973,10 +974,12 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		
 		// Next slot is used for the brdfLUT
 		m_rtBrdfLUTGPUHandle = gpuHandle;
-		if (!Application::getInstance()->getResourceManager().hasTexture(m_brdfLUTPath)) {
-			Application::getInstance()->getResourceManager().loadTexture(m_brdfLUTPath);
+
+		auto& rm = Application::getInstance()->getResourceManager();
+		if (!rm.hasTexture(m_brdfLUTPath)) {
+			rm.loadTexture(m_brdfLUTPath);
 		}
-		auto& brdfLutTex = dynamic_cast<DX12Texture&>(Application::getInstance()->getResourceManager().getTexture(m_brdfLUTPath));
+		auto& brdfLutTex = static_cast<DX12Texture&>(rm.getTexture(m_brdfLUTPath));
 		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, brdfLutTex.getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		cpuHandle.ptr += m_heapIncr;
 		gpuHandle.ptr += m_heapIncr;
@@ -1032,7 +1035,6 @@ void DXRBase::createInitialShaderResources(bool remake) {
 			free(initData);
 		}
 	}
-
 }
 
 void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
@@ -1072,9 +1074,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 				hasTexture = (textureNum == 2) ? materialSettings.hasMetalnessRoughnessAOTexture : hasTexture;
 				if (hasTexture) {
 					// Make sure textures have initialized / uploaded their data to its default buffer
-					if (!texture->hasBeenInitialized()) {
-						texture->initBuffers(cmdList);
-					}
+					texture->initBuffers(cmdList);
 
 						// Copy SRV to DXR heap
 						m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

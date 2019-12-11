@@ -25,6 +25,10 @@ void PowerUpCollectibleSystem::init(std::vector<Entity*>* playerList) {
 	m_playerList = playerList;
 }
 
+void PowerUpCollectibleSystem::stop() {
+	m_respawns.clear();
+}
+
 void PowerUpCollectibleSystem::setSpawnPoints(std::vector<glm::vec3>& points) {
 	m_spawnPoints.clear();
 	m_spawnPoints.insert(m_spawnPoints.begin(), points.begin(), points.end());
