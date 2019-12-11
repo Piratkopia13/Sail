@@ -19,11 +19,21 @@
 #include <string>
 #include <vector>
 
+
+#include "Sail/../../libraries/gzip/compress.hpp"
+#include "Sail/../../libraries/gzip/config.hpp"
+#include "Sail/../../libraries/gzip/decompress.hpp"
+#include "Sail/../../libraries/gzip/utils.hpp"
+#include "Sail/../../libraries/gzip/version.hpp"
+
 //#define _LOG_TO_FILE
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 #include <fstream>
 static std::ofstream out("LogFiles/NetworkSenderSystem.cpp.log");
 #endif
+//
+//#pragma comment(lib,"zlib.lib")
+//#pragma comment(lib,"zlibstatic.lib")
 
 NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
 	registerComponent<NetworkSenderComponent>(true, true, true);
@@ -104,6 +114,8 @@ void NetworkSenderSystem::update() {
 		}
 	}
 
+	SAIL_LOG("Sender comp: \t" + std::to_string(nonEmptySenderComponents));
+
 	// Write nrOfEntities
 	sendToOthers(nonEmptySenderComponents);
 	sendToSelf(size_t{ 0 }); // SenderComponent messages should not be sent to ourself
@@ -135,6 +147,9 @@ void NetworkSenderSystem::update() {
 	}
 
 	// -+-+-+-+-+-+-+-+ Per-instance events via eventQueue -+-+-+-+-+-+-+-+ 
+	SAIL_LOG("Events: \t" + std::to_string(m_eventQueue.size()));
+
+
 	sendToOthers(m_eventQueue.size());
 	sendToSelf(m_nrOfEventsToSendToSelf.load());
 
@@ -157,6 +172,29 @@ void NetworkSenderSystem::update() {
 
 	// -+-+-+-+-+-+-+-+ send the serialized archive over the network -+-+-+-+-+-+-+-+ 
 	std::string binaryDataToSendToOthers = osToOthers.str();
+
+
+
+
+
+	// COMPRESSION TEST
+	const char* ptr = binaryDataToSendToOthers.data();
+	std::size_t size = binaryDataToSendToOthers.size();
+
+	std::string compressed = gzip::compress(ptr, size);
+
+	SAIL_LOG("RAW: \t" + std::to_string(size) + " \tCOMPRESSED: \t" + std::to_string(compressed.size()));
+
+	const char* cmprPtr = compressed.data();
+	std::string decompressed = gzip::decompress(cmprPtr, compressed.size());
+
+
+	if (decompressed.compare(binaryDataToSendToOthers) != 0) {
+		SAIL_LOG_WARNING("COMPRESSION FAILED");
+	}
+
+
+
 	if (NWrapperSingleton::getInstance().isHost()) {
 		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryDataToSendToOthers);
 
