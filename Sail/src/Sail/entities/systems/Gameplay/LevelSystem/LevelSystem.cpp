@@ -135,6 +135,7 @@ void LevelSystem::destroyWorld() {
 	spawnPoints.clear();
 	extraSpawnPoints.clear();
 	powerUpSpawnPoints.clear();
+	botSpawnPoints.clear();
 	while(chunks.size()>0){
 		chunks.pop();
 	}
@@ -1475,6 +1476,7 @@ void LevelSystem::stop() {
 	spawnPoints.clear();
 	extraSpawnPoints.clear();
 	powerUpSpawnPoints.clear();
+	botSpawnPoints.clear();
 }
 
 void LevelSystem::generateClutter() {
