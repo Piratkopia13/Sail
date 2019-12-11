@@ -4,7 +4,7 @@
 #include "..//Regex/Regex.h"
 #include "Sail/KeyCodes.h"
 
-#pragma region OTIONSSTORAGE
+#pragma region OPTIONSSTORAGE
 SettingStorage::SettingStorage(const std::string& file) {
 	createApplicationDefaultStructure();
 	if (!loadFromFile(file)) {
@@ -130,7 +130,7 @@ void SettingStorage::setMap(const int mode, const int index, const int playerCou
 		//DEATHMATCH
 		case 0:
 			switch (index) {
-			case -1:	setMapValues(rand() % 30, rand() % 30, float(rand()%100)/100.0f, rand() % 300000); break;
+			case -1:	setMapValues(6+(rand() % 7), 6+(rand() % 7), float(rand()%100)/100.0f, rand() % 300000); break;
 			case 0:		setMapValues(6,		6,		0.85f,		12397);		break;
 			case 1:		setMapValues(10,	10,		0.85f,		34590);		break;
 			case 2:		setMapValues(7,		7,		0.85f,		345912);	break;
@@ -284,9 +284,9 @@ void SettingStorage::createGameDefaultMap() {
 
 	auto& gameSettingMapD = gameSettingsDynamic["map"] = std::unordered_map<std::string, DynamicSetting>();
 	auto& gameSettingMapS = gameSettingsStatic["map"] = std::unordered_map<std::string, Setting>();
-	gameSettingMapD["sizeX"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
-	gameSettingMapD["sizeY"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
-	gameSettingMapD["tileSize"] =	DynamicSetting(7.0f, 1.0f, 30.0f);
+	gameSettingMapD["sizeX"] =   DynamicSetting(6.0f,	2.0f,	16.0f);
+	gameSettingMapD["sizeY"] =   DynamicSetting(6.0f,	2.0f,	16.0f);
+	gameSettingMapD["tileSize"] =	DynamicSetting(7.0f, 6.0f, 10.0f);
 	gameSettingMapD["clutter"] = DynamicSetting(0.85f,	0.0f,	1.0f);
 	gameSettingMapD["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
 	
