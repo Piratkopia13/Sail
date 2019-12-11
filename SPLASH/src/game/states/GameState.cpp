@@ -133,7 +133,7 @@ GameState::GameState(StateStack& stack)
 
 	createLevel(&m_app->getResourceManager().getShaderSet<GBufferOutShader>(), boundingBoxModel);
 #ifndef _DEBUG
-	if (NWrapperSingleton::getInstance().isHost() && m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
+	if (NWrapperSingleton::getInstance().isHost()) {
 		m_componentSystems.aiSystem->initNodeSystem(m_octree);
 	}
 #endif
@@ -175,9 +175,7 @@ GameState::GameState(StateStack& stack)
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #else
 	#ifndef _DEBUG
-	if (m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
 		createBots();
-	}
 	#endif
 #endif
 
@@ -446,7 +444,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
 
-	if (NWrapperSingleton::getInstance().isHost() && m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
+	if (NWrapperSingleton::getInstance().isHost()) {
 		m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
 	}
 
@@ -1044,7 +1042,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.powerUpCollectibleSystem->update(dt);
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	if (NWrapperSingleton::getInstance().isHost() && m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
+	if (NWrapperSingleton::getInstance().isHost()) {
 		runSystem(dt, m_componentSystems.aiSystem);
 	}
 	runSystem(dt, m_componentSystems.projectileSystem);
@@ -1280,7 +1278,13 @@ const std::string GameState::createCube(const glm::vec3& position) {
 }
 
 void GameState::createBots() {
-	auto botCount = static_cast<int>(m_app->getSettings().gameSettingsDynamic["bots"]["count"].value);
+	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
+
+	if (botCount < 0) {
+		botCount = 0;
+	}
+
+	botCount = 10;
 
 	for (size_t i = 0; i < botCount; i++) {
 		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getBotSpawnPoint(i);

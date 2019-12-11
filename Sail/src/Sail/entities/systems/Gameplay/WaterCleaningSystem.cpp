@@ -10,6 +10,8 @@ WaterCleaningSystem::WaterCleaningSystem()
 {
 	registerComponent<WaterCleaningComponent>(true, true, false);
 	registerComponent<TransformComponent>(true, true, false);
+
+	m_powerUpThreshold = 100.f;
 }
 
 WaterCleaningSystem::~WaterCleaningSystem() {}
@@ -37,14 +39,13 @@ void WaterCleaningSystem::update(float dt) {
 			}
 
 			float amountOfWaterRemoved = m_rendererWrapperRef->removeWaterPoint(transC->getTranslation(), posOffset, negOffset);
-			if (NWrapperSingleton::getInstance().isHost() && Application::getInstance()->getSettings().gameSettingsStatic["map"]["Powerup"].getSelected().value == 0.f) {
+			if (NWrapperSingleton::getInstance().isHost()) {
 				amountOfWaterRemoved *= 0.00098039f;
 				cleanC->amountCleaned += amountOfWaterRemoved;
-				float powerUpThreshold = Application::getInstance()->getSettings().gameSettingsDynamic["bots"]["waterStorage"].value;
-				if (cleanC->amountCleaned >= powerUpThreshold) {
+				if (cleanC->amountCleaned >= m_powerUpThreshold) {
 					// Spawn power-up here
 					EventDispatcher::Instance().emit(SpawnPowerUp(rand() % PowerUps::NUMPOWUPS, glm::vec3(0.f, 1.f, 0.f), 0, e));
-					cleanC->amountCleaned -= powerUpThreshold;
+					cleanC->amountCleaned -= m_powerUpThreshold;
 				}
 			}
 		}
