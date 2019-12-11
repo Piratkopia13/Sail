@@ -205,14 +205,23 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				if (Input::IsKeyPressed(KeyBinds::TOGGLE_BOUNDINGBOXES) && !m_ragdolling) {
 					//Ragdoll landing
 					auto* ragdollComp = e->addComponent<RagdollComponent>();
-					ragdollComp->localCenterOfMass = { 0.f, 1.2f, 0.f };
-					e->getComponent<TransformComponent>()->setCenter(ragdollComp->localCenterOfMass);
+					ragdollComp->localCenterOfMass = { 0.f, 1.0f, 0.f };
+					e->getComponent<TransformComponent>()->setCenter(glm::vec3(0.01f, 1.0f, 0.01f));
 					ragdollComp->addContactPoint(glm::vec3(0.0f, 0.4f, 0.0f), glm::vec3(0.4f));
-					ragdollComp->addContactPoint(glm::vec3(0.f, 1.4f, 0.0f), glm::vec3(0.4f));
+					ragdollComp->addContactPoint(glm::vec3(0.f, 1.4f, 0.3f), glm::vec3(0.4f));
 
-					movement->rotation = { 10.0f, 0.f, 0.f };
+					e->getComponent<AnimationComponent>()->pitch = 0.f;
 
-					movement->constantAcceleration = { 0.f, -4.f, 0.f };
+					e->getComponent<TransformComponent>()->getMatrixWithUpdate();
+
+					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
+
+					glm::vec3 rotVec = glm::normalize(glm::cross(m_cam->getCameraDirection(), glm::vec3(0.0f, 1.0f, 0.0f)));
+					//glm::vec3 rotVec = { 0.f, 0.f, 1.0f };
+					movement->rotation = rotVec * glm::pi<float>() * -2.0f;
+					movement->constantAcceleration = { 0.f, -6.f, 0.f };
+
+
 					m_ragdolling = true;
 				}
 #endif
@@ -522,6 +531,13 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 			cosRadPitch * sinRadYaw));
 
 		m_cam->setCameraDirection(forwards);
+	}
+	else {
+		for (auto e : entities) {
+			TransformComponent* playerTrans = e->getComponent<TransformComponent>();
+
+			m_cam->setCameraDirection(glm::vec3(playerTrans->getMatrixWithoutUpdate()[3]) - m_cam->getCameraPosition());
+		}
 	}
 }
 
