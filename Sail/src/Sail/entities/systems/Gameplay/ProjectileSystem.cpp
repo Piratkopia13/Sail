@@ -85,7 +85,7 @@ void ProjectileSystem::update(float dt) {
 					);
 
 					// Alter the crosshair for the local player.
-					if (m_crosshair->hasComponent<CrosshairComponent>() && cc->isLit&& cc->invincibleTimer<0.2f) {
+					if (m_crosshair->hasComponent<CrosshairComponent>() && cc->isLit) {
 						CrosshairComponent* crossC = m_crosshair->getComponent<CrosshairComponent>();
 						crossC->currentlyAltered = true;
 						crossC->passedTimeSinceAlteration = 0.0f;
