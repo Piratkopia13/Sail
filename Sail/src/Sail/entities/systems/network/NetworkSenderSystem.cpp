@@ -178,36 +178,30 @@ void NetworkSenderSystem::update() {
 
 
 	// COMPRESSION TEST
-	const char* ptr = binaryDataToSendToOthers.data();
-	std::size_t size = binaryDataToSendToOthers.size();
+	const char* othersPtr = binaryDataToSendToOthers.data();
+	std::size_t othersSize = binaryDataToSendToOthers.size();
 
-	std::string compressed = gzip::compress(ptr, size);
-
-	SAIL_LOG("RAW: \t" + std::to_string(size) + " \tCOMPRESSED: \t" + std::to_string(compressed.size()));
-
-	const char* cmprPtr = compressed.data();
-	std::string decompressed = gzip::decompress(cmprPtr, compressed.size());
-
-
-	if (decompressed.compare(binaryDataToSendToOthers) != 0) {
-		SAIL_LOG_WARNING("COMPRESSION FAILED");
-	}
-
-
+	std::string compressedToOthers = gzip::compress(othersPtr, othersSize);
 
 	if (NWrapperSingleton::getInstance().isHost()) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryDataToSendToOthers);
+		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(compressedToOthers);
 
 		// Host doesn't get their messages sent back to them so we need to send them to the killCamReceiverSystem from here
-		m_killCamSystem->handleIncomingData(binaryDataToSendToOthers);
+		m_killCamSystem->handleIncomingData(compressedToOthers);
 	} else {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryDataToSendToOthers);
+		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(compressedToOthers);
 	}
 
 
 	// -+-+-+-+-+-+-+-+ send Events directly to our own ReceiverSystem -+-+-+-+-+-+-+-+ 
 	std::string binaryDataToSendToSelf = osToSelf.str();
-	m_receiverSystem->pushDataToBuffer(binaryDataToSendToSelf);
+	const char* selfPtr = binaryDataToSendToSelf.data();
+	std::size_t selfSize = binaryDataToSendToSelf.size();
+
+	std::string compressedToSelf = gzip::compress(selfPtr, selfSize);
+
+
+	m_receiverSystem->pushDataToBuffer(compressedToSelf);
 
 
 
