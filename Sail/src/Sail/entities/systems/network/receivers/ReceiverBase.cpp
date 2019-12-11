@@ -14,12 +14,7 @@
 #include "Sail/entities/Entity.h"
 #include "Sail/utils/Utils.h"
 
-#include "Sail/../../libraries/gzip/compress.hpp"
-#include "Sail/../../libraries/gzip/config.hpp"
 #include "Sail/../../libraries/gzip/decompress.hpp"
-#include "Sail/../../libraries/gzip/utils.hpp"
-#include "Sail/../../libraries/gzip/version.hpp"
-
 
 // DO NOT IMPLEMENT ANY BEHAVIOR, EMIT EVENTS, OR IN ANY WAY CHANGE STATE IN RECEIVERBASE
 // This class is just used to call functions in the classes that inherit from it
