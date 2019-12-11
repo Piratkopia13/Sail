@@ -19,7 +19,7 @@
 void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos, size_t lightIndex) {
 	// Candle has a model and a bounding box
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
-	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("Torch.fbx", shader);
+	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("Torch", shader);
 	candleModel->setCastShadows(false);
 	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Torch/Torch_Albedo.dds");
 	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Torch/Torch_NM.dds");
@@ -27,7 +27,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 
 
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();
-	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox", wireframeShader);
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 	boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
 	boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
@@ -74,7 +74,7 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 Entity::SPtr EntityFactory::CreateWaterGun(const std::string& name) {
 
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
-	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("WaterPistol.fbx", shader);
+	Model* candleModel = &Application::getInstance()->getResourceManager().getModel("WaterPistol", shader);
 	candleModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/WaterGun/Watergun_Albedo.dds");
 	candleModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/WaterGun/Watergun_MRAO.dds");
 	candleModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/WaterGun/Watergun_NM.dds");
@@ -317,7 +317,7 @@ Entity::SPtr EntityFactory::CreateMySpectator(Netcode::PlayerID playerID, size_t
 
 // Creates a player entity without a candle and without a model
 void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightIndex, glm::vec3 spawnLocation, Netcode::PlayerID playerID, bool doNotAddToSystems) {
-	std::string modelName = "Doc.fbx";
+	std::string modelName = "Doc";
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
 	Model* characterModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, shader);
 	characterModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Doc/Doc_MRAO.dds");
@@ -328,7 +328,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 
 	// All players have a bounding box
 	auto* wireframeShader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferWireframe>();
-	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox.fbx", wireframeShader);
+	Model* boundingBoxModel = &Application::getInstance()->getResourceManager().getModel("boundingBox", wireframeShader);
 	boundingBoxModel->getMesh(0)->getMaterial()->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 	boundingBoxModel->getMesh(0)->getMaterial()->setAOScale(0.5);
 	boundingBoxModel->getMesh(0)->getMaterial()->setMetalnessScale(0.5);
@@ -390,7 +390,7 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 
 Entity::SPtr EntityFactory::CreatePowerUp(glm::vec3& spawn, const int type, Netcode::ComponentID comID) {
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>();
-	Model* powerUpModel = &Application::getInstance()->getResourceManager().getModel("Clutter/PowerUp.fbx", shader);
+	Model* powerUpModel = &Application::getInstance()->getResourceManager().getModel("Clutter/PowerUp", shader);
 	powerUpModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Clutter/powerUp_MRAO.dds");
 	powerUpModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/powerUp.dds");
 
@@ -463,7 +463,7 @@ Entity::SPtr EntityFactory::CreateCleaningBot(const glm::vec3& pos, const Netcod
 	auto e = ECS::Instance()->createEntity();
 	e->setName("Cleaning Bot #" + std::to_string(e->getID()));
 
-	std::string modelName = "CleaningBot.fbx";
+	std::string modelName = "CleaningBot";
 	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
 	botModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
 	botModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");
@@ -566,7 +566,7 @@ Entity::SPtr EntityFactory::CreateReplayCleaningBot(Netcode::ComponentID compID)
 	Entity::SPtr replayBot = ECS::Instance()->createEntity("ReplayBot");
 	replayBot->tryToAddToSystems = false;
 
-	std::string modelName = "CleaningBot.fbx";
+	std::string modelName = "CleaningBot";
 	Model* botModel = &Application::getInstance()->getResourceManager().getModelCopy(modelName, &Application::getInstance()->getResourceManager().getShaderSet<GBufferOutShader>());
 	botModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/CleaningRobot/CleaningBot_MRAO.dds");
 	botModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/CleaningRobot/CleaningBot_Albedo.dds");

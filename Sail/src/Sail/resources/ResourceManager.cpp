@@ -6,6 +6,11 @@
 #include "API/DX12/resources/DX12DDSTexture.h"
 
 #include <filesystem>
+#include "loaders/NotFBXLoader.h"
+
+
+//#define CREATE_NOT_FBX
+
 
 const std::string ResourceManager::SAIL_DEFAULT_MODEL_LOCATION = "res/models/";
 const std::string ResourceManager::SAIL_DEFAULT_SOUND_LOCATION = "res/sounds/";
@@ -126,11 +131,14 @@ void ResourceManager::addModel(const std::string& modelName, Model* model) {
 }
 
 bool ResourceManager::loadModel(const std::string& filename, Shader* shader, const ImporterType type) {
+	
 	// Insert the new model
 	Shader* shaderToUse = shader ? shader : m_defaultShader;
 
+	std::string nameOnly = filename.substr(0, filename.find_last_of("."));
+
 	m_modelMutex.lock();
-	if (m_models.find(filename) != m_models.end()) {
+	if (m_models.find(nameOnly) != m_models.end()) {
 		m_modelMutex.unlock();
 		return false;
 	}
@@ -141,6 +149,23 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 	}
 	else if (type == ResourceManager::ImporterType::SAIL_FBXSDK) {
 		temp = m_fbxLoader->fetchModel(SAIL_DEFAULT_MODEL_LOCATION + filename, shaderToUse);
+
+#ifdef CREATE_NOT_FBX
+		std::string newName = SAIL_DEFAULT_MODEL_LOCATION + filename.substr(0, filename.find_last_of("."));
+		NotFBXLoader::Save(newName + ".notfbx", temp, &getAnimationStack(filename));
+#endif // NOT_FBX
+	} else if (type == ResourceManager::ImporterType::SAIL_NOT_FBXSDK) {
+		AnimationStack* animationStack = nullptr;		
+		NotFBXLoader::Load(SAIL_DEFAULT_MODEL_LOCATION + filename, temp, shaderToUse, animationStack);
+
+		if (animationStack) {
+			m_animationStacks.insert({ nameOnly, std::unique_ptr<AnimationStack>(animationStack) });
+			SAIL_LOG("Animation size of '" + filename + "' : " + std::to_string((float)m_animationStacks[nameOnly]->getByteSize() / (1024.f * 1024.f)) + "MB");
+			m_byteSize[RMDataType::Animations] += m_animationStacks[nameOnly]->getByteSize();
+		} else {
+			//SAIL_LOG_ERROR("Could not Load model: (" + filename + ")");
+		}
+
 	}
 
 	if (temp) {
@@ -148,7 +173,7 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 		m_byteSize[RMDataType::Models] += temp->getByteSize();
 		temp->setName(filename);
 		m_modelMutex.lock();
-		m_models.insert({ filename, std::unique_ptr<Model>(temp) });
+		m_models.insert({ nameOnly, std::unique_ptr<Model>(temp) });
 		m_modelMutex.unlock();
 		return true;
 	}
@@ -161,12 +186,7 @@ bool ResourceManager::loadModel(const std::string& filename, Shader* shader, con
 Model& ResourceManager::getModel(const std::string& filename, Shader* shader, const ImporterType type) {
 	auto pos = m_models.find(filename);
 	if (pos == m_models.end()) {
-		SAIL_LOG_WARNING("Tried to get model (" + filename + ") but it was not previously loaded.");
-		// Model was not yet loaded, load it and return
-		Shader* shaderToUse = shader ? shader : m_defaultShader;
-		loadModel(filename, shaderToUse, type);
-		
-		return *m_models.find(filename)->second;
+		SAIL_LOG_ERROR("USE SPLASHSCREEN TO LOAD YOUR SHIT!!! : " + filename);
 	}
 
 	return *pos->second;
@@ -196,6 +216,9 @@ void ResourceManager::clearSceneData() {
 }
 
 void ResourceManager::loadAnimationStack(const std::string& fileName, const ImporterType type) {
+	
+	//std::string nameOnly = fileName.substr(0, fileName.find_last_of("."));
+	
 	AnimationStack* temp = nullptr;
 	if (m_animationStacks.find(fileName) != m_animationStacks.end()) {
 		return;
@@ -211,7 +234,7 @@ void ResourceManager::loadAnimationStack(const std::string& fileName, const Impo
 	}
 
 	if (temp) {
-		m_animationStacks.insert({fileName, std::unique_ptr<AnimationStack>(temp)});
+		m_animationStacks.insert({ fileName, std::unique_ptr<AnimationStack>(temp)});
 		SAIL_LOG("Animation size of '" + fileName + "' : " + std::to_string((float)m_animationStacks[fileName]->getByteSize() / (1024.f * 1024.f)) + "MB");
 		m_byteSize[RMDataType::Animations] += m_animationStacks[fileName]->getByteSize();
 	}
@@ -224,6 +247,7 @@ AnimationStack& ResourceManager::getAnimationStack(const std::string& fileName) 
 	//TODO : make more reliable
 	if (m_animationStacks.find(fileName) == m_animationStacks.end()) {
 		loadAnimationStack(fileName);
+		SAIL_LOG_ERROR("USE SPLASHSCREEN TO LOAD YOUR SHIT!!! : " + fileName);
 	}
 
 	return *m_animationStacks[fileName].get();
