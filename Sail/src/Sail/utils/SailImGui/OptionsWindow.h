@@ -20,7 +20,6 @@ private:
 	Application* m_app = nullptr;
 	SettingStorage* m_settings = nullptr;
 	LevelSystem* m_levelSystem = nullptr;
-	AudioSystem* m_audioSystem = nullptr;
 
 	int* m_keyToChange;
 

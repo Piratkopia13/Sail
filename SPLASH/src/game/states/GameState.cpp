@@ -172,7 +172,12 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.networkReceiverSystem->setGameState(this);
 
 #ifdef _PERFORMANCE_TEST
-	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
+	Model* lightModel = &m_app->getResourceManager().getModel("Torch", &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Torch/Torch_Albedo.dds");
+	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Torch/Torch_NM.dds");
+	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Torch/Torch_MRAO.dds");
+
+	populateScene(lightModel, boundingBoxModel, boundingBoxModel, &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #else
 	#ifndef _DEBUG

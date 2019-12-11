@@ -4,8 +4,6 @@
 #include "Sail/KeyBinds.h"
 #include "Sail/utils/SailImGui/SailImGui.h"
 #include "Sail/entities/ECS.h"
-#include "../Sail/src/API/Audio/AudioEngine.h"
-#include "Sail/entities/systems/Audio/AudioSystem.h"
 #include "Sail/KeyCodes.h"
 
 OptionsWindow::OptionsWindow(bool showWindow) : 
@@ -14,7 +12,6 @@ OptionsWindow::OptionsWindow(bool showWindow) :
 	m_app = Application::getInstance();
 	m_settings = &m_app->getSettings();
 	m_levelSystem = ECS::Instance()->getSystem<LevelSystem>();
-	m_audioSystem = ECS::Instance()->getSystem<AudioSystem>();
 
 	auto& dynamic = m_app->getSettings().gameSettingsDynamic;
 	auto& stat = m_app->getSettings().gameSettingsStatic;

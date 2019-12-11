@@ -9,7 +9,6 @@ public:
 	HazardLightSystem();
 	~HazardLightSystem();
 
-	const std::vector<Entity*>* getHazardLightEntities();
 	void updateLights(LightSetup* lightSetup, float alpha, float dt);
 	void toggleONOFF();
 	void enableHazardLights(std::vector<int> activeRooms);
