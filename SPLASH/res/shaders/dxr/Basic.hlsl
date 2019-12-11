@@ -299,8 +299,7 @@ void rayGen() {
 
 	uint shadowTextureIndex = 0;
 	int lightIndex = 0;
-	[unroll]
-	while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
+	while (shadowTextureIndex < CB_SceneData.numShadowTextures) {
 		float firstBounceShadow = getShadowAmount(randSeed, worldPosition, worldNormal, lightIndex);
 		if (lightIndex == -1) {
 			// No more lights available!
@@ -432,7 +431,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 		[unroll] // THIS IS REQUIRED FOR SOME REASON
 		while (shadowTextureIndex < NUM_SHADOW_TEXTURES) {
 			float shadowAmount = getShadowAmount(randSeed, worldPosition, normalInWorldSpace, lightIndex);
-			if (lightIndex == -1) {
+			if (lightIndex == -1 || shadowTextureIndex >= CB_SceneData.numShadowTextures) {
 				// No more lights available!
 				break;
 			}

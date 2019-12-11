@@ -9,7 +9,7 @@
 #include "loaders/AssimpLoader.h"
 #include "loaders/FBXLoader.h"
 
-//#define INCLUDE_ASSIMP_LOADER
+#define LOAD_NOT_FBX
 
 //class DeferredGeometryShader;
 class ShaderPipeline;
@@ -25,6 +25,7 @@ public:
 
 	enum ImporterType {
 		SAIL_FBXSDK,
+		SAIL_NOT_FBXSDK,
 		SAIL_ASSIMP
 	};
 	bool setDefaultShader(Shader* shader);
@@ -112,6 +113,7 @@ public:
 
 	void uploadFinishedTextures(ID3D12GraphicsCommandList4* cmdList);
 	void clearModelCopies();
+	void releaseTextureUploadBuffers();
 
 #ifdef DEVELOPMENT
 	void unloadTextures();
@@ -169,9 +171,11 @@ private:
 	std::unique_ptr<FBXLoader> m_fbxLoader;
 	Shader* m_defaultShader;
 
+#ifdef DEVELOPMENT
 	std::vector<std::string> m_loadedTextures;
 	mutable bool m_hasLoggedTextures = false;
 	mutable bool m_hasLoggedModels = false;
+#endif
 };
 
 template <typename T>

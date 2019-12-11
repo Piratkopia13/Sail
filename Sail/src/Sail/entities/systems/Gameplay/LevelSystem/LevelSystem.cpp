@@ -1758,6 +1758,8 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 
 		MovementComponent* mc = e2->addComponent<MovementComponent>();
 		AudioComponent* ac = e2->addComponent<AudioComponent>();
+		SAIL_LOG("Adding Saftblandare to AudioQueue");
+		Application::getInstance()->addToAudioComponentQueue(&*e2);
 		SpotlightComponent* sc = e2->addComponent<SpotlightComponent>();
 		sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
 		sc->light.setPosition(glm::vec3(0, tileHeight * 5 - 0.05, 0));

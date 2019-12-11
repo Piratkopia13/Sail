@@ -22,6 +22,7 @@ public:
 	unsigned int getByteSize() const override;
 
 	void clearDDSData();
+	void releaseUploadBuffer();
 
 private:
 	void generateMips(ID3D12GraphicsCommandList4* cmdList);
@@ -35,6 +36,7 @@ private:
 	D3D12_RESOURCE_DESC m_textureDesc;
 
 	wComPtr<ID3D12Resource> m_textureUploadBuffer;
+
 	DX12API::CommandQueue* m_queueUsedForUpload;
 	UINT64 m_initFenceVal;
 

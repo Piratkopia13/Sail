@@ -62,8 +62,16 @@ PostProcessPipeline* RendererWrapper::getPostProcessPipeline() {
 	return m_postProcessPipeline.get();
 }
 
+unsigned int RendererWrapper::removeWaterPoint(const glm::vec3& worldPos, const glm::ivec3& posOffset, const glm::ivec3& negOffset) {
+	return m_rendererRaytrace->removeWaterPoint(worldPos, posOffset, negOffset);
+}
+
 bool RendererWrapper::checkIfOnWater(const glm::vec3& worldPos) const {
 	return m_rendererRaytrace->checkIfOnWater(worldPos);
+}
+
+std::pair<bool, glm::vec3> RendererWrapper::getNearestWaterPosition(const glm::vec3& position, const glm::vec3& maxOffset) {
+	return m_rendererRaytrace->getNearestWaterPosition(position, maxOffset);
 }
 
 bool RendererWrapper::onEvent(const Event& event) {

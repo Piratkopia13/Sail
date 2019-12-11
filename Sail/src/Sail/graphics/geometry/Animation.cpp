@@ -7,6 +7,10 @@ Animation::Frame::Frame() :
 	m_transformSize(0),
 	m_limbTransform(nullptr){
 }
+Animation::Frame::Frame(glm::mat4* limbTransform, const unsigned int size) {
+	m_limbTransform = limbTransform;
+	m_transformSize = size;
+}
 Animation::Frame::Frame(const unsigned int size) :
 	m_transformSize(size) {
 	m_limbTransform = SAIL_NEW glm::mat4[size];
@@ -160,7 +164,7 @@ void Animation::addFrame(const unsigned int frame, const float time, Animation::
 void Animation::setName(const std::string& name) {
 	m_name = name;
 }
-const std::string Animation::getName() {
+const std::string& Animation::getName() {
 	return m_name;
 }
 
@@ -399,6 +403,11 @@ const glm::mat4* AnimationStack::getTransform(const unsigned int index, const un
 
 AnimationStack::VertConnection* AnimationStack::getConnections() {
 	return m_connections;
+}
+
+void AnimationStack::setConnections(VertConnection* con, unsigned int size) {
+	m_connections = con;
+	m_connectionSize = size;
 }
 
 const unsigned int AnimationStack::getConnectionSize() {
