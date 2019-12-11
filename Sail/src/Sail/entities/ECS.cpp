@@ -2,10 +2,14 @@
 #include "ECS.h"
 #include "systems/entityManagement/EntityAdderSystem.h"
 #include "systems/entityManagement/EntityRemovalSystem.h"
+#include "systems/Audio/AudioSystem.h"
+#include "Sail.h"
 
 void ECS::addAllQueuedEntities() {
 	for (auto& s : m_systems) {
-		s.second->addQueuedEntities();
+		if (s.second) {
+			s.second->addQueuedEntities();
+		}
 	}
 }
 
@@ -22,8 +26,10 @@ ECS::~ECS() {
 
 void ECS::stopAllSystems() {
 	for (auto& sys : m_systems) {
-		sys.second->stop();
-		sys.second->clearEntities();
+		if (sys.second) {
+			sys.second->stop();
+			sys.second->clearEntities();
+		}
 	}
 }
 
@@ -98,11 +104,13 @@ void ECS::addEntityToSystems(Entity* entity) {
 
 	// Check which systems this entity can be placed in
 	for ( ; it != m_systems.end(); ++it ) {
-		auto componentTypes = it->second->getRequiredComponentTypes();
+		if (it->second) {
+			auto componentTypes = it->second->getRequiredComponentTypes();
 
-		// Add this entity to the system
-		if ( entity->hasComponents(componentTypes) ) {
-			it->second->addEntity(entity);
+			// Add this entity to the system
+			if (entity->hasComponents(componentTypes)) {
+				it->second->addEntity(entity);
+			}
 		}
 	}
 }
@@ -111,14 +119,15 @@ void ECS::removeEntityFromSystems(Entity* entity) {
 	SystemMap::iterator it = m_systems.begin();
 
 	for ( ; it != m_systems.end(); ++it ) {
-		auto componentTypes = it->second->getRequiredComponentTypes();
+		if (it->second) {
+			auto componentTypes = it->second->getRequiredComponentTypes();
 
-		if ( !entity->hasComponents(componentTypes) ) {
-			it->second->removeEntity(entity);
+			if (!entity->hasComponents(componentTypes)) {
+				it->second->removeEntity(entity);
+			}
 		}
 	}
 }
-
 
 size_t ECS::getNumEntities() {
 	return m_entities.size();
@@ -134,7 +143,9 @@ const unsigned int ECS::getByteSize() const {
 	size += m_systems.size() * sizeof(std::pair< std::type_index, std::unique_ptr<BaseComponentSystem>>);
 	
 	for (auto& sys : m_systems) {
-		size += sys.second->getByteSize();
+		if (sys.second) {
+			size += sys.second->getByteSize();
+		}
 	}
 	size += m_entityRemovalSystem->getByteSize();
 	size += m_entityAdderSystem->getByteSize();
