@@ -58,16 +58,10 @@ void DX12RaytracingRenderer::present(PostProcessPipeline* postProcessPipeline, R
 
 	if (postProcessPipeline) {
 		// Make sure output textures are in a higher precision format to accomodate values > 1
-		if (m_shadedOutput) {
-			//m_shadedOutput->changeFormat(Texture::R16G16B16A16_FLOAT);
-		}
 		m_outputBloomTexture->changeFormat(Texture::R16G16B16A16_FLOAT);
 	} else {
 		// Make sure output textures are in a format that can be directly copied to the back buffer
 		// Please note that no tone mapping is applied when post process is turned off.
-		if (m_shadedOutput) {
-			//m_shadedOutput->changeFormat(Texture::R8G8B8A8);
-		}
 		m_outputBloomTexture->changeFormat(Texture::R8G8B8A8);
 	}
 

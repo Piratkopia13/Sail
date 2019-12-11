@@ -50,7 +50,6 @@ TonemapShader::TonemapShader()
 	m_settings.threadGroupXScale = 1.f / 256.f;
 
 	m_output = std::make_unique<PostProcessPipeline::PostProcessOutput>();
-	//m_output->outputTexture = getPipeline()->getRenderableTexture("output");
 
 }
 TonemapShader::~TonemapShader() {}
