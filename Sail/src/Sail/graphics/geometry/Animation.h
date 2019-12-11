@@ -14,6 +14,8 @@ public:
 		void setTransform(const unsigned int index, const glm::mat4& transform);
 		const unsigned int getTransformListSize();
 		const glm::mat4* getTransformList();
+
+		unsigned int getByteSize() const;
 	private:
 		unsigned int m_transformSize;
 		glm::mat4* m_limbTransform;
@@ -45,6 +47,8 @@ public:
 	void setName(const std::string& name);
 	const std::string& getName();
 	
+	unsigned int getByteSize() const;
+
 private:
 	
 	std::string m_name;
@@ -81,6 +85,16 @@ public:
 
 		Bone() { name = ""; parentIndex = -1; uniqueID = 0; globalBindposeInverse = glm::identity<glm::mat4>(); part = BodyPart::LOWER; };
 		~Bone() {};
+		unsigned int getByteSize() const {
+			unsigned int size = 0;
+
+			size += sizeof(*this);
+			size += name.capacity() * sizeof(unsigned char);
+			size += childIndexes.capacity() * sizeof(unsigned int);
+
+			return size;
+		}
+
 		unsigned int uniqueID;
 		std::string name;
 		int parentIndex;
@@ -129,6 +143,5 @@ private:
 	std::map<std::string, unsigned int> m_indexes;
 	std::map<std::string, Animation*> m_stack;
 	std::vector<AnimationStack::Bone> m_bones;
-
 };
 
