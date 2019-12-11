@@ -5,6 +5,7 @@
 
 #include "Network/NWrapperSingleton.h"
 #include "Sail/entities/systems/Gameplay/ai/AiSystem.h"
+#include "Sail/TimeSettings.h"
 
 Profiler::Profiler(bool showWindow) 
 	: SailImGuiWindow(showWindow)
@@ -167,7 +168,7 @@ void Profiler::renderWindow() {
 				ImGui::PlotLines(header.c_str(), m_history.vramUsageHistory, 100, 0, "", 0.f, 500.f, ImVec2(0, 100));
 			}
 			if (ImGui::CollapsingHeader("Packet Size Graph")) {
-				header = "\n\n\n" + m_averageSentPacketSize + "(B/s)";
+				header = "\n\n\n" + m_averageSentPacketSize + "(kiloB/s)";
 				ImGui::PlotLines(header.c_str(), m_history.averageSentPacketSizeHistory, 100, 0, "", 0.f, 2000.f, ImVec2(0, 100));
 			}
 			if (ImGui::CollapsingHeader("Resource Manager")) {
@@ -260,7 +261,7 @@ void Profiler::renderWindow() {
 					m_ftCount = std::to_string(dt);
 					m_fixedUpdateCount = std::to_string(latestFixedUpdate*1000.f);
 					m_potentialFixedUpdateRate = std::to_string(static_cast<int>(1.0f / latestFixedUpdate));
-					m_averageSentPacketSize = std::to_string(static_cast<size_t>(averagePacketSize * updateFrequency));
+					m_averageSentPacketSize = std::to_string(static_cast<size_t>((averagePacketSize* TICKRATE) / 1024.f));
 
 					m_rmModelsMB = std::to_string(byteToMB(rmModelsByteSize));
 					m_rmAnimationsMB = std::to_string(byteToMB(rmAnimationsByteSize));
@@ -290,7 +291,7 @@ void Profiler::renderWindow() {
 					rotateArray(m_history.fixedUpdateHistory, m_fixedUpdateCount, latestFixedUpdate, latestFixedUpdate * 1000.f);
 					m_potentialFixedUpdateRate = std::to_string(static_cast<int>(1.0f / latestFixedUpdate));
 
-					rotateArray(m_history.averageSentPacketSizeHistory, m_averageSentPacketSize, (float)averagePacketSize, (float)averagePacketSize* updateFrequency);
+					rotateArray(m_history.averageSentPacketSizeHistory, m_averageSentPacketSize, (float)averagePacketSize, (float)((averagePacketSize* TICKRATE) / 1024.f));
 
 					rotateArray(m_history.rmModelsSizeMBHistory, m_rmModelsMB, byteToMB(rmModelsByteSize), byteToMB(rmModelsByteSize));
 					rotateArray(m_history.rmAnimationsSizeMBHistory, m_rmAnimationsMB, byteToMB(rmAnimationsByteSize), byteToMB(rmAnimationsByteSize));
