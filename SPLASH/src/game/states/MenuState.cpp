@@ -761,7 +761,7 @@ void MenuState::renderCredits(float dt) {
 		std::string info;
 	};
 	static std::map<std::string, Info> names;
-	names["Johansson"] = { "Henrik", "person of chilling & complaining" };
+	names["Johansson"] = { "Henrik", "person of options" };
 	names["Junede"] = { "Fredrik", "person of artificial cleaning" };
 	names["Wester"] = { "Alexander", "person of pew" };
 	names["Björk"] = { "Gustav", "person of scuffed newton" };
