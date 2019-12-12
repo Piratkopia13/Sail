@@ -96,10 +96,12 @@ void ImGuiHandler::addFonts() {
 	m_fonts["Beb60"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), size);
 
 
+	m_scaling["BigHeader"] =	(70.0f/size); // 60
 	m_scaling["Header0"] =	(60.0f/size); // 60
 	m_scaling["Header1"] =	(42.0f/size); // 42
 	m_scaling["Header2"] =	(40.0f/size); //40
 	m_scaling["text"] =		(27.0f/size); // 27
+	m_scaling["smalltext"] =		(24.0f/size); // 20
 
 
 

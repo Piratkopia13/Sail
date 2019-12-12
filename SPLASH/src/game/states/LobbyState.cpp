@@ -181,7 +181,6 @@ bool LobbyState::renderImgui(float dt) {
 
 
 	//ImGui::PushFont(m_imGuiHandler->getFont(font));
-	ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("header0"));
 	// ------- menu ----------------
 	renderMenu();
 
@@ -534,7 +533,7 @@ void LobbyState::renderGameSettings() {
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 	if (ImGui::Begin("##LOBBYSETTINGS", nullptr, settingsFlags)) {
 		//ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
-		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("header2"));
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("Header2"));
 		SailImGui::HeaderText("Lobby Settings");
 		//ImGui::PopFont();
 		ImGui::Separator();
@@ -559,6 +558,7 @@ void LobbyState::renderMenu() {
 	//ImGui::PushFont(m_imGuiHandler->getFont("Beb60"));
 
 	if (ImGui::Begin("##LOBBYMENU", nullptr, m_standaloneButtonflags)) {
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("Header0"));
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.3f, 0.3f, 1));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1));

@@ -26,7 +26,7 @@
 #include "Sail/graphics/shader/postprocess/BilateralBlurHorizontal.h"
 #include "Sail/graphics/shader/postprocess/BilateralBlurVertical.h"
 #include "Sail/graphics/shader/dxr/ShadePassShader.h"
-
+#include "Sail/utils/SailImGui/SailImGui.h"
 
 
 constexpr int SPECTATOR_TEAM = -1;
@@ -53,7 +53,7 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 	m_gameStarted = m_isSingleplayer; //Delay start of game until everyOne is ready if playing multiplayer
-	
+	m_imguiHandler = m_app->getImGuiHandler();
 	NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
 	m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
 
@@ -899,19 +899,22 @@ bool GameState::renderImgui(float dt) {
 		ImGui::PopStyleVar(1);
 
 		if (ImGui::Begin("##KILLCAMWINDOW", nullptr, m_standaloneButtonflags)) {
-			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb70"));
+			//ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb70"));
+			ImGui::SetWindowFontScale(m_imguiHandler->getFontScaling("BigHeader"));
+
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.f));
 			ImGui::Text(m_killCamTitle.c_str());
 			ImGui::PopStyleColor(1);
 			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, height / 2 - (ImGui::GetWindowSize().y / 2)));
-			ImGui::PopFont();
+			//ImGui::PopFont();
 		}
 		ImGui::End();
 
 
 		const ImVec4 textColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 		if (ImGui::Begin("##KILLCAMKILLEDBY", nullptr, m_standaloneButtonflags)) {
-			ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb30"));
+			ImGui::SetWindowFontScale(m_imguiHandler->getFontScaling("text"));
+			//ImGui::PushFont(m_app->getImGuiHandler()->getFont("Beb30"));
 
 
 			if (m_isFinalKillCam) {

@@ -66,6 +66,7 @@ private:
 
 private:
 	Application* m_app;
+	ImGuiHandler* m_imguiHandler;
 	// Camera
 	PerspectiveCamera m_cam;
 
