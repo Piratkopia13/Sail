@@ -243,6 +243,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 					auto* transComp = e->getComponent<TransformComponent>();
 
+					transComp->setRotations(0.f, transComp->getRotations().y, 0.f);
 					transComp->translate(glm::vec3(0.0f, 0.9f, 0.0f));
 					transComp->setCenter(glm::vec3(0.f));
 					movement->rotation = { 0.f, 0.f, 0.f };
@@ -256,6 +257,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					);
 
 					m_ragdolling = false;
+					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 				}
 				m_ragdollSwitchWasPressed = true;
 			}
