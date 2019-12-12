@@ -393,7 +393,7 @@ Entity::SPtr EntityFactory::CreatePowerUp(glm::vec3& spawn, const int type, Netc
 	powerUpModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Clutter/powerUp.dds");
 
 	auto powerUp = ECS::Instance()->createEntity("powerup" + Utils::toStr(spawn) + ":" + std::to_string(type));
-	powerUp->addComponent<ModelComponent>(powerUpModel)->teamColorID = type;
+	powerUp->addComponent<ModelComponent>(powerUpModel)->teamColorID = PowerUpColorTeams::teams[type];
 	
 	powerUp->addComponent<TransformComponent>(spawn);
 	powerUp->addComponent<RenderInActiveGameComponent>();

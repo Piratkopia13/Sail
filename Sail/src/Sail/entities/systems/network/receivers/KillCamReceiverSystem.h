@@ -79,6 +79,7 @@ private:
 	void spawnProjectile (const ProjectileInfo& info)                                                override;
 	void submitWaterPoint(const glm::vec3& point)                                                    override;
 	void waterHitPlayer  (const Netcode::ComponentID id, const Netcode::ComponentID killerID)        override;
+	void setCenter(const Netcode::ComponentID compID, const glm::vec3 offset)                        override;
 
 	// AUDIO
 	void playerJumped (const Netcode::ComponentID id)                  override;

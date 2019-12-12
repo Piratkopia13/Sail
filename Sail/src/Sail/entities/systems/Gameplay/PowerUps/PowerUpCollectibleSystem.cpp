@@ -109,11 +109,11 @@ void PowerUpCollectibleSystem::spawnPowerUps(int amount) {
 
 	for (int i = 0; i < amount; i++) {
 		if (side) {
-			spawnPowerUp(m_spawnPoints.front(), rand() % (PowerUps::NUMPOWUPS - 1), 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
+			spawnPowerUp(m_spawnPoints.front(), rand() % (PowerUps::NUMPOWUPS), 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
 			m_spawnPoints.pop_front();
 		} 
 		else {
-			spawnPowerUp(m_spawnPoints.back(), rand() % (PowerUps::NUMPOWUPS - 1), 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
+			spawnPowerUp(m_spawnPoints.back(), rand() % (PowerUps::NUMPOWUPS), 15, 30); // TODO: CHANGE TO READ FROM SETTINGS
 			m_spawnPoints.pop_back();
 		}
 		side = !side;

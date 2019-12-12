@@ -532,6 +532,14 @@ void KillCamReceiverSystem::submitWaterPoint(const glm::vec3& point) {}
 // kill player when water hits it
 void KillCamReceiverSystem::waterHitPlayer(const Netcode::ComponentID id, const Netcode::ComponentID killerID) {}
 
+void KillCamReceiverSystem::setCenter(const Netcode::ComponentID compID, const glm::vec3 offset) {
+	if (auto e = findFromNetID(compID); e) {
+		e->getComponent<TransformComponent>()->setCenter(offset);
+		return;
+	}
+	SAIL_LOG_WARNING("setCenter called but no matching entity found");
+}
+
 // AUDIO (no audio in the killcam)
 void KillCamReceiverSystem::playerJumped(const Netcode::ComponentID id) {}
 void KillCamReceiverSystem::playerLanded(const Netcode::ComponentID id) {}

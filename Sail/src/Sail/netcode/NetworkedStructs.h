@@ -128,6 +128,7 @@ namespace Netcode {
 		STOP_THROWING,
 		SPAWN_POWER_UP,
 		DESTROY_POWER_UP,
+		SET_CENTER,
 		EMPTY,
 		COUNT
 	}; 
@@ -165,6 +166,7 @@ namespace Netcode {
 		"ENABLE_SPRINKLERS",
 		"START_THROWING",
 		"STOP_THROWING",
+		"SET_CENTER",
 		"EMPTY",
 		"COUNT"
 	};
@@ -422,5 +424,11 @@ namespace Netcode {
 		~MessageStopThrowing() {}
 		Netcode::ComponentID playerCompID;
 	};
-
+	class MessageSetCenter : public MessageData {
+	public:
+		MessageSetCenter(Netcode::ComponentID id, glm::vec3 offset) : compID(id), centerOffset(offset) {}
+		~MessageSetCenter() {}
+		Netcode::ComponentID compID;
+		glm::vec3 centerOffset;
+	};
 }

@@ -462,6 +462,16 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				destroyPowerup(compID, pickedByPlayer);
 			}
 			break;
+			case Netcode::MessageType::SET_CENTER: 
+			{
+				Netcode::ComponentID compID;
+				glm::vec3 offset;
+
+				ar(compID);
+				ArchiveHelpers::loadVec3(ar, offset);
+				setCenter(compID, offset);
+			}
+			break;
 			default:
 				SAIL_LOG_ERROR("INVALID NETWORK EVENT NR " + std::to_string((int)messageType) + " RECEIVED FROM" + NWrapperSingleton::getInstance().getPlayer(senderID)->name + "\n");
 				break;

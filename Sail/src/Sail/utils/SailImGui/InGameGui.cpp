@@ -63,6 +63,8 @@ void InGameGui::renderWindow() {
 		GunComponent* c4 = m_player->getComponent<GunComponent>();
 		PowerUpComponent* c5 = m_player->getComponent<PowerUpComponent>();
 		ImGui::Begin("GUI", NULL, flags);
+		ImGui::SetWindowFontScale(Application::getInstance()->getImGuiHandler()->getFontScaling("text"));
+
 		for (auto e : m_player->getChildEntities()) {
 			if (!e->isAboutToBeDestroyed() && e->hasComponent<CandleComponent>()) {
 				c3 = e->getComponent<CandleComponent>();
@@ -99,6 +101,8 @@ void InGameGui::renderWindow() {
 		ImGui::End();
 
 		ImGui::Begin("TorchThrowButton", NULL, flags);
+		ImGui::SetWindowFontScale(Application::getInstance()->getImGuiHandler()->getFontScaling("text"));
+
 		auto* imguiHandler = app->getImGuiHandler();
 		if (c3) {
 			Texture& testTexture = app->getResourceManager().getTexture("Icons/TorchThrow2.tga");
@@ -115,6 +119,8 @@ void InGameGui::renderWindow() {
 		if (c3 && !c3->isLit) {
 			Texture& cantShootTexture = app->getResourceManager().getTexture("Icons/CantShootIcon1.tga");
 			ImGui::Begin("CantShoot", nullptr, flags);
+			ImGui::SetWindowFontScale(Application::getInstance()->getImGuiHandler()->getFontScaling("text"));
+
 			ImGui::Image(imguiHandler->getTextureID(&cantShootTexture), ImVec2(64, 64));
 			ImGui::SetWindowPos(ImVec2(
 				screenWidth * 0.505f - 40,
@@ -127,6 +133,8 @@ void InGameGui::renderWindow() {
 		int nrOfTorchesLeft = GameDataTracker::getInstance().getTorchesLeft();
 		Texture& testTexture = app->getResourceManager().getTexture("Icons/TorchLeft.tga");
 		ImGui::Begin("TorchesLeft", nullptr, flags);
+		ImGui::SetWindowFontScale(Application::getInstance()->getImGuiHandler()->getFontScaling("text"));
+
 		for (int i = 0; i < nrOfTorchesLeft; i++) {
 			ImGui::Image(imguiHandler->getTextureID(&testTexture), ImVec2(55, 55));
 			ImGui::SameLine(0.f, 0);
@@ -142,6 +150,8 @@ void InGameGui::renderWindow() {
 			float val = 1-c4->gunOverloadvalue/val_inv;
 			ImGui::SetNextWindowSize(ImVec2(progresbarLenght, progresbarHeight - progresbarHeight * 2.2));
 			ImGui::Begin("PowerBar", nullptr, flags);
+			ImGui::SetWindowFontScale(Application::getInstance()->getImGuiHandler()->getFontScaling("text"));
+
 			CustomImGui::CustomProgressBar(val, ImVec2(-1, 0), "", ImVec4((1-val) * 0.3, 0.6 - (1-val) * 0.6, 1, 1));
 			ImGui::SetWindowPos(ImVec2(screenWidth / 2-progresbarLenght/2, screenHeight - 40));
 			ImGui::End();
@@ -163,20 +173,21 @@ void InGameGui::renderWindow() {
 			poFlags |= ImGuiWindowFlags_NoTitleBar;
 			poFlags |= ImGuiWindowFlags_NoBackground;
 			ImGui::Begin("PowerUps", NULL, poFlags);
+			ImGui::SetWindowFontScale(Application::getInstance()->getImGuiHandler()->getFontScaling("text"));
 			ImGui::SetWindowSize(ImVec2(120, 30));
 			ImGui::SetWindowPos(ImVec2(centerX - ImGui::GetWindowSize().x * 0.5f, screenHeight-60));
 			ImDrawList* powerUps = ImGui::GetWindowDrawList();
 			if (runspeed > 3 || ((int)(runspeed * 10)) % 2 == 1) {
-					powerUps->AddCircleFilled(ImVec2(centerX - 45, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(1, 0, 0, 1))));
+				powerUps->AddCircleFilled(ImVec2(centerX - 45, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(0, 1, 0, 1))));
 			}
 			if (stamina > 3 || ((int)(stamina* 10)) % 2 == 1) {
-				powerUps->AddCircleFilled(ImVec2(centerX - 15, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(0, 0, 1, 1))));
+				powerUps->AddCircleFilled(ImVec2(centerX - 15, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(1, 1, 0, 1))));
 			}
 			if (shower > 3 || ((int)(shower * 10)) % 2 == 1) {
-				powerUps->AddCircleFilled(ImVec2(centerX + 15, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(0, 1, 0, 1))));
+				powerUps->AddCircleFilled(ImVec2(centerX + 15, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(1, 0, 0, 1))));
 			}
 			if (powerwash > 3 || ((int)(powerwash * 10)) % 2 == 1) {
-				powerUps->AddCircleFilled(ImVec2(centerX + 45, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(1, 1, 0, 1))));
+				powerUps->AddCircleFilled(ImVec2(centerX + 45, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(0, 0, 1, 1))));
 			}
 			ImGui::End();
 		}
@@ -196,13 +207,15 @@ void InGameGui::renderWindow() {
 
 		ImGui::End();
 		ImGui::Begin("PlayersLeftNumber", nullptr, flags);
-		ImGui::PushFont(imguiHandler->getFont("Beb50"));
+		//ImGui::PushFont(imguiHandler->getFont("Beb50"));
+		ImGui::SetWindowFontScale(Application::getInstance()->getImGuiHandler()->getFontScaling("Header1"));
+
 		std::string progress = std::to_string(nrOfPlayersLeft);
 		ImGui::Text(progress.c_str());
 		ImGui::SetWindowPos(ImVec2(
 			40, 1
 		));
-		ImGui::PopFont();
+		//ImGui::PopFont();
 
 
 		ImGui::End();
