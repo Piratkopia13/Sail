@@ -30,7 +30,6 @@ OptionsWindow::~OptionsWindow() {}
 
 void OptionsWindow::renderWindow() {
 	// Rendering a pause window in the middle of the game window.
-	
 	auto& stat = m_settings->applicationSettingsStatic;
 	auto& dynamic = m_settings->applicationSettingsDynamic;
 	float x[4] = { 
@@ -256,6 +255,8 @@ void OptionsWindow::renderWindow() {
 
 bool OptionsWindow::renderGameOptions() {
 
+	ImGui::PushItemFlag(ImGuiItemFlags_Disabled, m_disabled);
+
 	float x[4] = {
 	ImGui::GetWindowContentRegionWidth() * 0.5f,
 	0,
@@ -358,8 +359,9 @@ bool OptionsWindow::renderGameOptions() {
 	ImGui::Spacing();
 	ImGui::Spacing();
 
-
+	ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
 	if (ImGui::CollapsingHeader("Advanced Settings##map")) {
+		ImGui::PushItemFlag(ImGuiItemFlags_Disabled, m_disabled);
 		SettingStorage::DynamicSetting* mapSizeX = &m_app->getSettings().gameSettingsDynamic["map"]["sizeX"];
 		SettingStorage::DynamicSetting* mapSizeY = &m_app->getSettings().gameSettingsDynamic["map"]["sizeY"];
 
@@ -411,7 +413,10 @@ bool OptionsWindow::renderGameOptions() {
 
 
 		ImGui::Unindent();
+
+		ImGui::PopItemFlag();
 	}
+	ImGui::PopItemFlag();
 
 	ImGui::Spacing();
 	ImGui::Spacing();
@@ -450,7 +455,10 @@ bool OptionsWindow::renderGameOptions() {
 	ImGui::PopItemFlag();
 	ImGui::PopStyleColor();
 
+	ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
 	if (ImGui::CollapsingHeader("Advanced Settings##game")) {
+		ImGui::PushItemFlag(ImGuiItemFlags_Disabled, m_disabled);
+
 		ImGui::Indent();
 		bool powActive = stat["map"]["Powerup"].getSelected().value == 0.0f ? true : false;
 		if (!powActive) {
@@ -554,13 +562,15 @@ bool OptionsWindow::renderGameOptions() {
 				ImGui::PopStyleColor();
 			}
 		}
-
+		ImGui::PopItemFlag();
 	}
+	ImGui::PopItemFlag();
 
 	if (mapChanged) {
 		updateMap();
 	}
 
+	ImGui::PopItemFlag();
 
 	return settingsChanged;
 }
@@ -581,6 +591,10 @@ void OptionsWindow::updateMap() {
 	p = std::clamp(p, 0.0f, 1.0f);
 	count.value = p * count.maxVal;
 
+}
+
+void OptionsWindow::setDisabled(bool b) {
+	m_disabled = b;
 }
 
 void OptionsWindow::drawCrosshair() {

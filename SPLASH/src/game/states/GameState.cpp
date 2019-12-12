@@ -37,7 +37,6 @@ GameState::GameState(StateStack& stack)
 	, m_profiler(true)
 	, m_showcaseProcGen(false)
 {
-
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
@@ -54,12 +53,9 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 	m_gameStarted = m_isSingleplayer; //Delay start of game until everyOne is ready if playing multiplayer
-
-
-	if (!m_isSingleplayer) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
-		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
-	}
+	
+	NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
+	m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
 
 	initConsole();
 	m_app->setCurrentCamera(&m_cam);
@@ -234,9 +230,7 @@ GameState::GameState(StateStack& stack)
 
 
 	// Keep this at the bottom
-	if (!m_isSingleplayer) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.
-	}
+	NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.	
 }
 
 GameState::~GameState() {
@@ -258,6 +252,13 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
+
+	MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+	if (mrs) {
+		delete mrs;
+		mrs = nullptr;
+	}
+
 	EventDispatcher::Instance().unsubscribe(Event::Type::START_KILLCAM, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_KILLCAM, this);
 
@@ -496,14 +497,11 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
 	// Create Network Receiver System depending on host or client.
-	if (NWrapperSingleton::getInstance().isHost()) {
+	if (NWrapperSingleton::getInstance().isHost() && (!NWrapperSingleton::getInstance().recordSystem || NWrapperSingleton::getInstance().recordSystem->status != 2)) {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemHost>();
 	} else {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
 	}
-
-
-
 
 	m_componentSystems.killCamReceiverSystem = ECS::Instance()->createSystem<KillCamReceiverSystem>();
 
@@ -1236,7 +1234,8 @@ void GameState::logSomeoneDisconnected(unsigned char id) {
 }
 
 void GameState::waitForOtherPlayers() {
-	if (NWrapperSingleton::getInstance().isHost()) {
+	MatchRecordSystem* mrs = NWrapperSingleton::getInstance().recordSystem;
+	if (NWrapperSingleton::getInstance().isHost() || (mrs && mrs->status == 2)) {
 		if (!m_gameStarted) {
 			bool allReady = true;
 
@@ -1244,7 +1243,7 @@ void GameState::waitForOtherPlayers() {
 			//TODO: maybe dont count in spectators here.
 			//TODO: what will happen if new players joins in gamestate but before gamestart?
 			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
-				if (p.lastStateStatus.status != 1 || p.lastStateStatus.state != States::Game) {
+				if ((p.lastStateStatus.status != 1 || p.lastStateStatus.state != States::Game) && p.lastStateStatus.status != -1) {
 					allReady = false;
 					break;
 				}
@@ -1260,8 +1259,18 @@ void GameState::waitForOtherPlayers() {
 		if (!m_gameStarted) {
 			//If Host have given approval to start game, set m_gameStarted = true
 			auto p = NWrapperSingleton::getInstance().getPlayer(0);
-			if (p->lastStateStatus.status == 2 && p->lastStateStatus.state == States::Game) {
-				m_gameStarted = true;
+			if (p->lastStateStatus.status != -1) {
+				if (p->lastStateStatus.status == 2 && p->lastStateStatus.state == States::Game) {
+					m_gameStarted = true;
+				}
+			} else {
+				//If in replay match mode, just look for anyone informing that the game should start. since player 0 is not the "host" from the clients perspective
+				for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+					if (p.lastStateStatus.state == States::Game && p.lastStateStatus.status == 2) {
+						m_gameStarted = true;
+						break;
+					}
+				}
 			}
 		}
 	}
