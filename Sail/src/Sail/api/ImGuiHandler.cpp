@@ -92,14 +92,14 @@ void ImGuiHandler::showMetrics(const bool show) {
 void ImGuiHandler::addFonts() {
 	ImGuiIO& io = ImGui::GetIO();
 	const std::string defaultPath = "res/fonts/";
+	const float size = 30;
+	m_fonts["Beb60"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), size);
 
-	m_fonts["Beb60"] = io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "BebasNeue.ttf").c_str(), 30);
 
-
-	m_scaling["Header0"] = 1.0f		*	2; // 60
-	m_scaling["Header1"] = 0.7f		*	2; // 42
-	m_scaling["Header2"] = 0.66f	*	2; //40
-	m_scaling["text"] = 0.45f		*	2; // 27
+	m_scaling["Header0"] =	(60.0f/size); // 60
+	m_scaling["Header1"] =	(42.0f/size); // 42
+	m_scaling["Header2"] =	(40.0f/size); //40
+	m_scaling["text"] =		(27.0f/size); // 27
 
 
 
