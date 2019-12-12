@@ -132,13 +132,13 @@ void CandleThrowingSystem::update(float dt) {
 					// Set initial throw position
 					transC->setTranslation(throwPos);
 
-					if (e->hasComponent<RagdollComponent>()) {
-						transC->setCenter(e->getComponent<RagdollComponent>()->localCenterOfMass);
+					if (torchE->hasComponent<RagdollComponent>()) {
+						transC->setCenter(torchE->getComponent<RagdollComponent>()->localCenterOfMass);
 						NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
 							Netcode::MessageType::SET_CENTER,
 							SAIL_NEW Netcode::MessageSetCenter{
-								e->getComponent<NetworkReceiverComponent>()->m_id,
-								e->getComponent<RagdollComponent>()->localCenterOfMass
+								torchE->getComponent<NetworkReceiverComponent>()->m_id,
+								torchE->getComponent<RagdollComponent>()->localCenterOfMass
 							}, false
 						);
 					}

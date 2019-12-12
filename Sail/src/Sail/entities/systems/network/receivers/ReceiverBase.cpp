@@ -462,7 +462,7 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 
 				ar(compID);
 				ArchiveHelpers::loadVec3(ar, offset);
-
+				setCenter(compID, offset);
 			}
 			break;
 			default:
