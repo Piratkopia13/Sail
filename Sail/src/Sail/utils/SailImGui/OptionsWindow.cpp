@@ -4,6 +4,7 @@
 #include "Sail/KeyBinds.h"
 #include "Sail/utils/SailImGui/SailImGui.h"
 #include "Sail/entities/ECS.h"
+#include "../SPLASH/src/game/events/SettingsEvent.h"
 #include "Sail/KeyCodes.h"
 
 OptionsWindow::OptionsWindow(bool showWindow) : 
@@ -56,7 +57,7 @@ void OptionsWindow::renderWindow() {
 	ImGui::Separator();
 
 
-	static std::vector<std::string> options = { "fullscreen","bloom","shadows","fxaa","watersimulation" };
+	static std::vector<std::string> options = { "fullscreen","bloom","shadows","fxaa","watersimulation","particles" };
 	for (auto & optionName : options) {
 		sopt = &stat["graphics"][optionName];
 		selected = sopt->selected;
@@ -64,6 +65,7 @@ void OptionsWindow::renderWindow() {
 		ImGui::SameLine(x[0]);
 		if (SailImGui::TextButton(std::string("<##"+ optionName).c_str())) {
 			sopt->setSelected(selected - 1);
+			EventDispatcher::Instance().emit(SettingsUpdatedEvent());
 		}
 		ImGui::SameLine(x[1]);
 		valueName = sopt->getSelected().name;
@@ -71,6 +73,7 @@ void OptionsWindow::renderWindow() {
 		ImGui::SameLine(x[2]);
 		if (SailImGui::TextButton(std::string(">##"+ optionName).c_str())) {
 			sopt->setSelected(selected + 1);
+			EventDispatcher::Instance().emit(SettingsUpdatedEvent());
 		}
 	}
 	ImGui::Spacing();
@@ -313,7 +316,7 @@ bool OptionsWindow::renderGameOptions() {
 	unsigned int selected = 0;
 	std::string valueName = "";
 
-	static std::vector<std::string> MapOptions = { "sprinkler", "Powerup" };
+	static std::vector<std::string> MapOptions = { "sprinkler", "Powerup", "bots" };
 	for (auto& optionName : MapOptions) {
 		sopt = &stat["map"][optionName];
 		selected = sopt->selected;
@@ -499,6 +502,57 @@ bool OptionsWindow::renderGameOptions() {
 		if (!powActive) {
 			ImGui::PopItemFlag();
 			ImGui::PopStyleColor();
+		}
+
+
+		{
+			bool botsActive = stat["map"]["bots"].getSelected().value == 0.0f ? true : false;
+			if (!botsActive) {
+				ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			}
+
+			SailImGui::HeaderText("Bots ");
+			ImGui::Text("Count");
+			ImGui::SameLine(x[0]);
+			ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
+			val = m_app->getSettings().gameSettingsDynamic["bots"]["count"].value;
+			if (ImGui::SliderFloat("##countbots",
+								   &val,
+								   m_app->getSettings().gameSettingsDynamic["bots"]["count"].minVal,
+								   m_app->getSettings().gameSettingsDynamic["bots"]["count"].maxVal,
+								   "%.0f"
+			)) {
+				m_app->getSettings().gameSettingsDynamic["bots"]["count"].setValue(val);
+				settingsChanged = true;
+			}
+
+
+			ImGui::Text("Powerup threshold");
+			if (ImGui::IsItemHovered()) {
+				ImGui::BeginTooltip();
+				ImGui::SetWindowFontScale(0.8f);
+				ImGui::Text("This option sets the amount of water a bot needs\nto clean up before a power up spawns on it");
+				ImGui::SetWindowFontScale(1.f);
+				ImGui::EndTooltip();
+			}
+			ImGui::SameLine(x[0]);
+			ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() * 0.5f);
+			val = m_app->getSettings().gameSettingsDynamic["bots"]["waterStorage"].value;
+			if (ImGui::SliderFloat("##powerupThreshold",
+								   &val,
+								   m_app->getSettings().gameSettingsDynamic["bots"]["waterStorage"].minVal,
+								   m_app->getSettings().gameSettingsDynamic["bots"]["waterStorage"].maxVal,
+								   "%.0f"
+			)) {
+				m_app->getSettings().gameSettingsDynamic["bots"]["waterStorage"].setValue(val);
+				settingsChanged = true;
+			}
+
+			if (!botsActive) {
+				ImGui::PopItemFlag();
+				ImGui::PopStyleColor();
+			}
 		}
 
 	}

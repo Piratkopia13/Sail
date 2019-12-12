@@ -51,12 +51,8 @@ void EntityFactory::CreateCandle(Entity::SPtr& candle, const glm::vec3& lightPos
 	particleEmitterComp->lifeTime = 0.13f;
 	particleEmitterComp->maxNumberOfParticles = 100;
 	particleEmitterComp->isActive = true;
-	std::string particleTextureName = "particles/animFire.dds";
 	particleEmitterComp->atlasSize = glm::uvec2(8U, 4U);
-	if (!Application::getInstance()->getResourceManager().hasTexture(particleTextureName)) {
-		Application::getInstance()->getResourceManager().loadTexture(particleTextureName);
-	}
-	particleEmitterComp->setTexture(particleTextureName);
+	particleEmitterComp->setTexture("particles/animFire.dds");
 
 	auto* ragdollComp = candle->addComponent<RagdollComponent>(boundingBoxModel);
 	ragdollComp->localCenterOfMass = { 0.f, 0.2f, 0.f };
@@ -350,6 +346,8 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 
 	// Adding audio component and adding all sounds attached to the playerEntity entity
 	playerEntity->addComponent<AudioComponent>();
+	SAIL_LOG("Adding Generic Player to AudioQueue");
+	Application::getInstance()->addToAudioComponentQueue(&*playerEntity);
 
 	playerEntity->addComponent<GunComponent>();
 	playerEntity->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(0, 0.9f, 0) + spawnLocation);
@@ -604,22 +602,6 @@ Entity::SPtr EntityFactory::CreateScreenSpaceText(const std::string& text, glm::
 	num++;
 
 	return GUIEntity;
-}
-
-Entity::SPtr EntityFactory::CreateGUIEntity(const std::string& name, const std::string& texture, glm::vec2 origin, glm::vec2 size) {
-	auto ent = ECS::Instance()->createEntity(name);
-	ModelFactory::QuadModel::Constraints entConst;
-	entConst.origin = Mesh::vec3(origin.x, origin.y, 0.f);
-	entConst.halfSize = Mesh::vec2(size.x, size.y);
-	auto entModel = ModelFactory::QuadModel::Create(&Application::getInstance()->getResourceManager().getShaderSet<GuiShader>(), entConst);
-	if (!Application::getInstance()->getResourceManager().hasTexture(texture)) {
-		Application::getInstance()->getResourceManager().loadTexture(texture);
-	}
-	entModel->getMesh(0)->getMaterial()->setAlbedoTexture(texture);
-	Application::getInstance()->getResourceManager().addModel(name + "Model", entModel);
-	ent->addComponent<GUIComponent>(&Application::getInstance()->getResourceManager().getModel(name + "Model"));
-
-	return ent;
 }
 
 Entity::SPtr EntityFactory::CreateCrosshairEntity(const std::string& name) {
