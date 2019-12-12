@@ -96,6 +96,7 @@ private:
 	void renderProfile();
 	void renderJoiningLobby();
 	void renderOptions();
+	void renderCredits(float dt);
 
 #ifdef DEVELOPMENT
 	void startSinglePlayer();
