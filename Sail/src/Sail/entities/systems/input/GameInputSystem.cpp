@@ -80,21 +80,6 @@ void GameInputSystem::clean() {
 
 void GameInputSystem::stop() {
 	clean();
-
-	if (m_ragdolling) {
-		for (auto e : entities) {
-			e->removeComponent<RagdollComponent>();
-
-			auto* transComp = e->getComponent<TransformComponent>();
-
-			transComp->setRotations(0.f, transComp->getRotations().y, 0.f);
-			transComp->translate(glm::vec3(0.0f, 0.9f, 0.0f));
-			transComp->setCenter(glm::vec3(0.f));
-			e->getComponent<MovementComponent>()->rotation = { 0.f, 0.f, 0.f };
-
-			m_ragdolling = false;
-		}
-	}
 }
 
 void GameInputSystem::processKeyboardInput(const float& dt) {
