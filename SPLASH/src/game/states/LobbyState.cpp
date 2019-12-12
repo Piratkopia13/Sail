@@ -236,23 +236,24 @@ bool LobbyState::onEvent(const Event& event) {
 	return true;
 }
 
-
-
-
-
-
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	
-	if (NWrapperSingleton::getInstance().isHost()) {
-		if (m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().value == 0.0f) {
-			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)event.player.id, event.player.id);
-		}
-		else {
-			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+	if (m_isHost) {
+		MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+		if (!(mrs && mrs->status == 2)) {
+			if (m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().value == 0.0f) {
+				NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)event.player.id, event.player.id);
+			}
+			else {
+				NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+			}
+		} else {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)-1, event.player.id);
 		}
 
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
 	}
+
 	return true;
 }
 
@@ -488,7 +489,7 @@ void LobbyState::renderPlayerList() {
 			} else {
 				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-				bool asd = currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0;
+				bool asd = (currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0) || currentplayer.lastStateStatus.status == -1;
 				ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd);
 				ImGui::PopItemFlag();
 				ImGui::PopStyleVar();
@@ -496,7 +497,7 @@ void LobbyState::renderPlayerList() {
 
 			ImGui::EndGroup();
 			if (ImGui::BeginPopupContextItem(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str())) {
-				if (NWrapperSingleton::getInstance().isHost()) {
+				if (m_isHost && currentplayer.lastStateStatus.status != -1) {
 					if (ImGui::Button("KICK")) {
 						NWrapperSingleton::getInstance().getNetworkWrapper()->kickPlayer(currentplayer.id);
 					}
@@ -538,6 +539,9 @@ void LobbyState::renderGameSettings() {
 		//ImGui::PopFont();
 		ImGui::Separator();
 		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("text"));
+
+		bool disableSettings = !NWrapperSingleton::getInstance().isHost();
+		m_optionsWindow.setDisabled(disableSettings);
 
 		if (m_optionsWindow.renderGameOptions()) {
 			m_settingsChanged = true;
@@ -617,11 +621,11 @@ void LobbyState::renderMenu() {
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.9f, 0.3f, 1));
 
 		
-		if (NWrapperSingleton::getInstance().isHost()) {
+		if (m_isHost) {
 			bool allReady = true;
 			const unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
 			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
-				if (p.id != myID &&  (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1)) {
+				if ((p.id != myID &&  (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1)) && p.lastStateStatus.status != -1) {
 					allReady = false;
 				}
 			}
@@ -629,6 +633,18 @@ void LobbyState::renderMenu() {
 			if (SailImGui::TextButton((allReady) ? "Start" : "Force start")) {
 				auto& stat = m_app->getSettings().gameSettingsStatic;
 				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+
+				MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+				if (!mrs || mrs->status != 2) {
+					if (mrs) {
+						delete mrs;
+					}
+					mrs = new MatchRecordSystem();
+					mrs->initRecording();
+				}else if (mrs && mrs->status == 2) {
+					NWrapperSingleton::getInstance().stopUDP();
+					NWrapperSingleton::getInstance().getNetworkWrapper()->setAllowJoining(false);
+				}
 
 				//TODO: ONLY DO THIS IF GAMEMODE IS FFA
 				int teamID = 0;

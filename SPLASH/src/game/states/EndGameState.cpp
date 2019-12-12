@@ -128,7 +128,8 @@ void EndGameState::renderMenu() {
 	ImGui::SetNextWindowPos(ImVec2(m_padding, m_padding));
 	ImGui::SetNextWindowSize(ImVec2(300,700));
 	if (ImGui::Begin("##GameOverMenu", nullptr, m_standaloneButtonflags)) {
-		if (NWrapperSingleton::getInstance().isHost()) {
+		MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+		if (NWrapperSingleton::getInstance().isHost() && !(mrs && mrs->status == 2)) {
 			if (SailImGui::TextButton("Lobby")) {
 				NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby);
 				this->requestStackPop();

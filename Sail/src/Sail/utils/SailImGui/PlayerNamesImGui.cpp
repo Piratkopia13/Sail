@@ -43,8 +43,10 @@ void PlayerNamesImGui::renderWindow() {
 
 		if (ImGui::Begin(std::string("PlayerName##" + std::to_string(counter)).c_str(), NULL, flags)) {
 			NetworkReceiverComponent* nrc = player->getComponent<NetworkReceiverComponent>();
-			if (nrc) {
-				Netcode::PlayerID owner = Netcode::getComponentOwner(nrc->m_id);
+			ReplayReceiverComponent*  rrc = player->getComponent<ReplayReceiverComponent>();
+
+			if (nrc || rrc) {
+				Netcode::PlayerID owner = Netcode::getComponentOwner(nrc ? nrc->m_id : rrc->m_id);
 				Player* p = NWrapperSingleton::getInstance().getPlayer(owner);
 				glm::vec3 color = Application::getInstance()->getSettings().getColor(Application::getInstance()->getSettings().teamColorIndex(p->team));
 				float alpha = 1;
