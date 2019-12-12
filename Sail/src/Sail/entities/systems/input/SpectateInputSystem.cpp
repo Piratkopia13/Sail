@@ -71,7 +71,7 @@ void SpectateInputSystem::processKeyboardInput(const float& dt) {
 			glm::vec3 right = glm::cross(glm::vec3(0.f, 1.f, 0.f), forward);
 			right = glm::normalize(right);
 
-			glm::vec3 up = glm::vec3(0.f, 1.f, 0.f);
+			glm::vec3 up = glm::cross(forward, right);
 
 			auto transComp = e->getComponent<TransformComponent>();
 			float speed = 10.f;
