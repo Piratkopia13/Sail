@@ -227,6 +227,8 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					glm::vec3 rotVec = glm::normalize(glm::cross(m_cam->getCameraDirection(), glm::vec3(0.0f, 1.0f, 0.0f)));
 					movement->rotation = rotVec * glm::pi<float>() * -3.0f;
 
+					m_cam->setCameraPosition(m_cam->getCameraPosition() - m_cam->getCameraDirection());
+
 					m_ragdolling = true;
 
 					m_ragdollSwitchWasPressed = true;
