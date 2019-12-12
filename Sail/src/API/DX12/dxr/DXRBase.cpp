@@ -340,9 +340,10 @@ unsigned int DXRBase::removeWaterAtWorldPosition(const glm::vec3& position, cons
 				ind.y = glm::clamp(ind.y + y, 0, int(m_waterArrSizes.y));
 				ind.z = glm::clamp(ind.z + z, 0, int(m_waterArrSizes.z));
 				int arrIndex = Utils::to1D(ind, m_waterArrSizes.x, m_waterArrSizes.y);
-				if (m_updateWater[arrIndex]) {
-					// Ignore water points that are outside the map
-					if (arrIndex >= 0 && arrIndex < m_waterArrSize) {
+
+				// Ignore water points that are outside the map
+				if (arrIndex >= 0 && arrIndex < m_waterArrSize) {
+					if (m_updateWater[arrIndex]) {
 						// Make sure to update this water
 						uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
 						uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);

@@ -12,6 +12,4 @@ public:
 
 private:
 	RendererWrapper* m_rendererWrapperRef;
-
-	float m_powerUpThreshold;
 };

@@ -133,7 +133,7 @@ GameState::GameState(StateStack& stack)
 
 	createLevel(&m_app->getResourceManager().getShaderSet<GBufferOutShader>(), boundingBoxModel);
 #ifndef _DEBUG
-	if (NWrapperSingleton::getInstance().isHost()) {
+	if (NWrapperSingleton::getInstance().isHost() && m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
 		m_componentSystems.aiSystem->initNodeSystem(m_octree);
 	}
 #endif
@@ -142,19 +142,13 @@ GameState::GameState(StateStack& stack)
 
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
-		for (int i = -1; i < id; i++) {
-			spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
-		}
-
+		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint(id);
 		m_player = EntityFactory::CreateMySpectator(playerID, m_currLightIndex++, spawnLocation).get();
 
 	} else {
 		int id = static_cast<int>(playerID);
-		glm::vec3 spawnLocation = glm::vec3(0.f);
-		for (int i = -1; i < id; i++) {
-			spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
-		}
-
+		glm::vec3 spawnLocation = glm::vec3(0.f);	
+		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint(id);
 		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 	}
 
@@ -181,7 +175,9 @@ GameState::GameState(StateStack& stack)
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #else
 	#ifndef _DEBUG
+	if (m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
 		createBots();
+	}
 	#endif
 #endif
 
@@ -450,7 +446,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
 
-	if (NWrapperSingleton::getInstance().isHost()) {
+	if (NWrapperSingleton::getInstance().isHost() && m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
 		m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
 	}
 
@@ -1048,7 +1044,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.powerUpCollectibleSystem->update(dt);
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	if (NWrapperSingleton::getInstance().isHost()) {
+	if (NWrapperSingleton::getInstance().isHost() && m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
 		runSystem(dt, m_componentSystems.aiSystem);
 	}
 	runSystem(dt, m_componentSystems.projectileSystem);
@@ -1284,16 +1280,10 @@ const std::string GameState::createCube(const glm::vec3& position) {
 }
 
 void GameState::createBots() {
-	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
-
-	if (botCount < 0) {
-		botCount = 0;
-	}
-
-	botCount = 10;
+	auto botCount = static_cast<int>(m_app->getSettings().gameSettingsDynamic["bots"]["count"].value);
 
 	for (size_t i = 0; i < botCount; i++) {
-		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
+		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getBotSpawnPoint(i);
 		if (spawnLocation.x != -1000.f) {
 			auto compID = Netcode::generateUniqueBotID();
 			if (NWrapperSingleton::getInstance().isHost()) {
