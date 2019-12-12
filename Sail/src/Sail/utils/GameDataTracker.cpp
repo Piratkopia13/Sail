@@ -193,8 +193,8 @@ void GameDataTracker::renderPlacement() {
 	ImGui::PopStyleColor();
 	//ImGui::PopFont();
 	ImGui::Separator();
-	std::string map = m_app->getSettings().gameSettingsStatic["map"]["names"].getSelected().name; 
 	std::string gamemode = m_app->getSettings().gameSettingsStatic["gamemode"]["types"].getSelected().name;
+	std::string map = m_app->getSettings().defaultMaps[gamemode].getSelected().name; 
 
 	ImGui::Text(map.c_str());
 	ImGui::SameLine();
