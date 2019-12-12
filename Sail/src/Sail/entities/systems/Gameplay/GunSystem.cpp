@@ -45,19 +45,21 @@ void GunSystem::update(float dt) {
 		GunComponent* gun = e->getComponent<GunComponent>();
 		// Gun is firing and is not overloaded
 		if (gun->firing && gun->gunOverloadTimer <= 0) {
+			bool powerWashActive = false;
 			// SHOOT
 			if (gun->projectileSpawnTimer <= 0.f) {
 					// Determine projectileSpeed based on how long the gun has been firing continuously
 				PowerUpComponent* powC = e->getComponent<PowerUpComponent>();
 				if (powC) {
 					if (powC->powerUps[PowerUps::POWERWASH].time > 0) {
-						gun->projectileSpeed = gun->baseProjectileSpeed * 2;
-					}
-					else {
+						powerWashActive = true;
+						gun->projectileSpeed = gun->baseProjectileSpeed;
+						gun->gunOverloadTimer = 0.f;
+						gun->gunOverloadvalue = 0.f;
+					} else {
 						alterProjectileSpeed(gun);
 					}
-				}
-				else {
+				} else {
 					alterProjectileSpeed(gun);
 				}
 
@@ -70,7 +72,7 @@ void GunSystem::update(float dt) {
 			}
 
 			// Overload the gun if necessary
-			if ((gun->gunOverloadvalue += dt) > gun->gunOverloadThreshold) {
+			if (!powerWashActive && (gun->gunOverloadvalue += dt) > gun->gunOverloadThreshold) {
 				overloadGun(e, gun);
 			}
 		} else { // Gun is not firing.
