@@ -108,7 +108,7 @@ void PlayerNamesImGui::renderWindow() {
 
 
 			} else {
-				ImGui::Text("): !no name here! :(");
+				ImGui::Text(" ");
 			}
 
 			ImVec2 s = ImGui::GetWindowSize();
