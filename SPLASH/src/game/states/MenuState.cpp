@@ -1012,7 +1012,7 @@ void MenuState::renderCredits(float dt) {
 	names["Johansson"] = { "Henrik", "person of options" };
 	names["Junede"] = { "Fredrik", "person of artificial cleaning" };
 	names["Wester"] = { "Alexander", "person of pew" };
-	names["Björk"] = { "Gustav", "person of scuffed newton" };
+	names[u8"Björk"] = { "Gustav", "person of scuffed newton" };
 	names["Wahl"] = { "Emil", "person of slave driving" };
 	names["Fredriksson"] = { "Daniel", "person of Github love" };
 	names["Glandberger"] = { "Oliver", "person of curry (with salad)" };
