@@ -183,6 +183,8 @@ if (m_usePercentage) {
 		renderProfile();
 	} else if (m_windowToRender == 5) {
 		renderReplays();
+	} else if (m_windowToRender == 6) {
+		renderCredits(dt);
 	}
 #ifdef DEVELOPMENT
 	renderDebug();
@@ -406,7 +408,7 @@ void MenuState::renderMenu() {
 		std::string profileText = (m_windowToRender == 4 ? ">Profile" : "Profile");
 		profileText += " (" + m_network->getMyPlayerName() + ")";
 
-		if (SailImGui::TextButton(profileText.c_str())){
+		if (SailImGui::TextButton(profileText.c_str())) {
 			if (m_windowToRender != 4) {
 				m_windowToRender = 4;
 				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
@@ -441,6 +443,30 @@ void MenuState::renderMenu() {
 			ImGui::PopStyleColor();
 		}
 		///////////////////////////////////
+
+		{
+
+			if (m_windowToRender == 6) {
+				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+			}
+
+			std::string profileText = (m_windowToRender == 6 ? ">Credits" : "Credits");
+			
+			if (SailImGui::TextButton(profileText.c_str())) {
+				if (m_windowToRender != 6) {
+					m_windowToRender = 6;
+					ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+				}
+				else {
+					m_windowToRender = 0;
+					ImGui::PopStyleColor();
+				}
+			}
+			if (m_windowToRender == 6) {
+				ImGui::PopStyleColor();
+			}
+		}
+
 #ifdef DEVELOPMENT
 		if (SailImGui::TextButton("Pause  #dev")) {
 			this->requestStackPush(States::InGameMenu);
@@ -776,6 +802,7 @@ void MenuState::renderOptions() {
 	}
 	ImGui::End();
 }
+
 void MenuState::renderReplays() {
 	// Display open lobbies
 	const static std::string windowName = "Saved Replays";
@@ -784,6 +811,7 @@ void MenuState::renderReplays() {
 	ImGui::SetNextWindowPos(m_pos);
 	ImGui::SetNextWindowSize(m_size);
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
+
 	if (ImGui::Begin("##SAVED_REPLAYS", nullptr, m_backgroundOnlyflags)) {
 		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
 		SailImGui::HeaderText(windowName.c_str());
@@ -968,6 +996,87 @@ void MenuState::updateSavedReplays() {
 		SAIL_LOG_WARNING("Could not list saved replay path: " + err.message());
 		return;
 	}
+}
+
+void MenuState::renderCredits(float dt) {
+	
+	ImGui::SetNextWindowPos(m_pos);
+	ImGui::SetNextWindowSize(m_size);
+	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
+
+	struct Info {
+		std::string name;
+		std::string info;
+	};
+	static std::map<std::string, Info> names;
+	names["Johansson"] = { "Henrik", "person of options" };
+	names["Junede"] = { "Fredrik", "person of artificial cleaning" };
+	names["Wester"] = { "Alexander", "person of pew" };
+	names["Björk"] = { "Gustav", "person of scuffed newton" };
+	names["Wahl"] = { "Emil", "person of slave driving" };
+	names["Fredriksson"] = { "Daniel", "person of Github love" };
+	names["Glandberger"] = { "Oliver", "person of curry (with salad)" };
+	names["Fasth"] = { "Tobias", "person of wet balls" };
+	names["Enfeldt"] = { "Viktor", "person of Synchronization" };
+	names["Asp"] = { "Samuel", "person of pain and suffering" };
+	names["Meunier"] = { "Peter", "person of clutter" };
+	names["Bengtsson"] = {"David", "person of Jet engines" };
+
+
+	if (ImGui::Begin("##Credits menu", NULL, m_backgroundOnlyflags)) {
+
+		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		SailImGui::cHeaderText("Credits", ImGui::GetWindowContentRegionWidth());
+		ImGui::PopFont();
+		ImGui::Separator();
+
+
+
+		for (auto& [second, first] : names) {
+
+			SailImGui::cText(std::string(first.name+" "+second).c_str(), ImGui::GetWindowContentRegionWidth());
+			if (ImGui::IsItemHovered() && first.info != "") {
+				ImGui::BeginTooltip();
+				ImGui::SetWindowFontScale(0.7f);
+				ImGui::Text(first.info.c_str());
+				ImGui::SetWindowFontScale(1.0f);
+				ImGui::EndTooltip();
+			}
+
+
+
+		}
+		ImGui::Spacing();
+		ImGui::Spacing();
+		ImGui::Spacing();
+		SailImGui::cHeaderText("Special Thanks <3", ImGui::GetWindowContentRegionWidth());
+		ImGui::Spacing();
+
+		SailImGui::cText("BTH - for the buying of computers", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("Hans - for the guidance", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("Stefan - for the Criticism", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("Erik - for the guidance", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("Christoffer - for bringing us the computers", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("OCornut - for making imgui", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("Random people - who tested our game", ImGui::GetWindowContentRegionWidth());
+
+		ImGui::Spacing();
+		ImGui::Spacing();
+		ImGui::Spacing();
+		SailImGui::cHeaderText("Programs used", ImGui::GetWindowContentRegionWidth());
+		ImGui::Spacing();
+
+		SailImGui::cText("visual studio", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("git", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("maya", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("blender", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("gimp", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("Mixamo", ImGui::GetWindowContentRegionWidth());
+		SailImGui::cText("Audacity", ImGui::GetWindowContentRegionWidth());
+
+	}
+
+	ImGui::End();
 }
 
 #ifdef DEVELOPMENT

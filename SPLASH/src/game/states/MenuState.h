@@ -99,6 +99,7 @@ private:
 	void renderJoiningLobby();
 	void renderOptions();
 	void renderReplays();
+	void renderCredits(float dt);
 
 	void prepareReplay(std::string replayName);
 	void updateSavedReplays();
