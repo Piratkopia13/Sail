@@ -227,6 +227,10 @@ GameState::GameState(StateStack& stack)
 		m_componentSystems.particleSystem->update(0);
 	}
 
+	PowerUpComponent::PowerUp pup;
+	pup.maxTime = 100;
+	pup.name = "shower";
+	m_player->getComponent<PowerUpComponent>()->powerUps[PowerUps::SHOWER] = pup;
 
 
 	// Keep this at the bottom
