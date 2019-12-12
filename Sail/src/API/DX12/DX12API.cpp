@@ -78,8 +78,12 @@ bool DX12API::init(Window* window) {
 
 	OutputDebugString(L"DX12 Initialized.\n");
 
-	return true;
+	// Enable fullscreen on startup if setting is set
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["fullscreen"].getSelected().value == 1.f) {
+		toggleFullscreen();
+	}
 
+	return true;
 }
 
 
