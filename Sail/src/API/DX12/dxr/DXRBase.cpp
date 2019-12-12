@@ -9,7 +9,7 @@
 #include "../renderer/DX12GBufferRenderer.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 #include "../SPLASH/src/game/events/ResetWaterEvent.h"
-
+#include "../SPLASH/src/game/events/SettingsEvent.h"
 #include "Sail/events/EventDispatcher.h"
 
 DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
@@ -24,6 +24,7 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 {
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::RESET_WATER, this);
+	EventDispatcher::Instance().subscribe(Event::Type::SETTINGS_UPDATED, this);
 
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
@@ -44,6 +45,9 @@ DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inpu
 	createHitGroupLocalRootSignature();
 	createMissLocalRootSignature();
 	createEmptyLocalRootSignature();
+
+	// Get initial shadow setting
+	m_enableSoftShadowsInShader = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 1.f;
 
 	createRaytracingPSO();
 	createInitialShaderResources();
@@ -94,6 +98,7 @@ DXRBase::~DXRBase() {
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::RESET_WATER, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::SETTINGS_UPDATED, this);
 }
 
 void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
@@ -336,9 +341,10 @@ unsigned int DXRBase::removeWaterAtWorldPosition(const glm::vec3& position, cons
 				ind.y = glm::clamp(ind.y + y, 0, int(m_waterArrSizes.y));
 				ind.z = glm::clamp(ind.z + z, 0, int(m_waterArrSizes.z));
 				int arrIndex = Utils::to1D(ind, m_waterArrSizes.x, m_waterArrSizes.y);
-				if (m_updateWater[arrIndex]) {
-					// Ignore water points that are outside the map
-					if (arrIndex >= 0 && arrIndex < m_waterArrSize) {
+
+				// Ignore water points that are outside the map
+				if (arrIndex >= 0 && arrIndex < m_waterArrSize) {
+					if (m_updateWater[arrIndex]) {
 						// Make sure to update this water
 						uint8_t up0 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 0);
 						uint8_t up1 = Utils::unpackQuarterFloat(m_waterDataCPU[arrIndex], 1);
@@ -699,6 +705,10 @@ void DXRBase::reloadShaders() {
 	createRaytracingPSO();
 }
 
+void DXRBase::enableSoftShadows(bool enable) {
+	m_enableSoftShadowsInShader = enable;
+}
+
 bool DXRBase::onEvent(const Event& event) {
 	auto onResize = [&](const WindowResizeEvent& event) {
 		// Window changed size, resize output UAV
@@ -711,9 +721,19 @@ bool DXRBase::onEvent(const Event& event) {
 		return true;
 	};
 
+	auto onSettingsUpdated = [&](const SettingsUpdatedEvent& event) {
+		bool newShadowSetting = Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["shadows"].getSelected().value == 1.f;
+		if (newShadowSetting != m_enableSoftShadowsInShader) {
+			m_enableSoftShadowsInShader = newShadowSetting;
+			reloadShaders();
+		}
+		return true;
+	};
+
 	switch (event.type) {
 	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)event); break;
 	case Event::Type::RESET_WATER: onResetWater((const ResetWaterEvent&)event); break;
+	case Event::Type::SETTINGS_UPDATED: onSettingsUpdated((const SettingsUpdatedEvent&)event); break;
 	default: break;
 	}
 	return true;
@@ -1239,7 +1259,13 @@ void DXRBase::createRaytracingPSO() {
 
 	DXRUtils::PSOBuilder psoBuilder;
 
-	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName, m_closestProceduralPrimitive, m_intersectionProceduralPrimitive });
+	UINT payloadSize = sizeof(DXRShaderCommon::RayPayload);
+	std::vector<DxcDefine> defines;
+	if (m_enableSoftShadowsInShader) {
+		defines.push_back({ L"ALLOW_SOFT_SHADOWS" });
+		payloadSize += sizeof(float) * NUM_SHADOW_TEXTURES; // Append size of "float shadowTwo[NUM_SHADOW_TEXTUES]"
+	}
+	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName, m_closestProceduralPrimitive, m_intersectionProceduralPrimitive }, defines);
 	psoBuilder.addHitGroup(m_hitGroupTriangleName, m_closestHitName);
 	psoBuilder.addHitGroup(m_hitGroupMetaBallName, m_closestProceduralPrimitive, nullptr, m_intersectionProceduralPrimitive, D3D12_HIT_GROUP_TYPE_PROCEDURAL_PRIMITIVE); //TODO: Add intesection Shader here!
 
@@ -1251,7 +1277,7 @@ void DXRBase::createRaytracingPSO() {
 	psoBuilder.addLibrary(ShaderPipeline::DEFAULT_SHADER_LOCATION + "dxr/ShadowRay.hlsl", { m_shadowMissName });
 	psoBuilder.addSignatureToShaders({ m_shadowMissName }, m_localSignatureEmpty->get());
 
-	psoBuilder.setMaxPayloadSize(sizeof(DXRShaderCommon::RayPayload));
+	psoBuilder.setMaxPayloadSize(payloadSize);
 	psoBuilder.setMaxAttributeSize(sizeof(float) * 4);
 	psoBuilder.setMaxRecursionDepth(MAX_RAY_RECURSION_DEPTH);
 	psoBuilder.setGlobalSignature(m_dxrGlobalRootSignature->get());

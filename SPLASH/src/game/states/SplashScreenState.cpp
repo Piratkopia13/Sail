@@ -96,7 +96,6 @@ bool SplashScreenState::loadModels(Application* app) {
 
 	loadModel(rm, "Doc" + extension, nullptr, type);
 	loadModel(rm, "Torch" + extension, nullptr, type);
-	loadModel(rm, "candleExported" + extension, nullptr, type);
 	loadModel(rm, "Tiles/RoomWall" + extension, nullptr, type);
 	loadModel(rm, "Tiles/RoomDoor" + extension, nullptr, type);
 	loadModel(rm, "Tiles/CorridorDoor" + extension, nullptr, type);

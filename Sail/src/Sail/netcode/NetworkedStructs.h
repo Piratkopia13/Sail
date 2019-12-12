@@ -42,6 +42,7 @@ namespace Netcode {
 	
 	// Used to signify NetworkMessages sent Internally
 	static constexpr PlayerID    MESSAGE_FROM_SELF_ID = 255;
+	static constexpr PlayerID    UNINITIALIZED_PLAYER = 255;
 #pragma endregion
 
 	static constexpr ComponentID generateID(PlayerID playerID, ComponentID counter) {

@@ -4,7 +4,6 @@
 #include "Sail/Application.h"
 #include "Sail/entities/systems/Gameplay/LevelSystem/LevelSystem.h"
 
-class AudioSystem;
 
 class OptionsWindow : public SailImGuiWindow {
 
@@ -15,12 +14,14 @@ public:
 	virtual void renderWindow() override;
 	bool renderGameOptions();
 	void updateMap();
+	void setDisabled(bool b = true);
 
 private:
+	bool m_disabled = false;
+
 	Application* m_app = nullptr;
 	SettingStorage* m_settings = nullptr;
 	LevelSystem* m_levelSystem = nullptr;
-	AudioSystem* m_audioSystem = nullptr;
 
 	int* m_keyToChange;
 

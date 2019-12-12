@@ -7,6 +7,7 @@
 #include <iomanip>
 #include "Sail/events/EventDispatcher.h"
 #include "Sail/events/types/NewFrameEvent.h"
+#include "../SPLASH/src/game/events/SettingsEvent.h"
 
 const UINT DX12API::NUM_SWAP_BUFFERS = 3;
 const UINT DX12API::NUM_GPU_BUFFERS = 2;
@@ -25,6 +26,7 @@ DX12API::DX12API()
 	, m_computeQueueFenceValues()
 	, m_frameCount(0)
 {
+	EventDispatcher::Instance().subscribe(Event::Type::SETTINGS_UPDATED, this);
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
 }
 
@@ -58,7 +60,7 @@ DX12API::~DX12API() {
 		}
 	}
 #endif
-
+	EventDispatcher::Instance().unsubscribe(Event::Type::SETTINGS_UPDATED, this);
 }
 
 bool DX12API::init(Window* window) {
@@ -76,8 +78,12 @@ bool DX12API::init(Window* window) {
 
 	OutputDebugString(L"DX12 Initialized.\n");
 
-	return true;
+	// Enable fullscreen on startup if setting is set
+	if (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["fullscreen"].getSelected().value == 1.f) {
+		toggleFullscreen();
+	}
 
+	return true;
 }
 
 
@@ -533,6 +539,22 @@ void DX12API::resizeBuffers(UINT width, UINT height) {
 	m_scissorRect.bottom = (long)height;
 }
 
+bool DX12API::onEvent(const Event& e) {
+	auto onSettingsUpdated = [&](const SettingsUpdatedEvent& event) {
+		if (m_windowedMode != (Application::getInstance()->getSettings().applicationSettingsStatic["graphics"]["fullscreen"].getSelected().value == 0)) {
+			toggleFullscreen();
+		}
+		return true;
+	};
+
+	switch (e.type) {
+	case Event::Type::WINDOW_RESIZE: onResize((const WindowResizeEvent&)e); break;
+	case Event::Type::SETTINGS_UPDATED: onSettingsUpdated((const SettingsUpdatedEvent&)e); break;
+	default: break;
+	}
+	return true;
+}
+
 void DX12API::setDepthMask(DepthMask setting) {
 
 	/*switch (setting) {
@@ -748,6 +770,8 @@ bool DX12API::onResize(const WindowResizeEvent& event) {
 }
 
 void DX12API::toggleFullscreen() {
+	waitForGPU();
+
 	if (!m_tearingSupport)
 		return;
 

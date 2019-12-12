@@ -37,7 +37,6 @@ GameState::GameState(StateStack& stack)
 	, m_profiler(true)
 	, m_showcaseProcGen(false)
 {
-
 	EventDispatcher::Instance().subscribe(Event::Type::WINDOW_RESIZE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_SERIALIZED_DATA_RECIEVED, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
@@ -54,12 +53,9 @@ GameState::GameState(StateStack& stack)
 	m_app = Application::getInstance();
 	m_isSingleplayer = NWrapperSingleton::getInstance().getPlayers().size() == 1;
 	m_gameStarted = m_isSingleplayer; //Delay start of game until everyOne is ready if playing multiplayer
-
-
-	if (!m_isSingleplayer) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
-		m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
-	}
+	
+	NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 0); //Indicate To other players that you entered gamestate, but are not ready to start yet.
+	m_waitingForPlayersWindow.setStateStatus(States::Game, 1);
 
 	initConsole();
 	m_app->setCurrentCamera(&m_cam);
@@ -133,7 +129,7 @@ GameState::GameState(StateStack& stack)
 
 	createLevel(&m_app->getResourceManager().getShaderSet<GBufferOutShader>(), boundingBoxModel);
 #ifndef _DEBUG
-	if (NWrapperSingleton::getInstance().isHost()) {
+	if (NWrapperSingleton::getInstance().isHost() && m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
 		m_componentSystems.aiSystem->initNodeSystem(m_octree);
 	}
 #endif
@@ -142,19 +138,13 @@ GameState::GameState(StateStack& stack)
 
 		int id = static_cast<int>(playerID);
 		glm::vec3 spawnLocation = glm::vec3(0.f);
-		for (int i = -1; i < id; i++) {
-			spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
-		}
-
+		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint(id);
 		m_player = EntityFactory::CreateMySpectator(playerID, m_currLightIndex++, spawnLocation).get();
 
 	} else {
 		int id = static_cast<int>(playerID);
-		glm::vec3 spawnLocation = glm::vec3(0.f);
-		for (int i = -1; i < id; i++) {
-			spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
-		}
-
+		glm::vec3 spawnLocation = glm::vec3(0.f);	
+		spawnLocation = m_componentSystems.levelSystem->getSpawnPoint(id);
 		m_player = EntityFactory::CreateMyPlayer(playerID, m_currLightIndex++, spawnLocation).get();
 	}
 
@@ -172,11 +162,18 @@ GameState::GameState(StateStack& stack)
 	m_componentSystems.networkReceiverSystem->setGameState(this);
 
 #ifdef _PERFORMANCE_TEST
-	populateScene(lightModel, boundingBoxModel, boundingBoxModel, shader);
+	Model* lightModel = &m_app->getResourceManager().getModel("Torch", &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
+	lightModel->getMesh(0)->getMaterial()->setAlbedoTexture("pbr/DDS/Torch/Torch_Albedo.dds");
+	lightModel->getMesh(0)->getMaterial()->setNormalTexture("pbr/DDS/Torch/Torch_NM.dds");
+	lightModel->getMesh(0)->getMaterial()->setMetalnessRoughnessAOTexture("pbr/DDS/Torch/Torch_MRAO.dds");
+
+	populateScene(lightModel, boundingBoxModel, boundingBoxModel, &m_app->getResourceManager().getShaderSet<GBufferOutShader>());
 	m_player->getComponent<TransformComponent>()->setStartTranslation(glm::vec3(54.f, 1.6f, 59.f));
 #else
 	#ifndef _DEBUG
+	if (m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
 		createBots();
+	}
 	#endif
 #endif
 
@@ -233,9 +230,7 @@ GameState::GameState(StateStack& stack)
 
 
 	// Keep this at the bottom
-	if (!m_isSingleplayer) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.
-	}
+	NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.	
 }
 
 GameState::~GameState() {
@@ -257,6 +252,13 @@ GameState::~GameState() {
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DROPPED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_UPDATE_STATE_LOAD_STATUS, this);
+
+	MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+	if (mrs) {
+		delete mrs;
+		mrs = nullptr;
+	}
+
 	EventDispatcher::Instance().unsubscribe(Event::Type::START_KILLCAM, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::STOP_KILLCAM, this);
 
@@ -445,7 +447,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	m_componentSystems.entityRemovalSystem = ECS::Instance()->getEntityRemovalSystem();
 
-	if (NWrapperSingleton::getInstance().isHost()) {
+	if (NWrapperSingleton::getInstance().isHost() && m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
 		m_componentSystems.aiSystem = ECS::Instance()->createSystem<AiSystem>();
 	}
 
@@ -495,14 +497,11 @@ void GameState::initSystems(const unsigned char playerID) {
 
 	NWrapperSingleton::getInstance().setNSS(m_componentSystems.networkSenderSystem);
 	// Create Network Receiver System depending on host or client.
-	if (NWrapperSingleton::getInstance().isHost()) {
+	if (NWrapperSingleton::getInstance().isHost() && (!NWrapperSingleton::getInstance().recordSystem || NWrapperSingleton::getInstance().recordSystem->status != 2)) {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemHost>();
 	} else {
 		m_componentSystems.networkReceiverSystem = ECS::Instance()->createSystem<NetworkReceiverSystemClient>();
 	}
-
-
-
 
 	m_componentSystems.killCamReceiverSystem = ECS::Instance()->createSystem<KillCamReceiverSystem>();
 
@@ -991,20 +990,31 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 // Make sure things are updated in the correct order or things will behave strangely
 void GameState::updatePerTickComponentSystems(float dt) {
 	
-	m_playerNamesinGameGui.clearPlayersToDraw();
-	if (!m_player->getComponent<SpectatorComponent>()) {
+	if (!m_player->getComponent<SpectatorComponent>() || m_isInKillCamMode) {
 		m_playerNamesinGameGui.setMaxDistance(10);
 
 		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo, m_player, 0.0, true);
+		Octree* octree = m_isInKillCamMode ? m_killCamOctree : m_octree;
+		octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo, m_player, 0.0, true);
+		
 		if (tempInfo.closestHitIndex != -1) {
-			NetworkReceiverComponent* nrc = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<NetworkReceiverComponent>();			
-			if (nrc) {
+			Netcode::PlayerID owner = Netcode::UNINITIALIZED_PLAYER;
+
+			if (m_isInKillCamMode) {
+				ReplayReceiverComponent* rrc = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<ReplayReceiverComponent>();
+				if (rrc) {
+					owner = Netcode::getComponentOwner(rrc->m_id);
+				}
+			} else {
+				NetworkReceiverComponent* nrc = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<NetworkReceiverComponent>();
+				if (nrc) {
+					owner = Netcode::getComponentOwner(nrc->m_id);
+				}
+			}
+
+			if (owner != Netcode::UNINITIALIZED_PLAYER) {
 				CandleComponent* candleComp = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<CandleComponent>();
-
-				Netcode::PlayerID owner = Netcode::getComponentOwner(nrc->m_id);
 				Player* p = NWrapperSingleton::getInstance().getPlayer(owner);
-
 				if (p) {
 					m_playerNamesinGameGui.addPlayerToDraw(tempInfo.info[tempInfo.closestHitIndex].entity);
 				}
@@ -1043,7 +1053,7 @@ void GameState::updatePerTickComponentSystems(float dt) {
 	m_componentSystems.powerUpCollectibleSystem->update(dt);
 	// TODO: Investigate this
 	// Systems sent to runSystem() need to override the update(float dt) in BaseComponentSystem
-	if (NWrapperSingleton::getInstance().isHost()) {
+	if (NWrapperSingleton::getInstance().isHost() && m_app->getSettings().gameSettingsStatic["map"]["bots"].getSelected().value == 0.f) {
 		runSystem(dt, m_componentSystems.aiSystem);
 	}
 	runSystem(dt, m_componentSystems.projectileSystem);
@@ -1148,6 +1158,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	}
 
 	// Will probably need to be called last
+	m_playerNamesinGameGui.update(dt);
 	m_componentSystems.entityAdderSystem->update();
 	m_componentSystems.entityRemovalSystem->update();
 }
@@ -1223,7 +1234,8 @@ void GameState::logSomeoneDisconnected(unsigned char id) {
 }
 
 void GameState::waitForOtherPlayers() {
-	if (NWrapperSingleton::getInstance().isHost()) {
+	MatchRecordSystem* mrs = NWrapperSingleton::getInstance().recordSystem;
+	if (NWrapperSingleton::getInstance().isHost() || (mrs && mrs->status == 2)) {
 		if (!m_gameStarted) {
 			bool allReady = true;
 
@@ -1231,7 +1243,7 @@ void GameState::waitForOtherPlayers() {
 			//TODO: maybe dont count in spectators here.
 			//TODO: what will happen if new players joins in gamestate but before gamestart?
 			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
-				if (p.lastStateStatus.status != 1 || p.lastStateStatus.state != States::Game) {
+				if ((p.lastStateStatus.status != 1 || p.lastStateStatus.state != States::Game) && p.lastStateStatus.status != -1) {
 					allReady = false;
 					break;
 				}
@@ -1247,8 +1259,18 @@ void GameState::waitForOtherPlayers() {
 		if (!m_gameStarted) {
 			//If Host have given approval to start game, set m_gameStarted = true
 			auto p = NWrapperSingleton::getInstance().getPlayer(0);
-			if (p->lastStateStatus.status == 2 && p->lastStateStatus.state == States::Game) {
-				m_gameStarted = true;
+			if (p->lastStateStatus.status != -1) {
+				if (p->lastStateStatus.status == 2 && p->lastStateStatus.state == States::Game) {
+					m_gameStarted = true;
+				}
+			} else {
+				//If in replay match mode, just look for anyone informing that the game should start. since player 0 is not the "host" from the clients perspective
+				for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
+					if (p.lastStateStatus.state == States::Game && p.lastStateStatus.status == 2) {
+						m_gameStarted = true;
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -1279,16 +1301,10 @@ const std::string GameState::createCube(const glm::vec3& position) {
 }
 
 void GameState::createBots() {
-	int botCount = m_app->getStateStorage().getLobbyToGameData()->botCount;
-
-	if (botCount < 0) {
-		botCount = 0;
-	}
-
-	botCount = 10;
+	auto botCount = static_cast<int>(m_app->getSettings().gameSettingsDynamic["bots"]["count"].value);
 
 	for (size_t i = 0; i < botCount; i++) {
-		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getSpawnPoint();
+		glm::vec3 spawnLocation = m_componentSystems.levelSystem->getBotSpawnPoint(i);
 		if (spawnLocation.x != -1000.f) {
 			auto compID = Netcode::generateUniqueBotID();
 			if (NWrapperSingleton::getInstance().isHost()) {
