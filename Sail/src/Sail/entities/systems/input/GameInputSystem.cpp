@@ -241,7 +241,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 					auto* transComp = e->getComponent<TransformComponent>();
 
-					//transComp->setRotations(glm::vec3(0.0f, 0.0f, 0.0f));
 					transComp->translate(glm::vec3(0.0f, 0.9f, 0.0f));
 					transComp->setCenter(glm::vec3(0.f));
 					movement->rotation = { 0.f, 0.f, 0.f };
@@ -554,12 +553,6 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 		for (auto e : entities) {
 			TransformComponent* playerTrans = e->getComponent<TransformComponent>();
 			glm::vec3 playerPos = playerTrans->getMatrixWithoutUpdate()[3];
-			/*glm::vec3 playerVel = e->getComponent<MovementComponent>()->velocity;
-			playerVel.y = 0.0f;
-			if (glm::length(playerVel) > 4.0f) {
-				playerVel.y = -5.0f;
-				m_cam->setCameraPosition(playerPos - playerVel);
-			}*/
 			glm::vec3 dir = playerPos - m_cam->getCameraPosition();
 			dir.y = 0.0f;
 			if (glm::length2(dir) > 0.0001f) {
