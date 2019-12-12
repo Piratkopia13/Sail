@@ -226,8 +226,8 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 					glm::vec3 rotVec = glm::normalize(glm::cross(m_cam->getCameraDirection(), glm::vec3(0.0f, 1.0f, 0.0f)));
 					//glm::vec3 rotVec = { 0.f, 0.f, 1.0f };
-					movement->rotation = rotVec * glm::pi<float>() * -2.0f;
-					movement->constantAcceleration = { 0.f, -6.f, 0.f };
+					movement->rotation = rotVec * glm::pi<float>() * -3.0f;
+					//movement->constantAcceleration = { 0.f, -6.f, 0.f };
 
 
 					m_ragdolling = true;
@@ -239,8 +239,11 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			if (Input::IsKeyPressed(KeyBinds::TEST_FRUSTUMCULLING) && m_ragdolling) {
 				e->removeComponent<RagdollComponent>();
 
-				e->getComponent<TransformComponent>()->setRotations(glm::vec3(0.0f, 0.0f, 0.0f));
-				e->getComponent<TransformComponent>()->setCenter(glm::vec3(0.f));
+				auto* transComp = e->getComponent<TransformComponent>();
+
+				transComp->setRotations(glm::vec3(0.0f, 0.0f, 0.0f));
+				transComp->translate(glm::vec3(0.0f, 0.9f, 0.0f));
+				transComp->setCenter(glm::vec3(0.f));
 				movement->rotation = { 0.f, 0.f, 0.f };
 
 				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
@@ -251,7 +254,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					}, false
 				);
 
-				movement->constantAcceleration = { 0.f, -9.8f, 0.f };
+				//movement->constantAcceleration = { 0.f, -9.8f, 0.f };
 
 				m_ragdolling = false;
 
@@ -551,8 +554,18 @@ void GameInputSystem::updateCameraPosition(float alpha) {
 	else {
 		for (auto e : entities) {
 			TransformComponent* playerTrans = e->getComponent<TransformComponent>();
-
-			m_cam->setCameraDirection(glm::vec3(playerTrans->getMatrixWithoutUpdate()[3]) - m_cam->getCameraPosition());
+			glm::vec3 playerPos = playerTrans->getMatrixWithoutUpdate()[3];
+			/*glm::vec3 playerVel = e->getComponent<MovementComponent>()->velocity;
+			playerVel.y = 0.0f;
+			if (glm::length(playerVel) > 4.0f) {
+				playerVel.y = -5.0f;
+				m_cam->setCameraPosition(playerPos - playerVel);
+			}*/
+			glm::vec3 dir = playerPos - m_cam->getCameraPosition();
+			dir.y = 0.0f;
+			if (glm::length2(dir) > 0.0001f) {
+				m_cam->setCameraDirection(dir);
+			}
 		}
 	}
 }
