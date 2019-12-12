@@ -193,7 +193,7 @@ void GameDataTracker::renderPlacement() {
 	ImGui::PopStyleColor();
 	//ImGui::PopFont();
 	ImGui::Separator();
-	std::string map = "not implemented yet"; // m_app->getSettings().gameSettingsStatic["map"]["names"].getSelected().name; 
+	std::string map = m_app->getSettings().gameSettingsStatic["map"]["names"].getSelected().name; 
 	std::string gamemode = m_app->getSettings().gameSettingsStatic["gamemode"]["types"].getSelected().name;
 
 	ImGui::Text(map.c_str());
@@ -275,7 +275,7 @@ void GameDataTracker::renderPersonalStats() {
 
 
 
-	std::string localStatsString = "Bullets fired: " + std::to_string(m_loggedData.bulletsFired);
+	std::string localStatsString = "water wasted: " + std::to_string(m_loggedData.bulletsFired);
 	ImGui::Text(localStatsString.c_str());
 
 	localStatsString = "Distance walked: " + std::to_string((int)m_loggedData.distanceWalked) + "m";
