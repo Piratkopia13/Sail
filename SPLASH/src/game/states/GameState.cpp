@@ -990,7 +990,6 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 // Make sure things are updated in the correct order or things will behave strangely
 void GameState::updatePerTickComponentSystems(float dt) {
 	
-	m_playerNamesinGameGui.clearPlayersToDraw();
 	if (!m_player->getComponent<SpectatorComponent>() || m_isInKillCamMode) {
 		m_playerNamesinGameGui.setMaxDistance(10);
 
@@ -1159,6 +1158,7 @@ void GameState::updatePerFrameComponentSystems(float dt, float alpha) {
 	}
 
 	// Will probably need to be called last
+	m_playerNamesinGameGui.update(dt);
 	m_componentSystems.entityAdderSystem->update();
 	m_componentSystems.entityRemovalSystem->update();
 }
