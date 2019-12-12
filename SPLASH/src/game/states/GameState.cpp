@@ -991,19 +991,31 @@ void GameState::updatePerTickKillCamComponentSystems(float dt) {
 void GameState::updatePerTickComponentSystems(float dt) {
 	
 	m_playerNamesinGameGui.clearPlayersToDraw();
-	if (!m_player->getComponent<SpectatorComponent>()) {
+	if (!m_player->getComponent<SpectatorComponent>() || m_isInKillCamMode) {
 		m_playerNamesinGameGui.setMaxDistance(10);
 
 		Octree::RayIntersectionInfo tempInfo;
-		m_octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo, m_player, 0.0, true);
+		Octree* octree = m_isInKillCamMode ? m_killCamOctree : m_octree;
+		octree->getRayIntersection(m_cam.getPosition(), m_cam.getDirection(), &tempInfo, m_player, 0.0, true);
+		
 		if (tempInfo.closestHitIndex != -1) {
-			NetworkReceiverComponent* nrc = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<NetworkReceiverComponent>();			
-			if (nrc) {
+			Netcode::PlayerID owner = Netcode::UNINITIALIZED_PLAYER;
+
+			if (m_isInKillCamMode) {
+				ReplayReceiverComponent* rrc = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<ReplayReceiverComponent>();
+				if (rrc) {
+					owner = Netcode::getComponentOwner(rrc->m_id);
+				}
+			} else {
+				NetworkReceiverComponent* nrc = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<NetworkReceiverComponent>();
+				if (nrc) {
+					owner = Netcode::getComponentOwner(nrc->m_id);
+				}
+			}
+
+			if (owner != Netcode::UNINITIALIZED_PLAYER) {
 				CandleComponent* candleComp = tempInfo.info[tempInfo.closestHitIndex].entity->getComponent<CandleComponent>();
-
-				Netcode::PlayerID owner = Netcode::getComponentOwner(nrc->m_id);
 				Player* p = NWrapperSingleton::getInstance().getPlayer(owner);
-
 				if (p) {
 					m_playerNamesinGameGui.addPlayerToDraw(tempInfo.info[tempInfo.closestHitIndex].entity);
 				}
