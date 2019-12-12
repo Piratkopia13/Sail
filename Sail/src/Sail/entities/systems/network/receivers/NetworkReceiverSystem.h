@@ -4,6 +4,7 @@
 #include "../../BaseComponentSystem.h"
 #include "Sail/netcode/NetworkedStructs.h"
 #include "Sail/events/EventReceiver.h"
+#include "MatchRecordSystem.h"
 
 class GameState;
 class NetworkSenderSystem;

@@ -112,7 +112,10 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 		if (ignoreFromSelf && senderID == m_playerID) { data.pop(); continue; }
 
 		// If the message was sent internally to ourself then correct the senderID
-		if (senderID == Netcode::MESSAGE_FROM_SELF_ID) { senderID = m_playerID; }
+		MatchRecordSystem* mrs = NWrapperSingleton::getInstance().recordSystem;
+		if (senderID == Netcode::MESSAGE_FROM_SELF_ID) {
+			if (mrs && mrs->status == 2) { senderID = 0; } else { senderID = m_playerID; };
+		}
 
 		// -+-+-+-+-+-+-+-+ Process data from senderComponents -+-+-+-+-+-+-+-+ 
 

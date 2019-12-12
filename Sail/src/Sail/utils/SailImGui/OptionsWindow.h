@@ -14,8 +14,11 @@ public:
 	virtual void renderWindow() override;
 	bool renderGameOptions();
 	void updateMap();
+	void setDisabled(bool b = true);
 
 private:
+	bool m_disabled = false;
+
 	Application* m_app = nullptr;
 	SettingStorage* m_settings = nullptr;
 	LevelSystem* m_levelSystem = nullptr;
