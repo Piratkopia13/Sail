@@ -137,10 +137,12 @@ void GunSystem::fireGun(Entity* e, GunComponent* gun, PowerUpComponent* powC) {
 			glm::vec3 right = glm::normalize(glm::cross(gun->direction, glm::vec3(0.0f, 1.0f, 0.0f)));
 			glm::vec3 up = glm::normalize(glm::cross(vel.front(), right));
 
-			vel.push_back(glm::normalize(gun->direction + 0.3f*right + 0.3f*up) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
-			vel.push_back(glm::normalize(gun->direction - 0.3f*right + 0.3f*up) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
-			vel.push_back(glm::normalize(gun->direction + 0.3f*right - 0.3f*up ) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
-			vel.push_back(glm::normalize(gun->direction - 0.3f*right - 0.3f*up) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
+			const float spread = 0.15f;
+
+			vel.push_back(glm::normalize(gun->direction + spread*right + spread*up) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
+			vel.push_back(glm::normalize(gun->direction - spread*right + spread*up) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
+			vel.push_back(glm::normalize(gun->direction + spread*right - spread*up ) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
+			vel.push_back(glm::normalize(gun->direction - spread*right - spread*up) * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);
 		}
 		else {
 			vel.push_back(gun->direction * gun->projectileSpeed + e->getComponent<MovementComponent>()->velocity);

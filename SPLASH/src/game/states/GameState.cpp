@@ -227,8 +227,6 @@ GameState::GameState(StateStack& stack)
 		m_componentSystems.particleSystem->update(0);
 	}
 
-
-
 	// Keep this at the bottom
 	NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Game, 1); //Indicate To other players that you are ready to start.	
 }
