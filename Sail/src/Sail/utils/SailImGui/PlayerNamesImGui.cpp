@@ -137,7 +137,8 @@ void PlayerNamesImGui::setLocalPlayer(Entity* player) {
 }
 
 void PlayerNamesImGui::addPlayerToDraw(Entity* player) {
-	if (player && !player->isAboutToBeDestroyed()) {
+	auto transC = player->getComponent<TransformComponent>();
+	if (player && !player->isAboutToBeDestroyed() && transC && transC->getParent() == nullptr) {
 		bool notFound = true;
 		for (auto& e : m_drawPlayers) {
 			if (e.playerEntity->getID() == player->getID()) {
