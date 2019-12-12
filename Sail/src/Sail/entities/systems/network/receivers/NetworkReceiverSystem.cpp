@@ -296,6 +296,14 @@ void NetworkReceiverSystem::destroyPowerup(const Netcode::ComponentID compID, co
 	EventDispatcher::Instance().emit(DestroyPowerUp(compID, pickedByPlayer));
 }
 
+void NetworkReceiverSystem::setCenter(const Netcode::ComponentID compID, const glm::vec3 offset) {
+	if (auto e = findFromNetID(compID); e) {
+		e->getComponent<TransformComponent>()->setCenter(offset);
+		return;
+	}
+	SAIL_LOG_WARNING("setCenter called but no matching entity found");
+}
+
 // AUDIO
 
 void NetworkReceiverSystem::playerJumped(const Netcode::ComponentID id) {

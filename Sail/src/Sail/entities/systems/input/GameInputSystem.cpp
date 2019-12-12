@@ -206,9 +206,17 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					//Ragdoll landing
 					auto* ragdollComp = e->addComponent<RagdollComponent>();
 					ragdollComp->localCenterOfMass = { 0.f, 1.0f, 0.f };
-					e->getComponent<TransformComponent>()->setCenter(glm::vec3(0.01f, 1.0f, 0.01f));
+					e->getComponent<TransformComponent>()->setCenter(ragdollComp->localCenterOfMass);
 					ragdollComp->addContactPoint(glm::vec3(0.0f, 0.4f, 0.0f), glm::vec3(0.4f));
 					ragdollComp->addContactPoint(glm::vec3(0.f, 1.4f, 0.3f), glm::vec3(0.4f));
+
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::SET_CENTER,
+						SAIL_NEW Netcode::MessageSetCenter{
+							e->getComponent<NetworkReceiverComponent>()->m_id,
+							ragdollComp->localCenterOfMass
+						}, false
+					);
 
 					e->getComponent<AnimationComponent>()->pitch = 0.f;
 
@@ -234,6 +242,14 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				e->getComponent<TransformComponent>()->setRotations(glm::vec3(0.0f, 0.0f, 0.0f));
 				e->getComponent<TransformComponent>()->setCenter(glm::vec3(0.f));
 				movement->rotation = { 0.f, 0.f, 0.f };
+
+				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+					Netcode::MessageType::SET_CENTER,
+					SAIL_NEW Netcode::MessageSetCenter{
+						e->getComponent<NetworkReceiverComponent>()->m_id,
+						glm::vec3(0.0f)
+					}, false
+				);
 
 				movement->constantAcceleration = { 0.f, -9.8f, 0.f };
 
