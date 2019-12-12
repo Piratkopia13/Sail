@@ -5,6 +5,8 @@
 #include "../../entities/ECS.h"
 #include "../../entities/components/Components.h"
 
+#include "Sail/Application.h"
+
 ECS_SystemInfoImGuiWindow::ECS_SystemInfoImGuiWindow(bool showWindow) {
 	selectedEntity = nullptr;
 	oldSelected = nullptr;
