@@ -19,11 +19,15 @@
 #include <string>
 #include <vector>
 
+
+#include "Sail/../../libraries/gzip/compress.hpp"
+
 //#define _LOG_TO_FILE
 #if defined(DEVELOPMENT) && defined(_LOG_TO_FILE)
 #include <fstream>
 static std::ofstream out("LogFiles/NetworkSenderSystem.cpp.log");
 #endif
+
 
 NetworkSenderSystem::NetworkSenderSystem() : BaseComponentSystem() {
 	registerComponent<NetworkSenderComponent>(true, true, true);
@@ -155,23 +159,27 @@ void NetworkSenderSystem::update() {
 	m_nrOfEventsToSendToSelf = 0;
 
 
-	// -+-+-+-+-+-+-+-+ send the serialized archive over the network -+-+-+-+-+-+-+-+ 
-	std::string binaryDataToSendToOthers = osToOthers.str();
+	// -+-+-+-+-+-+-+-+ compress and send the serialized archive over the network -+-+-+-+-+-+-+-+ 
+	std::string uncompOthers    = osToOthers.str();
+	const char* uncompOthersPtr = uncompOthers.data();
+	std::string compOthers      = gzip::compress(uncompOthersPtr, uncompOthers.size());
+
 	if (NWrapperSingleton::getInstance().isHost()) {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(binaryDataToSendToOthers);
+		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataAllClients(compOthers);
 
 		// Host doesn't get their messages sent back to them so we need to send them to the killCamReceiverSystem from here
-		m_killCamSystem->handleIncomingData(binaryDataToSendToOthers);
+		m_killCamSystem->handleIncomingData(compOthers);
 	} else {
-		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(binaryDataToSendToOthers);
+		NWrapperSingleton::getInstance().getNetworkWrapper()->sendSerializedDataToHost(compOthers);
 	}
 
 
-	// -+-+-+-+-+-+-+-+ send Events directly to our own ReceiverSystem -+-+-+-+-+-+-+-+ 
-	std::string binaryDataToSendToSelf = osToSelf.str();
-	m_receiverSystem->pushDataToBuffer(binaryDataToSendToSelf);
+	// -+-+-+-+-+-+-+-+ compress and send Events directly to our own ReceiverSystem -+-+-+-+-+-+-+-+ 
+	std::string uncompSelf    = osToSelf.str();
+	const char* uncompSelfPtr = uncompSelf.data();
+	std::string compSelf      = gzip::compress(uncompSelfPtr, uncompSelf.size());
 
-
+	m_receiverSystem->pushDataToBuffer(compSelf);
 
 	// -+-+-+-+-+-+-+-+ Host forwards all messages to all clients -+-+-+-+-+-+-+-+ 
 	std::scoped_lock lock(m_forwardBufferLock);

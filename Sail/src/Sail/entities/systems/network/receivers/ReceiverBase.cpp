@@ -14,6 +14,7 @@
 #include "Sail/entities/Entity.h"
 #include "Sail/utils/Utils.h"
 
+#include "Sail/../../libraries/gzip/decompress.hpp"
 
 // DO NOT IMPLEMENT ANY BEHAVIOR, EMIT EVENTS, OR IN ANY WAY CHANGE STATE IN RECEIVERBASE
 // This class is just used to call functions in the classes that inherit from it
@@ -98,7 +99,10 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 
 	// Process all messages in the buffer
 	while (!data.empty()) {
-		std::istringstream is(data.front());
+		const char* compressedPtr = data.front().data();
+		std::string decompressedData = gzip::decompress(compressedPtr, data.front().size());
+
+		std::istringstream is(decompressedData);
 		Netcode::InArchive ar(is);
 
 		ar(senderID);
