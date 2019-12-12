@@ -206,11 +206,11 @@ void SettingStorage::createApplicationDefaultStructure() {
 
 void SettingStorage::createApplicationDefaultGraphics() {
 	auto& applicationSettingsS = applicationSettingsStatic["graphics"] = std::unordered_map<std::string, Setting>();
-	applicationSettingsS["fullscreen"] = Setting(1, std::vector<Setting::Option>({
+	applicationSettingsS["fullscreen"] = Setting(0, std::vector<Setting::Option>({
 		{ "on", 1.0f }, 
 		{ "off",0.0f } 
 	}));
-	applicationSettingsS["fxaa"] = Setting(1, std::vector<Setting::Option>({
+	applicationSettingsS["fxaa"] = Setting(0, std::vector<Setting::Option>({
 		{ "off", 0.0f },
 		{ "on", 1.0f },
 		}));
@@ -227,7 +227,7 @@ void SettingStorage::createApplicationDefaultGraphics() {
 		{ "off", 0.0f },
 		{ "on", 1.0f }
 	}));
-	applicationSettingsS["particles"] = Setting(0, std::vector<Setting::Option>({
+	applicationSettingsS["particles"] = Setting(1, std::vector<Setting::Option>({
 		{"off", 0.0f },
 		{ "on", 1.0f},
 	}));
@@ -294,7 +294,7 @@ void SettingStorage::createGameDefaultMap() {
 	gameSettingMapD["clutter"] = DynamicSetting(0.85f,	0.0f,	1.0f);
 	gameSettingMapD["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
 	
-	gameSettingMapS["sprinkler"] = Setting(0, std::vector<Setting::Option>({
+	gameSettingMapS["sprinkler"] = Setting(1, std::vector<Setting::Option>({
 		{ "on", 0.0f },
 		{ "off",1.0f }
 	}));
