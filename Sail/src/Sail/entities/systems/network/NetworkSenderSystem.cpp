@@ -585,6 +585,14 @@ void NetworkSenderSystem::writeEventToArchive(NetworkSenderEvent* event, Netcode
 		ar(data->pickedByPlayer);
 	}
 	break;
+	case Netcode::MessageType::SET_CENTER:
+	{
+		Netcode::MessageSetCenter* data = static_cast<Netcode::MessageSetCenter*>(event->data);
+
+		ar(data->compID);
+		ArchiveHelpers::saveVec3(ar, data->centerOffset);
+	}
+	break;
 	default:
 		SAIL_LOG_ERROR("TRIED TO SEND INVALID NETWORK EVENT (" + std::to_string((int)event->type));
 		break;
