@@ -7,6 +7,7 @@
 
 #include "Sail/Application.h"
 
+const float MIN_TIME = 1.0f;
 
 PlayerNamesImGui::PlayerNamesImGui(bool showWindow) {
 }
@@ -22,9 +23,15 @@ void PlayerNamesImGui::renderWindow() {
 	int counter = 0;
 	float dist = 0;
 	float minDist = 3;
-	for (auto player : m_drawPlayers) {
-		if (!player || player->isAboutToBeDestroyed())
+	for (int i = 0; i < m_drawPlayers.size(); i++) {
+		Entity* player = m_drawPlayers[i].playerEntity;
+		const float& timeLeft = m_drawPlayers[i].timeLeft;
+
+		if (player->isAboutToBeDestroyed()) {
+			m_drawPlayers.erase(m_drawPlayers.begin() + i);
+			i--;
 			continue;
+		}
 
 		counter++;
 		TransformComponent* trans = player->getComponent<TransformComponent>();
@@ -67,12 +74,16 @@ void PlayerNamesImGui::renderWindow() {
 						wrongDirection = glm::dot(m_camera->getDirection(), delta) < -0.8f;
 						dist = glm::length(delta);
 						if (m_maxDist > 0) {
+							//Fade with distance
 							if(dist < minDist){
 								alpha = 1;
 							} else {
 								alpha = 1 - (dist - minDist) / m_maxDist;
 								scale = 1.5 - (dist - minDist) / m_maxDist;
 							}
+
+							//Fade with time
+							alpha *= std::clamp(timeLeft * 2, 0.0f, 1.0f);
 						} else {
 							float f = std::max((dist - minDist) / 10.0f, 0.0f);
 							scale = std::max(1.5f - f, 1.0f);
@@ -110,12 +121,37 @@ void PlayerNamesImGui::renderWindow() {
 
 }
 
+void PlayerNamesImGui::update(float dt) {
+	for (size_t i = 0; i < m_drawPlayers.size(); i++) {
+		if (m_drawPlayers[i].playerEntity->isAboutToBeDestroyed() || m_drawPlayers[i].timeLeft < 0) {
+			m_drawPlayers.erase(m_drawPlayers.begin() + i);
+			i--;
+		} else {
+			m_drawPlayers[i].timeLeft -= dt;
+		}
+	}
+}
+
 void PlayerNamesImGui::setLocalPlayer(Entity* player) {
 	m_localPlayer = player;
 }
 
 void PlayerNamesImGui::addPlayerToDraw(Entity* player) {
-	m_drawPlayers.push_back(player);
+	auto transC = player->getComponent<TransformComponent>();
+	if (player && !player->isAboutToBeDestroyed() && transC && transC->getParent() == nullptr) {
+		bool notFound = true;
+		for (auto& e : m_drawPlayers) {
+			if (e.playerEntity->getID() == player->getID()) {
+				e.timeLeft = MIN_TIME;
+				notFound = false;
+				break;
+			}
+		}
+
+		if (notFound) {
+			m_drawPlayers.push_back({player, MIN_TIME});
+		}
+	}
 }
 
 void PlayerNamesImGui::clearPlayersToDraw() {
