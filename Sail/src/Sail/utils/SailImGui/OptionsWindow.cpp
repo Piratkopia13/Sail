@@ -4,6 +4,7 @@
 #include "Sail/KeyBinds.h"
 #include "Sail/utils/SailImGui/SailImGui.h"
 #include "Sail/entities/ECS.h"
+#include "../SPLASH/src/game/events/SettingsEvent.h"
 #include "Sail/KeyCodes.h"
 
 OptionsWindow::OptionsWindow(bool showWindow) : 
@@ -63,6 +64,7 @@ void OptionsWindow::renderWindow() {
 		ImGui::SameLine(x[0]);
 		if (SailImGui::TextButton(std::string("<##"+ optionName).c_str())) {
 			sopt->setSelected(selected - 1);
+			EventDispatcher::Instance().emit(SettingsUpdatedEvent());
 		}
 		ImGui::SameLine(x[1]);
 		valueName = sopt->getSelected().name;
@@ -70,6 +72,7 @@ void OptionsWindow::renderWindow() {
 		ImGui::SameLine(x[2]);
 		if (SailImGui::TextButton(std::string(">##"+ optionName).c_str())) {
 			sopt->setSelected(selected + 1);
+			EventDispatcher::Instance().emit(SettingsUpdatedEvent());
 		}
 	}
 	ImGui::Spacing();
