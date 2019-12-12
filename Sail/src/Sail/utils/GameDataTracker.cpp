@@ -275,7 +275,7 @@ void GameDataTracker::renderPersonalStats() {
 
 
 
-	std::string localStatsString = "water wasted: " + std::to_string(m_loggedData.bulletsFired);
+	std::string localStatsString = "water wasted: " + std::to_string(m_loggedData.bulletsFired) + "L";
 	ImGui::Text(localStatsString.c_str());
 
 	localStatsString = "Distance walked: " + std::to_string((int)m_loggedData.distanceWalked) + "m";
