@@ -942,7 +942,7 @@ bool GameState::renderImgui(float dt) {
 			}
 			
 			ImGui::SetWindowPos(ImVec2(m_app->getWindow()->getWindowWidth() * 0.5f - ImGui::GetWindowSize().x * 0.5f, m_app->getWindow()->getWindowHeight() - height / 2 - (ImGui::GetWindowSize().y / 2)));
-			ImGui::PopFont();
+			//ImGui::PopFont();
 		}
 		ImGui::End();
 	}
