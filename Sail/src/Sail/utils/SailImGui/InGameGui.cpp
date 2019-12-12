@@ -178,16 +178,16 @@ void InGameGui::renderWindow() {
 			ImGui::SetWindowPos(ImVec2(centerX - ImGui::GetWindowSize().x * 0.5f, screenHeight-60));
 			ImDrawList* powerUps = ImGui::GetWindowDrawList();
 			if (runspeed > 3 || ((int)(runspeed * 10)) % 2 == 1) {
-					powerUps->AddCircleFilled(ImVec2(centerX - 45, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(1, 0, 0, 1))));
+				powerUps->AddCircleFilled(ImVec2(centerX - 45, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(0, 1, 0, 1))));
 			}
 			if (stamina > 3 || ((int)(stamina* 10)) % 2 == 1) {
-				powerUps->AddCircleFilled(ImVec2(centerX - 15, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(0, 0, 1, 1))));
+				powerUps->AddCircleFilled(ImVec2(centerX - 15, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(1, 1, 0, 1))));
 			}
 			if (shower > 3 || ((int)(shower * 10)) % 2 == 1) {
-				powerUps->AddCircleFilled(ImVec2(centerX + 15, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(0, 1, 0, 1))));
+				powerUps->AddCircleFilled(ImVec2(centerX + 15, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(1, 0, 0, 1))));
 			}
 			if (powerwash > 3 || ((int)(powerwash * 10)) % 2 == 1) {
-				powerUps->AddCircleFilled(ImVec2(centerX + 45, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(1, 1, 0, 1))));
+				powerUps->AddCircleFilled(ImVec2(centerX + 45, screenHeight - 45), 7.f, ImU32(ImColor(ImVec4(0, 0, 1, 1))));
 			}
 			ImGui::End();
 		}
