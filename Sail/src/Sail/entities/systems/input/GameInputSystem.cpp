@@ -202,7 +202,7 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 				}
 
 #ifndef DEVELOPMENT
-				if (Input::IsKeyPressed(KeyBinds::TOGGLE_BOUNDINGBOXES) && !m_ragdolling) {
+				if (Input::IsKeyPressed(KeyBinds::TOGGLE_BOUNDINGBOXES) && !m_ragdolling && !m_ragdollSwitchWasPressed) {
 					//Ragdoll landing
 					auto* ragdollComp = e->addComponent<RagdollComponent>();
 					ragdollComp->localCenterOfMass = { 0.f, 1.0f, 0.f };
@@ -225,42 +225,41 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 
 					glm::vec3 rotVec = glm::normalize(glm::cross(m_cam->getCameraDirection(), glm::vec3(0.0f, 1.0f, 0.0f)));
-					//glm::vec3 rotVec = { 0.f, 0.f, 1.0f };
 					movement->rotation = rotVec * glm::pi<float>() * -3.0f;
-					//movement->constantAcceleration = { 0.f, -6.f, 0.f };
-
 
 					m_ragdolling = true;
+
+					m_ragdollSwitchWasPressed = true;
 				}
 #endif
 			}
 
 #ifndef DEVELOPMENT
-			if (Input::IsKeyPressed(KeyBinds::TEST_FRUSTUMCULLING) && m_ragdolling) {
-				e->removeComponent<RagdollComponent>();
+			if (Input::IsKeyPressed(KeyBinds::TOGGLE_BOUNDINGBOXES)) {
+				if (m_ragdolling && !m_ragdollSwitchWasPressed) {
+					e->removeComponent<RagdollComponent>();
 
-				auto* transComp = e->getComponent<TransformComponent>();
+					auto* transComp = e->getComponent<TransformComponent>();
 
-				transComp->setRotations(glm::vec3(0.0f, 0.0f, 0.0f));
-				transComp->translate(glm::vec3(0.0f, 0.9f, 0.0f));
-				transComp->setCenter(glm::vec3(0.f));
-				movement->rotation = { 0.f, 0.f, 0.f };
+					//transComp->setRotations(glm::vec3(0.0f, 0.0f, 0.0f));
+					transComp->translate(glm::vec3(0.0f, 0.9f, 0.0f));
+					transComp->setCenter(glm::vec3(0.f));
+					movement->rotation = { 0.f, 0.f, 0.f };
 
-				NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
-					Netcode::MessageType::SET_CENTER,
-					SAIL_NEW Netcode::MessageSetCenter{
-						e->getComponent<NetworkReceiverComponent>()->m_id,
-						glm::vec3(0.0f)
-					}, false
-				);
+					NWrapperSingleton::getInstance().queueGameStateNetworkSenderEvent(
+						Netcode::MessageType::SET_CENTER,
+						SAIL_NEW Netcode::MessageSetCenter{
+							e->getComponent<NetworkReceiverComponent>()->m_id,
+							glm::vec3(0.0f)
+						}, false
+					);
 
-				//movement->constantAcceleration = { 0.f, -9.8f, 0.f };
-
-				m_ragdolling = false;
-
-				m_yaw = 160.f;
-				m_pitch = 0.f;
-				m_roll = 0.f;
+					m_ragdolling = false;
+				}
+				m_ragdollSwitchWasPressed = true;
+			}
+			else {
+				m_ragdollSwitchWasPressed = false;
 			}
 #endif
 
