@@ -181,13 +181,13 @@ void EndGameState::renderPersonalStats() {
 	ImGui::SetNextWindowSize(size);
 	if (ImGui::Begin("##PERSONALSTATS", nullptr, m_backgroundOnlyflags)) {
 		ImGui::SetWindowFontScale(Application::getInstance()->getImGuiHandler()->getFontScaling("text"));
-		ImGui::PushFont(m_imguiHandler->getFont("Beb30"));
-		ImGui::SetWindowFontScale(Application::getInstance()->getImGuiHandler()->getFontScaling("smalltext"));
+		//ImGui::PushFont(m_imguiHandler->getFont("Beb30"));
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
 		ImGui::Text("Personal Stats");
 		ImGui::Separator();
 		ImGui::PopStyleColor();
-		ImGui::PopFont();
+		//ImGui::PopFont();
+		ImGui::SetWindowFontScale(Application::getInstance()->getImGuiHandler()->getFontScaling("smalltext"));
 		GameDataTracker::getInstance().renderPersonalStats();
 
 		
