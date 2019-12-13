@@ -133,7 +133,7 @@ void SettingStorage::setMap(const int mode, const int index, const int playerCou
 #ifdef DEBUG
 			case -1:	setMapValues(2, 2, float(rand() % 100) / 100.0f, rand() % 300000); break;
 #else
-			case -1:	setMapValues(6+(rand() % 7), 6+(rand() % 7), float(rand()%100)/100.0f, rand() % 300000); break;
+			case -1:	setMapValues(6+(rand() % 6), 6+(rand() % 6), float(rand()%100)/100.0f, rand() % 300000); break;
 #endif // DEBUG
 			case 0:		setMapValues(6,		6,		0.85f,		12397);		break;
 			case 1:		setMapValues(10,	10,		0.85f,		34590);		break;
