@@ -124,7 +124,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<ThrowingComponent>();
 	myPlayer->addComponent<RenderInActiveGameComponent>();
 
-
+	myPlayer->getComponent<BoundingBoxComponent>()->isStatic = true;
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
@@ -343,7 +343,6 @@ void EntityFactory::CreateGenericPlayer(Entity::SPtr playerEntity, size_t lightI
 	// Give playerEntity a bounding box
 	playerEntity->addComponent<BoundingBoxComponent>(boundingBoxModel);
 	playerEntity->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.4f, .9f, 0.4f)); // Needed?
-	playerEntity->getComponent<BoundingBoxComponent>()->isStatic = true;
 
 	// Adding audio component and adding all sounds attached to the playerEntity entity
 	playerEntity->addComponent<AudioComponent>();
