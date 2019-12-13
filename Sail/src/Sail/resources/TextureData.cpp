@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "TextureData.h"
 
-const std::string TextureData::DEFAULT_TEXTURE_LOCATION = "res/textures/";
-
 TextureData::TextureData() {
 	m_data.channels = 4;
 	m_data.height = 0;
@@ -11,13 +9,14 @@ TextureData::TextureData() {
 }
 TextureData::TextureData(const std::string& filename) {
 	load(filename);
+	m_fileName = filename;
 }
 TextureData::~TextureData() {
 	Memory::SafeDeleteArr(m_data.textureData);
 }
 
 void TextureData::load(const std::string& filename) {
-	FileLoader::TGALoader TGALoader(DEFAULT_TEXTURE_LOCATION + filename, m_data);
+	FileLoader::TGALoader TGALoader(filename, m_data);
 }
 
 unsigned int TextureData::getWidth() const {
@@ -48,6 +47,10 @@ glm::vec4 TextureData::getPixel(unsigned int x, unsigned int y) {
 
 }
 
-unsigned int  TextureData::getByteSize() const {
+unsigned int TextureData::getByteSize() const {
 	return sizeof(*this) + sizeof(unsigned char) * m_data.width * m_data.height * m_data.channels;
+}
+
+const std::string& TextureData::getFileName() const {
+	return m_fileName;
 }

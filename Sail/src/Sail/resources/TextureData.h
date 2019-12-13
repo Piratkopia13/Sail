@@ -7,9 +7,6 @@
 
 class TextureData {
 public:
-	static const std::string DEFAULT_TEXTURE_LOCATION;
-
-public:
 	TextureData();
 	TextureData(const std::string& filename);
 	~TextureData();
@@ -24,7 +21,9 @@ public:
 	
 	unsigned int getByteSize() const;
 
+	const std::string& getFileName() const;
+
 private:
 	ResourceFormat::TextureData m_data;
-
+	std::string m_fileName;
 };

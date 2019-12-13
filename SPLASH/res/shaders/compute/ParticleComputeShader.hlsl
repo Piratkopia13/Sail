@@ -7,7 +7,7 @@ struct Particle{
 	float spawnTime;
 };
 
-struct ParticleInput{
+struct ParticleInput{ // Size of this type is hardcoded in ShaderPipeline.cpp and ParticleSystem.cpp (initEmitter()) - change this if struct changes
 	Particle particles[312];
 	uint4 toRemove[312/4];
 	float3 cameraPos;
@@ -17,9 +17,11 @@ struct ParticleInput{
 	uint maxOutputVertices;
 	float frameTime;
 	float particleSize;
+	uint2 atlasSize; // How many sprites in each dimension the texture atlas contains, set to 1x1 for no animation
+	float drag;
 };
 
-cbuffer CSInputBuffer : register(b0) {
+cbuffer CSInputBuffer : register(b0) : SAIL_IGNORE {
 	ParticleInput inputBuffer;
 }
 
@@ -31,9 +33,9 @@ struct Vertex { // Size of this type is hardcoded in ShaderPipeline.cpp - change
 	float3 bitangent;
 };
 
-RWStructuredBuffer<Vertex> CSOutputBuffer: register(u10);
+RWStructuredBuffer<Vertex> CSOutputBuffer: register(u10) : SAIL_IGNORE;
 
-struct ParticlePhysics {
+struct ParticlePhysics { // Size of this type is hardcoded in ParticleSystem.cpp (initEmitter()) - change this if struct changes
 	float3 velocity;
 	float3 acceleration;
 	float3 position;
@@ -108,7 +110,11 @@ void updateVertices(int particleIndex) {
 void updatePhysics(int particleIndex, float dt) {
 	float3 oldVelocity = CSPhysicsBuffer[particleIndex].velocity;
 	CSPhysicsBuffer[particleIndex].velocity += CSPhysicsBuffer[particleIndex].acceleration * dt;
+	float3 xzVel = CSPhysicsBuffer[particleIndex].velocity;
+	xzVel.y = 0.0f;
+	CSPhysicsBuffer[particleIndex].velocity -= normalize(xzVel) * inputBuffer.drag * dt;
 	CSPhysicsBuffer[particleIndex].position += (oldVelocity + CSPhysicsBuffer[particleIndex].velocity) * 0.5 * dt;
+	
 	
 	updateVertices(particleIndex);
 }
@@ -117,12 +123,12 @@ void updateAnimation(int particleIndex) {
     int v0Index = particleIndex * 6;
     
     // Hardcoded dimention of texture atlas. 
-    int textureSize = 8;                                                                    // This atlas dimension is 8x4
-    int ai = (CSPhysicsBuffer[particleIndex].animationIndexCounter += inputBuffer.frameTime*24.f) % (4 * textureSize);
+    int atlasSizeX = inputBuffer.atlasSize.x;
+    int ai = (CSPhysicsBuffer[particleIndex].animationIndexCounter += inputBuffer.frameTime*24.f) % (inputBuffer.atlasSize.y * atlasSizeX);
 
-    float offset = 1.0f / textureSize;
-    float ix = ai % textureSize;
-    float iy = (int)(ai / textureSize);
+    float offset = 1.0f / atlasSizeX;
+    float ix = ai % atlasSizeX;
+    float iy = (int)(ai / atlasSizeX);
 
     // Triangle 1
     CSOutputBuffer[v0Index].texCoords = float2(ix * offset + offset, iy * offset);
@@ -218,6 +224,7 @@ void CSMain(ComputeShaderInput IN) {
 		
 		// Physics for new particle (accounts for how far into the frame the particle was created)
 		updatePhysics(inputBuffer.numPrevParticles - inputBuffer.numToRemove + i, inputBuffer.particles[i].spawnTime);
+		updateAnimation(inputBuffer.numPrevParticles - inputBuffer.numToRemove + i);
 	}
 	
 	// Physics for all prevous particles

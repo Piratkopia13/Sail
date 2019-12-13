@@ -2,8 +2,9 @@
 #include "SettingStorage.h"
 #include "../Utils.h"
 #include "..//Regex/Regex.h"
+#include "Sail/KeyCodes.h"
 
-#pragma region OTIONSSTORAGE
+#pragma region OPTIONSSTORAGE
 SettingStorage::SettingStorage(const std::string& file) {
 	createApplicationDefaultStructure();
 	if (!loadFromFile(file)) {
@@ -90,7 +91,7 @@ bool SettingStorage::deSerialize(const std::string& content, std::unordered_map<
 				if (dynamic.find(currentArea) != dynamic.end()) {
 					if (dynamic[currentArea].find(name) != dynamic[currentArea].end()) {
 						float value = std::stof(temp);
-						dynamic[currentArea][name].value = value;
+						dynamic[currentArea][name].setValue(value);
 					}
 				}
 			}
@@ -101,8 +102,6 @@ bool SettingStorage::deSerialize(const std::string& content, std::unordered_map<
 
 const int SettingStorage::teamColorIndex(const int team) {
 	if (team < 12 && team >= -1) {
-		std::string name = "team" + std::to_string(team);
-		unsigned int value = (unsigned int)(int)gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().value;
 		return (unsigned int)(int)gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().value;
 	}
 	else {
@@ -110,9 +109,9 @@ const int SettingStorage::teamColorIndex(const int team) {
 	}
 }
 
-glm::vec3 SettingStorage::getColor(const int team) {
-	if (team < 12 && team >= -1) {
-		auto& gameSettingsD = gameSettingsDynamic["Color" + std::to_string(team)];
+glm::vec3 SettingStorage::getColor(const int colorIndex) {
+	if (colorIndex < 12 && colorIndex >= -1) {
+		auto& gameSettingsD = gameSettingsDynamic["Color" + std::to_string(colorIndex)];
 
 		return glm::vec3(
 			gameSettingsD["r"].value,
@@ -131,7 +130,11 @@ void SettingStorage::setMap(const int mode, const int index, const int playerCou
 		//DEATHMATCH
 		case 0:
 			switch (index) {
-			case -1:	setMapValues(rand() % 30, rand() % 30, float(rand()%100)/100.0f, rand() % 300000); break;
+#ifdef DEBUG
+			case -1:	setMapValues(2, 2, float(rand() % 100) / 100.0f, rand() % 300000); break;
+#else
+			case -1:	setMapValues(6+(rand() % 6), 6+(rand() % 6), float(rand()%100)/100.0f, rand() % 300000); break;
+#endif // DEBUG
 			case 0:		setMapValues(6,		6,		0.85f,		12397);		break;
 			case 1:		setMapValues(10,	10,		0.85f,		34590);		break;
 			case 2:		setMapValues(7,		7,		0.85f,		345912);	break;
@@ -203,11 +206,11 @@ void SettingStorage::createApplicationDefaultStructure() {
 
 void SettingStorage::createApplicationDefaultGraphics() {
 	auto& applicationSettingsS = applicationSettingsStatic["graphics"] = std::unordered_map<std::string, Setting>();
-	applicationSettingsS["fullscreen"] = Setting(1, std::vector<Setting::Option>({
+	applicationSettingsS["fullscreen"] = Setting(0, std::vector<Setting::Option>({
 		{ "on", 1.0f }, 
 		{ "off",0.0f } 
 	}));
-	applicationSettingsS["fxaa"] = Setting(1, std::vector<Setting::Option>({
+	applicationSettingsS["fxaa"] = Setting(0, std::vector<Setting::Option>({
 		{ "off", 0.0f },
 		{ "on", 1.0f },
 		}));
@@ -224,13 +227,17 @@ void SettingStorage::createApplicationDefaultGraphics() {
 		{ "off", 0.0f },
 		{ "on", 1.0f }
 	}));
+	applicationSettingsS["particles"] = Setting(1, std::vector<Setting::Option>({
+		{"off", 0.0f },
+		{ "on", 1.0f},
+	}));
 }
 void SettingStorage::createApplicationDefaultSound() {
 	auto& applicationSettingsD = applicationSettingsDynamic["sound"] = std::unordered_map<std::string, DynamicSetting>();
-	applicationSettingsD["global"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
-	applicationSettingsD["music"]   = DynamicSetting(1.0f, 0.0f, 1.0f);
-	applicationSettingsD["effects"] = DynamicSetting(1.0f, 0.0f, 1.0f);
-	applicationSettingsD["voices"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
+	applicationSettingsD["global"]  = DynamicSetting(0.0f, 0.0f, 1.0f);
+	//applicationSettingsD["music"]   = DynamicSetting(1.0f, 0.0f, 1.0f);
+	//applicationSettingsD["effects"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+	//applicationSettingsD["voices"]  = DynamicSetting(1.0f, 0.0f, 1.0f);
 }
 void SettingStorage::createApplicationDefaultMisc() {
 	applicationSettingsStatic["misc"] = std::unordered_map<std::string, Setting>();
@@ -243,6 +250,31 @@ void SettingStorage::createApplicationDefaultMisc() {
 	crosshairSettings["ColorG"] = DynamicSetting(0.0f, 0.0f, 1.0f);
 	crosshairSettings["ColorB"] = DynamicSetting(0.0f, 0.0f, 1.0f);
 	crosshairSettings["ColorA"] = DynamicSetting(1.0f, 0.0f, 1.0f);
+
+
+	applicationSettingsDynamic["keybindings"] = std::unordered_map<std::string, DynamicSetting>();
+	applicationSettingsDynamic["keybindings"]["forward"] = DynamicSetting(SAIL_KEY_W, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["backward"] = DynamicSetting(SAIL_KEY_S, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["left"] = DynamicSetting(SAIL_KEY_A, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["right"] = DynamicSetting(SAIL_KEY_D, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["up"] = DynamicSetting(SAIL_KEY_SPACE, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["down"] = DynamicSetting(SAIL_KEY_CONTROL, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["sprint"] = DynamicSetting(SAIL_KEY_SHIFT, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["throw"] = DynamicSetting(SAIL_KEY_F, 0.0f, 256.0f);
+	applicationSettingsDynamic["keybindings"]["light"] = DynamicSetting(SAIL_KEY_R, 0.0f, 256.0f);
+
+
+	applicationSettingsDynamic["keybindingsDEFAULT"] = std::unordered_map<std::string, DynamicSetting>();
+	applicationSettingsDynamic["keybindingsDEFAULT"]["forward"] = DynamicSetting(SAIL_KEY_W, SAIL_KEY_W, SAIL_KEY_W);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["backward"] = DynamicSetting(SAIL_KEY_S, SAIL_KEY_S, SAIL_KEY_S);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["left"] = DynamicSetting(SAIL_KEY_A, SAIL_KEY_A, SAIL_KEY_A);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["right"] = DynamicSetting(SAIL_KEY_D, SAIL_KEY_D, SAIL_KEY_D);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["up"] = DynamicSetting(SAIL_KEY_SPACE, SAIL_KEY_SPACE, SAIL_KEY_SPACE);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["down"] = DynamicSetting(SAIL_KEY_CONTROL, SAIL_KEY_CONTROL, SAIL_KEY_CONTROL);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["sprint"] = DynamicSetting(SAIL_KEY_SHIFT, SAIL_KEY_SHIFT, SAIL_KEY_SHIFT);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["throw"] = DynamicSetting(SAIL_KEY_F, SAIL_KEY_F, SAIL_KEY_F);
+	applicationSettingsDynamic["keybindingsDEFAULT"]["light"] = DynamicSetting(SAIL_KEY_R, SAIL_KEY_R, SAIL_KEY_R);
+
 }
 
 void SettingStorage::createGameDefaultStructure() {
@@ -254,22 +286,40 @@ void SettingStorage::createGameDefaultStructure() {
 void SettingStorage::createGameDefaultMap() {
 
 
-	auto& gameSettingD = gameSettingsDynamic["map"] = std::unordered_map<std::string, DynamicSetting>();
-	gameSettingD["sizeX"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
-	gameSettingD["sizeY"] =   DynamicSetting(6.0f,	2.0f,	30.0f);
-	gameSettingD["tileSize"] =	DynamicSetting(7.0f, 1.0f, 30.0f);
-	gameSettingD["clutter"] = DynamicSetting(0.85f,	0.0f,	1.0f);
-	gameSettingD["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
-	gameSettingD["sprinklerTime"] = DynamicSetting(75.0f, 0.0f, 600.0f);
-	gameSettingD["sprinklerIncrement"] = DynamicSetting(30.0f, 5.0f, 300.0f);
-
-	gameSettingsStatic["map"] = std::unordered_map<std::string, Setting>();
-	gameSettingsStatic["map"]["sprinkler"] = Setting(0, std::vector<Setting::Option>({
+	auto& gameSettingMapD = gameSettingsDynamic["map"] = std::unordered_map<std::string, DynamicSetting>();
+	auto& gameSettingMapS = gameSettingsStatic["map"] = std::unordered_map<std::string, Setting>();
+	gameSettingMapD["sizeX"] =   DynamicSetting(6.0f,	2.0f,	16.0f);
+	gameSettingMapD["sizeY"] =   DynamicSetting(6.0f,	2.0f,	16.0f);
+	gameSettingMapD["tileSize"] =	DynamicSetting(7.0f, 6.0f, 10.0f);
+	gameSettingMapD["clutter"] = DynamicSetting(0.85f,	0.0f,	1.0f);
+	gameSettingMapD["seed"] =    DynamicSetting(0.0f,	0.0f,	1000000.0f);
+	
+	gameSettingMapS["sprinkler"] = Setting(1, std::vector<Setting::Option>({
 		{ "on", 0.0f },
 		{ "off",1.0f }
 	}));
+	gameSettingMapD["sprinklerTime"] = DynamicSetting(75.0f, 0.0f, 600.0f);
+	gameSettingMapD["sprinklerIncrement"] = DynamicSetting(30.0f, 5.0f, 300.0f);
+
+	gameSettingsStatic["map"]["Powerup"] = Setting(0, std::vector<Setting::Option>({
+		{ "on", 0.0f },
+		{ "off",1.0f }
+	}));
+	gameSettingsDynamic["powerup"] = std::unordered_map<std::string, DynamicSetting>();
+
+	gameSettingsDynamic["powerup"]["duration"] = DynamicSetting(15.0f, 5.0f, 60.0f);
+	gameSettingsDynamic["powerup"]["respawnTime"] = DynamicSetting(30.0f, 5.0f, 300.0f);
+	gameSettingsDynamic["powerup"]["count"] = DynamicSetting(1.0f, 1.0f, 1.0f);
 
 
+	gameSettingsStatic["map"]["bots"] = Setting(0, std::vector<Setting::Option>({
+		{ "on", 0.0f },
+		{ "off",1.0f }
+	}));
+	gameSettingsDynamic["bots"] = std::unordered_map<std::string, DynamicSetting>();
+
+	gameSettingsDynamic["bots"]["count"] = DynamicSetting(5.0f, 1.0f, 15.0f);
+	gameSettingsDynamic["bots"]["waterStorage"] = DynamicSetting(100.0f, 1.0f, 500.0f);
 
 
 	defaultMaps["Deathmatch"] = Setting(0, std::vector<Setting::Option>({
@@ -282,8 +332,8 @@ void SettingStorage::createGameDefaultMap() {
 		{"Cologne",		5},
 		{"Frankfurt",	6},
 		{"Bremen",		7},
-		{"Flensburg",			8},
-		{"Hanover",			9},
+		{"Flensburg",	8},
+		{"Hanover",		9},
 		{"Wasserburg",	10}, // Alex - Hanslin/Hansburg/
 		{"Lubeck",		11}, // Fred - /
 	}));

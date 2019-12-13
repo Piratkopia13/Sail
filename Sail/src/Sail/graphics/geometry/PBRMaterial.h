@@ -35,6 +35,8 @@ public:
 	void setNormalTexture(const std::string& filename);
 	void setMetalnessRoughnessAOTexture(const std::string& filename);
 
+	void manuallySetTexture(Texture* tex, unsigned int arraySlot);
+
 	/*	Returns a texture
 		Default texture id is as follows
 		0 - Albedo
@@ -47,6 +49,8 @@ public:
 
 	Shader* getShader() const;
 
+	unsigned int getByteSize() const;
+
 private:
 	void getAndInsertTexture(const std::string& filename, int arraySlot);
 
@@ -57,5 +61,4 @@ private:
 	Texture* m_textures[3];
 
 	UINT m_numTextures;
-
 };

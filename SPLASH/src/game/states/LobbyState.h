@@ -17,6 +17,7 @@ struct NetworkJoinedEvent;
 struct NetworkDisconnectEvent;
 struct NetworkPlayerChangedTeam;
 struct NetworkPlayerRequestedTeamChange;
+struct NetworkTeamColorRequest;
 
 #define HOST_ID 0
 
@@ -40,6 +41,8 @@ public:
 	// Sends events to the state
 
 protected:
+	bool m_isHost = false;
+
 	Application* m_app = nullptr;
 	Input* m_input = nullptr;
 	NWrapper* m_network = nullptr;
@@ -87,6 +90,7 @@ private:
 	bool onPlayerJoined(const NetworkJoinedEvent& event);
 	bool onPlayerDisconnected(const NetworkDisconnectEvent& event);
 	bool onPlayerTeamRequest(const NetworkPlayerRequestedTeamChange& event);
+	bool onTeamColorRequest(const NetworkTeamColorRequest& event);
 	bool onPlayerTeamChanged(const NetworkPlayerChangedTeam& event);
 	bool onSettingsChanged();
 

@@ -11,6 +11,7 @@
 
 #include "Sail/events/types/NetworkPlayerChangedTeam.h"
 #include "Sail/events/types/NetworkPlayerRequestedTeamChange.h"
+#include "Sail/events/types/NetworkTeamColorRequest.h"
 
 #include "Network/NWrapperSingleton.h"
 #include "Network/NWrapper.h"
@@ -50,6 +51,7 @@ LobbyState::LobbyState(StateStack& stack)
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_DISCONNECT, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+	EventDispatcher::Instance().subscribe(Event::Type::NETWORK_TEAM_REQUESTED_COLOR_CHANGE, this);
 	EventDispatcher::Instance().subscribe(Event::Type::SETTINGS_UPDATED, this);
 
 	m_ready = false;
@@ -92,12 +94,6 @@ LobbyState::LobbyState(StateStack& stack)
 	//m_lobbyAudio = ECS::Instance()->createEntity("LobbyAudio").get();
 	//m_lobbyAudio->addComponent<AudioComponent>();
 	//m_lobbyAudio->getComponent<AudioComponent>()->streamSoundRequest_HELPERFUNC("res/sounds/LobbyMusic.xwb", true, true);
-
-	if (NWrapperSingleton::getInstance().isHost()) {
-		//NW
-		NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, 1);
-	}
-
 }
 
 LobbyState::~LobbyState() {
@@ -105,9 +101,9 @@ LobbyState::~LobbyState() {
 
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_JOINED, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_DISCONNECT, this);
-
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_PLAYER_CHANGED_TEAM, this);
+	EventDispatcher::Instance().unsubscribe(Event::Type::NETWORK_TEAM_REQUESTED_COLOR_CHANGE, this);
 	EventDispatcher::Instance().unsubscribe(Event::Type::SETTINGS_UPDATED, this);
 }
 
@@ -151,7 +147,8 @@ bool LobbyState::renderImgui(float dt) {
 
 	//Keep all this
 	//ImGui::ShowDemoWindow();
-	static std::string font = "Beb27";
+	static std::string font = "Beb60";
+	//static std::string font = "Beb27";
 	//ImGui::PushFont(m_imGuiHandler->getFont(font));
 	//
 	//if (ImGui::Begin("IMGUISETTINGS")) {
@@ -183,7 +180,7 @@ bool LobbyState::renderImgui(float dt) {
 #endif
 
 
-	ImGui::PushFont(m_imGuiHandler->getFont(font));
+	//ImGui::PushFont(m_imGuiHandler->getFont(font));
 	// ------- menu ----------------
 	renderMenu();
 
@@ -202,16 +199,18 @@ bool LobbyState::renderImgui(float dt) {
 
 		if (ImGui::Begin("##OptionsMenu", nullptr, m_backgroundOnlyflags)) {
 
-			ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+			//ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+			ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("header2"));
 			SailImGui::HeaderText("Options");
-			ImGui::PopFont();
+			ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("text"));
+			//ImGui::PopFont();
 			ImGui::Separator();
 			m_optionsWindow.renderWindow();
 		}
 		ImGui::End();
 	}
 
-	ImGui::PopFont();
+	//ImGui::PopFont();
 	m_app->getChatWindow()->renderChat(dt);
 
 	return false;
@@ -220,14 +219,12 @@ bool LobbyState::renderImgui(float dt) {
 bool LobbyState::onEvent(const Event& event) {
 	State::onEvent(event);
 
-	
-
 	switch (event.type) {
-
 
 	case Event::Type::NETWORK_JOINED:		onPlayerJoined((const NetworkJoinedEvent&)event); break;
 	case Event::Type::NETWORK_DISCONNECT:	onPlayerDisconnected((const NetworkDisconnectEvent&)event); break;
 	case Event::Type::NETWORK_PLAYER_REQUESTED_TEAM_CHANGE:	onPlayerTeamRequest((const NetworkPlayerRequestedTeamChange&)event); break;
+	case Event::Type::NETWORK_TEAM_REQUESTED_COLOR_CHANGE:	onTeamColorRequest((const NetworkTeamColorRequest&)event); break;
 	case Event::Type::NETWORK_PLAYER_CHANGED_TEAM:	onPlayerTeamChanged((const NetworkPlayerChangedTeam&)event); break;
 	case Event::Type::SETTINGS_UPDATED:	onSettingsChanged(); break;
 
@@ -238,23 +235,24 @@ bool LobbyState::onEvent(const Event& event) {
 	return true;
 }
 
-
-
-
-
-
 bool LobbyState::onPlayerJoined(const NetworkJoinedEvent& event) {
 	
-	if (NWrapperSingleton::getInstance().isHost()) {
-		if (m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().value == 0.0f) {
-			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)event.player.id, event.player.id);
-		}
-		else {
-			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+	if (m_isHost) {
+		MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+		if (!(mrs && mrs->status == 2)) {
+			if (m_settings->gameSettingsStatic["gamemode"]["types"].getSelected().value == 0.0f) {
+				NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)event.player.id, event.player.id);
+			}
+			else {
+				NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(0, event.player.id);
+			}
+		} else {
+			NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer((char)-1, event.player.id);
 		}
 
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setClientState(States::JoinLobby, event.player.id);
 	}
+
 	return true;
 }
 
@@ -270,6 +268,16 @@ bool LobbyState::onPlayerTeamRequest(const NetworkPlayerRequestedTeamChange& eve
 		NWrapperSingleton::getInstance().getNetworkWrapper()->setTeamOfPlayer(event.team, event.playerID);
 	}
 
+	return true;
+}
+
+bool LobbyState::onTeamColorRequest(const NetworkTeamColorRequest& event) {
+	if (NWrapperSingleton::getInstance().isHost()) {
+		//TODO: Check if teamcolor is free to use
+		//if so, set teamcolor
+		m_app->getSettings().gameSettingsStatic["team" + std::to_string(event.team)]["color"].setSelected(event.teamColorID);
+		m_settingsChanged = true;
+	}
 	return true;
 }
 
@@ -311,6 +319,7 @@ void LobbyState::renderPlayerList() {
 	};
 
 	if (ImGui::Begin("players in lobby:", NULL, flags)) {
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("text"));
 
 		//ImGui::DragFloat3("##ASDASD", &x[0], 0.1f);
 		ImGui::Separator();
@@ -413,9 +422,7 @@ void LobbyState::renderPlayerList() {
 
 			//Color
 			ImGui::SameLine(x[1]);
-			//Keep
-			/*if (currentplayer.id == myID || myID == HOST_ID) {*/
-			if (myID == HOST_ID) {
+			if (currentplayer.id == myID || myID == HOST_ID) {
 				std::string unique = "##ColorLABEL" + std::to_string(currentplayer.id);
 				int team = (int)currentplayer.team;
 				int index = m_settings->teamColorIndex(team);
@@ -433,6 +440,7 @@ void LobbyState::renderPlayerList() {
 				ImGui::SetNextItemWidth(27);
 				if (ImGui::BeginCombo(unique.c_str(), std::string("##"+m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].getSelected().name).c_str())) {
 					ImGui::PopStyleColor();
+					int selectedIndex = 0;
 					for (auto const& key : m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].options) {
 						std::string name = key.name + unique;
 						col = ImVec4(
@@ -443,19 +451,16 @@ void LobbyState::renderPlayerList() {
 						);
 						ImGui::PushStyleColor(ImGuiCol_Text, col);
 						if (ImGui::Selectable(name.c_str(), index == (char)key.value)) {
-							if (currentplayer.id == myID) {
-								m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected((int)key.value);
-
+							if (NWrapperSingleton::getInstance().isHost()) {
+								m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected(selectedIndex);
 								m_settingsChanged = true;
-							}
-							else {
-								m_settings->gameSettingsStatic["team" + std::to_string(team)]["color"].setSelected((int)key.value);
-								SAIL_LOG(std::to_string(key.value));
-
-								m_settingsChanged = true;
+							} else {
+								//This is called by clients and will trigger the "NETWORK_TEAM_REQUESTED_COLOR_CHANGE" event on the host
+								NWrapperSingleton::getInstance().getNetworkWrapper()->requestTeamColor(selectedIndex);
 							}
 						}
 						ImGui::PopStyleColor();
+						selectedIndex++;
 					}
 					ImGui::EndCombo();
 				}
@@ -475,16 +480,23 @@ void LobbyState::renderPlayerList() {
 
 			ImGui::SameLine(x[2]);
 
-			// READY 
-			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-			bool asd = currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0;
-			ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd); 
-			ImGui::PopItemFlag();
-			ImGui::PopStyleVar();
+			// READY
+			if (currentplayer.id == myID) {
+				if (ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &m_ready)) {
+					NWrapperSingleton::getInstance().getNetworkWrapper()->updateStateLoadStatus(States::Lobby, m_ready);
+				}
+			} else {
+				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+				bool asd = (currentplayer.lastStateStatus.state == States::Lobby && currentplayer.lastStateStatus.status > 0) || currentplayer.lastStateStatus.status == -1;
+				ImGui::Checkbox(std::string("##Player" + std::to_string(currentplayer.id)).c_str(), &asd);
+				ImGui::PopItemFlag();
+				ImGui::PopStyleVar();
+			}
+
 			ImGui::EndGroup();
 			if (ImGui::BeginPopupContextItem(std::string("item context menu##" + std::to_string(currentplayer.id)).c_str())) {
-				if (NWrapperSingleton::getInstance().isHost()) {
+				if (m_isHost && currentplayer.lastStateStatus.status != -1) {
 					if (ImGui::Button("KICK")) {
 						NWrapperSingleton::getInstance().getNetworkWrapper()->kickPlayer(currentplayer.id);
 					}
@@ -520,10 +532,15 @@ void LobbyState::renderGameSettings() {
 	ImGui::SetNextWindowSize(m_size);
 	ImGui::SetNextWindowSizeConstraints(m_minSize, m_maxSize);
 	if (ImGui::Begin("##LOBBYSETTINGS", nullptr, settingsFlags)) {
-		ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		//ImGui::PushFont(m_imGuiHandler->getFont("Beb40"));
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("Header2"));
 		SailImGui::HeaderText("Lobby Settings");
-		ImGui::PopFont();
+		//ImGui::PopFont();
 		ImGui::Separator();
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("text"));
+
+		bool disableSettings = !NWrapperSingleton::getInstance().isHost();
+		m_optionsWindow.setDisabled(disableSettings);
 
 		if (m_optionsWindow.renderGameOptions()) {
 			m_settingsChanged = true;
@@ -538,9 +555,11 @@ void LobbyState::renderMenu() {
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowSize(size);
 
-	ImGui::PushFont(m_imGuiHandler->getFont("Beb60"));
+	//ImGui::PushFont(m_imGuiHandler->getFont("Beb60"));
 
 	if (ImGui::Begin("##LOBBYMENU", nullptr, m_standaloneButtonflags)) {
+		ImGui::SetWindowFontScale(m_imGuiHandler->getFontScaling("Header0"));
+
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.3f, 0.3f, 1));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1));
 		if (SailImGui::TextButton("Leave")) {
@@ -602,10 +621,11 @@ void LobbyState::renderMenu() {
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.9f, 0.3f, 1));
 
 		
-		if (NWrapperSingleton::getInstance().isHost()) {
+		if (m_isHost) {
 			bool allReady = true;
+			const unsigned char myID = NWrapperSingleton::getInstance().getMyPlayerID();
 			for (auto p : NWrapperSingleton::getInstance().getPlayers()) {
-				if (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1) {
+				if ((p.id != myID &&  (p.lastStateStatus.state != States::Lobby || p.lastStateStatus.status < 1)) && p.lastStateStatus.status != -1) {
 					allReady = false;
 				}
 			}
@@ -613,6 +633,18 @@ void LobbyState::renderMenu() {
 			if (SailImGui::TextButton((allReady) ? "Start" : "Force start")) {
 				auto& stat = m_app->getSettings().gameSettingsStatic;
 				auto& dynamic = m_app->getSettings().gameSettingsDynamic;
+
+				MatchRecordSystem*& mrs = NWrapperSingleton::getInstance().recordSystem;
+				if (!mrs || mrs->status != 2) {
+					if (mrs) {
+						delete mrs;
+					}
+					mrs = new MatchRecordSystem();
+					mrs->initRecording();
+				}else if (mrs && mrs->status == 2) {
+					NWrapperSingleton::getInstance().stopUDP();
+					NWrapperSingleton::getInstance().getNetworkWrapper()->setAllowJoining(false);
+				}
 
 				//TODO: ONLY DO THIS IF GAMEMODE IS FFA
 				int teamID = 0;
@@ -650,6 +682,6 @@ void LobbyState::renderMenu() {
 
 	}
 	ImGui::End();
-	ImGui::PopFont();
+	//ImGui::PopFont();
 }
 

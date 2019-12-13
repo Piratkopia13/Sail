@@ -38,8 +38,8 @@ struct Player {
 	bool justJoined = true;
 	StateStatus lastStateStatus;
 
-	Player(Netcode::PlayerID setID = HOST_ID, std::string setName = "Hans")
-		: name(setName), id(setID)
+	Player(Netcode::PlayerID setID = HOST_ID, std::string setName = "Hans", char team = -1)
+		: name(setName), id(setID), team(team)
 	{
 		name.reserve(MAX_NAME_LENGTH);
 	}
@@ -74,7 +74,7 @@ public:
 
 	virtual bool host(int port = 54000) = 0;
 	virtual bool connectToIP(char* = "127.0.0.1:54000") = 0;
-
+	virtual void setAllowJoining(bool b) {};
 	virtual void sendChatMsg(std::string msg) = 0;
 
 	void sendSerializedDataAllClients(const std::string& data);
@@ -94,7 +94,7 @@ public:
 
 	virtual void requestTeam(char team) {};
 	virtual void setTeamOfPlayer(char team, Netcode::PlayerID playerID, bool dispatch = true) {};
-
+	virtual void requestTeamColor(char teamColorID) {};
 protected:
 	enum MessageLetter : char {
 		ML_NULL = 0,
@@ -108,6 +108,7 @@ protected:
 		ML_UPDATE_STATE_LOAD_STATUS,
 		ML_UPDATE_SETTINGS,
 		ML_TEAM_REQUEST,
+		ML_TEAMCOLOR_REQUEST,
 	};
 
 protected:

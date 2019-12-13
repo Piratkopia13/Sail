@@ -1,9 +1,11 @@
 #include "pch.h"
 #include "LevelSystem.h"
+#include "Sail/Application.h"
 #include "Sail/entities/ECS.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/entities/components/MapComponent.h"
 #include <random>
+#include <algorithm>
 
 LevelSystem::LevelSystem():BaseComponentSystem() {
 	registerComponent<MapComponent>(true,true,true);
@@ -70,10 +72,11 @@ void LevelSystem::generateMap() {
 		for (int i = 0; i < tile.sizex; i++) {
 			for (int j = 0; j < tile.sizey; j++) {
 				tileArr[tile.posx + i][tile.posy + j][1] = 0;
+				botSpawnPoints.push_back(glm::vec3((tile.posx + i-0.5f)*tileSize, 0.3f,( tile.posy + j-0.5f)*tileSize));
 			}
 		}
 	}
-
+	std::shuffle(botSpawnPoints.begin(), botSpawnPoints.end(), std::default_random_engine{});
 	//create rooms from blocks
 	splitBlock();
 	//add rooms with individual type to type-layer
@@ -131,7 +134,8 @@ void LevelSystem::destroyWorld() {
 	}
 	spawnPoints.clear();
 	extraSpawnPoints.clear();
-
+	powerUpSpawnPoints.clear();
+	botSpawnPoints.clear();
 	while(chunks.size()>0){
 		chunks.pop();
 	}
@@ -274,16 +278,16 @@ void LevelSystem::splitChunk() {
 	bool ns = true;
 	float hallwayArea = 0.f;
 	while (hallwayArea / totalArea < hallwayThreshold && !chunks.empty()) {
-		Rect rekt,a,b,hall;
+		Rect rekt, a, b, hall;
 		rekt = chunks.front();
 		chunks.pop();
 #ifdef _PERFORMANCE_TEST
-		if (ns) { 
+		if (ns) {
 #else
-		if(rekt.sizex >= rekt.sizey){
+		if (rekt.sizex >= rekt.sizey) {
 #endif
 			if (rekt.sizex > minSplitSize) {
-				int newSize = rand() % (rekt.sizex - minSplitSize) + minSplitSize/2;
+				int newSize = rand() % (rekt.sizex - minSplitSize) + minSplitSize / 2;
 				a.posx = rekt.posx;
 				a.posy = rekt.posy;
 				a.sizex = newSize;
@@ -301,7 +305,7 @@ void LevelSystem::splitChunk() {
 				hallways.emplace(hall);
 				hallwayArea += hall.sizex * hall.sizey;
 			}
-			else if(rekt.sizey <= minSplitSize){
+			else if (rekt.sizey <= minSplitSize) {
 				blocks.emplace(rekt);
 				ns = !ns;
 			}
@@ -312,7 +316,7 @@ void LevelSystem::splitChunk() {
 		}
 		else {
 			if (rekt.sizey > minSplitSize) {
-				int newSize = rand() % (rekt.sizey - minSplitSize) + minSplitSize/2;
+				int newSize = rand() % (rekt.sizey - minSplitSize) + minSplitSize / 2;
 				a.posx = rekt.posx;
 				a.posy = rekt.posy;
 				a.sizex = rekt.sizex;
@@ -323,10 +327,10 @@ void LevelSystem::splitChunk() {
 				b.sizex = rekt.sizex;
 				b.sizey = rekt.sizey - 1 - newSize;
 				chunks.emplace(b);
-				hall.posx = rekt.posx ;
+				hall.posx = rekt.posx;
 				hall.posy = rekt.posy + newSize;
 				hall.sizex = rekt.sizex;
-				hall.sizey =1;
+				hall.sizey = 1;
 				hallways.emplace(hall);
 				hallwayArea += hall.sizex * hall.sizey;
 			}
@@ -339,6 +343,11 @@ void LevelSystem::splitChunk() {
 			}
 			ns = !ns;
 
+		}
+
+		if (hall.sizex > 1 || hall.sizey > 1) {
+			glm::vec3 powerPos = glm::vec3((hall.posx + hall.sizex / 2.f - 0.5f) * tileSize, 0.5f, (hall.posy + hall.sizey / 2.f - 0.5f) * tileSize);
+			powerUpSpawnPoints.push_back(powerPos);
 		}
 	}
 	while (!chunks.empty()) {
@@ -1349,16 +1358,24 @@ void LevelSystem::addSpawnPoints() {
 	}
 }
 
-glm::vec3 LevelSystem::getSpawnPoint() {
+glm::vec3 LevelSystem::getPowerUpPosition(int index) {
+	if (index < 0 || index >= powerUpSpawnPoints.size()) {
+		SAIL_LOG_ERROR("Invalid powerup position.");
+		return glm::vec3(-30.f, -30.f, -30.f);
+	}
+	else {
+		return powerUpSpawnPoints.at(index);
+	}
+}
+
+glm::vec3 LevelSystem::getSpawnPoint(int id) {
 	// Gets the spawn points with the 4 corners first, then randomized spawn points around the edges of the map
 	glm::vec3 spawnLocation;
-	if (spawnPoints.size() > 0) {
-		spawnLocation = spawnPoints.front();
-		spawnPoints.erase(spawnPoints.begin());
+	if (spawnPoints.size() > 0 && id<spawnPoints.size()) {
+		spawnLocation = spawnPoints.at(id);
 	}
-	else if (extraSpawnPoints.size() > 0) {
-		spawnLocation = extraSpawnPoints.front();
-		extraSpawnPoints.erase(extraSpawnPoints.begin());
+	else if (extraSpawnPoints.size() > 0 && (id-spawnPoints.size())<extraSpawnPoints.size()) {
+		spawnLocation = extraSpawnPoints.at(id - spawnPoints.size());
 	}
 	else {
 		spawnLocation = glm::vec3(((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (xsize - 1), 1.f, ((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (ysize - 1));
@@ -1366,7 +1383,17 @@ glm::vec3 LevelSystem::getSpawnPoint() {
 	}
 	return spawnLocation;
 }
-
+glm::vec3 LevelSystem::getBotSpawnPoint(int id) {
+	glm::vec3 spawnLocation;
+	if (botSpawnPoints.size() > 0 && id < botSpawnPoints.size()) {
+		spawnLocation = botSpawnPoints.at(id);
+	}
+	else {
+		spawnLocation = glm::vec3(((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (xsize - 1), 1.f, ((tileSize / 2.f) + ((Utils::rnd() * (tileSize - 1.f) * 2.f) - (tileSize - 1.f))) * (ysize - 1));
+		SAIL_LOG_ERROR("No more spawn locations available.");
+	}
+	return spawnLocation;
+}
 
 const int LevelSystem::getAreaType(float posX, float posY) {
 
@@ -1448,6 +1475,8 @@ void LevelSystem::stop() {
 	destroyWorld();
 	spawnPoints.clear();
 	extraSpawnPoints.clear();
+	powerUpSpawnPoints.clear();
+	botSpawnPoints.clear();
 }
 
 void LevelSystem::generateClutter() {
@@ -1731,6 +1760,9 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 	for (int i = 0; i < extraSpawnPoints.size(); i++) {
 		EntityFactory::CreateStaticMapObject("Spawnpoint", clutterModels[ClutterModel::NOTEPAD], bb, extraSpawnPoints[i], glm::vec3(0.f, 0, 0.f), glm::vec3(1,1, 1));
 	}
+	for (int i = 0; i < powerUpSpawnPoints.size(); i++) {
+		EntityFactory::CreateStaticMapObject("Spawnpoint", clutterModels[ClutterModel::CLONINGVATS], bb, getPowerUpPosition(i), glm::vec3(0.f, 0, 0.f), glm::vec3(0.1f, 0.1f, 0.1f));
+	}
 #endif
 
 	for (int i = 0; i < numberOfRooms; i++) {
@@ -1738,11 +1770,13 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 		auto e2 = EntityFactory::CreateStaticMapObject("Saftblandare", clutterModels[ClutterModel::SAFTBLANDARE], bb, glm::vec3((room.posx + (room.sizex / 2.f)-0.5f)*tileSize, 0, (room.posy + (room.sizey / 2.f)-0.5f)*tileSize),glm::vec3(0.f),glm::vec3(1.f,tileHeight,1.f));
 
 		MovementComponent* mc = e2->addComponent<MovementComponent>();
-		SpotlightComponent* sc = e2->addComponent<SpotlightComponent>();
 		AudioComponent* ac = e2->addComponent<AudioComponent>();
+		SAIL_LOG("Adding Saftblandare to AudioQueue");
+		Application::getInstance()->addToAudioComponentQueue(&*e2);
+		SpotlightComponent* sc = e2->addComponent<SpotlightComponent>();
 		sc->light.setColor(glm::vec3(1.0f, 0.2f, 0.0f));
 		sc->light.setPosition(glm::vec3(0, tileHeight * 5 - 0.05, 0));
-		sc->light.setAttenuation(1.f, 0.01f, 0.01f);
+		sc->light.setRadius(30.f);
 		sc->light.setDirection(glm::vec3(1, 0, 0));
 		sc->light.setAngle(0.5);
 		sc->roomID = getRoomID(room.posx, room.posy);
@@ -1750,5 +1784,24 @@ void LevelSystem::addClutterModel(const std::vector<Model*>& clutterModels, Mode
 #ifdef _PERFORMANCE_TEST
 		sc->isOn = true;
 #endif
+
+		auto* particleEmitterComp = e2->addComponent<ParticleEmitterComponent>();
+
+		float sprinklerXspread = room.sizex * tileSize * 1.3f;
+		float sprinklerZspread = room.sizey * tileSize * 1.3f;
+
+		particleEmitterComp->size = 0.055f;
+		particleEmitterComp->offset = { 0, tileHeight * 6, 0 };
+		particleEmitterComp->constantVelocity = { 0.0f, -0.5f, 0.0f };
+		particleEmitterComp->acceleration = { 0.0f, -30.0f, 0.0f };
+		particleEmitterComp->spread = { sprinklerXspread, 0.5f, sprinklerZspread };
+		particleEmitterComp->spawnRate = 1.f / (100.f * room.sizex * room.sizey);
+		particleEmitterComp->lifeTime = 0.5f;
+		particleEmitterComp->atlasSize = glm::uvec2(8U, 3U);
+		particleEmitterComp->drag = 30.0f;
+		particleEmitterComp->maxNumberOfParticles = (int)glm::ceil((1.0f / particleEmitterComp->spawnRate) * particleEmitterComp->lifeTime);
+		particleEmitterComp->isActive = false;
+		particleEmitterComp->setTexture("particles/animSmoke.dds");
+
 	}
 }

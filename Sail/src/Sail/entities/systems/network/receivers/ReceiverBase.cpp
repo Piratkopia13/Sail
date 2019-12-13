@@ -14,6 +14,7 @@
 #include "Sail/entities/Entity.h"
 #include "Sail/utils/Utils.h"
 
+#include "Sail/../../libraries/gzip/decompress.hpp"
 
 // DO NOT IMPLEMENT ANY BEHAVIOR, EMIT EVENTS, OR IN ANY WAY CHANGE STATE IN RECEIVERBASE
 // This class is just used to call functions in the classes that inherit from it
@@ -88,17 +89,20 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 	Netcode::PlayerID    senderID    = 0; // The playerID of the person who sent the message
 	Netcode::EntityType  entityType  = Netcode::EntityType::INVALID_ENTITY; // Entity that sent a message
 	Netcode::MessageType messageType = Netcode::MessageType::EMPTY;
-	Netcode::ComponentID compID = 0;
+	Netcode::ComponentID compID      = 0;
 
 	// Commonly used types within messages/events:
 	glm::vec3 vector;
 	glm::quat quaternion;
-	float lowPassFrequency = -1;
+	float lowPassFrequency = -1.f;
 
 
 	// Process all messages in the buffer
 	while (!data.empty()) {
-		std::istringstream is(data.front());
+		const char* compressedPtr = data.front().data();
+		std::string decompressedData = gzip::decompress(compressedPtr, data.front().size());
+
+		std::istringstream is(decompressedData);
 		Netcode::InArchive ar(is);
 
 		ar(senderID);
@@ -108,7 +112,10 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 		if (ignoreFromSelf && senderID == m_playerID) { data.pop(); continue; }
 
 		// If the message was sent internally to ourself then correct the senderID
-		if (senderID == Netcode::MESSAGE_FROM_SELF_ID) { senderID = m_playerID; }
+		MatchRecordSystem* mrs = NWrapperSingleton::getInstance().recordSystem;
+		if (senderID == Netcode::MESSAGE_FROM_SELF_ID) {
+			if (mrs && mrs->status == 2) { senderID = 0; } else { senderID = m_playerID; };
+		}
 
 		// -+-+-+-+-+-+-+-+ Process data from senderComponents -+-+-+-+-+-+-+-+ 
 
@@ -249,40 +256,33 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 			case Netcode::MessageType::ENDGAME_STATS:
 			{
 				// create temporary variables to hold data when reading message
-				GameDataForOthersInfo info;
 				size_t nrOfPlayers;
-				Netcode::PlayerID pID;
-				int placement = 0;
-				int nKills = -1;
-				int nDeaths = -1;
-				int damage = -1;
-				int damageTaken = -1;
+				PlayerStatsInfo playerStats;
+				GameDataForOthersInfo gameData;
 
 				ar(nrOfPlayers);
 
 				// Get all per player data from the Host
-				for (int k = 0; k < nrOfPlayers; k++) {
-					ar(pID);
-					ar(placement);
-					ar(nKills);
-					ar(nDeaths);
-					ar(damage);
-					ar(damageTaken);
+				for (size_t k = 0; k < nrOfPlayers; k++) {
+					ar(playerStats.player);
+					ar(playerStats.placement);
+					ar(playerStats.nrOfKills);
+					ar(playerStats.nDeaths);
+					ar(playerStats.damage);
+					ar(playerStats.damageTaken);
 
-					setPlayerStats(pID, nKills, placement, nDeaths, damage, damageTaken);
+					setPlayerStats(playerStats);
 				}
 
 				// Get all specific data from the Host
-				ar(info.bulletsFired);
-				ar(info.bulletsFiredID);
-
-				ar(info.distanceWalked);
-				ar(info.distanceWalkedID);
-
-				ar(info.jumpsMade);
-				ar(info.jumpsMadeID);
+				ar(gameData.bulletsFired);
+				ar(gameData.bulletsFiredID);
+				ar(gameData.distanceWalked);
+				ar(gameData.distanceWalkedID);
+				ar(gameData.jumpsMade);
+				ar(gameData.jumpsMadeID);
 				
-				endMatch(info);
+				endMatch(gameData);
 			}
 			break;
 			case Netcode::MessageType::EXTINGUISH_CANDLE:
@@ -316,12 +316,13 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 			break;
 			case Netcode::MessageType::PLAYER_DIED:
 			{
-				Netcode::ComponentID killerID;
+				KillInfo info;
 
 				ar(compID);
-				ar(killerID);
+				ar(info.killerCompID);
+				ar(info.isFinal);
 				
-				playerDied(compID, killerID);
+				playerDied(compID, info);
 			}
 			break;
 			case Netcode::MessageType::PLAYER_JUMPED:
@@ -435,6 +436,40 @@ void ReceiverBase::processData(float dt, std::queue<std::string>& data, const bo
 				// This function is and should be empty for the NetworkReceiverSystemClient. 
 				// Only the Host has the authority to damage candles.
 				waterHitPlayer(playerwhoWasHit, projectile);
+			}
+			break;
+			case Netcode::MessageType::SPAWN_POWER_UP:
+			{
+				int type;
+				glm::vec3 pos;
+				Netcode::ComponentID compID;
+				Netcode::ComponentID parentCompID;
+
+				ar(type);
+				ArchiveHelpers::loadVec3(ar, pos);
+				ar(compID);
+				ar(parentCompID);
+				spawnPowerup(type, pos, compID, parentCompID);
+			}
+			break;
+			case Netcode::MessageType::DESTROY_POWER_UP:
+			{
+				Netcode::ComponentID compID;
+				Netcode::ComponentID pickedByPlayer;
+
+				ar(compID);
+				ar(pickedByPlayer);
+				destroyPowerup(compID, pickedByPlayer);
+			}
+			break;
+			case Netcode::MessageType::SET_CENTER: 
+			{
+				Netcode::ComponentID compID;
+				glm::vec3 offset;
+
+				ar(compID);
+				ArchiveHelpers::loadVec3(ar, offset);
+				setCenter(compID, offset);
 			}
 			break;
 			default:

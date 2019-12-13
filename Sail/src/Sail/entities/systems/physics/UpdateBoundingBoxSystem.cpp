@@ -102,7 +102,7 @@ void UpdateBoundingBoxSystem::update(float dt) {
 		TransformComponent* transform = e->getComponent<TransformComponent>();
 		if (transform) {
 			int change = transform->getChange();
-			if (change > 1) {
+			if (change > 1 && !e->getComponent<BoundingBoxComponent>()->isStatic) {
 				recalculateBoundingBoxFully(e);
 			} 
 			else if (change > 0) {
@@ -110,6 +110,7 @@ void UpdateBoundingBoxSystem::update(float dt) {
 			}
 
 			if (e->hasComponent<RagdollComponent>()) {
+				recalculateBoundingBoxFully(e);
 				updateRagdollBoundingBoxes(e);
 			}
 		}

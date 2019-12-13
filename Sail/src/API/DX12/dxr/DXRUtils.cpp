@@ -30,17 +30,21 @@ D3D12_STATE_SUBOBJECT* DXRUtils::PSOBuilder::append(D3D12_STATE_SUBOBJECT_TYPE t
 	return so;
 }
 
-void DXRUtils::PSOBuilder::addLibrary(const std::string& shaderPath, const std::vector<LPCWSTR> names) {
+void DXRUtils::PSOBuilder::addLibrary(const std::string& shaderPath, const std::vector<LPCWSTR>& names, const std::vector<DxcDefine>& defines) {
 
 	// Add names to the list of names/export to be configured in generate()
 	m_shaderNames.insert(m_shaderNames.end(), names.begin(), names.end());
 
 	DXILShaderCompiler::Desc shaderDesc;
-	shaderDesc.compileArguments.push_back(L"/Gis");
+	shaderDesc.compileArguments.push_back(L"/Gis"); // Declare all variables and values as precise
+#ifdef _DEBUG
+	shaderDesc.compileArguments.push_back(L"/Zi"); // Debug info
+#endif
 	std::wstring stemp = std::wstring(shaderPath.begin(), shaderPath.end());
 	shaderDesc.filePath = stemp.c_str();
 	shaderDesc.entryPoint = L"";
 	shaderDesc.targetProfile = L"lib_6_3";
+	shaderDesc.defines = defines;
 
 	IDxcBlob* pShaders = nullptr;
 	ThrowIfFailed(m_dxilCompiler.compile(&shaderDesc, &pShaders));
@@ -240,7 +244,7 @@ void DXRUtils::ShaderTableBuilder::addDescriptor(UINT64& descriptor, UINT instan
 	auto ptr = static_cast<char*>(m_data[instance]) + m_dataOffsets[instance];
 	*(UINT64*)ptr = descriptor;
 	m_dataOffsets[instance] += sizeof(descriptor);
-	assert(m_dataOffsets[instance] <= m_maxBytesPerInstance && "DXRUtils::ShaderTableBuilder::addDescriptor");
+	assert(m_dataOffsets[instance] <= m_maxBytesPerInstance && "DXRUtils::ShaderTableBuilder::addDescriptor bytesPerInstance is too small!");
 }
 
 void DXRUtils::ShaderTableBuilder::addConstants(UINT numConstants, float* constants, UINT instance) {
