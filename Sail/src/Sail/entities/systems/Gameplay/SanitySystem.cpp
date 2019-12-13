@@ -52,9 +52,12 @@ void SanitySystem::update(float dt) {
 			float dist;
 			if (candleComp->isCarried && candleComp->isLit) {
 				dist = -12;
-			}
-			else {
-				dist = glm::min(glm::distance(playerTransformComp->getTranslation(), candleTransformComp->getTranslation()), 25.f);
+			} else if (candleComp->isCarried) {
+				// Carried but not lit
+				dist = 25.f;
+			} else {
+				// CandleTransform translation is read from the matrix in order to always get its world postitions regardless of if it has a parent or not
+				dist = glm::min(glm::distance(playerTransformComp->getTranslation(), (glm::vec3)candleTransformComp->getMatrixWithoutUpdate()[3]), 25.f);
 			}
 
 			sanityComp->sanity -= (dist - 1) * dt * 0.5f;

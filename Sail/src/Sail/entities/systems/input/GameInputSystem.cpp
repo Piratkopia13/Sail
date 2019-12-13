@@ -201,7 +201,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 					m_onGroundTimer -= dt;
 				}
 
-#ifndef DEVELOPMENT
 				if (Input::IsKeyPressed(KeyBinds::TOGGLE_BOUNDINGBOXES) && !m_ragdolling && !m_ragdollSwitchWasPressed) {
 					//Ragdoll landing
 					auto* ragdollComp = e->addComponent<RagdollComponent>();
@@ -233,10 +232,8 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 
 					m_ragdollSwitchWasPressed = true;
 				}
-#endif
 			}
 
-#ifndef DEVELOPMENT
 			if (Input::IsKeyPressed(KeyBinds::TOGGLE_BOUNDINGBOXES)) {
 				if (m_ragdolling && !m_ragdollSwitchWasPressed) {
 					e->removeComponent<RagdollComponent>();
@@ -256,6 +253,8 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 						}, false
 					);
 
+					e->getComponent<BoundingBoxComponent>()->getBoundingBox()->setHalfSize(glm::vec3(0.4f, .9f, 0.4f));
+
 					m_ragdolling = false;
 					ECS::Instance()->getSystem<UpdateBoundingBoxSystem>()->update(0.0f);
 				}
@@ -264,7 +263,6 @@ void GameInputSystem::processKeyboardInput(const float& dt) {
 			else {
 				m_ragdollSwitchWasPressed = false;
 			}
-#endif
 
 			if (playerMovement.upMovement == 1.0f) {
 

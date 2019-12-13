@@ -124,7 +124,7 @@ Entity::SPtr EntityFactory::CreateMyPlayer(Netcode::PlayerID playerID, size_t li
 	myPlayer->addComponent<ThrowingComponent>();
 	myPlayer->addComponent<RenderInActiveGameComponent>();
 
-
+	myPlayer->getComponent<BoundingBoxComponent>()->isStatic = true;
 
 	AnimationComponent* ac = myPlayer->getComponent<AnimationComponent>();
 
