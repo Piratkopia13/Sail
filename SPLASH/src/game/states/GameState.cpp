@@ -562,6 +562,7 @@ void GameState::initSystems(const unsigned char playerID) {
 
 void GameState::initConsole() {
 	auto& console = Application::getInstance()->getConsole();
+#ifdef DEVELOPMENT
 	console.addCommand("state <string>", [&](const std::string& param) {
 		bool stateChanged = false;
 		std::string returnMsg = "Invalid state. Available states are \"menu\" and \"pbr\"";
@@ -603,6 +604,7 @@ void GameState::initConsole() {
 
 		return std::string("Match ended.");
 		}, "GameState");
+#endif
 #ifdef _DEBUG
 	console.addCommand("AddCube", [&]() {
 		return createCube(m_cam.getPosition());
