@@ -25,6 +25,10 @@ include "libraries/glfw"
 include "libraries/imgui"
 
 group ""
+
+-----------------------------------
+--------------  DEMO --------------
+-----------------------------------
 project "Demo"
 	location "Demo"
 	kind "WindowedApp"
@@ -60,6 +64,10 @@ project "Demo"
 		"Sail"
 	}
 
+	defines { "NOMINMAX",				-- Removes min max macros which cause issues
+			  "WIN32_LEAN_AND_MEAN" }	-- Exclude some less used APIs to speed up the build process on windows
+	flags { "MultiProcessorCompile" }
+
 	filter "system:windows"
 		systemversion "latest"
 
@@ -81,7 +89,9 @@ project "Demo"
 			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
 		}
 
-
+-----------------------------------
+--------------  Sail --------------
+-----------------------------------
 project "Sail"
 	location "Sail"
 	kind "StaticLib"
@@ -134,6 +144,8 @@ project "Sail"
 		"GLFW",
 		"ImGui"
 	}
+
+	flags { "MultiProcessorCompile" }
 
 	defines {
 		"SAIL_PLATFORM=\"%{cfg.platform}\""
