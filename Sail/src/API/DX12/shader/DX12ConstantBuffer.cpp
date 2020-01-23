@@ -14,7 +14,7 @@ namespace ShaderComponent {
 		, m_resourceHeapMeshIndex(0)
 	{
 		m_context = Application::getInstance()->getAPI<DX12API>();
-		auto numSwapBuffers = m_context->getNumSwapBuffers();
+		auto numSwapBuffers = m_context->getNumGPUBuffers();
 
 		// Store offset size for each mesh
 		m_byteAlignedSize = (size + 255) & ~255;
@@ -38,13 +38,13 @@ namespace ShaderComponent {
 
 	void DX12ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int offset /*= 0U*/) {
 		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
-		auto frameIndex = m_context->getFrameIndex();
+		auto frameIndex = m_context->getSwapIndex();
 		memcpy(m_cbGPUAddress[frameIndex] + m_byteAlignedSize * m_resourceHeapMeshIndex + offset, newData, bufferSize);
 	}
 
 	void DX12ConstantBuffer::bind(void* cmdList) const {
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-		auto frameIndex = m_context->getFrameIndex();
+		auto frameIndex = m_context->getSwapIndex();
 		
 		UINT rootIndex = m_context->getRootIndexFromRegister("b" + std::to_string(m_register));
 		dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * m_resourceHeapMeshIndex);
@@ -52,8 +52,8 @@ namespace ShaderComponent {
 
 	void DX12ConstantBuffer::setResourceHeapMeshIndex(unsigned int index) {
 		m_resourceHeapMeshIndex = index;
-		auto numSwapBuffers = m_context->getNumSwapBuffers();
-		auto frameIndex = m_context->getFrameIndex();
+		auto numSwapBuffers = m_context->getNumGPUBuffers();
+		auto frameIndex = m_context->getSwapIndex();
 		// Expand resource heap if index is out of range
 		if ((index + 1) * m_byteAlignedSize >= m_resourceHeapSize) {
 			unsigned int oldSize = m_resourceHeapSize;
@@ -72,7 +72,7 @@ namespace ShaderComponent {
 	}
 
 	void DX12ConstantBuffer::createBuffers() {
-		auto numSwapBuffers = m_context->getNumSwapBuffers();
+		auto numSwapBuffers = m_context->getNumGPUBuffers();
 
 		// Create an upload heap to hold the constant buffer
 		// create a resource heap, and pointer to cbv for each frame

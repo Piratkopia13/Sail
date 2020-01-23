@@ -10,7 +10,6 @@ public:
 	virtual void bind(void* cmdList) const override;
 
 private:
-	wComPtr<ID3D12Resource1> m_vertexBuffer;
+	wComPtr<ID3D12Resource> m_vertexBuffer;
 
 };
-

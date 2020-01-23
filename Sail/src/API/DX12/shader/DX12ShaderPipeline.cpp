@@ -126,7 +126,7 @@ void DX12ShaderPipeline::setTexture2D(const std::string& name, Texture* texture,
 		dxTexture->initBuffers(static_cast<ID3D12GraphicsCommandList4*>(cmdList));
 
 	// Copy texture SRVs to the gpu heap
-	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void DX12ShaderPipeline::setResourceHeapMeshIndex(unsigned int index) {

@@ -3,6 +3,7 @@
 #include "Sail/Application.h"
 #include "../DX12API.h"
 #include "API/Windows/Win32Window.h"
+#include "../resources/DX12Texture.h"
 
 #include "imgui.h"
 #include "examples/imgui_impl_win32.h"
@@ -15,7 +16,7 @@
 
 
 ImGuiHandler* ImGuiHandler::Create() {
-	return new DX12ImGuiHandler();
+	return SAIL_NEW DX12ImGuiHandler();
 }
 
 DX12ImGuiHandler::DX12ImGuiHandler() {
@@ -33,10 +34,9 @@ void DX12ImGuiHandler::init() {
 	auto* window = Application::getInstance()->getWindow<Win32Window>();
 
 	// Set up a GPU visible srv descriptor heap
-	m_descHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, true);
+	m_descHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 100, true);
 
-	m_context->initCommand(m_command);
-	m_command.list->SetName(L"imgui command list");
+	m_context->initCommand(m_command, D3D12_COMMAND_LIST_TYPE_DIRECT, L"imgui command list");
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -65,10 +65,11 @@ void DX12ImGuiHandler::init() {
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplWin32_Init((void*)*window->getHwnd());
-	ImGui_ImplDX12_Init(m_context->getDevice(), m_context->getNumSwapBuffers(),
+	ImGui_ImplDX12_Init(m_context->getDevice(), m_context->getNumGPUBuffers(),
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		m_descHeap->getCPUDescriptorHandleForIndex(0),
 		m_descHeap->getGPUDescriptorHandleForIndex(0));
+	m_descHeap->setIndex(1);
 }
 
 void DX12ImGuiHandler::begin() {
@@ -79,13 +80,19 @@ void DX12ImGuiHandler::begin() {
 }
 
 void DX12ImGuiHandler::end() {
-
 	auto& allocator = m_command.allocators[m_context->getFrameIndex()];
 	auto& cmdList = m_command.list;
 
 	// Reset allocators and lists for this frame
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
+
+	// Transition all used textures to pixel shader resource
+	for (auto* texture : m_texturesUsedThisFrame) {
+		texture->initBuffers(cmdList.Get());
+		texture->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	}
+	m_texturesUsedThisFrame.clear();
 
 	// Transition back buffer to render target
 	m_context->prepareToRender(cmdList.Get());
@@ -101,12 +108,30 @@ void DX12ImGuiHandler::end() {
 	m_context->prepareToPresent(cmdList.Get());
 	// Execute command list
 	cmdList->Close();
-	m_context->executeCommandLists({ cmdList.Get() });
+	m_context->getDirectQueue()->executeCommandLists({ cmdList.Get() });
 
 	// Update and Render additional Platform Windows
 	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
 	}
-	
+
+	// Reset descriptor heap index as soon as the SRVs can be overwritten
+	// Set it to 1 since the first is always used for imgui fonts
+	if (m_context->getSwapIndex() == 1) {
+		m_descHeap->setIndex(1);
+	}
+}
+
+ImTextureID DX12ImGuiHandler::getTextureID(Texture* texture) {
+	auto* dxTexture = static_cast<DX12Texture*>(texture);
+
+	auto heapIndex = m_descHeap->getAndStepIndex();
+	m_context->getDevice()->CopyDescriptorsSimple(1, m_descHeap->getCPUDescriptorHandleForIndex(heapIndex), dxTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	// Store texture since its resource state needs to change to PIXEL_SHADER_RESOURCE before rendering
+	m_texturesUsedThisFrame.emplace_back(dxTexture);
+
+	return (ImTextureID)m_descHeap->getGPUDescriptorHandleForIndex(heapIndex).ptr;
+
 }

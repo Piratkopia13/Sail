@@ -13,6 +13,14 @@
 #define ThrowIfFailed(result)	\
 	if (FAILED(result))			\
 		throw std::exception(); \
+// Show message box and break on failed blob creation
+#define ThrowIfBlobError(hr, blob) { \
+	if (FAILED(hr)) { \
+		MessageBoxA(0, (char*)blob->GetBufferPointer(), "", 0); \
+		OutputDebugStringA((char*)blob->GetBufferPointer()); \
+		throw std::exception(); \
+	} \
+}
 
 // Macro to easier track down memory leaks
 #ifdef _DEBUG

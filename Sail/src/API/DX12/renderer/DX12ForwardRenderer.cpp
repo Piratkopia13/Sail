@@ -84,6 +84,6 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	m_context->prepareToPresent(cmdList.Get());
 	// Execute command list
 	cmdList->Close();
-	m_context->executeCommandLists({ cmdList.Get() });
+	m_context->getDirectQueue()->executeCommandLists({ cmdList.Get() });
 
 }

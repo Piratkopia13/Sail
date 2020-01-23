@@ -7,6 +7,7 @@
 #include <iomanip>
 
 const UINT DX12API::NUM_SWAP_BUFFERS = 3;
+const UINT DX12API::NUM_GPU_BUFFERS = 2;
 
 GraphicsAPI* GraphicsAPI::Create() {
 	return SAIL_NEW DX12API();
@@ -14,12 +15,14 @@ GraphicsAPI* GraphicsAPI::Create() {
 
 DX12API::DX12API()
 	: m_backBufferIndex(0)
+	, m_swapIndex(0)
 	, m_clearColor{0.8f, 0.2f, 0.2f, 1.0f}
 	, m_tearingSupport(true)
 	, m_windowedMode(true)
+	, m_directQueueFenceValues()
+	, m_frameCount(0)
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
-	m_fenceValues.resize(NUM_SWAP_BUFFERS, 0);
 }
 
 DX12API::~DX12API() {
@@ -30,14 +33,11 @@ DX12API::~DX12API() {
 #ifdef _DEBUG
 	{
 		m_dxgiFactory.Reset();
-		m_directCommandQueue.Reset();
-		m_computeCommandQueue.Reset();
-		m_copyCommandQueue.Reset();
 		m_swapChain.Reset();
-		m_fence.Reset();
 		m_globalRootSignature.Reset();
 		m_renderTargetsHeap.Reset();
 		m_depthStencilBuffer.Reset();
+		m_directCommandQueue->reset();
 		m_dsDescriptorHeap.Reset();
 		for (auto& rt : m_renderTargets) {
 			rt.Reset();
@@ -57,33 +57,19 @@ DX12API::~DX12API() {
 }
 
 bool DX12API::init(Window* window) {
-
 	auto winWindow = static_cast<Win32Window*>(window);
 	createDevice();
 	createCmdInterfacesAndSwapChain(winWindow);
-	createFenceAndEventHandle();
+	createEventHandle();
 	createRenderTargets();
 	createShaderResources();
 	createGlobalRootSignature();
 	createDepthStencilResources(winWindow);
-
-	// 7. Viewport and scissor rect
-	m_viewport.TopLeftX = 0.0f;
-	m_viewport.TopLeftY = 0.0f;
-	m_viewport.Width = (float)window->getWindowWidth();
-	m_viewport.Height = (float)window->getWindowHeight();
-	m_viewport.MinDepth = 0.0f;
-	m_viewport.MaxDepth = 1.0f;
-
-	m_scissorRect.left = (long)0;
-	m_scissorRect.right = (long)window->getWindowWidth();
-	m_scissorRect.top = (long)0;
-	m_scissorRect.bottom = (long)window->getWindowHeight();
+	createViewportAndScissorRect(winWindow);
 
 	OutputDebugString(L"DX12 Initialized.\n");
 
 	return true;
-
 }
 
 
@@ -162,45 +148,7 @@ void DX12API::createDevice() {
 
 void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 	// 3. Create command queue/allocator/list
-
-	// Create direct command queue
-	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_directCommandQueue)));
-	m_directCommandQueue->SetName(L"Direct Command Queue");
-
-	// Create compute command queue
-	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_computeCommandQueue)));
-	m_computeCommandQueue->SetName(L"Compute Command Queue");
-
-	// Create copy command queue
-	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
-	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_copyCommandQueue)));
-	m_copyCommandQueue->SetName(L"Copy Command Queue");
-
-	// Create allocators
-	//m_postCommand.allocators.resize(NUM_SWAP_BUFFERS);
-	//m_computeCommand.allocators.resize(NUM_SWAP_BUFFERS);
-	//m_copyCommand.allocators.resize(NUM_SWAP_BUFFERS);
-	//for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++) {
-	//	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_postCommand.allocators[i])));
-	//	// TODO: Is this required?
-	//	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&m_computeCommand.allocators[i])));
-	//	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_copyCommand.allocators[i])));
-	//}
-	//// Create command lists
-	//ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_postCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_postCommand.list)));
-	//ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_computeCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_computeCommand.list)));
-	//ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_copyCommand.allocators[0].Get(), nullptr, IID_PPV_ARGS(&m_copyCommand.list)));
-
-	//// Command lists are created in the recording state. Since there is nothing to
-	//// record right now and the main loop expects it to be closed, we close them
-	//m_postCommand.list->Close();
-	//m_computeCommand.list->Close();
-	//m_copyCommand.list->Close();
-
+	m_directCommandQueue = std::make_unique<CommandQueue>(this, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Main direct command queue");
 	
 	// 5. Create swap chain
 	DXGI_SWAP_CHAIN_DESC1 scDesc = {};
@@ -218,11 +166,13 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 	scDesc.Flags = (m_tearingSupport) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
 	IDXGISwapChain1* swapChain1 = nullptr;
-	if (SUCCEEDED(m_factory->CreateSwapChainForHwnd(m_directCommandQueue.Get(), *window->getHwnd(), &scDesc, nullptr, nullptr, &swapChain1))) {
-		if (SUCCEEDED(swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain)))) {
+	HRESULT hr;
+	if (SUCCEEDED(hr = m_factory->CreateSwapChainForHwnd(m_directCommandQueue->get(), *window->getHwnd(), &scDesc, nullptr, nullptr, &swapChain1))) {
+		if (SUCCEEDED(hr = swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain)))) {
 			m_swapChain->Release();
 		}
 	}
+	ThrowIfFailed(hr);
 
 	if (m_tearingSupport) {
 		// When tearing support is enabled we will handle ALT+Enter key presses in the
@@ -234,17 +184,9 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 	Memory::SafeRelease(&m_factory);
 }
 
-void DX12API::createFenceAndEventHandle() {
-	// 4. Create fence
-	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
-	for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++)
-		m_fenceValues[i] = 1;
+void DX12API::createEventHandle() {
 	// Create an event handle to use for GPU synchronization
 	m_eventHandle = CreateEvent(0, false, false, 0);
-
-	/*ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeQueueFence)));
-	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyQueueFence)));
-	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directQueueFence)));*/
 }
 
 void DX12API::createRenderTargets() {
@@ -370,11 +312,10 @@ void DX12API::createGlobalRootSignature() {
 	ThrowIfFailed(m_device->CreateRootSignature(0, sBlob->GetBufferPointer(), sBlob->GetBufferSize(), IID_PPV_ARGS(&m_globalRootSignature)));
 }
 
-
 void DX12API::createShaderResources() {
 	// Create one big gpu descriptor heap for all cbvs, srvs and uavs
-	// TODO: maybe dont hardcode 512 as numdescriptors?
-	m_cbvSrvUavDescriptorHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 512, true);
+	// TODO: maybe dont hardcode numdescriptors?
+	m_cbvSrvUavDescriptorHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 50000, true, true);
 }
 
 void DX12API::createDepthStencilResources(Win32Window* window) {
@@ -421,56 +362,44 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 	m_dsvDescHandle = m_dsDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
+void DX12API::createViewportAndScissorRect(Win32Window* window) {
+	// 7. Viewport and scissor rect
+	m_viewport.TopLeftX = 0.0f;
+	m_viewport.TopLeftY = 0.0f;
+	m_viewport.Width = (float)window->getWindowWidth();
+	m_viewport.Height = (float)window->getWindowHeight();
+	m_viewport.MinDepth = 0.0f;
+	m_viewport.MaxDepth = 1.0f;
+
+	m_scissorRect.left = (long)0;
+	m_scissorRect.right = (long)window->getWindowWidth();
+	m_scissorRect.top = (long)0;
+	m_scissorRect.bottom = (long)window->getWindowHeight();
+}
+
 void DX12API::nextFrame() {
-
 	// Schedule a signal to notify when the current frame has finished presenting
-	UINT64 currentFenceValue = m_fenceValues[m_backBufferIndex];
-	ThrowIfFailed(m_directCommandQueue->Signal(m_fence.Get(), currentFenceValue));
-	
+	m_directQueueFenceValues[m_swapIndex] = m_directCommandQueue->signal();
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
-
-	//// Debug vars to log how many frames have to wait for the gpu
-	//static const int waitedMax = 10000;
-	//static std::vector<bool> waited = std::vector<bool>(waitedMax, false);
-	//static int waitedCounter = 0;
-
-	// Wait until the next frame is ready
-	auto val = m_fence->GetCompletedValue();
-	if (val < m_fenceValues[m_backBufferIndex]) {
-		m_fence->SetEventOnCompletion(m_fenceValues[m_backBufferIndex], m_eventHandle);
-		WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
-		//waited[waitedCounter++] = true;
-	} else {
-		//waited[waitedCounter++] = false;
+	m_swapIndex = 1 - m_swapIndex; // Toggle between 0 and 1
+	static bool firstFrame = true;
+	// Wait until the next frame is ready, don't wait on the first frame as there is nothing to wait for
+	if (!firstFrame) {
+		m_directCommandQueue->waitOnCPU(m_directQueueFenceValues[m_swapIndex], m_eventHandle);
 	}
-
-	/*if (waitedCounter == waitedMax) {
-		int matches = std::count(waited.begin(), waited.end(), true);
-		std::stringstream stream;
-		stream << std::fixed << std::setprecision(2) << ((matches / (float)waitedMax) * 100.f);
-		std::string percentageStr = stream.str();
-
-		std::string outputStr(percentageStr + "% of the last " + std::to_string(waitedMax) + " frames had to wait for the gpu before rendering");
-		Logger::Log(outputStr);
-		OutputDebugStringA(outputStr.c_str());
-		OutputDebugStringA("\n");
-		waitedCounter = 0;
-	}*/
-
-	m_fenceValues[m_backBufferIndex] = currentFenceValue + 1;
-
+	firstFrame = false;
 	// Get the handle for the current render target used as back buffer
 	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
 	m_currentRenderTargetCDH.ptr += m_renderTargetDescriptorSize * m_backBufferIndex;
 	m_currentRenderTargetResource = m_renderTargets[m_backBufferIndex].Get();
-
 	// Reset descriptor heap index back to 0 as soon as the SRVs can be overwritten
 	// This is to avoid having to find a good point to loop the heap index mid-frame
 	// as this would be difficult to calculate (depends on the number of objects being 
 	// rendered and how many textures each object has)
-	if (m_backBufferIndex == 0)
+	if (m_swapIndex == 0) {
 		getMainGPUDescriptorHeap()->setIndex(0);
-
+	}
+	m_frameCount++;
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {
@@ -495,10 +424,13 @@ void DX12API::resizeBuffers(UINT width, UINT height) {
 	}
 	// Back buffer index now changes to 0
 	// Rotate fence values to avoid infinite stall
-	std::rotate(m_fenceValues.begin(), m_fenceValues.begin() + m_backBufferIndex, m_fenceValues.end());
-
+	auto tmpFenceVal = m_directQueueFenceValues[0];
+	m_directQueueFenceValues[0] = m_directQueueFenceValues[1];
+	m_directQueueFenceValues[1] = tmpFenceVal;
+	
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
-	m_currentRenderTargetResource = m_renderTargets[getFrameIndex()].Get();
+	m_swapIndex = m_backBufferIndex % NUM_GPU_BUFFERS;
+	m_currentRenderTargetResource = m_renderTargets[m_backBufferIndex].Get();
 	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
 
 	// Recreate the dsv
@@ -606,17 +538,15 @@ void DX12API::present(bool vsync) {
 }
 
 unsigned int DX12API::getMemoryUsage() const {
-	/*DXGI_QUERY_VIDEO_MEMORY_INFO info;
+	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
-	return info.CurrentUsage / 1000000;*/
-	return -1;
+	return static_cast<unsigned int>(info.CurrentUsage / (1024 * 1024));
 }
 
 unsigned int DX12API::getMemoryBudget() const {
-	/*DXGI_QUERY_VIDEO_MEMORY_INFO info;
+	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
-	return info.Budget / 1000000;*/
-	return -1;
+	return static_cast<unsigned int>(info.Budget / (1024 * 1024));
 }
 
 ID3D12Device5* DX12API::getDevice() const {
@@ -636,12 +566,16 @@ UINT DX12API::getRootIndexFromRegister(const std::string& reg) const {
 	return -1;
 }
 
+UINT DX12API::getSwapIndex() const {
+	return m_swapIndex;
+}
+
 UINT DX12API::getFrameIndex() const {
 	return m_backBufferIndex;
 }
 
-UINT DX12API::getNumSwapBuffers() const {
-	return NUM_SWAP_BUFFERS;
+UINT DX12API::getNumGPUBuffers() const {
+	return NUM_GPU_BUFFERS;
 }
 
 DescriptorHeap* const DX12API::getMainGPUDescriptorHeap() const {
@@ -660,22 +594,27 @@ IDXGISwapChain4* const DX12API::getSwapChain() const {
 	return m_swapChain.Get();
 }
 
-void DX12API::initCommand(Command& cmd) {
+DX12API::CommandQueue* DX12API::getDirectQueue() const {
+	return m_directCommandQueue.get();
+}
+
+unsigned int DX12API::getFrameCount() const {
+	return m_frameCount;
+}
+
+void DX12API::initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type, LPCWSTR name) {
 	// Create allocators
 	cmd.allocators.resize(NUM_SWAP_BUFFERS);
 	for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++) {
-		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmd.allocators[i])));
+		ThrowIfFailed(m_device->CreateCommandAllocator(type, IID_PPV_ARGS(&cmd.allocators[i])));
+		cmd.allocators[i]->SetName(name);
 	}
 	// Create command lists
-	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmd.allocators[0].Get(), nullptr, IID_PPV_ARGS(&cmd.list)));
+	ThrowIfFailed(m_device->CreateCommandList(0, type, cmd.allocators[0].Get(), nullptr, IID_PPV_ARGS(&cmd.list)));
+	cmd.list->SetName(name);
 	// Command lists are created in the recording state. Since there is nothing to
 	// record right now and the main loop expects it to be closed, we close them
 	cmd.list->Close();
-}
-
-void DX12API::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const {
-	// Command lists needs to be closed before sent to this method
-	m_directCommandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
 }
 
 void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
@@ -709,6 +648,7 @@ bool DX12API::onResize(WindowResizeEvent& event) {
 }
 
 void DX12API::toggleFullscreen() {
+
 	if (!m_tearingSupport)
 		return;
 
@@ -727,7 +667,8 @@ void DX12API::toggleFullscreen() {
 			m_windowRect.top,
 			m_windowRect.right - m_windowRect.left,
 			m_windowRect.bottom - m_windowRect.top,
-			SWP_FRAMECHANGED | SWP_NOACTIVATE);
+			SWP_FRAMECHANGED | SWP_NOACTIVATE
+		);
 
 		ShowWindow(hWnd, SW_NORMAL);
 	} else {
@@ -783,15 +724,77 @@ void DX12API::toggleFullscreen() {
 }
 
 void DX12API::waitForGPU() {
-	// Waits for the GPU to finish all current tasks in the direct queue
+	// Waits for the GPU to finish all current tasks in all queues
+	// Schedule signals and wait for them
+	m_directCommandQueue->waitOnCPU(m_directCommandQueue->signal(), m_eventHandle);
+}
 
-	// Schedule a signal
-	ThrowIfFailed(m_directCommandQueue->Signal(m_fence.Get(), m_fenceValues[m_backBufferIndex]));
+UINT64 DX12API::CommandQueue::sFenceValue = 0;
+wComPtr<ID3D12Fence1> DX12API::CommandQueue::sFence;
 
-	// Wait until command queue is done
-	m_fence->SetEventOnCompletion(m_fenceValues[m_backBufferIndex], m_eventHandle);
-	WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
-
-	// Increment fence value for current frame
-	m_fenceValues[m_backBufferIndex]++;
+DX12API::CommandQueue::CommandQueue(DX12API* context, D3D12_COMMAND_LIST_TYPE type, LPCWSTR name)
+	: m_context(context)
+{
+	// Create command queue
+	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+	queueDesc.Type = type;
+	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	ThrowIfFailed(context->getDevice()->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
+	m_commandQueue->SetName(name);
+	// Create fence
+	if (!sFence) {
+		ThrowIfFailed(context->getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&sFence)));
+	}
+}
+UINT64 DX12API::CommandQueue::signal() {
+	auto fenceVal = sFenceValue++;
+	ThrowIfFailed(m_commandQueue->Signal(sFence.Get(), fenceVal));
+	return fenceVal;
+}
+void DX12API::CommandQueue::wait(UINT64 fenceValue) const {
+	m_commandQueue->Wait(sFence.Get(), fenceValue);
+}
+bool DX12API::CommandQueue::waitOnCPU(UINT64 fenceValue, HANDLE eventHandle) const {
+	if (sFence->GetCompletedValue() < fenceValue) {
+		ThrowIfFailed(sFence->SetEventOnCompletion(fenceValue, eventHandle));
+		WaitForSingleObjectEx(eventHandle, INFINITE, FALSE);
+		return true;
+	}
+	return false;
+}
+ID3D12CommandQueue* DX12API::CommandQueue::get() const {
+	return m_commandQueue.Get();
+}
+UINT64 DX12API::CommandQueue::getCurrentFenceValue() const {
+	return sFenceValue;
+}
+UINT64 DX12API::CommandQueue::getCompletedFenceValue() const {
+	return sFence->GetCompletedValue();
+}
+void DX12API::CommandQueue::reset() {
+	m_commandQueue.Reset();
+	if (sFence) {
+		sFence.Reset();
+	}
+}
+void DX12API::CommandQueue::scheduleSignal(std::function<void(UINT64)> func) {
+	m_queuedSignals.emplace_back(func);
+}
+void DX12API::CommandQueue::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) {
+	// Command lists needs to be closed before sent to this method
+	m_commandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
+	// Signal and return fence values to scheduled lambdas
+	for (auto& func : m_queuedSignals) {
+		func(this->signal());
+	}
+	m_queuedSignals.clear();
+}
+void DX12API::CommandQueue::executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) {
+	// Command lists needs to be closed before sent to this method
+	m_commandQueue->ExecuteCommandLists(nLists, cmdLists);
+	// Signal and return fence values to scheduled lambdas
+	for (auto& func : m_queuedSignals) {
+		func(this->signal());
+	}
+	m_queuedSignals.clear();
 }

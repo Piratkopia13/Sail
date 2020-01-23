@@ -5,9 +5,6 @@
 #pragma comment(lib,"d3dcompiler.lib")
 #pragma comment(lib, "dxgi.lib")
 
-// Include the minimal needed from windows.h
-#define VC_EXTRALEAN
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wrl/client.h>
 #include <d3d12.h>
@@ -39,10 +36,48 @@ namespace GlobalRootParam {
 
 class DX12API : public GraphicsAPI {
 public:
+	static const UINT NUM_SWAP_BUFFERS;
+	static const UINT NUM_GPU_BUFFERS;
+
 	struct Command {
-		std::vector<wComPtr<ID3D12CommandAllocator>> allocators; // Allocator only grows, use multple (one for each thing)
+		std::vector<wComPtr<ID3D12CommandAllocator>> allocators; // Allocator only grows, use multiple (one for each thing)
 		wComPtr<ID3D12GraphicsCommandList4> list;
 	};
+
+	class CommandQueue {
+	public:
+		CommandQueue(DX12API* context, D3D12_COMMAND_LIST_TYPE type, LPCWSTR name = L"Unnamed Command Queue");
+		UINT64 signal();
+		void wait(UINT64 fenceValue) const;
+		bool waitOnCPU(UINT64 fenceValue, HANDLE eventHandle) const;
+		ID3D12CommandQueue* get() const;
+		UINT64 getCurrentFenceValue() const;
+		UINT64 getCompletedFenceValue() const;
+		void reset();
+		void scheduleSignal(std::function<void(UINT64)> func);
+		void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists);
+		void executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists);
+	private:
+		DX12API* m_context;
+		wComPtr<ID3D12CommandQueue> m_commandQueue;
+		static UINT64 sFenceValue;
+		static wComPtr<ID3D12Fence1> sFence;
+		std::vector<std::function<void(UINT64)>> m_queuedSignals;
+	};
+
+	// Helper method to create resources that require one for each swap buffer
+	template <typename T>
+	std::vector<T> createFrameResource() {
+		auto resource = std::vector<T>();
+		resource.resize(NUM_GPU_BUFFERS);
+		return resource;
+	}
+	// Retrieves the resource for the current back buffer index
+	template <typename T>
+	T getFrameResource(const std::vector<T>& resource) {
+		return resource[m_context->getSwapIndex()];
+	}
+
 
 public:
 	DX12API();
@@ -62,16 +97,18 @@ public:
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;
 	UINT getRootIndexFromRegister(const std::string& reg) const;
-	UINT getFrameIndex() const;
-	UINT getNumSwapBuffers() const;
+	UINT getSwapIndex() const; // Returns 0 or 1
+	UINT getFrameIndex() const; // Returns 0, 1, ... NUM_SWAP_BUFFERS
+	UINT getNumGPUBuffers() const; // Always returns 2 - as no more than two buffers are needed for any gpu based resource
+
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
 	IDXGISwapChain4* const getSwapChain() const;
+	CommandQueue* getDirectQueue() const;
+	unsigned int getFrameCount() const; // Returns the number of elapsed frames
 
-	void initCommand(Command& cmd);
-
-	void executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) const;
+	void initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT, LPCWSTR name = L"Unnamed Commmand list or allocator object");
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;
@@ -80,29 +117,29 @@ public:
 private:
 	void createDevice();
 	void createCmdInterfacesAndSwapChain(Win32Window* window);
-	void createFenceAndEventHandle();
+	void createEventHandle();
 	void createRenderTargets();
 	void createGlobalRootSignature();
 	void createShaderResources();
 	void createDepthStencilResources(Win32Window* window);
+	void createViewportAndScissorRect(Win32Window* window);
 
 	void nextFrame();
 
 	void resizeBuffers(UINT width, UINT height);
 
-
 private:
-	static const UINT NUM_SWAP_BUFFERS;
-
 	// Whether or not tearing is available for fullscreen borderless windowed mode.
 	bool m_tearingSupport;
 	bool m_windowedMode;
 	RECT m_windowRect;
 	
-	UINT m_backBufferIndex;
+	UINT m_backBufferIndex; // 0, 1, .. numSwapBuffers
+	UINT m_swapIndex; // 0 or 1
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentRenderTargetCDH;
 	ID3D12Resource* m_currentRenderTargetResource;
 	float m_clearColor[4];
+	unsigned int m_frameCount;
 
 	wComPtr<ID3D12Device5> m_device;
 #ifdef _DEBUG
@@ -113,15 +150,9 @@ private:
 	IDXGIAdapter3* m_adapter3;
 
 	// Queues
-	wComPtr<ID3D12CommandQueue> m_directCommandQueue;
-	wComPtr<ID3D12CommandQueue> m_computeCommandQueue;
-	wComPtr<ID3D12CommandQueue> m_copyCommandQueue;
+	std::unique_ptr<CommandQueue> m_directCommandQueue;
+	UINT64 m_directQueueFenceValues[2];
 
-	// Commands
-	//Command m_preCommand;
-	//Command m_postCommand;
-	//Command m_copyCommand;
-	//Command m_computeCommand;
 	std::unique_ptr<DescriptorHeap> m_cbvSrvUavDescriptorHeap;
 
 	wComPtr<ID3D12DescriptorHeap> m_renderTargetsHeap;
@@ -129,14 +160,6 @@ private:
 	std::vector<wComPtr<ID3D12Resource1>> m_renderTargets;
 	wComPtr<ID3D12RootSignature> m_globalRootSignature;
 	std::map<std::string, UINT> m_globalRootSignatureRegisters;
-
-	// Fences
-	// TODO: check which ones are needed
-	std::vector<UINT64> m_fenceValues;
-	wComPtr<ID3D12Fence1> m_fence;
-	//wComPtr<ID3D12Fence1> m_computeQueueFence;
-	//wComPtr<ID3D12Fence1> m_copyQueueFence;
-	//wComPtr<ID3D12Fence1> m_directQueueFence;
 
 	D3D12_VIEWPORT m_viewport;
 	D3D12_RECT m_scissorRect;
