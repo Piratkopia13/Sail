@@ -15,6 +15,12 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, dsBlob(nullptr)
 	, hsBlob(nullptr)
 	, filename(filename)
+	, wireframe(false)
+	, cullMode(GraphicsAPI::Culling::NO_CULLING)
+	, numRenderTargets(1)
+	, enableDepth(true)
+	, enableDepthWrite(true)
+	, blendMode(GraphicsAPI::NO_BLENDING)
 {
 	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
 }
@@ -67,9 +73,7 @@ void ShaderPipeline::bind(void* cmdList) {
 	for (auto& it : parsedData.samplers) {
 		it.sampler->bind();
 	}
-
-
-
+	
 	// Set input layout as active
 	inputLayout->bind();
 }
@@ -82,6 +86,11 @@ void ShaderPipeline::parse(const std::string& source) {
 	if (source.find("GSMain") != std::string::npos) parsedData.hasGS = true;
 	if (source.find("DSMain") != std::string::npos) parsedData.hasDS = true;
 	if (source.find("HSMain") != std::string::npos) parsedData.hasHS = true;
+
+	if (!parsedData.hasVS && !parsedData.hasPS && !parsedData.hasGS && !parsedData.hasDS && !parsedData.hasHS) {
+		Logger::Error("No main function found in shader. The main function(s) needs to be named VSMain, PSMain, GSMain, DSMain or HSMain");
+		assert(false);
+	}
 
 	// Remove comments from source
 	std::string cleanSource = removeComments(source);
@@ -194,12 +203,14 @@ void ShaderPipeline::parseTexture(const char* source) {
 
 std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray) const {
 	std::string name = nextToken(source);
-	outTokenSize = name.size();
-	if (name[name.size() - 1] == ';')
+	outTokenSize = (UINT)name.size() + 1U; /// +1 to account for the space before the name
+	if (name[name.size() - 1] == ';') {
 		name = name.substr(0, name.size() - 1); // Remove ending ';'
+	}
 	bool isArray = name[name.size() - 1] == ']';
-	if (!allowArray && isArray)
+	if (!allowArray && isArray) {
 		Logger::Error("Shader resource with name \"" + name + "\" is of unsupported type - array");
+	}
 	if (isArray) {
 		// remove [asd] part from the name
 		auto start = name.find("[");
@@ -221,67 +232,29 @@ ShaderComponent::BIND_SHADER ShaderPipeline::getBindShaderFromName(const std::st
 	return ShaderComponent::VS; // Default to binding to VertexShader
 }
 
-//void ShaderPipeline::bind() {
-//
-//	// Don't bind if already bound
-//	// This is to cut down on shader state changes
-//	if (CurrentlyBoundShader == this)
-//		return;
-//
-//	//auto* devCon = Application::getInstance()->getAPI()->getDeviceContext();
-//
-//	if (m_vs)	m_vs->bind();
-//	//else		devCon->VSSetShader(nullptr, 0, 0);
-//	if (m_gs)	m_gs->bind();
-//	//else		devCon->GSSetShader(nullptr, 0, 0);
-//	if (m_ps)	m_ps->bind();
-//	//else		devCon->PSSetShader(nullptr, 0, 0);
-//	if (m_ds)	m_ds->bind();
-//	//else		devCon->DSSetShader(nullptr, 0, 0);
-//	if (m_hs)	m_hs->bind();
-//	//else		devCon->HSSetShader(nullptr, 0, 0);
-//
-//	for (auto& it : parsedData.cBuffers) {
-//		it.cBuffer.bind();
-//	}
-//	for (auto& it : parsedData.samplers) {
-//		it.sampler.bind();
-//	}
-//
-//	// Set input layout as active
-//	inputLayout->bind();
-//
-//	// Set this shader as bound
-//	CurrentlyBoundShader = this;
-//
-//}
-//
-//void ShaderPipeline::bindCS(UINT csIndex) {
-//	/*if (m_css[csIndex]) 
-//		m_css[csIndex]->bind();*/
-//}
+void ShaderPipeline::setWireframe(bool wireframeState) {
+	this->wireframe = wireframeState;
+}
 
-//ID3D10Blob* ShaderPipeline::compileShader(const std::string& source, const std::string& entryPoint, const std::string& shaderVersion) {
-//	
-//	ID3D10Blob *shader = nullptr;
-//	ID3D10Blob *errorMsg;
-//	if (FAILED(D3DCompile(source.c_str(), source.size(), DEFAULT_SHADER_LOCATION.c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), shaderVersion.c_str(), D3DCOMPILE_DEBUG, 0, &shader, &errorMsg))) {
-//		OutputDebugString(L"\n Failed to compile shader\n\n");
-//
-//		char* msg = (char*)(errorMsg->GetBufferPointer());
-//
-//		std::stringstream ss;
-//		ss << "Failed to compile shader (" << entryPoint << ", " << shaderVersion << ")\n";
-//
-//		for (size_t i = 0; i < errorMsg->GetBufferSize(); i++) {
-//			ss << msg[i];
-//		}
-//		Logger::Error(ss.str());
-//	}
-//
-//	return shader;
-//
-//}
+void ShaderPipeline::setCullMode(GraphicsAPI::Culling newCullMode) {
+	this->cullMode = newCullMode;
+}
+
+void ShaderPipeline::setNumRenderTargets(unsigned int numRenderTargets) {
+	this->numRenderTargets = numRenderTargets;
+}
+
+void ShaderPipeline::enableDepthStencil(bool enable) {
+	this->enableDepth = enable;
+}
+
+void ShaderPipeline::enableDepthWriting(bool enable) {
+	this->enableDepthWrite = enable;
+}
+
+void ShaderPipeline::setBlending(GraphicsAPI::Blending blendMode) {
+	this->blendMode = blendMode;
+}
 
 InputLayout& ShaderPipeline::getInputLayout() {
 	return *inputLayout.get();
@@ -315,64 +288,26 @@ bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data,
 	return false;
 }
 
-//void ShaderPipeline::setTexture2D(const std::string& name, ID3D11ShaderResourceView* srv) {
-//
-//	UINT slot = findSlotFromName(name, parsedData.textures);
-//	//Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, &srv);
-//
-//}
-
-//void ShaderPipeline::setVertexShader(void* blob) {
-//
-//	//m_vs = std::make_unique<VertexShader>(blob);
-//
-//}
-//void ShaderPipeline::setGeometryShader(void* blob) {
-//
-//	//m_gs = std::make_unique<GeometryShader>(blob);
-//
-//}
-//void ShaderPipeline::setPixelShader(void* blob) {
-//
-//	//m_ps = std::make_unique<PixelShader>(blob);
-//
-//}
-//void ShaderPipeline::setComputeShaders(void** blob, UINT numBlobs) {
-//	/*m_css.resize(numBlobs);
-//
-//	for (UINT i = 0; i < numBlobs; i++) {
-//		m_css[i] = std::make_unique<ComputeShader>(blob[i]);
-//	}*/
-//}
-//void ShaderPipeline::setDomainShader(void* blob) {
-//
-//	//m_ds = std::make_unique<DomainShader>(blob);
-//
-//}
-//void ShaderPipeline::setHullShader(void* blob) {
-//
-//	//m_hs = std::make_unique<HullShader>(blob);
-//
-//}
-
 // TODO: registerTypeSize(typeName, size)
 UINT ShaderPipeline::getSizeOfType(const std::string& typeName) const {
-	if (typeName == "float") return 4;
-	if (typeName == "float2") return 4*2;
-	if (typeName == "float3") return 4*3;
-	if (typeName == "float4") return 4*4;
-	if (typeName == "float3x3") return 4 * 3 * 3;
-	if (typeName == "float4x4" || typeName == "matrix") return 4 * 4 * 4;
+	if (typeName == "uint")								return 4;
+	if (typeName == "bool")								return 4;
+	if (typeName == "float")							return 4;
+	if (typeName == "float2" || 
+		typeName == "int2"   || 
+		typeName == "uint2")							return 4*2;
+	if (typeName == "float3")							return 4*3;
+	if (typeName == "float4")							return 4*4;
+	if (typeName == "float3x3")							return 4 * 3 * 3;
+	if (typeName == "float4x4" ||
+		typeName == "matrix")							return 4 * 4 * 4;
 
-	if (typeName == "Material") return 48;
-	if (typeName == "DirectionalLight") return 32;
-	if (typeName == "PointLight") return 32;
-	if (typeName == "PointLightInput") return 272;
-	if (typeName == "DeferredPointLightData") return 48;
-	if (typeName == "DeferredDirLightData") return 32;
-	//if (typeName == "DeferredPointLightData") return 48;
-	//if (typeName == "PointLightInput") return 384;
-
+	if (typeName == "Material")							return 48;
+	if (typeName == "DirectionalLight")					return 32;
+	if (typeName == "PointLight")						return 32;
+	if (typeName == "PointLightInput")					return 272;
+	if (typeName == "DeferredPointLightData")			return 48;
+	if (typeName == "DeferredDirLightData")				return 32;
 
 	Logger::Error("Found shader variable type with unknown size (" + typeName + ")");
 	return 0;

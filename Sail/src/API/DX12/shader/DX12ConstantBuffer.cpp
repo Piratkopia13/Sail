@@ -55,9 +55,12 @@ namespace ShaderComponent {
 		auto numSwapBuffers = m_context->getNumGPUBuffers();
 		auto frameIndex = m_context->getSwapIndex();
 		// Expand resource heap if index is out of range
+		// TODO: add mutex lock to this to make it thread safe
 		if ((index + 1) * m_byteAlignedSize >= m_resourceHeapSize) {
 			unsigned int oldSize = m_resourceHeapSize;
 			m_resourceHeapSize += 1024.0 * 64.0;
+
+			Logger::Log("Expanding cbuffer from " + std::to_string(oldSize) + " to " + std::to_string(m_resourceHeapSize) + " Bytes.");
 
 			// Copy gpu memory to ram before recreating buffers
 			void* data = malloc(oldSize);
@@ -68,12 +71,17 @@ namespace ShaderComponent {
 				// Place the original data in the buffer
 				memcpy(m_cbGPUAddress[i], data, oldSize);
 			}
+			free(data);
 		}
+	}
+
+	ID3D12Resource* DX12ConstantBuffer::getBuffer() const {
+		return m_constantBufferUploadHeap[m_context->getSwapIndex()].Get();
 	}
 
 	void DX12ConstantBuffer::createBuffers() {
 		auto numSwapBuffers = m_context->getNumGPUBuffers();
-
+		static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 		// Create an upload heap to hold the constant buffer
 		// create a resource heap, and pointer to cbv for each frame
 		for (UINT i = 0; i < numSwapBuffers; i++) {

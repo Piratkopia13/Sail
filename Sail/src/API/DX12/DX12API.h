@@ -104,7 +104,10 @@ public:
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
+	const D3D12_CPU_DESCRIPTOR_HANDLE& getDepthStencilViewCDH() const;
 	IDXGISwapChain4* const getSwapChain() const;
+	const D3D12_VIEWPORT* getViewport() const;
+	const D3D12_RECT* getScissorRect() const;
 	CommandQueue* getDirectQueue() const;
 	unsigned int getFrameCount() const; // Returns the number of elapsed frames
 

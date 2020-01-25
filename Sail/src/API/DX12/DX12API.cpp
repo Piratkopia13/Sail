@@ -382,12 +382,14 @@ void DX12API::nextFrame() {
 	m_directQueueFenceValues[m_swapIndex] = m_directCommandQueue->signal();
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 	m_swapIndex = 1 - m_swapIndex; // Toggle between 0 and 1
+	
 	static bool firstFrame = true;
 	// Wait until the next frame is ready, don't wait on the first frame as there is nothing to wait for
 	if (!firstFrame) {
 		m_directCommandQueue->waitOnCPU(m_directQueueFenceValues[m_swapIndex], m_eventHandle);
 	}
 	firstFrame = false;
+
 	// Get the handle for the current render target used as back buffer
 	m_currentRenderTargetCDH = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
 	m_currentRenderTargetCDH.ptr += m_renderTargetDescriptorSize * m_backBufferIndex;
@@ -527,14 +529,12 @@ void DX12API::clear(const glm::vec4& color) {
 }
 
 void DX12API::present(bool vsync) {
-
 	//Present the frame.
 	DXGI_PRESENT_PARAMETERS pp = { };
 	m_swapChain->Present1((UINT)vsync, (vsync || !m_windowedMode || !m_tearingSupport) ? 0 : DXGI_PRESENT_ALLOW_TEARING, &pp);
 
 	//waitForGPU();
 	nextFrame();
-	
 }
 
 unsigned int DX12API::getMemoryUsage() const {
@@ -590,8 +590,20 @@ const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getDsvCDH() const {
 	return m_dsvDescHandle;
 }
 
+const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getDepthStencilViewCDH() const {
+	return m_dsvDescHandle;
+}
+
 IDXGISwapChain4* const DX12API::getSwapChain() const {
 	return m_swapChain.Get();
+}
+
+const D3D12_VIEWPORT* DX12API::getViewport() const {
+	return &m_viewport;
+}
+
+const D3D12_RECT* DX12API::getScissorRect() const {
+	return &m_scissorRect;
 }
 
 DX12API::CommandQueue* DX12API::getDirectQueue() const {

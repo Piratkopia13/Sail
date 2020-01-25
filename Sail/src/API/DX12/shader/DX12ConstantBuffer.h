@@ -5,7 +5,7 @@
 
 namespace ShaderComponent {
 
-	// TODO: think about renaming this class to DX12ResourceHeap as it a cbuffer for each mesh in the scene
+	// TODO: think about renaming this class to DX12ResourceHeap as it is a cbuffer for each mesh in the scene
 	class DX12ConstantBuffer : public ConstantBuffer {
 	public:
 		DX12ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot = 0);
@@ -16,14 +16,13 @@ namespace ShaderComponent {
 
 		void setResourceHeapMeshIndex(unsigned int index);
 
+		ID3D12Resource* getBuffer() const;
+
 	private:
 		void createBuffers();
 
 	private:
 		DX12API* m_context;
-
-		//void* m_newData;
-		//bool* m_needsUpdate;
 
 		// The index specifies which offset it should write/read from in the resource heap
 		// This is used since multiple meshes store their cbuffers in a single resource heap

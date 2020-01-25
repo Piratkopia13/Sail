@@ -176,32 +176,89 @@ void DX12ShaderPipeline::finish() {
 	}
 
 	// Specify render target and depthstencil usage
-	gpsd.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	gpsd.NumRenderTargets = 1;
+	for (unsigned int i = 0; i < numRenderTargets; i++) {
+		if (m_rtFormats.find(i) != m_rtFormats.end()) {
+			gpsd.RTVFormats[i] = m_rtFormats[i];
+		} else {
+			gpsd.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
+	}
+	gpsd.NumRenderTargets = numRenderTargets;
 
 	gpsd.SampleDesc.Count = 1;
 	gpsd.SampleDesc.Quality = 0;
 	gpsd.SampleMask = UINT_MAX;
 
 	// Specify rasterizer behaviour
-	// TODO: get these from DX12API
-	gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-	gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	if (wireframe) {
+		gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+	}
+	else {
+		gpsd.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+	}
 
-	//Specify blend descriptions.
+	if (cullMode == GraphicsAPI::Culling::NO_CULLING) {
+		gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	} 
+	else if (cullMode == GraphicsAPI::Culling::FRONTFACE) {
+		gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+	}
+	else if (cullMode == GraphicsAPI::Culling::BACKFACE) {
+		gpsd.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+	}
+
+	// Specify blend descriptions
 	D3D12_RENDER_TARGET_BLEND_DESC defaultRTdesc = {
 		false, false,
 		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
 		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
 		D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
 	};
-	for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
+
+	D3D12_RENDER_TARGET_BLEND_DESC customRTBlendDesc = defaultRTdesc;
+	if (blendMode == GraphicsAPI::ALPHA) {
+		customRTBlendDesc = {
+			true, false,
+			D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
+			D3D12_BLEND_ZERO, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
+			D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
+		};
+		customRTBlendDesc.BlendEnable = TRUE;
+		customRTBlendDesc.SrcBlend = D3D12_BLEND_ONE;
+		customRTBlendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+		customRTBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
+		customRTBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+		customRTBlendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+		customRTBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		customRTBlendDesc.RenderTargetWriteMask = 0x0f;
+	} else if (blendMode == GraphicsAPI::ADDITIVE) {
+		customRTBlendDesc = {
+			true, false,
+			D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
+			D3D12_BLEND_ZERO, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
+			D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
+		};
+		customRTBlendDesc.BlendEnable = TRUE;
+		customRTBlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+		customRTBlendDesc.DestBlend = D3D12_BLEND_ONE;
+		customRTBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
+		customRTBlendDesc.SrcBlendAlpha = D3D12_BLEND_SRC_ALPHA;
+		customRTBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
+		customRTBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		customRTBlendDesc.RenderTargetWriteMask = 0x0f;
+	}
+
+	for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) { // TODO: change 1 to variable
 		gpsd.BlendState.RenderTarget[i] = defaultRTdesc;
+	}
+	
+	// gpsd.BlendState.IndependentBlendEnable = true; // What is this for again?
+	gpsd.BlendState.RenderTarget[0] = customRTBlendDesc;
 
 	// Specify depth stencil state descriptor.
 	D3D12_DEPTH_STENCIL_DESC dsDesc{};
-	dsDesc.DepthEnable = TRUE;
-	dsDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	dsDesc.DepthEnable = enableDepth;
+	dsDesc.DepthWriteMask = (enableDepthWrite) ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
 	dsDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
 	dsDesc.StencilEnable = FALSE;
 	dsDesc.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
@@ -215,4 +272,8 @@ void DX12ShaderPipeline::finish() {
 
 	ThrowIfFailed(m_context->getDevice()->CreateGraphicsPipelineState(&gpsd, IID_PPV_ARGS(&m_pipelineState)));
 
+}
+
+void DX12ShaderPipeline::setRenderTargetFormat(unsigned rtIndex, DXGI_FORMAT format) {
+	m_rtFormats[rtIndex] = format;
 }

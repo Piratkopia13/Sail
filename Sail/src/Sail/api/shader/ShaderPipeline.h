@@ -8,6 +8,7 @@
 
 #include "Sail/api/shader/ConstantBuffer.h"
 #include "Sail/api/shader/Sampler.h"
+#include "Sail/api/GraphicsAPI.h"
 #include "Sail/graphics/geometry/Model.h"
 #include "Sail/graphics/camera/Camera.h"
 #include "Sail/utils/Utils.h"
@@ -32,7 +33,12 @@ public:
 
 	virtual void updateCamera(Camera& cam) {};
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
-
+	virtual void setWireframe(bool wireframeState);
+	virtual void setCullMode(GraphicsAPI::Culling newCullMode);
+	virtual void setNumRenderTargets(unsigned int numRenderTargets);
+	virtual void enableDepthStencil(bool enable);
+	virtual void enableDepthWriting(bool enable);
+	virtual void setBlending(GraphicsAPI::Blending blendMode);
 
 	InputLayout& getInputLayout();
 	void* getVsBlob();
@@ -44,14 +50,19 @@ public:
 protected:
 	// Compiles shaders into blobs
 	virtual void compile();
-	// Called after the inputlayout is created
+	// Called after the inputLayout is created
 	virtual void finish();
-
-	//void setComputeShaders(ID3D10Blob** blob, UINT numBlobs);
 
 protected:
 	std::unique_ptr<InputLayout> inputLayout;
 	std::string filename;
+
+	bool wireframe;
+	GraphicsAPI::Culling cullMode;
+	unsigned int numRenderTargets;
+	bool enableDepth;
+	bool enableDepthWrite;
+	GraphicsAPI::Blending blendMode;
 
 	void* vsBlob; // Used for the input layout
 	void* gsBlob;
@@ -106,24 +117,13 @@ protected:
 	ParsedData parsedData;
 
 private:
-	//std::vector<std::unique_ptr<ComputeShader>> m_css;
-	//std::unique_ptr<Shader> m_shaders;
-
-
-private:
 	void parse(const std::string& source);
 	void parseCBuffer(const std::string& source);
 	void parseSampler(const char* source);
 	void parseTexture(const char* source);
 	std::string nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray = false) const;
 	ShaderComponent::BIND_SHADER getBindShaderFromName(const std::string& name) const;
-
-	//void setVertexShader(void* blob);
-	//void setGeometryShader(void* blob);
-	//void setPixelShader(void* blob);
-	//void setDomainShader(void* blob);
-	//void setHullShader(void* blob);
-
+	
 	UINT getSizeOfType(const std::string& typeName) const;
 
 protected:
