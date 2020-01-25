@@ -8,10 +8,10 @@ class DX12ImGuiHandler : public ImGuiHandler {
 public:
 	DX12ImGuiHandler();
 	~DX12ImGuiHandler();
+
 	virtual void init() override;
 	virtual void begin() override;
 	virtual void end() override;
-
 	virtual ImTextureID getTextureID(Texture* texture) override;
 
 private:

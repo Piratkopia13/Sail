@@ -15,7 +15,7 @@
 
 
 ImGuiHandler* ImGuiHandler::Create() {
-	return new DX11ImGuiHandler();
+	return SAIL_NEW DX11ImGuiHandler();
 }
 
 DX11ImGuiHandler::DX11ImGuiHandler() {
@@ -79,4 +79,9 @@ void DX11ImGuiHandler::end() {
 		ImGui::RenderPlatformWindowsDefault();
 	}
 	Application::getInstance()->getAPI<DX11API>()->renderToBackBuffer(); // This is only here because imgui changes render target
+}
+
+ImTextureID DX11ImGuiHandler::getTextureID(Texture* texture) {
+	assert(false && "ImGui texture rendering is currently not supported for DX11");
+	return 0;
 }

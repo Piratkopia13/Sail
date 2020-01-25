@@ -11,7 +11,6 @@ public:
 	virtual ~ImGuiHandler() {}
 
 	virtual void init() = 0;
-
 	virtual void begin() = 0;
 	virtual void end() = 0;
 

@@ -10,9 +10,9 @@ public:
 	DX11RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, bool createDepthStencilView = true, bool createOnlyDSV = false, UINT bindFlags = 0, UINT cpuAccessFlags = 0);
 	~DX11RenderableTexture();
 	
-	virtual void begin() override;
-	virtual void end() override;
-	virtual void clear(const glm::vec4& color) override;
+	virtual void begin(void* cmdList = nullptr) override;
+	virtual void end(void* cmdList = nullptr) override;
+	virtual void clear(const glm::vec4& color, void* cmdList = nullptr) override;
 	virtual void resize(int width, int height) override;
 
 	ID3D11ShaderResourceView** getColorSRV();

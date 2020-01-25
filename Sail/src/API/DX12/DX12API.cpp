@@ -273,14 +273,14 @@ void DX12API::createGlobalRootSignature() {
 	rootParam[GlobalRootParam::DT_SRVS].DescriptorTable = dtSrv;
 	rootParam[GlobalRootParam::DT_SRVS].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[2];
+	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[3];
 	staticSamplerDesc[0] = {};
-	staticSamplerDesc[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	staticSamplerDesc[0].Filter = D3D12_FILTER_ANISOTROPIC;
 	staticSamplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	staticSamplerDesc[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	staticSamplerDesc[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	staticSamplerDesc[0].MipLODBias = 0.f;
-	staticSamplerDesc[0].MaxAnisotropy = 1;
+	staticSamplerDesc[0].MaxAnisotropy = 16;
 	staticSamplerDesc[0].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	staticSamplerDesc[0].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
 	staticSamplerDesc[0].MinLOD = 0.f;
@@ -293,11 +293,18 @@ void DX12API::createGlobalRootSignature() {
 	staticSamplerDesc[1].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
 	staticSamplerDesc[1].ShaderRegister = 1;
 
+	staticSamplerDesc[2] = staticSamplerDesc[0];
+	staticSamplerDesc[2].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	staticSamplerDesc[2].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplerDesc[2].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplerDesc[2].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplerDesc[2].ShaderRegister = 2;
+
 	D3D12_ROOT_SIGNATURE_DESC rsDesc;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-	rsDesc.NumParameters = ARRAYSIZE(rootParam);
+	rsDesc.NumParameters = GlobalRootParam::SIZE;
 	rsDesc.pParameters = rootParam;
-	rsDesc.NumStaticSamplers = 2;
+	rsDesc.NumStaticSamplers = ARRAYSIZE(staticSamplerDesc);
 	rsDesc.pStaticSamplers = staticSamplerDesc;
 
 	// Serialize and create the actual signature

@@ -155,7 +155,7 @@ ID3D11Texture2D* DX11RenderableTexture::getDepthTexture2D() {
 	return m_dxDepthTexture->getTexture2D();
 }
 
-void DX11RenderableTexture::begin() {
+void DX11RenderableTexture::begin(void* cmdList) {
 
 // 	if (!m_hasDepthStencilView)
 // 		Logger::Error("Tried to call to DX11RenderableTexture::begin on a DX11RenderableTexture that was created without a depth stencil view. Use the data from this class manually or change the constructor parameter to create a DSV.");
@@ -168,7 +168,7 @@ void DX11RenderableTexture::begin() {
 
 }
 
-void DX11RenderableTexture::end() {
+void DX11RenderableTexture::end(void* cmdList) {
 	auto api = Application::getInstance()->getAPI<DX11API>();
 	// Create a non MSAA'd texture copy of the texture that was rendered to
 	if (m_aaSamples > 1)
@@ -178,7 +178,7 @@ void DX11RenderableTexture::end() {
 	api->renderToBackBuffer();
 }
 
-void DX11RenderableTexture::clear(const glm::vec4& color) {
+void DX11RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
 
 	auto api = Application::getInstance()->getAPI<DX11API>();
 	api->getDeviceContext()->ClearRenderTargetView(m_renderTargetView, glm::value_ptr(color));
