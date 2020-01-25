@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include "Sail/graphics/geometry/Material.h"
+#include "Sail/graphics/geometry/PhongMaterial.h"
 #include "Sail/api/Renderer.h"
 
 class VertexBuffer;
@@ -18,17 +18,26 @@ public:
 		vec2(float x = 0.f, float y = 0.f) {
 			this->vec.x = x; this->vec.y = y;
 		}
+		const bool operator==(const vec2& other) const {
+			return this->vec == other.vec;
+		}
 	};
 	struct vec3 {
 		glm::vec3 vec;
 		vec3(float x = 0.f, float y = 0.f, float z = 0.f) {
 			this->vec.x = x; this->vec.y = y; this->vec.z = z;
 		}
+		const bool operator==(const vec3& other) const{
+			return this->vec == other.vec;
+		}
 	};
 	struct vec4 {
 		glm::vec4 vec;
 		vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) {
 			this->vec.x = x; this->vec.y = y; this->vec.z = z; this->vec.w = w;
+		}
+		const bool operator==(const vec4& other) const {
+			return this->vec == other.vec;
 		}
 	};
 
@@ -54,7 +63,7 @@ public:
 
 	virtual void draw(const Renderer& renderer, void* cmdList = nullptr) = 0;
 
-	Material* getMaterial();
+	PhongMaterial* getMaterial();
 
 	unsigned int getNumVertices() const;
 	unsigned int getNumIndices() const;
@@ -63,7 +72,7 @@ public:
 	const IndexBuffer& getIndexBuffer() const;
 
 protected:
-	Material::SPtr material;
+	PhongMaterial::SPtr material;
 
 	std::unique_ptr<VertexBuffer> vertexBuffer;
 	std::unique_ptr<IndexBuffer> indexBuffer;

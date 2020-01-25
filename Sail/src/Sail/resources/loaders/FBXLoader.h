@@ -17,7 +17,7 @@ private:
 	void loadNode(FbxNode* pNode);
 	FbxVector2 getTexCoord(int cpIndex, FbxGeometryElementUV* geUV, FbxMesh* mesh, int polyIndex, int vertIndex) const;
 	void getGeometry(FbxMesh* mesh, Mesh::Data& buildData);
-	void getMaterial(FbxNode* pNode, Material* material);
+	void getMaterial(FbxNode* pNode, PhongMaterial* material);
 
 private:
 	static FbxManager* s_manager;

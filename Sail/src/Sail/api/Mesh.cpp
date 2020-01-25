@@ -22,7 +22,7 @@ Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.texCoords);
 }
 
-Material* Mesh::getMaterial() {
+PhongMaterial* Mesh::getMaterial() {
 	return material.get();
 }
 

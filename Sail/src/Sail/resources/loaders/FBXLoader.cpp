@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "FBXLoader.h"
 
-#include <d3d11.h>
 #include "../../utils/Utils.h"
 #include "../../graphics/geometry/factory/CubeModel.h"
 #include "Sail/Application.h"
@@ -323,7 +322,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 
 }
 
-void FBXLoader::getMaterial(FbxNode* pNode, Material* material) {
+void FBXLoader::getMaterial(FbxNode* pNode, PhongMaterial* material) {
 
 	// Gets the model's phong constants
 	if (pNode->GetSrcObjectCount<FbxSurfacePhong>() > 0) {

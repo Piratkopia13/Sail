@@ -8,7 +8,6 @@
 
 // Forward declarations
 class ShaderPipeline;
-class Material;
 
 class Model {
 public:

@@ -423,13 +423,13 @@ UINT DX11API::getAASamples() {
 unsigned int DX11API::getMemoryUsage() const {
 	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
-	return info.CurrentUsage / 1000000;
+	return static_cast<unsigned int>(info.CurrentUsage / 1000000);
 }
 
 unsigned int DX11API::getMemoryBudget() const {
 	DXGI_QUERY_VIDEO_MEMORY_INFO info;
 	m_adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
-	return info.Budget / 1000000;
+	return static_cast<unsigned int>(info.Budget / 1000000);
 }
 
 ID3D11RenderTargetView* const* DX11API::getBackBufferRTV() const {

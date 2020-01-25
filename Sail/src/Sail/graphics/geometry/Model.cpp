@@ -2,7 +2,6 @@
 #include "Model.h"
 
 //#include "../shader/basic/SimpleColorShader.h"
-#include "Material.h"
 
 Model::Model(Mesh::Data& buildData, Shader* shader) {
 
@@ -81,7 +80,7 @@ Mesh* Model::getMesh(unsigned int index) {
 }
 
 unsigned int Model::getNumberOfMeshes() const {
-	return m_meshes.size();
+	return static_cast<unsigned int>(m_meshes.size());
 }
 
 //ShaderSet* Model::getShader() const {

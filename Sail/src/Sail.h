@@ -8,8 +8,6 @@
 // 218 of these in the fbx sdk
 #pragma warning(disable:26495)
 
-#define NOMINMAX // Removes min max macros which cause issues
-
 // TODO: only define GLM_FORCE_DEPTH_ZERO_TO_ONE if directx or vulkan (not opengl)
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
