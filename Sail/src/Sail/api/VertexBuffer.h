@@ -5,16 +5,19 @@
 
 class VertexBuffer {
 public:
-	static VertexBuffer* Create(const InputLayout& inputLayout, Mesh::Data& modelData);
-	VertexBuffer(const InputLayout& inputLayout, Mesh::Data& modelData);;
+	static VertexBuffer* Create(const InputLayout& inputLayout, const Mesh::Data& modelData, bool allowUpdates = false);
+
+	VertexBuffer(const InputLayout& inputLayout, unsigned int numVertices);
 	virtual ~VertexBuffer() {};
 
-	virtual void bind(void* cmdList = nullptr) const = 0;
+	virtual void bind(void* cmdList = nullptr) = 0;
+	virtual void update(Mesh::Data& data) = 0;
 
 protected:
-	void* getVertexData(Mesh::Data& modelData);
+	void* getVertexData(const Mesh::Data& modelData);
 	unsigned int getVertexDataSize() const;
 	unsigned int getVertexDataStride() const;
+
 protected:
 	const InputLayout& inputLayout;
 

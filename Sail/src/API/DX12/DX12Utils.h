@@ -96,8 +96,7 @@ namespace DX12Utils {
 		if (DestinationDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
 			pCmdList->CopyBufferRegion(
 				pDestinationResource, 0, pIntermediate, pLayouts[0].Offset, pLayouts[0].Footprint.Width);
-		}
-		else {
+		} else {
 			for (UINT i = 0; i < NumSubresources; ++i) {
 				D3D12_TEXTURE_COPY_LOCATION Dst{};
 				Dst.pResource = pDestinationResource;

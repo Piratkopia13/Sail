@@ -58,7 +58,7 @@ void DX12IndexBuffer::bind(void* cmdList) {
 	ibView.BufferLocation = m_defaultIndexBuffers->GetGPUVirtualAddress();
 	ibView.SizeInBytes = static_cast<UINT>(getIndexDataSize());
 	ibView.Format = DXGI_FORMAT_R32_UINT;
-	// Later update to just put in a buffer on the renderer to set multiple vertex buffers at once
+	
 	dxCmdList->IASetIndexBuffer(&ibView);
 }
 
