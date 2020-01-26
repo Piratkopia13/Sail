@@ -12,9 +12,13 @@
 #define SAIL_NEW new
 #endif
 
-#define NOMINMAX // Removes min max macros which cause issues
-// Exclude some less used APIs to speed up the build process on windows
-#define WIN32_LEAN_AND_MEAN
+#ifndef NOMINMAX
+	#define NOMINMAX // Removes min max macros which cause issues
+#endif 
+#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN // Exclude some less used APIs to speed up the build process on windows
+#endif
+#include <Windows.h>
 
 // Math
 // TODO: only define GLM_FORCE_DEPTH_ZERO_TO_ONE if directx or vulkan (not opengl)
@@ -22,21 +26,20 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
-//#include <windows.h>
-
-#include <memory>
-#include <comdef.h> 
-#include <string>
-#include <Memory>
+#include <comdef.h>
 #include <algorithm>
+#include <atomic>
+#include <future>
 #include <iostream>
-#include <vector>
-#include <unordered_map>
+#include <memory>
 #include <sstream>
-
-// DirectX Toolkit includes
-//#include <d3d12.h>
-//#include <Keyboard.h>
-//#include <Mouse.h>
-//#include <GamePad.h>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include <exception>
+#include <random>
+#include <fstream>

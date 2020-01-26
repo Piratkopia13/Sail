@@ -12,7 +12,7 @@
 // Break on failed HRESULT return
 #define ThrowIfFailed(result)	\
 	if (FAILED(result))			\
-		throw std::exception(); \
+		throw std::exception();
 // Show message box and break on failed blob creation
 #define ThrowIfBlobError(hr, blob) { \
 	if (FAILED(hr)) { \
@@ -146,6 +146,7 @@ public:
 namespace Utils {
 	std::string readFile(const std::string& filepath);
 	std::wstring toWStr(const glm::vec3& vec);
+	std::string toStr(const glm::vec4& vec);
 	std::string toStr(const glm::vec3& vec);
 	std::string toStr(const glm::vec2& vec);
 	float rnd();

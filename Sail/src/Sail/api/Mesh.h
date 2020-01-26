@@ -72,6 +72,7 @@ public:
 	const IndexBuffer& getIndexBuffer() const;
 
 protected:
+	// TODO: allow same material for multiple meshes
 	PhongMaterial::SPtr material;
 
 	std::unique_ptr<VertexBuffer> vertexBuffer;

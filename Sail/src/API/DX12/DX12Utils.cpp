@@ -1,7 +1,8 @@
 #include "pch.h"
 #include "DX12Utils.h"
-
 #include "Sail/utils/Utils.h"
+
+#include <comdef.h>
 
 void DX12Utils::checkDeviceRemovalReason(ID3D12Device5* device, HRESULT hr) {
 #ifdef DEVELOPMENT
