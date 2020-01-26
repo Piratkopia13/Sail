@@ -25,6 +25,17 @@ void StateStack::processInput(float dt) {
 	// Toggle imgui rendering on key
 	if (Input::WasKeyJustPressed(SAIL_KEY_F10))
 		m_renderImgui = !m_renderImgui;
+	// Ignore game mouse input when imgui uses the mouse
+	Input::SetMouseInput(!ImGui::GetIO().WantCaptureMouse || Input::IsCursorHidden());
+	// Ignore game key input when imgui uses the key input
+	Input::SetKeyInput(!ImGui::GetIO().WantCaptureKeyboard);
+	// Ignore imgui input when mouse is hidden / used by game
+	if (Input::IsCursorHidden()) {
+		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+		ImGui::SetWindowFocus();
+	} else {
+		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+	}
 
 	// Loop through the stack reversed
 	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
@@ -88,16 +99,16 @@ void StateStack::onEvent(Event& event) {
 }
 
 void StateStack::pushState(States::ID stateID) {
-	m_pendingList.push_back(PendingChange(Push, stateID));
+	m_pendingList.emplace_back(Push, stateID);
 }
 void StateStack::popState() {
-	m_pendingList.push_back(PendingChange(Pop));
+	m_pendingList.emplace_back(Pop);
 }
 void StateStack::clearStack() {
-	m_pendingList.push_back(PendingChange(Clear));
+	m_pendingList.emplace_back(Clear);
 }
 bool StateStack::isEmpty() const {
-	return m_stack.size() == 0;
+	return m_stack.empty();
 }
 
 void StateStack::applyPendingChanges() {

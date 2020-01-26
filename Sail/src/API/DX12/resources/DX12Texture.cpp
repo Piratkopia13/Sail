@@ -18,6 +18,8 @@ DX12Texture::DX12Texture(const std::string& filename)
 	, m_initFenceVal(UINT64_MAX)
 	, m_fileName(filename)
 {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	// Don't create one resource per swap buffer
 	useOneResource = true;
@@ -58,6 +60,8 @@ DX12Texture::~DX12Texture() {
 }
 
 void DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// This method is called at least once every frame that this texture is used for rendering
 
 	// The lock_guard will make sure multiple threads wont try to initialize the same texture
@@ -126,6 +130,8 @@ const std::string& DX12Texture::getFilename() const {
 }
 
 void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	assert(false && "generateMips not supported since ComputeShader support is not yet added");
 	//auto& mipsShader = Application::getInstance()->getResourceManager().getShaderSet<GenerateMipsComputeShader>();
 	//DX12ComputeShaderDispatcher csDispatcher;

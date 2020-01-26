@@ -13,6 +13,8 @@ Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
 	: Mesh(buildData, shader)
 {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	material = std::make_shared<PhongMaterial>(shader);
 	// Create vertex buffer
@@ -27,6 +29,8 @@ DX12Mesh::~DX12Mesh() {
 }
 
 void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	// Set offset in SRV heap for this mesh 
 	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
@@ -37,9 +41,13 @@ void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
 	if (indexBuffer)
 		indexBuffer->bind(cmdList);
 
-	// Draw call
-	if (indexBuffer)
-		dxCmdList->DrawIndexedInstanced(getNumIndices(), 1, 0, 0, 0);
-	else
-		dxCmdList->DrawInstanced(getNumVertices(), 1, 0, 0);
+	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("DX12 draw call");
+
+		// Draw call
+		if (indexBuffer)
+			dxCmdList->DrawIndexedInstanced(getNumIndices(), 1, 0, 0, 0);
+		else
+			dxCmdList->DrawInstanced(getNumVertices(), 1, 0, 0);
+	}
 }

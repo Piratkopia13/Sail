@@ -30,6 +30,8 @@ ShaderPipeline::~ShaderPipeline() {
 }
 
 void ShaderPipeline::compile() {
+	SAIL_PROFILE_FUNCTION();
+
 	std::string filepath = DEFAULT_SHADER_LOCATION + filename;
 	std::string source = Utils::readFile(filepath);
 	if (source == "")
@@ -62,6 +64,8 @@ void ShaderPipeline::finish() {
 }
 
 void ShaderPipeline::bind(void* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Don't bind if already bound
 	// This is to cut down on shader state changes
 	if (CurrentlyBoundShader == this)
@@ -79,7 +83,8 @@ void ShaderPipeline::bind(void* cmdList) {
 }
 
 void ShaderPipeline::parse(const std::string& source) {
-	
+	SAIL_PROFILE_FUNCTION();
+
 	// Find what shader types are contained in the source
 	if (source.find("VSMain") != std::string::npos) parsedData.hasVS = true;
 	if (source.find("PSMain") != std::string::npos) parsedData.hasPS = true;

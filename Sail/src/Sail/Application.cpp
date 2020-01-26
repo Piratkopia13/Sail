@@ -6,6 +6,7 @@
 Application* Application::m_instance = nullptr;
 
 Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
+	SAIL_PROFILE_FUNCTION();
 
 	// Set up instance if not set
 	if (m_instance) {
@@ -49,7 +50,6 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 
 	// Load the missing texture texture
 	m_resourceManager.loadTexture("missing.tga");
-
 }
 
 Application::~Application() {
@@ -57,7 +57,6 @@ Application::~Application() {
 }
 
 int Application::startGameLoop() {
-
 	// Start delta timer
 	m_timer.startTimer();
 	
@@ -81,6 +80,7 @@ int Application::startGameLoop() {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		} else {
+			SAIL_PROFILE_SCOPE("Frame");
 
 			// Handle window resizing
 			if (m_window->hasBeenResized()) {

@@ -13,11 +13,10 @@ DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::D
 	: VertexBuffer(inputLayout, modelData.numVertices)
 	, m_allowUpdates(allowUpdates)
 {
-	void* vertices = getVertexData(modelData);
-	init(vertices);
-}
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-void DX12VertexBuffer::init(void* data) {
+	void* vertices = getVertexData(modelData);
+	
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	auto numSwapBuffers = (m_allowUpdates) ? m_context->getNumGPUBuffers() : 1;
 
@@ -39,17 +38,17 @@ void DX12VertexBuffer::init(void* data) {
 		void* pData;
 		D3D12_RANGE readRange{ 0, 0 };
 		ThrowIfFailed(m_uploadVertexBuffers[i]->Map(0, &readRange, &pData));
-		memcpy(pData, data, m_byteSize);
+		memcpy(pData, vertices, m_byteSize);
 		m_uploadVertexBuffers[i]->Unmap(0, nullptr);
 
-		// Create the default buffers that the data will be copied to during init()
+		// Create the default buffers that the data will be copied to during init(cmdList)
 		m_defaultVertexBuffers[i].Attach(DX12Utils::CreateBuffer(m_context->getDevice(), m_byteSize,
 			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, // TODO: only allow UAV on animated vertex buffers
 			D3D12_RESOURCE_STATE_COPY_DEST, DX12Utils::sDefaultHeapProps));
 		m_defaultVertexBuffers[i]->SetName(L"Vertex buffer default");
 	}
 	// Delete vertices from cpu memory
-	free(data);
+	free(vertices);
 }
 
 DX12VertexBuffer::~DX12VertexBuffer() {
@@ -57,6 +56,8 @@ DX12VertexBuffer::~DX12VertexBuffer() {
 }
 
 void DX12VertexBuffer::bind(void* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	auto frameIndex = (m_allowUpdates) ? m_context->getSwapIndex() : 0;
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	// Make sure it has been initialized
@@ -71,6 +72,8 @@ void DX12VertexBuffer::bind(void* cmdList) {
 }
 
 void DX12VertexBuffer::update(Mesh::Data& data) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	if (!m_allowUpdates) {
 		assert(false);
 		Logger::Error("update() was called on a VertexBuffer what was created without the allowUpdate flag!");
@@ -107,6 +110,8 @@ void DX12VertexBuffer::resetHasBeenUpdated() {
 }
 
 bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// This method is called at least once every frame that this vertex buffer is used
 
 	auto numSwapBuffers = (m_allowUpdates) ? m_context->getNumGPUBuffers() : 1;

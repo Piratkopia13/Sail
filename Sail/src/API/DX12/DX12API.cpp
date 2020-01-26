@@ -26,6 +26,7 @@ DX12API::DX12API()
 }
 
 DX12API::~DX12API() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	// Ensure that the GPU is no longer referencing resources that are about to be destroyed.
 	waitForGPU();
@@ -57,6 +58,8 @@ DX12API::~DX12API() {
 }
 
 bool DX12API::init(Window* window) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	auto winWindow = static_cast<Win32Window*>(window);
 	createDevice();
 	createCmdInterfacesAndSwapChain(winWindow);
@@ -74,6 +77,7 @@ bool DX12API::init(Window* window) {
 
 
 void DX12API::createDevice() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	DWORD dxgiFactoryFlags = 0;
 #ifdef _DEBUG
@@ -147,6 +151,8 @@ void DX12API::createDevice() {
 }
 
 void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// 3. Create command queue/allocator/list
 	m_directCommandQueue = std::make_unique<CommandQueue>(this, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Main direct command queue");
 	
@@ -185,11 +191,15 @@ void DX12API::createCmdInterfacesAndSwapChain(Win32Window* window) {
 }
 
 void DX12API::createEventHandle() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Create an event handle to use for GPU synchronization
 	m_eventHandle = CreateEvent(0, false, false, 0);
 }
 
 void DX12API::createRenderTargets() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Create descriptor heap for render target views
 	D3D12_DESCRIPTOR_HEAP_DESC dhd = {};
 	dhd.NumDescriptors = NUM_SWAP_BUFFERS;
@@ -212,6 +222,8 @@ void DX12API::createRenderTargets() {
 }
 
 void DX12API::createGlobalRootSignature() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// 8. Create root signature
 
 	// Define descriptor range(s)
@@ -320,12 +332,16 @@ void DX12API::createGlobalRootSignature() {
 }
 
 void DX12API::createShaderResources() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Create one big gpu descriptor heap for all cbvs, srvs and uavs
 	// TODO: maybe dont hardcode numdescriptors?
 	m_cbvSrvUavDescriptorHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 50000, true, true);
 }
 
 void DX12API::createDepthStencilResources(Win32Window* window) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// create a depth stencil descriptor heap so we can get a pointer to the depth stencil buffer
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
 	dsvHeapDesc.NumDescriptors = 1;
@@ -370,6 +386,8 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 }
 
 void DX12API::createViewportAndScissorRect(Win32Window* window) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// 7. Viewport and scissor rect
 	m_viewport.TopLeftX = 0.0f;
 	m_viewport.TopLeftY = 0.0f;
@@ -385,6 +403,8 @@ void DX12API::createViewportAndScissorRect(Win32Window* window) {
 }
 
 void DX12API::nextFrame() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Schedule a signal to notify when the current frame has finished presenting
 	m_directQueueFenceValues[m_swapIndex] = m_directCommandQueue->signal();
 	m_backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
@@ -412,6 +432,8 @@ void DX12API::nextFrame() {
 }
 
 void DX12API::resizeBuffers(UINT width, UINT height) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	if (width == 0 || height == 0)
 		return;
 	waitForGPU();
@@ -536,6 +558,8 @@ void DX12API::clear(const glm::vec4& color) {
 }
 
 void DX12API::present(bool vsync) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	//Present the frame.
 	DXGI_PRESENT_PARAMETERS pp = { };
 	m_swapChain->Present1((UINT)vsync, (vsync || !m_windowedMode || !m_tearingSupport) ? 0 : DXGI_PRESENT_ALLOW_TEARING, &pp);
@@ -622,6 +646,8 @@ unsigned int DX12API::getFrameCount() const {
 }
 
 void DX12API::initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type, LPCWSTR name) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Create allocators
 	cmd.allocators.resize(NUM_SWAP_BUFFERS);
 	for (UINT i = 0; i < NUM_SWAP_BUFFERS; i++) {
@@ -637,6 +663,8 @@ void DX12API::initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type, LPCWSTR na
 }
 
 void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	cmdList->OMSetRenderTargets(1, &m_currentRenderTargetCDH, true, &m_dsvDescHandle);
 
 	// Clear
@@ -648,11 +676,15 @@ void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
 }
 
 void DX12API::prepareToRender(ID3D12GraphicsCommandList4* cmdList) const {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Indicate that the back buffer will be used as render target
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 }
 
 void DX12API::prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Indicate that the back buffer will be used to present
 	DX12Utils::SetResourceTransitionBarrier(cmdList, m_currentRenderTargetResource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 }
@@ -743,6 +775,8 @@ void DX12API::toggleFullscreen() {
 }
 
 void DX12API::waitForGPU() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Waits for the GPU to finish all current tasks in all queues
 	// Schedule signals and wait for them
 	m_directCommandQueue->waitOnCPU(m_directCommandQueue->signal(), m_eventHandle);
@@ -754,6 +788,8 @@ wComPtr<ID3D12Fence1> DX12API::CommandQueue::sFence;
 DX12API::CommandQueue::CommandQueue(DX12API* context, D3D12_COMMAND_LIST_TYPE type, LPCWSTR name)
 	: m_context(context)
 {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Create command queue
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 	queueDesc.Type = type;
@@ -774,6 +810,8 @@ void DX12API::CommandQueue::wait(UINT64 fenceValue) const {
 	m_commandQueue->Wait(sFence.Get(), fenceValue);
 }
 bool DX12API::CommandQueue::waitOnCPU(UINT64 fenceValue, HANDLE eventHandle) const {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	if (sFence->GetCompletedValue() < fenceValue) {
 		ThrowIfFailed(sFence->SetEventOnCompletion(fenceValue, eventHandle));
 		WaitForSingleObjectEx(eventHandle, INFINITE, FALSE);
@@ -800,6 +838,8 @@ void DX12API::CommandQueue::scheduleSignal(std::function<void(UINT64)> func) {
 	m_queuedSignals.emplace_back(func);
 }
 void DX12API::CommandQueue::executeCommandLists(std::initializer_list<ID3D12CommandList*> cmdLists) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Command lists needs to be closed before sent to this method
 	m_commandQueue->ExecuteCommandLists((UINT)cmdLists.size(), cmdLists.begin());
 	// Signal and return fence values to scheduled lambdas
@@ -809,6 +849,8 @@ void DX12API::CommandQueue::executeCommandLists(std::initializer_list<ID3D12Comm
 	m_queuedSignals.clear();
 }
 void DX12API::CommandQueue::executeCommandLists(ID3D12CommandList* const* cmdLists, const int nLists) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// Command lists needs to be closed before sent to this method
 	m_commandQueue->ExecuteCommandLists(nLists, cmdLists);
 	// Signal and return fence values to scheduled lambdas

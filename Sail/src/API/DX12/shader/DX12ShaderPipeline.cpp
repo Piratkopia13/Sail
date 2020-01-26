@@ -28,6 +28,8 @@ DX12ShaderPipeline::~DX12ShaderPipeline() {
 }
 
 void DX12ShaderPipeline::bind(void* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	if (!m_pipelineState)
 		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);

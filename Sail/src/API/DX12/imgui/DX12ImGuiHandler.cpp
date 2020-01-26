@@ -24,12 +24,16 @@ DX12ImGuiHandler::DX12ImGuiHandler() {
 }
 
 DX12ImGuiHandler::~DX12ImGuiHandler() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 }
 
 void DX12ImGuiHandler::init() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	auto* window = Application::getInstance()->getWindow<Win32Window>();
 
@@ -80,6 +84,8 @@ void DX12ImGuiHandler::begin() {
 }
 
 void DX12ImGuiHandler::end() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	auto& allocator = m_command.allocators[m_context->getFrameIndex()];
 	auto& cmdList = m_command.list;
 
@@ -133,5 +139,4 @@ ImTextureID DX12ImGuiHandler::getTextureID(Texture* texture) {
 	m_texturesUsedThisFrame.emplace_back(dxTexture);
 
 	return (ImTextureID)m_descHeap->getGPUDescriptorHandleForIndex(heapIndex).ptr;
-
 }

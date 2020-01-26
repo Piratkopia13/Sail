@@ -42,6 +42,7 @@ Win32Window::~Win32Window() {
 
 
 bool Win32Window::initialize() {
+	SAIL_PROFILE_FUNCTION();
 
 	// WNDCLASSEX
 	WNDCLASSEX wcex;

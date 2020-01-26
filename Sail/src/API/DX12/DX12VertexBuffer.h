@@ -17,9 +17,6 @@ public:
 	void resetHasBeenUpdated();
 
 private:
-	void init(void* data);
-
-private:
 	DX12API* m_context;
 	bool m_allowUpdates;
 	unsigned int m_byteSize;

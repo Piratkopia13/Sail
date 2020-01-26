@@ -16,6 +16,8 @@ DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width,
 	, m_hasDepthTextures(createDepthStencilView)
 	, m_arraySize(arraySize)
 {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	isRenderableTex = true;
 	context = Application::getInstance()->getAPI<DX12API>();
 
@@ -47,6 +49,8 @@ DX12RenderableTexture::~DX12RenderableTexture() {
 }
 
 void DX12RenderableTexture::begin(void* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
 	//transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -63,6 +67,8 @@ void DX12RenderableTexture::end(void* cmdList) {
 }
 
 void DX12RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	// Clear
 	FLOAT clearColor[4];
@@ -154,6 +160,8 @@ DXGI_FORMAT DX12RenderableTexture::convertFormat(Texture::FORMAT format) const {
 }
 
 void DX12RenderableTexture::createTextures() {	
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	context->waitForGPU();
 	for (unsigned int i = 0; i < m_numSwapBuffers; i++) {
 		D3D12_RESOURCE_DESC textureDesc = {};
@@ -212,6 +220,8 @@ void DX12RenderableTexture::createTextures() {
 }
 
 void DX12RenderableTexture::createDepthTextures() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	for (unsigned int i = 0; i < m_numSwapBuffers; i++) {
 
 		D3D12_CLEAR_VALUE depthOptimizedClearValue = {};

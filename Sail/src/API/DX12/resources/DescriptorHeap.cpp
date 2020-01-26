@@ -7,6 +7,8 @@ DescriptorHeap::DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int num
 	, m_index(0)
 	, m_frameDependant(frameDependant)
 {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
@@ -65,6 +67,8 @@ void DescriptorHeap::setIndex(unsigned int index) {
 }
 
 void DescriptorHeap::bind(ID3D12GraphicsCommandList4* cmdList) const {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_descHeap.Get() };
 	cmdList->SetDescriptorHeaps(ARRAYSIZE(descriptorHeaps), descriptorHeaps);
 }

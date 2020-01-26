@@ -13,6 +13,8 @@ namespace ShaderComponent {
 		: m_register(slot)
 		, m_resourceHeapMeshIndex(0)
 	{
+		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 		m_context = Application::getInstance()->getAPI<DX12API>();
 		auto numSwapBuffers = m_context->getNumGPUBuffers();
 
@@ -43,6 +45,8 @@ namespace ShaderComponent {
 	}
 
 	void DX12ConstantBuffer::bind(void* cmdList) const {
+		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 		auto frameIndex = m_context->getSwapIndex();
 		
@@ -51,12 +55,16 @@ namespace ShaderComponent {
 	}
 
 	void DX12ConstantBuffer::setResourceHeapMeshIndex(unsigned int index) {
+		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 		m_resourceHeapMeshIndex = index;
 		auto numSwapBuffers = m_context->getNumGPUBuffers();
 		auto frameIndex = m_context->getSwapIndex();
 		// Expand resource heap if index is out of range
 		// TODO: add mutex lock to this to make it thread safe
 		if ((index + 1) * m_byteAlignedSize >= m_resourceHeapSize) {
+			SAIL_PROFILE_API_SPECIFIC_SCOPE("CBuffer expansion");
+
 			unsigned int oldSize = m_resourceHeapSize;
 			m_resourceHeapSize += 1024.0 * 64.0;
 
@@ -80,6 +88,8 @@ namespace ShaderComponent {
 	}
 
 	void DX12ConstantBuffer::createBuffers() {
+		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 		auto numSwapBuffers = m_context->getNumGPUBuffers();
 		static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 		// Create an upload heap to hold the constant buffer

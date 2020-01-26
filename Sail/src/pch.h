@@ -12,6 +12,8 @@
 #define SAIL_NEW new
 #endif
 
+#include "Sail/debug/Instrumentor.h"
+
 #ifndef NOMINMAX
 	#define NOMINMAX // Removes min max macros which cause issues
 #endif 

@@ -41,6 +41,7 @@ void Scene::setLightSetup(LightSetup* lights) {
 }
 
 void Scene::draw(Camera& camera) {
+	SAIL_PROFILE_FUNCTION();
 
 	m_renderer->begin(&camera);
 

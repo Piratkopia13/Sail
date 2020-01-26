@@ -1,5 +1,6 @@
 #include "GameState.h"
 #include "imgui.h"
+#include "Sail/debug/Instrumentor.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -7,6 +8,7 @@ GameState::GameState(StateStack& stack)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 , m_camController(&m_cam)
 {
+	SAIL_PROFILE_FUNCTION();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
@@ -119,6 +121,7 @@ GameState::~GameState() {
 
 // Process input for the state
 bool GameState::processInput(float dt) {
+	SAIL_PROFILE_FUNCTION();
 
 #ifdef _DEBUG
 	// Add point light at camera pos
@@ -159,6 +162,7 @@ bool GameState::processInput(float dt) {
 }
 
 bool GameState::onEvent(Event& event) {
+	SAIL_PROFILE_FUNCTION();
 	Logger::Log("Received event: " + std::to_string(event.getType()));
 
 	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
@@ -170,11 +174,13 @@ bool GameState::onEvent(Event& event) {
 }
 
 bool GameState::onResize(WindowResizeEvent& event) {
+	SAIL_PROFILE_FUNCTION();
 	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
 }
 
 bool GameState::update(float dt) {
+	SAIL_PROFILE_FUNCTION();
 
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
@@ -208,6 +214,7 @@ bool GameState::update(float dt) {
 
 // Renders the state
 bool GameState::render(float dt) {
+	SAIL_PROFILE_FUNCTION();
 
 	// Clear back buffer
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
@@ -219,6 +226,7 @@ bool GameState::render(float dt) {
 }
 
 bool GameState::renderImgui(float dt) {
+	SAIL_PROFILE_FUNCTION();
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
 	return false;

@@ -29,6 +29,8 @@ DX12ForwardRenderer::~DX12ForwardRenderer() {
 }
 
 void DX12ForwardRenderer::present(RenderableTexture* output) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	assert(!output); // Render to texture is currently not implemented for DX12!
 
 	auto frameIndex = m_context->getFrameIndex();

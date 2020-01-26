@@ -8,6 +8,8 @@ DX12ATexture::DX12ATexture()
 	, isRenderableTex(false)
 	, useOneResource(false)
 {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	context = Application::getInstance()->getAPI<DX12API>();
 	const auto& numSwapBuffers = context->getNumGPUBuffers();
 
@@ -41,6 +43,8 @@ D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getUavCDH(int swapBuffer) const {
 }
 
 void DX12ATexture::transitionStateTo(ID3D12GraphicsCommandList4* cmdList, D3D12_RESOURCE_STATES newState, int frameIndex) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	int i = (frameIndex == -1) ? context->getSwapIndex() : frameIndex;
 	auto index = (useOneResource) ? 0 : i;
 

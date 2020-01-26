@@ -13,6 +13,8 @@ DX12IndexBuffer::DX12IndexBuffer(Mesh::Data& modelData)
 	: IndexBuffer(modelData)
 	, m_hasBeenInitialized(false)
 {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	unsigned long* indices = getIndexData(modelData);
@@ -50,6 +52,8 @@ DX12IndexBuffer::~DX12IndexBuffer() {
 }
 
 void DX12IndexBuffer::bind(void* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	// Make sure it has been initialized
 	init(dxCmdList);
@@ -68,6 +72,8 @@ ID3D12Resource* DX12IndexBuffer::getBuffer() const {
 }
 
 bool DX12IndexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// This method is called at least once every frame that this index buffer is used
 
 	if (m_hasBeenInitialized) {
