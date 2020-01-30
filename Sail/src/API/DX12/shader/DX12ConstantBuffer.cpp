@@ -93,7 +93,7 @@ namespace ShaderComponent {
 			// Resize buffers to fit meshIndexMax number of meshes
 			const unsigned int size = (meshIndexMax + 1) * m_byteAlignedSize;
 			// Align new size to a multiple of 64KB as required for cbuffers
-			m_resourceHeapSizes[frameIndex] = (unsigned int)((glm::floor(size / 1024.0 * 64.0) + 1) * 1024.0 * 64.0);
+			m_resourceHeapSizes[frameIndex] = (unsigned int)((glm::floor(size / (1024.0 * 64.0)) + 1) * (1024.0 * 64.0));
 
 			Logger::Log("Expanding cbuffer from " + std::to_string(oldSize) + " to " + std::to_string(m_resourceHeapSizes[frameIndex]) + " Bytes.");
 
