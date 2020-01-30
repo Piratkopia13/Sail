@@ -1,15 +1,16 @@
 #include "Game.h"
 #include "states/GameState.h"
+#include "states/ModelViewerState.h"
 
 Game::Game(HINSTANCE hInstance)
-	: Application(1280, 720, "Sail | Game Engine Demo", hInstance)
+	: Application(1600, 900, "Sail | Game Engine Demo", hInstance)
 	, m_stateStack()
 	
 {
 	// Register states
 	registerStates();
 	// Set starting state
-	m_stateStack.pushState(States::Game);
+	m_stateStack.pushState(States::ModelViewer);
 
 }
 
@@ -25,6 +26,7 @@ void Game::registerStates() {
 
 	// Register all of the different states
 	m_stateStack.registerState<GameState>(States::Game);
+	m_stateStack.registerState<ModelViewerState>(States::ModelViewer);
 }
 
 void Game::dispatchEvent(Event& event) {

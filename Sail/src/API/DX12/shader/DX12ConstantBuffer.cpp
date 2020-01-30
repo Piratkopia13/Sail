@@ -67,7 +67,6 @@ namespace ShaderComponent {
 	void DX12ConstantBuffer::createBuffer(unsigned int swapIndex) {
 		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-		static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 		// Create an upload heap to hold the constant buffer
 		m_constantBufferUploadHeap[swapIndex].Attach(DX12Utils::CreateBuffer(m_context->getDevice(), m_resourceHeapSizes[swapIndex], D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 		m_constantBufferUploadHeap[swapIndex]->SetName(L"Constant Buffer Upload Resource Heap");

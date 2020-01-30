@@ -27,8 +27,8 @@ public:
 	bool hasTexture(const std::string& filename);
 
 	// Models
-	void loadModel(const std::string& filename, Shader* shader);
-	Model& getModel(const std::string& filename, Shader* shader);
+	void loadModel(const std::string& filename, Shader* shader, bool useAbsolutePath = false);
+	Model& getModel(const std::string& filename, Shader* shader, bool useAbsolutePath = false);
 	bool hasModel(const std::string& filename);
 
 	// ShaderSets

@@ -33,14 +33,19 @@ DX12ShaderPipeline::~DX12ShaderPipeline() {
 	m_context->waitForGPU();
 }
 
-void DX12ShaderPipeline::bind(void* cmdList) {
+bool DX12ShaderPipeline::bind(void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	if (!m_pipelineState)
 		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
+	if (!ShaderPipeline::bind(cmdList)) {
+		//return false; // Skip binding if already bound
+	}
+
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-	ShaderPipeline::bind(cmdList);
 	dxCmdList->SetPipelineState(m_pipelineState.Get());
+
+	return true;
 }
 
 void* DX12ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {

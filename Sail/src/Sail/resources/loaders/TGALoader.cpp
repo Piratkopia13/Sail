@@ -4,16 +4,13 @@
 namespace FileLoader {
 
 	TGALoader::TGALoader(std::string filename, ResourceFormat::TextureData& textureData) {
-
-		bool result;
-
 		// Load the targa image data into memory.
-		result = loadTarga(filename, textureData);
+		bool result = loadTarga(filename, textureData);
 		if (!result) {
 			Logger::Warning("Texture file \"" + filename + "\" could not be read!");
-			result = loadTarga("res/textures/missing.tga", textureData); // TODO: make this more general, dont load it every time
+			result = loadTarga("./res/textures/missing.tga", textureData); // TODO: make this more general, don't load it every time
+			assert(result && "Missing texture could not be loaded!");
 		}
-
 	}
 
 	TGALoader::~TGALoader() {
@@ -34,6 +31,7 @@ namespace FileLoader {
 		// Open the targa file for reading in binary.
 		error = fopen_s(&filePtr, filename.c_str(), "rb");
 		if (error != 0) {
+			Logger::Error(strerror(error));
 			return false;
 		}
 

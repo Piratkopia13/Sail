@@ -15,4 +15,6 @@ public:
 	virtual void end() = 0;
 
 	virtual ImTextureID getTextureID(Texture* texture) = 0;
+
+	void applySailStyle();
 };

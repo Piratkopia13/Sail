@@ -9,7 +9,7 @@ public:
 	DX12ShaderPipeline(const std::string& filename);
 	~DX12ShaderPipeline();
 
-	virtual void bind(void* cmdList) override;
+	virtual bool bind(void* cmdList) override;
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
 	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList) override;
 
