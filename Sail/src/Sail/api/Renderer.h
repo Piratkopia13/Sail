@@ -31,8 +31,13 @@ public:
 
 protected:
 	struct RenderCommand {
+		RenderCommand(Mesh* mesh, const glm::mat4& transform)
+			: mesh(mesh)
+			, transform(transform)
+		{}
+
 		Mesh* mesh;
-		glm::mat4 transform; // TODO: find out why having a const ptr here doesnt work
+		glm::mat4 transform;
 	};
 
 	std::vector<RenderCommand> commandQueue;

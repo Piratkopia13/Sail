@@ -23,7 +23,7 @@
 #include <iostream>
 
 //#define SAIL_PROFILING 1
-//#define SAIL_PROFILING_APIo_SPECIFIC 1
+//#define SAIL_PROFILING_API_SPECIFIC 1
 #ifdef SAIL_PROFILING
 	#define SAIL_PROFILE_BEGIN_SESSION(name, filepath) Instrumentor::Instance().beginSession(name, filepath)
 	#define SAIL_PROFILE_END_SESSION() Instrumentor::Instance().endSession()

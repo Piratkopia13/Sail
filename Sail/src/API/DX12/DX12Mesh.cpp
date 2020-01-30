@@ -26,6 +26,7 @@ DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
 }
 
 DX12Mesh::~DX12Mesh() {
+	static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 }
 
 void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {

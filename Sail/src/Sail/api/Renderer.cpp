@@ -14,10 +14,7 @@ void Renderer::submit(Model* model, const glm::mat4& modelMatrix) {
 }
 
 void Renderer::submit(Mesh* mesh, const glm::mat4& modelMatrix) {
-	RenderCommand cmd;
-	cmd.mesh = mesh;
-	cmd.transform = glm::transpose(modelMatrix);
-	commandQueue.push_back(cmd);
+	commandQueue.emplace_back(mesh, glm::transpose(modelMatrix));
 }
 
 void Renderer::setLightSetup(LightSetup* lightSetup) {

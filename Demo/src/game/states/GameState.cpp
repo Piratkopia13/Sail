@@ -4,7 +4,6 @@
 
 GameState::GameState(StateStack& stack)
 : State(stack)
-//, m_cam(20.f, 20.f, 0.1f, 5000.f)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 , m_camController(&m_cam)
 {
@@ -62,7 +61,7 @@ GameState::GameState(StateStack& stack)
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader, glm::vec2(3.0f));
+	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), shader, glm::vec2(30.0f));
 	m_planeModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
@@ -114,6 +113,24 @@ GameState::GameState(StateStack& stack)
 	m_scene.addEntity(e);
 	m_transformTestEntities.push_back(e);
 
+
+
+
+	// Random cube maze
+	const unsigned int mazeStart = 5;
+	const unsigned int mazeSize = 20;
+	const float wallSize = 1.1f;
+	for (unsigned int x = 0; x < mazeSize; x++) {
+		for (unsigned int y = 0; y < mazeSize; y++) {
+			/*if (Utils::rnd() > 0.5f)
+				continue;*/
+
+			e = Entity::Create();
+			e->addComponent<ModelComponent>(m_cubeModel.get());
+			e->addComponent<TransformComponent>(glm::vec3(x * wallSize + mazeStart, 0.5f, y * wallSize + mazeStart));
+			m_scene.addEntity(e);
+		}
+	}
 }
 
 GameState::~GameState() {

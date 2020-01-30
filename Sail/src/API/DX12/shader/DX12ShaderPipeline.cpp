@@ -8,6 +8,12 @@
 
 std::unique_ptr<DXILShaderCompiler> DX12ShaderPipeline::m_dxilCompiler = nullptr;
 
+void DX12ShaderPipeline::reserve(unsigned int meshIndexMax) {
+	for (auto& it : parsedData.cBuffers) {
+		static_cast<ShaderComponent::DX12ConstantBuffer*>(it.cBuffer.get())->reserve(meshIndexMax);
+	}
+}
+
 ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 	return SAIL_NEW DX12ShaderPipeline(filename);
 }

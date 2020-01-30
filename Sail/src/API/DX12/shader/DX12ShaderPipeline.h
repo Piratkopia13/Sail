@@ -27,4 +27,6 @@ private:
 	static std::unique_ptr<DXILShaderCompiler> m_dxilCompiler; // Class Singleton
 	wComPtr<ID3D12PipelineState> m_pipelineState;
 
+public:
+	void reserve(unsigned int meshIndexMax);
 };

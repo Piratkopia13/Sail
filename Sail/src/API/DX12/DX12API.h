@@ -162,7 +162,7 @@ private:
 	wComPtr<IDXGISwapChain4> m_swapChain;
 	std::vector<wComPtr<ID3D12Resource1>> m_renderTargets;
 	wComPtr<ID3D12RootSignature> m_globalRootSignature;
-	std::map<std::string, UINT> m_globalRootSignatureRegisters;
+	std::unordered_map<std::string, UINT> m_globalRootSignatureRegisters;
 
 	D3D12_VIEWPORT m_viewport;
 	D3D12_RECT m_scissorRect;
