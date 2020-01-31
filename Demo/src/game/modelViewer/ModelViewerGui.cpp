@@ -72,7 +72,7 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 		addProperty("Diffuse", [&] { ImGui::SliderFloat(lbl, &material->getPhongSettings().kd, 0.f, 10.f); });
 		addProperty("Specular", [&] { ImGui::SliderFloat(lbl, &material->getPhongSettings().ks, 0.f, 10.f); });
 
-		addProperty("Shininess", [&] { ImGui::SliderFloat(lbl, &material->getPhongSettings().shininess, 0.f, 10.f); });
+		addProperty("Shininess", [&] { ImGui::SliderFloat(lbl, &material->getPhongSettings().shininess, 0.f, 100.f); });
 
 		addProperty("Color", [&] { ImGui::ColorEdit4(lbl, glm::value_ptr(material->getPhongSettings().modelColor)); });
 
@@ -81,17 +81,18 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 		ImGui::Text("Textures");
 		enableColumns();
 
+		float trashButtonWidth = 21.f;
 		std::string diffuseTexName = (material->getTexture(0)) ? material->getTexture(0)->getName() : "None - click to load";
 		limitStringLength(diffuseTexName);
 		addProperty("Diffuse", [&]() {
-			if (ImGui::Button(diffuseTexName.c_str(), ImVec2(propWidth - 15 - ImGui::GetStyle().ItemSpacing.x, 0))) {
+			if (ImGui::Button(diffuseTexName.c_str(), ImVec2(propWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
 				std::string filename = openFilename(L"TGA textures (*.tga)\0*.tga");
 				if (!filename.empty()) {
 					material->setDiffuseTexture(filename, true);
 				}
 			}
 			ImGui::SameLine();
-			if (ImGui::Button(lbl, ImVec2(15, 0))) {
+			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
 				material->setDiffuseTexture("");
 			}
 		}, false);
@@ -99,14 +100,14 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 		std::string normalTexName = (material->getTexture(1)) ? material->getTexture(1)->getName() : "None - click to load";
 		limitStringLength(normalTexName);
 		addProperty("Normal", [&]() {
-			if (ImGui::Button(normalTexName.c_str(), ImVec2(propWidth - 15 - ImGui::GetStyle().ItemSpacing.x, 0))) {
+			if (ImGui::Button(normalTexName.c_str(), ImVec2(propWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
 				std::string filename = openFilename(L"TGA textures (*.tga)\0*.tga");
 				if (!filename.empty()) {
 					material->setNormalTexture(filename, true);
 				}
 			}
 			ImGui::SameLine();
-			if (ImGui::Button(lbl, ImVec2(15, 0))) {
+			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
 				material->setNormalTexture("");
 			}
 		}, false);
@@ -114,14 +115,14 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 		std::string specularTexName = (material->getTexture(2)) ? material->getTexture(2)->getName() : "None - click to load";
 		limitStringLength(specularTexName);
 		addProperty("Specular", [&]() {
-			if (ImGui::Button(specularTexName.c_str(), ImVec2(propWidth - 15 - ImGui::GetStyle().ItemSpacing.x, 0))) {
+			if (ImGui::Button(specularTexName.c_str(), ImVec2(propWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
 				std::string filename = openFilename(L"TGA textures (*.tga)\0*.tga");
 				if (!filename.empty()) {
 					material->setSpecularTexture(filename, true);
 				}
 			}
 			ImGui::SameLine();
-			if (ImGui::Button(lbl, ImVec2(15, 0))) {
+			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
 				material->setSpecularTexture("");
 			}
 		}, false);
@@ -163,11 +164,11 @@ void ModelViewerGui::setupDockspace(float menuBarHeight) {
 }
 
 float ModelViewerGui::setupMenuBar(){
+	static bool showDemoWindow;
 	ImVec2 menuBarSize;
 	if (ImGui::BeginMainMenuBar()) {
-
-		if (ImGui::BeginMenu("Potato")) {
-
+		if (ImGui::BeginMenu("Duffle")) {
+			ImGui::MenuItem("Show demo window", NULL, &showDemoWindow);
 			if (ImGui::MenuItem("Switch to GameState", NULL)) { m_funcSwitchState(); }
 			if (ImGui::MenuItem("Exit", NULL)) { PostQuitMessage(0); }
 			ImGui::EndMenu();
@@ -175,6 +176,9 @@ float ModelViewerGui::setupMenuBar(){
 
 		menuBarSize = ImGui::GetWindowSize();
 		ImGui::EndMainMenuBar();
+	}
+	if (showDemoWindow) {
+		ImGui::ShowDemoWindow();
 	}
 	return menuBarSize.y;
 }

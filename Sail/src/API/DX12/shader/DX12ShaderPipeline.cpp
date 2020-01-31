@@ -33,17 +33,23 @@ DX12ShaderPipeline::~DX12ShaderPipeline() {
 	m_context->waitForGPU();
 }
 
-bool DX12ShaderPipeline::bind(void* cmdList) {
+bool DX12ShaderPipeline::bind(void* cmdList, bool forceIfBound) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	if (!m_pipelineState)
 		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
-	if (!ShaderPipeline::bind(cmdList)) {
-		//return false; // Skip binding if already bound
-	}
+	ShaderPipeline::bind(cmdList, forceIfBound);
+	
+	// Don't bind if already bound
+	// This is to cut down on shader state changes
+	if (CurrentlyBoundShader == this)
+		return false;
 
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	dxCmdList->SetPipelineState(m_pipelineState.Get());
+
+	// Set this shader as bound
+	CurrentlyBoundShader = this;
 
 	return true;
 }

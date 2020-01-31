@@ -63,12 +63,12 @@ void ShaderPipeline::compile() {
 void ShaderPipeline::finish() {
 }
 
-bool ShaderPipeline::bind(void* cmdList) {
+bool ShaderPipeline::bind(void* cmdList, bool forceIfBound) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	// Don't bind if already bound
 	// This is to cut down on shader state changes
-	if (CurrentlyBoundShader == this)
+	if (!forceIfBound && CurrentlyBoundShader == this)
 		return false;
 
 	for (auto& it : parsedData.cBuffers) {
@@ -82,6 +82,10 @@ bool ShaderPipeline::bind(void* cmdList) {
 	inputLayout->bind();
 
 	return true;
+}
+
+void ShaderPipeline::unbind(){
+	CurrentlyBoundShader = nullptr;
 }
 
 void ShaderPipeline::parse(const std::string& source) {

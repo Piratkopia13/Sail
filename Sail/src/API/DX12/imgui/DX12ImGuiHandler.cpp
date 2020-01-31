@@ -13,8 +13,6 @@
 #include "examples/imgui_impl_dx12.cpp"
 #include "examples/imgui_impl_win32.cpp"
 
-
-
 ImGuiHandler* ImGuiHandler::Create() {
 	return SAIL_NEW DX12ImGuiHandler();
 }
@@ -45,7 +43,7 @@ void DX12ImGuiHandler::init() {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
@@ -56,17 +54,24 @@ void DX12ImGuiHandler::init() {
 	//io.ConfigDockingTabBarOnSingleWindows = true;
 	//io.ConfigDockingTransparentPayload = true;
 
-	// Setup Dear ImGui style
-	//ImGui::StyleColorsDark();
-	//ImGui::StyleColorsClassic();
-	applySailStyle();
-
 	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
 	ImGuiStyle& style = ImGui::GetStyle();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 		style.WindowRounding = 0.0f;
 		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 	}
+
+	// Setup Dear ImGui style
+	applySailStyle();
+
+	// Merge icons into default tool font
+	io.Fonts->AddFontDefault();
+
+	ImFontConfig config;
+	config.MergeMode = true;
+	config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+	io.Fonts->AddFontFromFileTTF("res/fonts/fontawesome-webfont.ttf", 13.0f, &config, icon_ranges);
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplWin32_Init((void*)*window->getHwnd());

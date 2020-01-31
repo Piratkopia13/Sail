@@ -7,6 +7,7 @@
 #include "../DX12Utils.h"
 #include "../shader/DX12ShaderPipeline.h"
 #include "../resources/DescriptorHeap.h"
+#include <unordered_set>
 
 Renderer* Renderer::Create(Renderer::Type type) {
 	switch (type) {
@@ -60,6 +61,8 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 		//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 	}
 
+	// Keep track of unique shader pipelines used this frame
+	std::unordered_set<DX12ShaderPipeline*> uniqueShaderPipelines;
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("commandQueue loop");
 
@@ -68,6 +71,7 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 		unsigned int meshIndexMax = commandQueue.size();
 		for (RenderCommand& command : commandQueue) {
 			DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.mesh->getMaterial()->getShader()->getPipeline());
+			uniqueShaderPipelines.insert(shaderPipeline);
 
 			// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
 			shaderPipeline->reserve(meshIndexMax);
@@ -76,7 +80,7 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 			// The index order does not matter, as long as the same index is used for bind and setCBuffer
 			shaderPipeline->setResourceHeapMeshIndex(meshIndex);
 
-			shaderPipeline->bind(cmdList.Get());
+			shaderPipeline->bind(cmdList.Get(), true);
 
 			shaderPipeline->setCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
 			shaderPipeline->setCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
@@ -92,6 +96,11 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 			command.mesh->draw(*this, cmdList.Get());
 			meshIndex++;
 		}
+	}
+
+	// Reset pipelines so that they will re-bind the next frame
+	for (auto* shaderPipeline : uniqueShaderPipelines) {
+		shaderPipeline->unbind();
 	}
 
 	{

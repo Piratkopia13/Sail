@@ -12,6 +12,8 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
+//#include "IconsFontAwesome5.h"
+
 #include "sail/KeyCodes.h"
 #include "sail/MouseButtonCodes.h"
 #include "Sail/Application.h"

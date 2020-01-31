@@ -49,7 +49,9 @@ DX11Texture::DX11Texture(const std::string& filename, bool useAbsolutePath)
 
 }
 
-DX11Texture::DX11Texture(UINT width, UINT height, UINT aaSamples, UINT bindFlags, UINT cpuAccessFlags) {
+DX11Texture::DX11Texture(UINT width, UINT height, UINT aaSamples, UINT bindFlags, UINT cpuAccessFlags)
+	: Texture("Custom texture")
+{
 
 	D3D11_TEXTURE2D_DESC texDesc;
 	ZeroMemory(&texDesc, sizeof(texDesc));
@@ -79,7 +81,9 @@ DX11Texture::DX11Texture(UINT width, UINT height, UINT aaSamples, UINT bindFlags
 
 }
 
-DX11Texture::DX11Texture(DXGI_FORMAT format, UINT width, UINT height, UINT samples, UINT cpuAccessFlags) {
+DX11Texture::DX11Texture(DXGI_FORMAT format, UINT width, UINT height, UINT samples, UINT cpuAccessFlags)
+	: Texture("Custom texture")
+{
 	auto api = Application::getInstance()->getAPI<DX11API>();
 
 	D3D11_TEXTURE2D_DESC texDesc;

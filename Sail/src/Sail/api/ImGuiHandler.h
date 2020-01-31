@@ -1,5 +1,6 @@
 #pragma once
 #include "imgui.h"
+#include "IconsFontAwesome4.h"
 
 class Texture;
 

@@ -28,7 +28,8 @@ public:
 	// The following static methods are to be implemented in APIs
 
 	// Returns false if already bound
-	virtual bool bind(void* cmdList = nullptr) = 0;
+	virtual bool bind(void* cmdList = nullptr, bool forceIfBound = false) = 0;
+	virtual void unbind();
 	// filepath is used for include paths and error messages 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) = 0;
 	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList = nullptr) = 0;

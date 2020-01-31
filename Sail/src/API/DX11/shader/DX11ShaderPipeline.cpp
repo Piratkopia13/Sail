@@ -30,8 +30,10 @@ DX11ShaderPipeline::~DX11ShaderPipeline() {
 	Memory::SafeRelease(m_gs);
 }
 
-void DX11ShaderPipeline::bind(void* cmdList) {
-	ShaderPipeline::bind(cmdList);
+bool DX11ShaderPipeline::bind(void* cmdList, bool forceIfBound) {
+	if (!ShaderPipeline::bind(cmdList, forceIfBound)) {
+		return false;
+	}
 
 	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
 
@@ -43,9 +45,7 @@ void DX11ShaderPipeline::bind(void* cmdList) {
 	devCon->DSSetShader(m_ds, 0, 0);
 	devCon->HSSetShader(m_hs, 0, 0);
 
-
-	// Set this shader as bound
-	CurrentlyBoundShader = this;
+	return true;
 }
 
 void* DX11ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {

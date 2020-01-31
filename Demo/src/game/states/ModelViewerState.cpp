@@ -78,8 +78,6 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	m_scene.addEntity(e);
 
 
-
-
 	// Random cube maze
 	const unsigned int mazeStart = 5;
 	const unsigned int mazeSize = 20;
@@ -220,7 +218,5 @@ bool ModelViewerState::renderImgui(float dt) {
 
 	m_viewerGui.render(dt, funcSwitchState, funcNewModel, material);
 	
-	// The ImGui window is rendered when activated on F10
-	ImGui::ShowDemoWindow();
 	return false;
 }
