@@ -16,6 +16,8 @@ public:
 	template<typename T, typename... Targs>
 	T* addComponent(Targs... args);
 	template<typename T>
+	bool removeComponent();
+	template<typename T>
 	T* getComponent();
 	
 	void setName(const std::string& name);
@@ -35,6 +37,13 @@ T* Entity::addComponent(Targs... args) {
 	}
 	// Return pointer to the inserted component
 	return static_cast<T*>(res.first->second.get());
+}
+
+template<typename T>
+bool Entity::removeComponent() {
+	auto res = m_components.erase(T::getStaticID());
+	// Return true if component was successfully removed
+	return res != 0;
 }
 
 template<typename T>

@@ -9,7 +9,7 @@
 
 class DX12Texture : public Texture, public virtual DX12ATexture {
 public:
-	DX12Texture(const std::string& filename);
+	DX12Texture(const std::string& filename, bool useAbsolutePath = false);
 	~DX12Texture();
 
 	// initBuffers is called once during its first bind

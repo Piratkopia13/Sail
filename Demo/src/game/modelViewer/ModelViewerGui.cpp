@@ -1,14 +1,15 @@
 #include "ModelViewerGui.h"
-#include "Sail/Application.h"
+#include "Sail.h"
 #include <imgui/imgui.cpp>
 #include <commdlg.h>
 #include <atlstr.h>
+#include <glm/gtc/type_ptr.hpp>
 
 ModelViewerGui::ModelViewerGui() {
-	m_modelName = "None";
+	m_modelName = "None - click to load";
 }
 
-void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(const std::string&)) callbackNewModel) {
+void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(const std::string&)) callbackNewModel, PhongMaterial* material) {
 	m_funcSwitchState = funcSwitchState;
 	m_callbackNewModel = callbackNewModel;
 
@@ -22,14 +23,112 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 
 	// Model customization window
 	ImGui::Begin("Model customizer");
-	ImGui::Text("Current model: %s", m_modelName.c_str());
-	if (ImGui::Button("Load new model")) {
-		std::string newModel = openFilename();
-		if (!newModel.empty()) {
-			m_modelName = newModel;
-			m_callbackNewModel(m_modelName);
+
+	float propWidth = 0;
+	int propID = 0;
+	auto addProperty = [&](const char* label, std::function<void()> prop, bool setWidth = true) {
+		ImGui::PushID(propID++);
+		ImGui::AlignTextToFramePadding();
+		ImGui::Text(label);
+		ImGui::NextColumn();
+		if (setWidth)
+			ImGui::SetNextItemWidth(propWidth);
+		prop();
+		ImGui::NextColumn();
+		ImGui::PopID();
+	};
+	auto disableColumns = [] {
+		ImGui::Columns(1);
+	};
+	auto enableColumns = [] {
+		ImGui::Columns(2, "alignedList", false);  // 3-ways, no border
+	};
+
+	enableColumns();
+	float width = ImGui::GetColumnWidth(1);
+	ImGui::SetColumnWidth(0, 75);
+	propWidth = ImGui::GetColumnWidth(1) - 10;
+
+	limitStringLength(m_modelName);
+	addProperty("Model", [&]() {
+		if (ImGui::Button(m_modelName.c_str(), ImVec2(propWidth, 0))) {
+			std::string newModel = openFilename(L"FBX models (*.fbx)\0*.fbx");
+			if (!newModel.empty()) {
+				m_modelName = newModel;
+				m_callbackNewModel(m_modelName);
+			}
 		}
+	});
+		
+	static const char* lbl = "##hidelabel";
+	if (material) {
+		disableColumns();
+		ImGui::Separator();
+		ImGui::Text("Shader pipeline: %s", material->getShader()->getPipeline()->getName().c_str()); ImGui::NextColumn();
+		ImGui::Separator();
+		enableColumns();
+
+		addProperty("Ambient", [&] { ImGui::SliderFloat(lbl, &material->getPhongSettings().ka, 0.f, 10.f); });
+		addProperty("Diffuse", [&] { ImGui::SliderFloat(lbl, &material->getPhongSettings().kd, 0.f, 10.f); });
+		addProperty("Specular", [&] { ImGui::SliderFloat(lbl, &material->getPhongSettings().ks, 0.f, 10.f); });
+
+		addProperty("Shininess", [&] { ImGui::SliderFloat(lbl, &material->getPhongSettings().shininess, 0.f, 10.f); });
+
+		addProperty("Color", [&] { ImGui::ColorEdit4(lbl, glm::value_ptr(material->getPhongSettings().modelColor)); });
+
+		disableColumns();
+		ImGui::Separator();
+		ImGui::Text("Textures");
+		enableColumns();
+
+		std::string diffuseTexName = (material->getTexture(0)) ? material->getTexture(0)->getName() : "None - click to load";
+		limitStringLength(diffuseTexName);
+		addProperty("Diffuse", [&]() {
+			if (ImGui::Button(diffuseTexName.c_str(), ImVec2(propWidth - 15 - ImGui::GetStyle().ItemSpacing.x, 0))) {
+				std::string filename = openFilename(L"TGA textures (*.tga)\0*.tga");
+				if (!filename.empty()) {
+					material->setDiffuseTexture(filename, true);
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(lbl, ImVec2(15, 0))) {
+				material->setDiffuseTexture("");
+			}
+		}, false);
+
+		std::string normalTexName = (material->getTexture(1)) ? material->getTexture(1)->getName() : "None - click to load";
+		limitStringLength(normalTexName);
+		addProperty("Normal", [&]() {
+			if (ImGui::Button(normalTexName.c_str(), ImVec2(propWidth - 15 - ImGui::GetStyle().ItemSpacing.x, 0))) {
+				std::string filename = openFilename(L"TGA textures (*.tga)\0*.tga");
+				if (!filename.empty()) {
+					material->setNormalTexture(filename, true);
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(lbl, ImVec2(15, 0))) {
+				material->setNormalTexture("");
+			}
+		}, false);
+
+		std::string specularTexName = (material->getTexture(2)) ? material->getTexture(2)->getName() : "None - click to load";
+		limitStringLength(specularTexName);
+		addProperty("Specular", [&]() {
+			if (ImGui::Button(specularTexName.c_str(), ImVec2(propWidth - 15 - ImGui::GetStyle().ItemSpacing.x, 0))) {
+				std::string filename = openFilename(L"TGA textures (*.tga)\0*.tga");
+				if (!filename.empty()) {
+					material->setSpecularTexture(filename, true);
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(lbl, ImVec2(15, 0))) {
+				material->setSpecularTexture("");
+			}
+		}, false);
 	}
+
+	disableColumns();
+
 	ImGui::End();
 
 }
@@ -95,4 +194,10 @@ std::string ModelViewerGui::openFilename(LPCWSTR filter, HWND owner) {
 	if (GetOpenFileName(&ofn))
 		fileNameStr = CW2A(fileName);
 	return fileNameStr;
+}
+
+void ModelViewerGui::limitStringLength(std::string& str, int maxLength) {
+	if (str.length() > maxLength) {
+		str = "..." + str.substr(str.length() - maxLength + 3, maxLength - 3);
+	}
 }

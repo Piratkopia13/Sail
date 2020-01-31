@@ -7,7 +7,7 @@ class DX11Texture : public Texture {
 
 public:
 	// Create a texture with data loaded from file
-	DX11Texture(const std::string& filename);
+	DX11Texture(const std::string& filename, bool useAbsolutePath = false);
 	// Createa an empty texture wit the D3D11_BIND_RENDER_TARGET flag set
 	DX11Texture(UINT width, UINT height, UINT aaSamples, UINT bindFlags = 0, UINT cpuAccessFlags = 0);
 	// Create an empty texture with chosen parameters

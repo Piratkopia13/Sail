@@ -72,46 +72,10 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 	// Create entities
-	auto e = Entity::Create("Static cube");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
-	m_scene.addEntity(e);
-
-	e = Entity::Create("Floor");
+	auto e = Entity::Create("Floor");
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	m_scene.addEntity(e);
-
-	e = Entity::Create("Clingy cube");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
-	m_scene.addEntity(e);
-
-	// Add some cubes which are connected through parenting
-	m_texturedCubeEntity = Entity::Create("Textured parent cube");
-	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
-	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
-	m_texturedCubeEntity->setName("MovingCube");
-	m_scene.addEntity(m_texturedCubeEntity);
-	e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
-
-	e = Entity::Create("CubeRoot");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
-	m_scene.addEntity(e);
-	m_transformTestEntities.push_back(e);
-
-	e = Entity::Create("CubeChild");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
-	m_scene.addEntity(e);
-	m_transformTestEntities.push_back(e);
-
-	e = Entity::Create("CubeChildChild");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
-	m_scene.addEntity(e);
-	m_transformTestEntities.push_back(e);
 
 
 
@@ -203,29 +167,6 @@ bool ModelViewerState::update(float dt) {
 
 	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
 
-	static float counter = 0.0f;
-	static float size = 1;
-	static float change = 0.4f;
-	
-	counter += dt * 2;
-	if (m_texturedCubeEntity) {
-		// Move the cubes around
-		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
-		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
-
-		// Move the three parented cubes with identical translation, rotations and scale to show how parenting affects transforms
-		for (Entity::SPtr item : m_transformTestEntities) {
-			item->getComponent<TransformComponent>()->rotateAroundY(dt * 1.0f);
-			item->getComponent<TransformComponent>()->setScale(size);
-			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
-		}
-		m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
-
-		size += change * dt;
-		if (size > 1.2f || size < 0.7f)
-			change *= -1.0f;
-	}
-
 	return true;
 }
 
@@ -245,23 +186,39 @@ bool ModelViewerState::render(float dt) {
 bool ModelViewerState::renderImgui(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
-	auto switchState = [&]() {
+	static auto funcSwitchState = [&]() {
 		requestStackPop();
 		requestStackPush(States::Game);
 	};
-	auto newModel = [&](const std::string& path) {
+	static auto modelEnt = Entity::Create();
+
+	// Add to the scene once
+	static std::once_flag flag;
+	std::call_once(flag, [&] {
+		modelEnt->addComponent<TransformComponent>();
+		m_scene.addEntity(modelEnt); 
+	});
+	
+	static auto funcNewModel = [&](const std::string& path) {
 		Logger::Log("Adding new model to scene: " + path);
 		
 		auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
 		Model* fbxModel = &m_app->getResourceManager().getModel(path, shader, true);
 
-		auto e = Entity::Create();
-		e->addComponent<ModelComponent>(fbxModel);
-		e->addComponent<TransformComponent>();
-		m_scene.addEntity(e);
+		// Remove existing model
+		if (modelEnt->getComponent<ModelComponent>()) {
+			modelEnt->removeComponent<ModelComponent>();
+		}
+		modelEnt->addComponent<ModelComponent>(fbxModel);
 
 	};
-	m_viewerGui.render(dt, switchState, newModel);
+
+	PhongMaterial* material = nullptr;
+	if (auto* modelComp = modelEnt->getComponent<ModelComponent>()) {
+		material = modelComp->getModel()->getMesh(0)->getMaterial();
+	}
+
+	m_viewerGui.render(dt, funcSwitchState, funcNewModel, material);
 	
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();

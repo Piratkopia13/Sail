@@ -17,12 +17,12 @@ public:
 	~ResourceManager();
 
 	// TextureData
-	void loadTextureData(const std::string& filename);
+	void loadTextureData(const std::string& filename, bool useAbsolutePath = false);
 	TextureData& getTextureData(const std::string& filename);
 	bool hasTextureData(const std::string& filename);
 
 	// Texture
-	void loadTexture(const std::string& filename);
+	void loadTexture(const std::string& filename, bool useAbsolutePath = false);
 	Texture& getTexture(const std::string& filename);
 	bool hasTexture(const std::string& filename);
 

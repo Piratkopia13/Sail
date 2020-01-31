@@ -11,10 +11,10 @@ public:
 
 public:
 	TextureData();
-	TextureData(const std::string& filename);
+	TextureData(const std::string& filename, bool useAbsolutePath = false);
 	~TextureData();
 
-	void load(const std::string& filename);
+	void load(const std::string& filename, bool useAbsolutePath = false);
 
 	unsigned int getWidth() const;
 	unsigned int getHeight() const;

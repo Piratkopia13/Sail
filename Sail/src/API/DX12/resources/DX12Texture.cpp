@@ -9,12 +9,13 @@
 
 #include <filesystem>
 
-Texture* Texture::Create(const std::string& filename) {
-	return SAIL_NEW DX12Texture(filename);
+Texture* Texture::Create(const std::string& filename, bool useAbsolutePath) {
+	return SAIL_NEW DX12Texture(filename, useAbsolutePath);
 }
 
-DX12Texture::DX12Texture(const std::string& filename)
-	: m_isInitialized(false)
+DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
+	: Texture(filename)
+	, m_isInitialized(false)
 	, m_initFenceVal(UINT64_MAX)
 	, m_fileName(filename)
 {
@@ -24,7 +25,7 @@ DX12Texture::DX12Texture(const std::string& filename)
 	// Don't create one resource per swap buffer
 	useOneResource = true;
 
-	m_tgaData = &getTextureData(filename);
+	m_tgaData = &getTextureData(filename, useAbsolutePath);
 
 	m_textureDesc = {};
 	m_textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // TODO: read this from texture data

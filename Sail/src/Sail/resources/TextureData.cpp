@@ -9,15 +9,16 @@ TextureData::TextureData() {
 	m_data.width = 0;
 	m_data.textureData = nullptr;
 }
-TextureData::TextureData(const std::string& filename) {
-	load(filename);
+TextureData::TextureData(const std::string& filename, bool useAbsolutePath) {
+	load(filename, useAbsolutePath);
 }
 TextureData::~TextureData() {
 	Memory::SafeDeleteArr(m_data.textureData);
 }
 
-void TextureData::load(const std::string& filename) {
-	FileLoader::TGALoader TGALoader(DEFAULT_TEXTURE_LOCATION + filename, m_data);
+void TextureData::load(const std::string& filename, bool useAbsolutePath) {
+	std::string path = (useAbsolutePath) ? filename : DEFAULT_TEXTURE_LOCATION + filename;
+	FileLoader::TGALoader TGALoader(path, m_data);
 }
 
 unsigned int TextureData::getWidth() const {

@@ -18,8 +18,8 @@ ResourceManager::~ResourceManager() {
 // TextureData
 //
 
-void ResourceManager::loadTextureData(const std::string& filename) {
-	m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename) });
+void ResourceManager::loadTextureData(const std::string& filename, bool useAbsolutePath) {
+	m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename, useAbsolutePath) });
 }
 TextureData& ResourceManager::getTextureData(const std::string& filename) {
 	auto pos = m_textureDatas.find(filename);
@@ -36,10 +36,10 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 // DXTexture
 //
 
-void ResourceManager::loadTexture(const std::string& filename) {
+void ResourceManager::loadTexture(const std::string& filename, bool useAbsolutePath) {
 	SAIL_PROFILE_FUNCTION();
 
-	m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename)) });
+	m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename, useAbsolutePath)) });
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
 	auto pos = m_textures.find(filename);

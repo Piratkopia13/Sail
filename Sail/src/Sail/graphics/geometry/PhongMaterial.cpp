@@ -53,9 +53,9 @@ void PhongMaterial::setColor(const glm::vec4& color) {
 }
 
 
-void PhongMaterial::setDiffuseTexture(const std::string& filename) {
-	getAndInsertTexture(filename, 0);
-	m_phongSettings.hasDiffuseTexture = 1;
+void PhongMaterial::setDiffuseTexture(const std::string& filename, bool useAbsolutePath) {
+	getAndInsertTexture(filename, 0, useAbsolutePath);
+	m_phongSettings.hasDiffuseTexture = (filename.empty()) ? 0 : 1;
 }
 void PhongMaterial::setDiffuseTextureFromHandle(Texture* srv) {
 	m_textures[0] = srv;
@@ -63,9 +63,9 @@ void PhongMaterial::setDiffuseTextureFromHandle(Texture* srv) {
 }
 
 
-void PhongMaterial::setNormalTexture(const std::string& filename) {
-	getAndInsertTexture(filename, 1);
-	m_phongSettings.hasNormalTexture = 1;
+void PhongMaterial::setNormalTexture(const std::string& filename, bool useAbsolutePath) {
+	getAndInsertTexture(filename, 1, useAbsolutePath);
+	m_phongSettings.hasNormalTexture = (filename.empty()) ? 0 : 1;;
 }
 void PhongMaterial::setNormalTextureFromHandle(Texture* srv) {
 	m_textures[1] = srv;
@@ -73,18 +73,25 @@ void PhongMaterial::setNormalTextureFromHandle(Texture* srv) {
 }
 
 
-void PhongMaterial::setSpecularTexture(const std::string& filename) {
-	getAndInsertTexture(filename, 2);
-	m_phongSettings.hasSpecularTexture = 1;
+void PhongMaterial::setSpecularTexture(const std::string& filename, bool useAbsolutePath) {
+	getAndInsertTexture(filename, 2, useAbsolutePath);
+	m_phongSettings.hasSpecularTexture = (filename.empty()) ? 0 : 1;;
 }
 void PhongMaterial::setSpecularTextureFromHandle(Texture* srv) {
 	m_textures[2] = srv;
 	m_phongSettings.hasSpecularTexture = 1;
 }
 
-
-void PhongMaterial::getAndInsertTexture(const std::string& filename, int arraySlot) {
-	Texture* t = &Application::getInstance()->getResourceManager().getTexture(filename);
+void PhongMaterial::getAndInsertTexture(const std::string& filename, int arraySlot, bool useAbsolutePath) {
+	Texture* t = nullptr;
+	if (!filename.empty()) {
+		auto& resMan = Application::getInstance()->getResourceManager();
+		if (!resMan.hasTexture(filename)) {
+			Logger::Warning("Texture (" + filename + ") was not yet loaded, loading now.");
+			resMan.loadTexture(filename, useAbsolutePath);
+		}
+		t = &resMan.getTexture(filename);
+	}
 	m_textures[arraySlot] = t;
 }
 
@@ -92,7 +99,7 @@ Texture* PhongMaterial::getTexture(unsigned int id) const {
 	return m_textures[id];
 }
 
-const PhongMaterial::PhongSettings& PhongMaterial::getPhongSettings() const {
+PhongMaterial::PhongSettings& PhongMaterial::getPhongSettings() {
 	return m_phongSettings;
 }
 

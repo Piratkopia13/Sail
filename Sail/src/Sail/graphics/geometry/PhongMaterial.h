@@ -35,13 +35,16 @@ public:
 	void setShininess(float shininess);
 	void setColor(const glm::vec4& color);
 
-	void setDiffuseTexture(const std::string& filename);
+	// An empty filename will remove the texture
+	void setDiffuseTexture(const std::string& filename, bool useAbsolutePath = false);
 	void setDiffuseTextureFromHandle(Texture* srv);
 
-	void setNormalTexture(const std::string& filename);
+	// An empty filename will remove the texture
+	void setNormalTexture(const std::string& filename, bool useAbsolutePath = false);
 	void setNormalTextureFromHandle(Texture* srv);
 
-	void setSpecularTexture(const std::string& filename);
+	// An empty filename will remove the texture
+	void setSpecularTexture(const std::string& filename, bool useAbsolutePath = false);
 	void setSpecularTextureFromHandle(Texture* srv);
 
 	//void setTextures(ID3D11ShaderResourceView** srvs, UINT numTextures);
@@ -54,12 +57,13 @@ public:
 	*/ 
 	Texture* getTexture(unsigned int id) const;
 
-	const PhongSettings& getPhongSettings() const;
+	PhongSettings& getPhongSettings();
 
 	Shader* getShader() const;
 
 private:
-	void getAndInsertTexture(const std::string& filename, int arraySlot);
+	// An empty filename will remove the texture
+	void getAndInsertTexture(const std::string& filename, int arraySlot, bool useAbsolutePath = false);
 
 private:
 	Shader* m_shader;

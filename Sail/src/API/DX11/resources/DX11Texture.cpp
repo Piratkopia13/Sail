@@ -3,13 +3,15 @@
 #include "Sail/Application.h"
 #include "../DX11API.h"
 
-Texture* Texture::Create(const std::string& filename) {
-	return SAIL_NEW DX11Texture(filename);
+Texture* Texture::Create(const std::string& filename, bool useAbsolutePath) {
+	return SAIL_NEW DX11Texture(filename, useAbsolutePath);
 }
 
-DX11Texture::DX11Texture(const std::string& filename) {
+DX11Texture::DX11Texture(const std::string& filename, bool useAbsolutePath)
+	: Texture(filename)
+{
 
-	TextureData& data = getTextureData(filename);
+	TextureData& data = getTextureData(filename, useAbsolutePath);
 
 	D3D11_TEXTURE2D_DESC texDesc;
 	ZeroMemory(&texDesc, sizeof(texDesc));
