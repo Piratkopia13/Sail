@@ -26,7 +26,8 @@ void ModelComponent::renderEditorGui(SailGuiWindow* window) {
 
 	window->setOption("setWidth", false);
 	window->addProperty("Diffuse", [&]() {
-		if (ImGui::Button(diffuseTexName.c_str(), ImVec2(ImGui::GetColumnWidth() - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
+		float colWidth = ImGui::GetColumnWidth() - 10.f;
+		if (ImGui::Button(diffuseTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
 			std::string filename = window->openFileDialog(L"TGA textures (*.tga)\0*.tga");
 			if (!filename.empty()) {
 				material->setDiffuseTexture(filename, true);
@@ -41,7 +42,8 @@ void ModelComponent::renderEditorGui(SailGuiWindow* window) {
 	std::string normalTexName = (material->getTexture(1)) ? material->getTexture(1)->getName() : "None - click to load";
 	window->limitStringLength(normalTexName);
 	window->addProperty("Normal", [&]() {
-		if (ImGui::Button(normalTexName.c_str(), ImVec2(ImGui::GetColumnWidth() - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
+		float colWidth = ImGui::GetColumnWidth() - 10.f;
+		if (ImGui::Button(normalTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
 			std::string filename = window->openFileDialog(L"TGA textures (*.tga)\0*.tga");
 			if (!filename.empty()) {
 				material->setNormalTexture(filename, true);
@@ -56,7 +58,8 @@ void ModelComponent::renderEditorGui(SailGuiWindow* window) {
 	std::string specularTexName = (material->getTexture(2)) ? material->getTexture(2)->getName() : "None - click to load";
 	window->limitStringLength(specularTexName);
 	window->addProperty("Specular", [&]() {
-		if (ImGui::Button(specularTexName.c_str(), ImVec2(ImGui::GetColumnWidth() - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
+		float colWidth = ImGui::GetColumnWidth() - 10.f;
+		if (ImGui::Button(specularTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
 			std::string filename = window->openFileDialog(L"TGA textures (*.tga)\0*.tga");
 			if (!filename.empty()) {
 				material->setSpecularTexture(filename, true);
