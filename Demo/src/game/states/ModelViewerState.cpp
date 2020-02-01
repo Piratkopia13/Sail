@@ -211,12 +211,7 @@ bool ModelViewerState::renderImgui(float dt) {
 
 	};
 
-	PhongMaterial* material = nullptr;
-	if (auto* modelComp = modelEnt->getComponent<ModelComponent>()) {
-		material = modelComp->getModel()->getMesh(0)->getMaterial();
-	}
-
-	m_viewerGui.render(dt, funcSwitchState, funcNewModel, material);
+	m_viewerGui.render(dt, funcSwitchState, funcNewModel, modelEnt.get());
 	
 	return false;
 }

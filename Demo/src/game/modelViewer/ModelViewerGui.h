@@ -5,12 +5,12 @@
 
 #define FUNC(a) std::function<a>
 
-class PhongMaterial;
+class Entity;
 
 class ModelViewerGui {
 public:
     ModelViewerGui();
-    void render(float dt, FUNC(void()) funcSwitchState, FUNC(void(const std::string&)) callbackNewModel, PhongMaterial* material);
+    void render(float dt, FUNC(void()) funcSwitchState, FUNC(void(const std::string&)) callbackNewModel, Entity* entity);
 
 private:
     void setupDockspace(float menuBarHeight);

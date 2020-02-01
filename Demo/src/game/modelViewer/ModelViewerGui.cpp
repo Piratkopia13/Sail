@@ -9,7 +9,7 @@ ModelViewerGui::ModelViewerGui() {
 	m_modelName = "None - click to load";
 }
 
-void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(const std::string&)) callbackNewModel, PhongMaterial* material) {
+void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(const std::string&)) callbackNewModel, Entity* entity) {
 	m_funcSwitchState = funcSwitchState;
 	m_callbackNewModel = callbackNewModel;
 
@@ -26,7 +26,7 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 
 	float propWidth = 0;
 	int propID = 0;
-	auto addProperty = [&](const char* label, std::function<void()> prop, bool setWidth = true) {
+	auto addProperty = [&propWidth, &propID](const char* label, std::function<void()> prop, bool setWidth = true) {
 		ImGui::PushID(propID++);
 		ImGui::AlignTextToFramePadding();
 		ImGui::Text(label);
@@ -37,17 +37,18 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 		ImGui::NextColumn();
 		ImGui::PopID();
 	};
-	auto disableColumns = [] {
+	auto disableColumns = []() {
 		ImGui::Columns(1);
 	};
-	auto enableColumns = [] {
+	auto enableColumns = [&propWidth, &propID](float labelWidth = 75.f) {
+		ImGui::PushID(propID++);
 		ImGui::Columns(2, "alignedList", false);  // 3-ways, no border
+		ImGui::SetColumnWidth(0, labelWidth);
+		propWidth = ImGui::GetColumnWidth(1) - 10;
+		ImGui::PopID();
 	};
 
 	enableColumns();
-	float width = ImGui::GetColumnWidth(1);
-	ImGui::SetColumnWidth(0, 75);
-	propWidth = ImGui::GetColumnWidth(1) - 10;
 
 	limitStringLength(m_modelName);
 	addProperty("Model", [&]() {
@@ -61,6 +62,15 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 	});
 		
 	static const char* lbl = "##hidelabel";
+	
+	// ================================
+	//			 MATERIAL GUI
+	// ================================
+	PhongMaterial* material = nullptr;
+	ModelComponent* model = entity->getComponent<ModelComponent>();
+	if (model) {
+		material = model->getModel()->getMesh(0)->getMaterial();
+	}
 	if (material) {
 		disableColumns();
 		ImGui::Separator();
@@ -126,6 +136,40 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 				material->setSpecularTexture("");
 			}
 		}, false);
+	}
+
+	// ================================
+	//			TRANSFORM GUI
+	// ================================
+	TransformComponent* transform = entity->getComponent<TransformComponent>();
+	if (model && transform) {
+		disableColumns();
+		ImGui::Separator();
+		ImGui::Text("Transform");
+		enableColumns(90.f);
+
+		addProperty("Translation", [&] {
+			static float translation[3];
+			memcpy(translation, glm::value_ptr(transform->getTranslation()), sizeof(translation));
+			if (ImGui::DragFloat3(lbl, translation, 0.05f)) {
+				transform->setTranslation(glm::make_vec3(translation));
+			}
+		});
+		addProperty("Rotation", [&] {
+			static float rotation[3];
+			memcpy(rotation, glm::value_ptr(transform->getRotations()), sizeof(rotation));
+			if (ImGui::DragFloat3(lbl, rotation, 0.01f)) {
+				transform->setRotations(glm::make_vec3(rotation));
+			}
+		});
+		addProperty("Scale", [&] {
+			static float scale[3];
+			memcpy(scale, glm::value_ptr(transform->getScale()), sizeof(scale));
+			if (ImGui::DragFloat3(lbl, scale, 0.05f)) {
+				transform->setScale(glm::make_vec3(scale));
+			}
+		});
+		
 	}
 
 	disableColumns();
