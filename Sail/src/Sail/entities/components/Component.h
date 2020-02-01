@@ -14,6 +14,7 @@
 	return __COUNTER__; \
 }
 
+class SailGuiWindow;
 
 class Component {
 public:
@@ -21,6 +22,7 @@ public:
 public:
 	Component() {}
 	virtual ~Component() {}
+	virtual void renderEditorGui(SailGuiWindow* window) {};
 
 private:
 };

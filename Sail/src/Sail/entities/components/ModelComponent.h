@@ -18,6 +18,8 @@ public:
 		return m_model;
 	}
 
+	void renderEditorGui(SailGuiWindow* window) override;
+
 private:
 	Model* m_model;
 };

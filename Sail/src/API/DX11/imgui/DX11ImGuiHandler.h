@@ -1,5 +1,5 @@
 #pragma once
-#include "Sail/api/ImGuiHandler.h"
+#include "Sail/api/gui/ImGuiHandler.h"
 
 class DX11ImGuiHandler : public ImGuiHandler {
 public:

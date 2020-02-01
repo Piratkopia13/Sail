@@ -4,7 +4,7 @@
 #include "api/Input.h"
 #include "api/GraphicsAPI.h"
 #include "api/Window.h"
-#include "api/ImGuiHandler.h"
+#include "api/gui/ImGuiHandler.h"
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"

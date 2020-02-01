@@ -1,5 +1,5 @@
 #pragma once
-#include "Sail/api/ImGuiHandler.h"
+#include "Sail/api/gui/ImGuiHandler.h"
 #include "../resources/DescriptorHeap.h"
 
 class DX12Texture;
