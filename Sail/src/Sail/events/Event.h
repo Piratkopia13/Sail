@@ -5,7 +5,9 @@ public:
 	enum Type {
 		WINDOW_RESIZE,
 		WINDOW_FOCUS_CHANGED,
-		POTATO
+		NEW_FRAME,
+
+		NUM_EVENTS
 	};
 public:
 	Event(Type type);

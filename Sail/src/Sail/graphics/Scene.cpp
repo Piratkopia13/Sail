@@ -74,23 +74,3 @@ void Scene::draw(Camera& camera) {
 		}
 	}
 }
-
-bool Scene::onEvent(Event& event) {
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&Scene::onResize));
-
-	// Forward events
-	m_renderer->onEvent(event);
-	//m_postProcessPipeline.onEvent(event);
-
-	return true;
-}
-
-bool Scene::onResize(WindowResizeEvent & event) {
-
-	unsigned int width = event.getWidth();
-	unsigned int height = event.getHeight();
-
-	//m_deferredOutputTex->resize(width, height);
-
-	return false;
-}

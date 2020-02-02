@@ -2,7 +2,8 @@
 #include "DX11ShaderPipeline.h"
 #include "Sail/Application.h"
 #include "../DX11API.h"
-#include "API/DX11/resources/DX11Texture.h"
+#include "../resources/DX11Texture.h"
+#include "../resources/DX11RenderableTexture.h"
 
 ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
 	return SAIL_NEW DX11ShaderPipeline(filename);
@@ -30,8 +31,8 @@ DX11ShaderPipeline::~DX11ShaderPipeline() {
 	Memory::SafeRelease(m_gs);
 }
 
-bool DX11ShaderPipeline::bind(void* cmdList, bool forceIfBound) {
-	if (!ShaderPipeline::bind(cmdList, forceIfBound)) {
+bool DX11ShaderPipeline::bind(void* cmdList) {
+	if (!ShaderPipeline::bind(cmdList)) {
 		return false;
 	}
 
@@ -97,10 +98,16 @@ void* DX11ShaderPipeline::compileShader(const std::string& source, const std::st
 	return shader;
 }
 
-void DX11ShaderPipeline::setTexture2D(const std::string& name, Texture* texture, void* cmdList) {
+void DX11ShaderPipeline::setTexture(const std::string& name, Texture* texture, void* cmdList) {
 	UINT slot = findSlotFromName(name, parsedData.textures);
 	auto* srv = ((DX11Texture*)texture)->getSRV();
 	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, &srv);
+}
+
+void DX11ShaderPipeline::setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList) {
+	UINT slot = findSlotFromName(name, parsedData.textures);
+	auto* srv = ((DX11RenderableTexture*)texture)->getColorSRV();
+	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, srv);
 }
 
 void DX11ShaderPipeline::compile() {

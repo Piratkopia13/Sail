@@ -29,11 +29,6 @@ void Game::registerStates() {
 	m_stateStack.registerState<ModelViewerState>(States::ModelViewer);
 }
 
-void Game::dispatchEvent(Event& event) {
-	Application::dispatchEvent(event);
-	m_stateStack.onEvent(event);
-}
-
 void Game::processInput(float dt) {
 	m_stateStack.processInput(dt);
 }

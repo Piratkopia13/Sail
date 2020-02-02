@@ -68,6 +68,15 @@ project "Demo"
 			  "WIN32_LEAN_AND_MEAN" }	-- Exclude some less used APIs to speed up the build process on windows
 	flags { "MultiProcessorCompile" }
 
+	filter { "platforms:DX11*" }
+		defines {
+			"_SAIL_DX11"
+		}
+	filter { "platforms:DX12*" }
+		defines {
+			"_SAIL_DX12"
+		}
+
 	filter "system:windows"
 		systemversion "latest"
 
@@ -147,7 +156,9 @@ project "Sail"
 	flags { "MultiProcessorCompile" }
 
 	defines {
-		"SAIL_PLATFORM=\"%{cfg.platform}\""
+		"SAIL_PLATFORM=\"%{cfg.platform}\"",
+		-- "_SAIL_BREAK_ON_WARNING",
+		"_SAIL_BREAK_ON_ERROR"
 	}
 
 	filter { "platforms:DX11*" }

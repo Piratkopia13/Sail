@@ -2,13 +2,12 @@
 
 #include "../entities/Entity.h"
 #include "camera/Camera.h"
-#include "../events/Events.h"
 //#include "postprocessing/PostProcessPipeline.h"
 
 class LightSetup;
 class Renderer;
 // TODO: make this class virtual and have the actual scene in the demo/game project
-class Scene : public IEventListener {
+class Scene {
 public:
 	Scene();
 	~Scene();
@@ -18,11 +17,6 @@ public:
 	void addEntity(Entity::SPtr entity);
 	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera);
-
-	virtual bool onEvent(Event& event) override;
-
-private:
-	bool onResize(WindowResizeEvent& event);
 
 private:
 	std::vector<Entity::SPtr> m_entities;

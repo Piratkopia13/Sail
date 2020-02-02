@@ -1,7 +1,11 @@
 #include "pch.h"
-#include "DX11API.h"
+#include "../DX11API.h"
 #include "DX11RenderableTexture.h"
 #include "Sail/Application.h"
+
+RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, Texture::FORMAT format, bool createDepthStencilView, bool createOnlyDSV, unsigned int arraySize, bool singleBuffer) {
+	return SAIL_NEW DX11RenderableTexture(1, width, height, createDepthStencilView, createOnlyDSV, 0U, 0U);
+}
 
 DX11RenderableTexture::DX11RenderableTexture(UINT aaSamples, UINT width, UINT height, bool createDepthStencilView, bool createOnlyDSV, UINT bindFlags, UINT cpuAccessFlags)
 	: m_width(width)
@@ -153,6 +157,10 @@ ID3D11Texture2D* DX11RenderableTexture::getTexture2D() {
 
 ID3D11Texture2D* DX11RenderableTexture::getDepthTexture2D() {
 	return m_dxDepthTexture->getTexture2D();
+}
+
+void DX11RenderableTexture::changeFormat(Texture::FORMAT newFormat) {
+	assert(false && "changeFormat() is not yet implemented for DX11");
 }
 
 void DX11RenderableTexture::begin(void* cmdList) {

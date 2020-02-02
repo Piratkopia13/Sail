@@ -86,18 +86,6 @@ void StateStack::render(float dt) {
 	Application::getInstance()->getAPI()->present(false);
 }
 
-void StateStack::onEvent(Event& event) {
-	// Loop through the stack reversed
-	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {
-
-		// Return if a state returns false
-		// This allows states to stop underlying states from receiving an event
-		if (!((*itr)->onEvent(event)))
-			break;
-
-	}
-}
-
 void StateStack::pushState(States::ID stateID) {
 	m_pendingList.emplace_back(Push, stateID);
 }

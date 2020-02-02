@@ -1,9 +1,5 @@
 #pragma once
 
-// Settings
-//#define _SAIL_BREAK_ON_WARNING
-#define _SAIL_BREAK_ON_ERROR
-
 // Disable "Variable uninitialized" warning
 // 218 of these in the fbx sdk
 #pragma warning(disable:26495)
@@ -31,6 +27,7 @@
 //#include "Sail/graphics/shader/basic/CubeMapShader.h"
 //#include "Sail/graphics/shader/basic/DepthShader.h"
 #include "Sail/graphics/shader/material/MaterialShader.h"
+#include "Sail/graphics/shader/compute/GenerateMipsComputeShader.h"
 //#include "Sail/graphics/shader/instanced/ParticleShader.h"
 //#include "Sail/graphics/shader/deferred/DynBlockDeferredInstancedGeometryShader.h"
 //#include "Sail/graphics/shader/deferred/DeferredInstancedGeometryShader.h"

@@ -6,6 +6,11 @@
 
 class Shader {
 public:
+	struct ComputeSettings {
+		float threadGroupXScale = 1.0f;
+		float threadGroupYScale = 1.0f;
+		float threadGroupZScale = 1.0f;
+	};
 	
 	Shader(const std::string& filename);
 	virtual ~Shader();
@@ -17,6 +22,8 @@ public:
 	virtual void setWireframe(bool wireframe);
 	virtual void setCullMode(GraphicsAPI::Culling cullMode);
 
+	// Compute specific
+	virtual const ComputeSettings* getComputeSettings() const { return nullptr; };
 protected:
 	void finish();
 protected:

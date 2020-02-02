@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Sail/api/Input.h"
-#include "../../Sail/MouseButtonCodes.h"
-#include "../../Sail/KeyCodes.h"
+#include "Sail/MouseButtonCodes.h"
+#include "Sail/KeyCodes.h"
+#include "Sail/events/Events.h"
 
-class Win32Input : public Input {
+class Win32Input : public Input, public IEventListener {
 public:
 	Win32Input();
 	~Win32Input();

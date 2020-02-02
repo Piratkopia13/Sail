@@ -5,13 +5,13 @@
 
 namespace ShaderComponent {
 
-	ConstantBuffer* ConstantBuffer::Create(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot) {
-		return SAIL_NEW DX12ConstantBuffer(initData, size, bindShader, slot);
+	ConstantBuffer* ConstantBuffer::Create(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot, bool inComputeShader) {
+		return SAIL_NEW DX12ConstantBuffer(initData, size, bindShader, slot, inComputeShader);
 	}
 
-	DX12ConstantBuffer::DX12ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot) 
+	DX12ConstantBuffer::DX12ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot, bool inComputeShader)
 		: m_register(slot)
-		, m_resourceHeapMeshIndex(0)
+		, m_inComputeShader(inComputeShader)
 	{
 		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
@@ -40,24 +40,25 @@ namespace ShaderComponent {
 		//delete[] m_needsUpdate;
 	}
 
-	void DX12ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int offset /*= 0U*/) {
+	void DX12ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int meshIndex, unsigned int offset) {
 		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
 		auto frameIndex = m_context->getSwapIndex();
-		memcpy(m_cbGPUAddress[frameIndex] + m_byteAlignedSize * m_resourceHeapMeshIndex + offset, newData, bufferSize);
+		memcpy(m_cbGPUAddress[frameIndex] + m_byteAlignedSize * meshIndex + offset, newData, bufferSize);
 	}
 
-	void DX12ConstantBuffer::bind(void* cmdList) const {
+	void DX12ConstantBuffer::bind(unsigned int meshIndex, void* cmdList) const {
 		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 		auto frameIndex = m_context->getSwapIndex();
 		
 		UINT rootIndex = m_context->getRootIndexFromRegister("b" + std::to_string(m_register));
-		dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * m_resourceHeapMeshIndex);
-	}
 
-	void DX12ConstantBuffer::setResourceHeapMeshIndex(unsigned int index) {
-		m_resourceHeapMeshIndex = index;
+		if (m_inComputeShader) {
+			dxCmdList->SetComputeRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);
+		} else {
+			dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);
+		}
 	}
 
 	ID3D12Resource* DX12ConstantBuffer::getBuffer() const {

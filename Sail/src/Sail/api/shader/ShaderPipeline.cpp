@@ -14,6 +14,7 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, psBlob(nullptr)
 	, dsBlob(nullptr)
 	, hsBlob(nullptr)
+	, csBlob(nullptr)
 	, filename(filename)
 	, wireframe(false)
 	, cullMode(GraphicsAPI::Culling::NO_CULLING)
@@ -27,6 +28,48 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 
 ShaderPipeline::~ShaderPipeline() {
 	//Memory::safeRelease(VSBlob); // Do this?
+}
+
+bool ShaderPipeline::bindInternal(void* cmdList, unsigned int meshIndex, bool forceIfBound) {
+	// Don't bind if already bound
+	// This is to cut down on shader state changes
+	if (!forceIfBound && CurrentlyBoundShader == this)
+		return false;
+
+	for (auto& it : parsedData.cBuffers) {
+		it.cBuffer->bind(meshIndex, cmdList);
+	}
+	for (auto& it : parsedData.samplers) {
+		it.sampler->bind();
+	}
+	// TODO: bind RenderableTextures
+
+	// Set input layout as active
+	inputLayout->bind();
+
+	// Set this shader as bound
+	CurrentlyBoundShader = this;
+
+	return true;
+}
+
+bool ShaderPipeline::trySetCBufferVarInternal(const std::string& name, const void* data, UINT size, unsigned int meshIndex) {
+	for (auto& it : parsedData.cBuffers) {
+		for (auto& var : it.vars) {
+			if (var.name == name) {
+				ShaderComponent::ConstantBuffer& cbuffer = *it.cBuffer.get();
+				cbuffer.updateData(data, size, meshIndex, var.byteOffset);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void ShaderPipeline::setCBufferVarInternal(const std::string& name, const void* data, UINT size, unsigned int meshIndex) {
+	bool success = trySetCBufferVarInternal(name, data, size, meshIndex);
+	if (!success)
+		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
 }
 
 void ShaderPipeline::compile() {
@@ -58,30 +101,19 @@ void ShaderPipeline::compile() {
 		hsBlob = compileShader(source, filepath, ShaderComponent::HS);
 		//Memory::safeRelease(blob);
 	}
+	if (parsedData.hasCS) {
+		csBlob = compileShader(source, filepath, ShaderComponent::CS);
+	}
 }
 
 void ShaderPipeline::finish() {
 }
 
-bool ShaderPipeline::bind(void* cmdList, bool forceIfBound) {
+// Default bind, override and don't call this one if required by the graphics API
+bool ShaderPipeline::bind(void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
-
-	// Don't bind if already bound
-	// This is to cut down on shader state changes
-	if (!forceIfBound && CurrentlyBoundShader == this)
-		return false;
-
-	for (auto& it : parsedData.cBuffers) {
-		it.cBuffer->bind(cmdList);
-	}
-	for (auto& it : parsedData.samplers) {
-		it.sampler->bind();
-	}
 	
-	// Set input layout as active
-	inputLayout->bind();
-
-	return true;
+	return bindInternal(cmdList, 0U, false);
 }
 
 void ShaderPipeline::unbind(){
@@ -97,9 +129,14 @@ void ShaderPipeline::parse(const std::string& source) {
 	if (source.find("GSMain") != std::string::npos) parsedData.hasGS = true;
 	if (source.find("DSMain") != std::string::npos) parsedData.hasDS = true;
 	if (source.find("HSMain") != std::string::npos) parsedData.hasHS = true;
+	if (source.find("CSMain") != std::string::npos) parsedData.hasCS = true;
 
-	if (!parsedData.hasVS && !parsedData.hasPS && !parsedData.hasGS && !parsedData.hasDS && !parsedData.hasHS) {
-		Logger::Error("No main function found in shader. The main function(s) needs to be named VSMain, PSMain, GSMain, DSMain or HSMain");
+	if (!parsedData.hasVS && !parsedData.hasPS && !parsedData.hasGS && !parsedData.hasDS && !parsedData.hasHS && !parsedData.hasCS) {
+		Logger::Error("No main function found in shader. The main function(s) needs to be named VSMain, PSMain, GSMain, DSMain, HSMain or CSMain");
+		assert(false);
+	}
+	if (parsedData.hasCS && (parsedData.hasVS || parsedData.hasPS || parsedData.hasGS || parsedData.hasDS || parsedData.hasHS)) {
+		Logger::Error("No other shader type (PS, VS, GS, HS, DS) is allowed in the same file as a compute shader!");
 		assert(false);
 	}
 
@@ -136,6 +173,11 @@ void ShaderPipeline::parse(const std::string& source) {
 	}
 
 	// Process all textures
+	// RWTextures needs to be handled first!
+	src = cleanSource.c_str();
+	while (src = findToken("RWTexture2D", src)) {
+		parseRWTexture(src);
+	}
 	src = cleanSource.c_str();
 	while (src = findToken("Texture2D", src)) {
 		parseTexture(src);
@@ -181,7 +223,7 @@ void ShaderPipeline::parseCBuffer(const std::string& source) {
 
 	void* initData = malloc(size);
 	memset(initData, 0, size);
-	parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot);
+	parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, parsedData.hasCS);
 	free(initData);
 
 	//Logger::Log(src);
@@ -198,10 +240,17 @@ void ShaderPipeline::parseSampler(const char* source) {
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
 
 	ShaderResource res(name, static_cast<UINT>(slot));
-	parsedData.samplers.emplace_back(res, Texture::WRAP, Texture::MIN_MAG_MIP_LINEAR, bindShader, slot);
+	parsedData.samplers.emplace_back(res, Texture::WRAP, Texture::ANISOTROPIC, bindShader, slot);
 }
 
 void ShaderPipeline::parseTexture(const char* source) {
+	if (source[0] == '<') {
+		// A type was found in the place of a name
+		// This probably means that it is a RWTexture2D and has already been handled
+		source = nextLine(source);
+		return;
+	}
+
 	UINT tokenSize = 0;
 	std::string name = nextTokenAsName(source, tokenSize);
 	source += tokenSize;
@@ -210,6 +259,37 @@ void ShaderPipeline::parseTexture(const char* source) {
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
 
 	parsedData.textures.emplace_back(name, slot);
+}
+
+void ShaderPipeline::parseRWTexture(const char* source) {
+	UINT tokenSize = 0;
+	std::string type = nextTokenAsType(source, tokenSize);
+	source += tokenSize;
+
+	tokenSize = 0;
+	std::string name = nextTokenAsName(source, tokenSize);
+	source += tokenSize;
+
+	tokenSize = 0;
+	int slot = findNextIntOnLine(source);
+	if (slot == -1) {
+		slot = 0; // No slot specified, use 0 as default
+	}
+
+	// Get texture format from source, if specified
+	Texture::FORMAT format = Texture::R8G8B8A8;
+	const char* newLine = strchr(source, '\n');
+	size_t lineLength = newLine - source;
+	char* lineCopy = (char*)malloc(lineLength + 1);
+	memset(lineCopy, '\0', lineLength + 1);
+	strncpy_s(lineCopy, lineLength + 1, source, lineLength);
+	if (strstr(lineCopy, "SAIL_RGBA16_FLOAT")) {
+		format = Texture::R16G16B16A16_FLOAT;
+	}
+	free(lineCopy);
+
+	std::string nameSuffix(" File: " + filename + " slot " + std::to_string(slot));
+	parsedData.renderableTextures.emplace_back(ShaderResource(name, slot), format, nameSuffix);
 }
 
 std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray) const {
@@ -231,6 +311,15 @@ std::string ShaderPipeline::nextTokenAsName(const char* source, UINT& outTokenSi
 	return name;
 }
 
+std::string ShaderPipeline::nextTokenAsType(const char* source, UINT& outTokenSize) const {
+	std::string type = nextToken(source);
+	outTokenSize = (UINT)type.size();
+	// Remove first '<' and last '>' character
+	type = type.substr(1, type.size() - 2);
+
+	return type;
+}
+
 ShaderComponent::BIND_SHADER ShaderPipeline::getBindShaderFromName(const std::string& name) const {
 	if (startsWith(name.c_str(), "VSPS") || startsWith(name.c_str(), "PSVS")) return ShaderComponent::BIND_SHADER(ShaderComponent::VS | ShaderComponent::PS);
 	if (startsWith(name.c_str(), "VS")) return ShaderComponent::VS;
@@ -241,6 +330,10 @@ ShaderComponent::BIND_SHADER ShaderPipeline::getBindShaderFromName(const std::st
 	if (startsWith(name.c_str(), "CS")) return ShaderComponent::CS;
 	Logger::Warning("Shader resource with name \"" + name + "\" not starting with VS/PS etc, using VS as default in shader: \"" + filename + "\"");
 	return ShaderComponent::VS; // Default to binding to VertexShader
+}
+
+bool ShaderPipeline::isComputeShader() const {
+	return csBlob != nullptr;
 }
 
 void ShaderPipeline::setWireframe(bool wireframeState) {
@@ -279,24 +372,23 @@ const std::string& ShaderPipeline::getName() const {
 	return filename;
 }
 
-// TODO: size isnt really needed, can be read from the byteOffset of the next var
+RenderableTexture* ShaderPipeline::getRenderableTexture(const std::string& name) const {
+	for (auto& it : parsedData.renderableTextures) {
+		if (it.res.name == name) {
+			return it.renderableTexture.get();
+		}
+	}
+	Logger::Error("Tried to get a RenderableTexture named \"" + name + "\" which does not exist in the ShaderPipeline.");
+	return nullptr;
+}
+
+// TODO: size isn't really needed, can be read from the byteOffset of the next var
 void ShaderPipeline::setCBufferVar(const std::string& name, const void* data, UINT size) {
-	bool success = trySetCBufferVar(name, data, size);
-	if (!success)
-		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
+	setCBufferVarInternal(name, data, size, 0U);
 }
 
 bool ShaderPipeline::trySetCBufferVar(const std::string& name, const void* data, UINT size) {
-	for (auto& it : parsedData.cBuffers) {
-		for (auto& var : it.vars) {
-			if (var.name == name) {
-				ShaderComponent::ConstantBuffer& cbuffer = *it.cBuffer.get();
-				cbuffer.updateData(data, size, var.byteOffset);
-				return true;
-			}
-		}
-	}
-	return false;
+	return trySetCBufferVarInternal(name, data, size, 0U);
 }
 
 // TODO: registerTypeSize(typeName, size)

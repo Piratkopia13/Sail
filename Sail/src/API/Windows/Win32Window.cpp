@@ -125,7 +125,7 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	case WM_ACTIVATE:
 		isWindowFocused = (wParam == WA_ACTIVE || wParam == WA_CLICKACTIVE);
 		// Dispatch event
-		Application::getInstance()->dispatchEvent(WindowFocusChangedEvent(isWindowFocused));
+		EventSystem::getInstance()->dispatchEvent(WindowFocusChangedEvent(isWindowFocused));
 		break;
 	case WM_SIZE:
 	{

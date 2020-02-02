@@ -8,17 +8,11 @@
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
-#include "events/IEventDispatcher.h"
 
-class Application : public IEventDispatcher {
-
-public:
-	enum API {
-		DX11, DX12
-	};
+class Application {
 
 public:
-	Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api = DX11);
+	Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance);
 	virtual ~Application();
 
 	int startGameLoop();
@@ -28,7 +22,6 @@ public:
 	virtual void processInput(float dt) = 0;
 	virtual void update(float dt) = 0;
 	virtual void render(float dt) = 0;
-	virtual void dispatchEvent(Event& event) override;
 
 	template<typename T>
 	T* const getAPI() { return static_cast<T*>(m_api.get()); }

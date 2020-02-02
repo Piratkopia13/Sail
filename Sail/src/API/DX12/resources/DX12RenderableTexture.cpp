@@ -5,7 +5,7 @@
 #include "../DX12Utils.h"
 
 RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, Texture::FORMAT format, bool createDepthStencilView, bool createOnlyDSV, unsigned int arraySize, bool singleBuffer) {
-	return SAIL_NEW DX12RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, singleBuffer, 0U, 0U, name, arraySize); // TODO: change singleBuffer back when issues with soft shadows are fixed!!
+	return SAIL_NEW DX12RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, singleBuffer, 0U, 0U, name, arraySize);
 }
 
 DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, Texture::FORMAT format, bool createDepthStencilView, bool createOnlyDSV, bool singleBuffer, UINT bindFlags, UINT cpuAccessFlags, const std::string& name, unsigned int arraySize)

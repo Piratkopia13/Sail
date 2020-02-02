@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "Sail/events/Events.h"
 
 class Mesh;
 class Camera;
@@ -9,7 +8,7 @@ class Model;
 class LightSetup;
 class RenderableTexture;
 
-class Renderer : public IEventListener {
+class Renderer {
 public:
 	enum Type {
 		FORWARD
@@ -27,7 +26,6 @@ public:
 	virtual void setLightSetup(LightSetup* lightSetup);
 	virtual void end();
 	virtual void present(RenderableTexture* output = nullptr) = 0;
-	virtual bool onEvent(Event& event) override { return true; };
 
 protected:
 	struct RenderCommand {

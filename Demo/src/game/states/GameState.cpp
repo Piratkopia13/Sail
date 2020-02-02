@@ -171,28 +171,8 @@ bool GameState::processInput(float dt) {
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
-		Event e(Event::POTATO);
-		m_app->dispatchEvent(e);
 	}
 
-	return true;
-}
-
-bool GameState::onEvent(Event& event) {
-	SAIL_PROFILE_FUNCTION();
-	Logger::Log("Received event: " + std::to_string(event.getType()));
-
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
-
-	// Forward events
-	m_scene.onEvent(event);
-
-	return true;
-}
-
-bool GameState::onResize(WindowResizeEvent& event) {
-	SAIL_PROFILE_FUNCTION();
-	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
 }
 

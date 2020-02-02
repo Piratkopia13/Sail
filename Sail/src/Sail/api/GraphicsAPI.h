@@ -1,9 +1,7 @@
 #pragma once
 
 #include "../utils/Utils.h"
-#include "Sail/events/IEventListener.h"
-#include "Sail/events/EventHandler.h"
-#include "Sail/events/WindowResizeEvent.h"
+#include "Sail/events/Events.h"
 
 class Window;
 
@@ -27,8 +25,8 @@ public:
 
 public:
 	static GraphicsAPI* Create();
-	GraphicsAPI() { };
-	virtual ~GraphicsAPI() { };
+	GraphicsAPI();;
+	virtual ~GraphicsAPI();;
 
 	virtual bool init(Window* window) = 0;
 	virtual void clear(const glm::vec4& color) = 0;
@@ -41,10 +39,5 @@ public:
 	virtual void toggleFullscreen() { /* All APIs might not need to implement this */ };
 
 	virtual bool onResize(WindowResizeEvent& event) = 0;
-	virtual bool onEvent(Event& event) override {
-		EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GraphicsAPI::onResize));
-		return true;
-	}
-
-
+	virtual bool onEvent(Event& event) override;
 };

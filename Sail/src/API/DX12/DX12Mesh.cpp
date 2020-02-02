@@ -5,6 +5,7 @@
 #include "Sail/Application.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "resources/DescriptorHeap.h"
+#include "shader/DX12ShaderPipeline.h"
 
 Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 	return SAIL_NEW DX12Mesh(buildData, shader);
@@ -51,4 +52,7 @@ void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
 		else
 			dxCmdList->DrawInstanced(getNumVertices(), 1, 0, 0);
 	}
+
+	// Update pipeline mesh index to not overwrite this instance cbuffer data
+	static_cast<DX12ShaderPipeline*>(material->getShader()->getPipeline())->instanceFinished();
 }

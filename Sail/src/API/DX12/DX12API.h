@@ -13,6 +13,7 @@
 #ifdef _DEBUG
 #include <initguid.h>
 #include <DXGIDebug.h>
+#include <DXProgrammableCapture.h>
 #endif
 #include "Sail/api/GraphicsAPI.h"
 #include <map>
@@ -26,10 +27,14 @@ using wComPtr = Microsoft::WRL::ComPtr<T>;
 
 namespace GlobalRootParam {
 	enum Slot {
-		CBV_TRANSFORM = 0,
-		CBV_DIFFUSE_TINT,
-		CBV_CAMERA,
-		DT_SRVS,
+		CBV_0 = 0,
+		CBV_1,
+		CBV_2,
+		DT_SRV_0TO9_UAV_10TO20,
+		SRV_10,
+		SRV_11,
+		UAV_0,
+		UAV_1,
 		SIZE
 	};
 }
@@ -78,7 +83,6 @@ public:
 		return resource[m_context->getSwapIndex()];
 	}
 
-
 public:
 	DX12API();
 	~DX12API();
@@ -110,6 +114,17 @@ public:
 	const D3D12_RECT* getScissorRect() const;
 	CommandQueue* getDirectQueue() const;
 	unsigned int getFrameCount() const; // Returns the number of elapsed frames
+
+#ifdef _DEBUG
+	void beginPIXCapture() const;
+	void endPIXCapture() const;
+#endif
+
+	// Schedules a resource for initialization
+	void scheduleResourceForInit(std::function<bool(ID3D12GraphicsCommandList4*)> initFunc);
+	// Initializes all resources previously scheduled using scheduleResourceForInit(..)
+	// It is up to the renderer to call this method
+	void initResources(ID3D12GraphicsCommandList4* cmdList);
 
 	void initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT, LPCWSTR name = L"Unnamed Commmand list or allocator object");
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
@@ -147,10 +162,13 @@ private:
 	wComPtr<ID3D12Device5> m_device;
 #ifdef _DEBUG
 	wComPtr<IDXGIFactory2> m_dxgiFactory;
+	wComPtr<IDXGraphicsAnalysis> m_pixGa;
 #endif
 	// Only used for initialization
 	IDXGIFactory7* m_factory;
 	IDXGIAdapter3* m_adapter3;
+
+	std::vector<std::function<bool(ID3D12GraphicsCommandList4*)>> m_resourcesScheduledForInit;
 
 	// Queues
 	std::unique_ptr<CommandQueue> m_directCommandQueue;

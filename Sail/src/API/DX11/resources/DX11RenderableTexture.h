@@ -2,7 +2,7 @@
 
 #include <d3d11.h>
 #include "Sail/api/RenderableTexture.h"
-#include "resources/DX11Texture.h"
+#include "DX11Texture.h"
 
 class DX11RenderableTexture : public RenderableTexture {
 
@@ -22,6 +22,8 @@ public:
 	D3D11_VIEWPORT* getViewPort();
 	ID3D11Texture2D* getTexture2D();
 	ID3D11Texture2D* getDepthTexture2D();
+
+	void changeFormat(Texture::FORMAT newFormat) override;
 
 private:
 	void createTextures();

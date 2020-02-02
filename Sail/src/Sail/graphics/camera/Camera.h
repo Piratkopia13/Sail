@@ -7,7 +7,6 @@
 class Camera {
 	friend class CameraController;
 public:
-
 	Camera() {
 		viewMatrix = glm::mat4(1.0f); // Identity matrix
 

@@ -69,10 +69,6 @@ class StateStack {
 		std::map<States::ID, std::function<State::Ptr()>> m_factories;
 
 		bool m_renderImgui;
-
-
-public:
-	void onEvent(Event& event);
 };
 
 template <typename T>

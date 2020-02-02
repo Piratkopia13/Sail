@@ -85,7 +85,6 @@ class Logger {
 public:
 
 	inline static void Log(const std::string& msg) {
-
 		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 		// Save currently set color
@@ -97,13 +96,10 @@ public:
 
 		// Revert color
 		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
-
-
 	}
 
 
 	inline static void Warning(const std::string& msg) {
-		
 		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 		// Save currently set color
@@ -117,12 +113,12 @@ public:
 		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 
 #ifdef _SAIL_BREAK_ON_WARNING
+		MessageBoxA(0, msg.c_str(), "Sail warning", MB_ICONWARNING);
  		__debugbreak();
 #endif
 	}
 
 	inline static void Error(const std::string& msg) {
-
 		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 		// Save currently set color
@@ -135,8 +131,8 @@ public:
 		// Revert color
 		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 
-
 #ifdef _SAIL_BREAK_ON_ERROR
+		MessageBoxA(0, msg.c_str(), "Sail error", MB_ICONERROR);
 		__debugbreak();
 #endif
 	}

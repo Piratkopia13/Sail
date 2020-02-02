@@ -5,7 +5,7 @@
 
 Application* Application::m_instance = nullptr;
 
-Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
+Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance) {
 	SAIL_PROFILE_FUNCTION();
 
 	// Set up instance if not set
@@ -88,7 +88,7 @@ int Application::startGameLoop() {
 				UINT newHeight = m_window->getWindowHeight();
 				bool isMinimized = m_window->isMinimized();
 				// Send resize event
-				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
+				EventSystem::getInstance()->dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
 			
 			// Get delta time from last frame
@@ -160,11 +160,6 @@ Application* Application::getInstance() {
 	if (!m_instance)
 		Logger::Error("Application instance not set, you need to initialize the class which inherits from Application before calling getInstance().");
 	return m_instance;
-}
-
-void Application::dispatchEvent(Event& event) {
-	m_api->onEvent(event);
-	Input::GetInstance()->onEvent(event);
 }
 
 GraphicsAPI* const Application::getAPI() {

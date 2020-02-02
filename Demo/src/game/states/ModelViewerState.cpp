@@ -2,6 +2,10 @@
 #include "imgui.h"
 #include "Sail/debug/Instrumentor.h"
 
+#ifdef _SAIL_DX12
+#include "API/DX12/DX12API.h"
+#endif
+
 ModelViewerState::ModelViewerState(StateStack& stack)
 : State(stack)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
@@ -65,11 +69,6 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	m_planeModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 	m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-	
-	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
-	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 	// Create entities
 	auto e = Entity::Create("Floor");
@@ -79,20 +78,20 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 
 
 	// Random cube maze
-	const unsigned int mazeStart = 5;
-	const unsigned int mazeSize = 20;
-	const float wallSize = 1.1f;
-	for (unsigned int x = 0; x < mazeSize; x++) {
-		for (unsigned int y = 0; y < mazeSize; y++) {
-			/*if (Utils::rnd() > 0.5f)
-				continue;*/
+	//const unsigned int mazeStart = 5;
+	//const unsigned int mazeSize = 20;
+	//const float wallSize = 1.1f;
+	//for (unsigned int x = 0; x < mazeSize; x++) {
+	//	for (unsigned int y = 0; y < mazeSize; y++) {
+	//		/*if (Utils::rnd() > 0.5f)
+	//			continue;*/
 
-			e = Entity::Create();
-			e->addComponent<ModelComponent>(m_cubeModel.get());
-			e->addComponent<TransformComponent>(glm::vec3(x * wallSize + mazeStart, 0.5f, y * wallSize + mazeStart));
-			m_scene.addEntity(e);
-		}
-	}
+	//		e = Entity::Create();
+	//		e->addComponent<ModelComponent>(m_cubeModel.get());
+	//		e->addComponent<TransformComponent>(glm::vec3(x * wallSize + mazeStart, 0.5f, y * wallSize + mazeStart));
+	//		m_scene.addEntity(e);
+	//	}
+	//}
 }
 
 ModelViewerState::~ModelViewerState() {
@@ -133,28 +132,8 @@ bool ModelViewerState::processInput(float dt) {
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
 		m_app->getResourceManager().reloadShader<MaterialShader>();
-		Event e(Event::POTATO);
-		m_app->dispatchEvent(e);
 	}
 
-	return true;
-}
-
-bool ModelViewerState::onEvent(Event& event) {
-	SAIL_PROFILE_FUNCTION();
-	Logger::Log("Received event: " + std::to_string(event.getType()));
-
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&ModelViewerState::onResize));
-
-	// Forward events
-	m_scene.onEvent(event);
-
-	return true;
-}
-
-bool ModelViewerState::onResize(WindowResizeEvent& event) {
-	SAIL_PROFILE_FUNCTION();
-	m_cam.resize(event.getWidth(), event.getHeight());
 	return true;
 }
 
@@ -172,11 +151,26 @@ bool ModelViewerState::update(float dt) {
 bool ModelViewerState::render(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
+#ifdef _SAIL_DX12
+	static int framesToCapture = 3;
+	static int frameCounter = 0;
+	if (frameCounter < framesToCapture) {
+		m_app->getAPI<DX12API>()->beginPIXCapture();
+	}
+#endif
+
 	// Clear back buffer
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
 
 	// Draw the scene
 	m_scene.draw(m_cam);
+
+#ifdef _SAIL_DX12
+	if (frameCounter < framesToCapture) {
+		m_app->getAPI<DX12API>()->endPIXCapture();
+		frameCounter++;
+	}
+#endif
 
 	return true;
 }

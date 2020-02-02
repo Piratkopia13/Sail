@@ -6,12 +6,12 @@ namespace ShaderComponent {
 
 	class ConstantBuffer {
 	public:
-		static ConstantBuffer* ConstantBuffer::Create(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot = 0);
+		static ConstantBuffer* ConstantBuffer::Create(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot = 0, bool inComputeShader = false);
 		virtual ~ConstantBuffer() {}
 
-		virtual void updateData(const void* newData, unsigned int bufferSize, unsigned int offset = 0U) = 0;
+		virtual void updateData(const void* newData, unsigned int bufferSize, unsigned int meshIndex = 0U, unsigned int offset = 0U) = 0;
 
-		virtual void bind(void* cmdList = nullptr) const = 0;
+		virtual void bind(unsigned int meshIndex = 0U, void* cmdList = nullptr) const = 0;
 	};
 
 }

@@ -1,18 +1,24 @@
 #pragma once
 
 #include "Camera.h"
+#include "Sail/events/Events.h"
 
-class PerspectiveCamera : public Camera {
+class PerspectiveCamera : public Camera, public IEventListener {
 
 public:
 	PerspectiveCamera(float fov, float aspectRatio, float nearZ, float farZ) 
 		: m_fov(glm::radians(fov))
 		, m_aspectRatio(aspectRatio)
 	{
+		EventSystem::getInstance()->subscribeToEvent(Event::WINDOW_RESIZE, this);
+
 		nearZDst = nearZ;
 		farZDst = farZ;
 		m_projectionMatrix = glm::perspectiveFovLH(m_fov, aspectRatio, 1.0f, nearZ, farZ);
 	};
+	~PerspectiveCamera() {
+		EventSystem::getInstance()->unsubscribeFromEvent(Event::WINDOW_RESIZE, this);
+	}
 
 	void resize(int width, int height) {
 		m_aspectRatio = static_cast<float>(width) / height;
@@ -24,6 +30,15 @@ public:
 	}
 	float getAspectRatio() const {
 		return m_aspectRatio;
+	}
+
+	bool onEvent(Event& event) override {
+		auto windowResize = [this](WindowResizeEvent& event) {
+			resize(event.getWidth(), event.getHeight());
+			return true;
+		};
+		EventHandler::HandleType<WindowResizeEvent>(event, windowResize);
+		return true;
 	}
 
 private:

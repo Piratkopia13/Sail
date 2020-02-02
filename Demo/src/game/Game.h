@@ -12,7 +12,6 @@ public:
 	virtual void processInput(float dt) override;
 	virtual void update(float dt) override;
 	virtual void render(float dt) override;
-	virtual void dispatchEvent(Event& event) override;
 
 private:
 	// Register the different states

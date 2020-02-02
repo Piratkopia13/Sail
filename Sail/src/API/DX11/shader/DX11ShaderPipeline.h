@@ -11,11 +11,14 @@ public:
 	//virtual void bind();
 
 	// The following static methods are to be implemented in APIs
-	virtual bool bind(void* cmdList, bool forceIfBound = false) override;
+	virtual bool bind(void* cmdList) override;
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
-	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList) override;
+	virtual void setTexture(const std::string& name, Texture* texture, void* cmdList) override;
+	virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) override;
 	virtual void compile() override;
 	
+
+
 private:
 	ID3D11VertexShader* m_vs;
 	ID3D11PixelShader* m_ps;

@@ -12,20 +12,26 @@ public:
 	DX12Texture(const std::string& filename, bool useAbsolutePath = false);
 	~DX12Texture();
 
-	// initBuffers is called once during its first bind
-	// It is used to create resource objects that needs an open command list
-	void initBuffers(ID3D12GraphicsCommandList4* cmdList);
+	// Returns true when mip maps have been generated and the texture is ready for useage
 	bool hasBeenInitialized() const;
+	// Returns true when the texture is uploaded to a default buffer
+	bool hasBeenUploaded() const;
+
 	const std::string& getFilename() const;
 	ID3D12Resource* getResource() const;
 
-	void releaseUploadBuffer();
+	// TODO: check if this method is still required
+	//		 upload buffer should be release automatically when it can
+	//void releaseUploadBuffer();
 
 private:
+	// It is used to create resource objects that needs an open command list
+	bool initBuffers(ID3D12GraphicsCommandList4* cmdList);
+
 	void generateMips(ID3D12GraphicsCommandList4* cmdList);
 
 private:
-	static const unsigned int MIP_LEVELS = 1;
+	static const unsigned int MIP_LEVELS = 5;
 
 	std::string m_fileName;
 
@@ -38,6 +44,7 @@ private:
 	UINT64 m_initFenceVal;
 
 	std::mutex m_initializeMutex;
+	bool m_isUploaded;
 	bool m_isInitialized;
 
 	TextureData* m_tgaData;

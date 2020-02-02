@@ -31,7 +31,7 @@ namespace FileLoader {
 		// Open the targa file for reading in binary.
 		error = fopen_s(&filePtr, filename.c_str(), "rb");
 		if (error != 0) {
-			Logger::Error(strerror(error));
+			//Logger::Error(strerror(error));
 			return false;
 		}
 

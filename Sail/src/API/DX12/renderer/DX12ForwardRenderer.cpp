@@ -46,15 +46,19 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 		allocator->Reset();
 		cmdList->Reset(allocator.Get(), nullptr);
 
+		// Bind the descriptor heap that will contain all SRVs for this frame
+		m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
+
+		// Initialize resources
+		// This executes texture mip generation
+		m_context->initResources(cmdList.Get());
+
 		// Transition back buffer to render target
 		m_context->prepareToRender(cmdList.Get());
 
 		m_context->renderToBackBuffer(cmdList.Get());
 		cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
 		cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		// Bind the descriptor heap that will contain all SRVs for this frame
-		m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
 
 		// Bind mesh-common constant buffers (camera)
 		// TODO: bind camera cbuffer here
@@ -67,20 +71,15 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("commandQueue loop");
 
 		// TODO: Sort meshes according to material
-		unsigned int meshIndex = 0;
-		unsigned int meshIndexMax = commandQueue.size();
+		unsigned int totalInstances = commandQueue.size();
 		for (RenderCommand& command : commandQueue) {
 			DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.mesh->getMaterial()->getShader()->getPipeline());
 			uniqueShaderPipelines.insert(shaderPipeline);
 
 			// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
-			shaderPipeline->reserve(meshIndexMax);
+			shaderPipeline->reserve(totalInstances);
 
-			// Set mesh index which is used to bind the correct cbuffers from the resource heap
-			// The index order does not matter, as long as the same index is used for bind and setCBuffer
-			shaderPipeline->setResourceHeapMeshIndex(meshIndex);
-
-			shaderPipeline->bind(cmdList.Get(), true);
+			shaderPipeline->bind(cmdList.Get());
 
 			shaderPipeline->setCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
 			shaderPipeline->setCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
@@ -94,7 +93,6 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 			}
 
 			command.mesh->draw(*this, cmdList.Get());
-			meshIndex++;
 		}
 	}
 

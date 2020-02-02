@@ -13,6 +13,7 @@
 #include "Sail/graphics/camera/Camera.h"
 #include "Sail/utils/Utils.h"
 #include "InputLayout.h"
+#include "../RenderableTexture.h"
 
 class ShaderPipeline {
 public:
@@ -28,11 +29,12 @@ public:
 	// The following static methods are to be implemented in APIs
 
 	// Returns false if already bound
-	virtual bool bind(void* cmdList = nullptr, bool forceIfBound = false) = 0;
+	virtual bool bind(void* cmdList = nullptr) = 0;
 	virtual void unbind();
 	// filepath is used for include paths and error messages 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) = 0;
-	virtual void setTexture2D(const std::string& name, Texture* texture, void* cmdList = nullptr) = 0;
+	virtual void setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) = 0;
+	virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) = 0;
 
 	virtual void updateCamera(Camera& cam) {};
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
@@ -43,14 +45,21 @@ public:
 	virtual void enableDepthWriting(bool enable);
 	virtual void setBlending(GraphicsAPI::Blending blendMode);
 
+	bool isComputeShader() const;
 	InputLayout& getInputLayout();
 	void* getVsBlob();
 	const std::string& getName() const;
+	RenderableTexture* getRenderableTexture(const std::string& name) const;
 
-	void setCBufferVar(const std::string& name, const void* data, UINT size);
-	bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
+	virtual void setCBufferVar(const std::string& name, const void* data, UINT size);
+	virtual bool trySetCBufferVar(const std::string& name, const void* data, UINT size);
 
 protected:
+	// Binds shader resources using specified arguments
+	bool bindInternal(void* cmdList, unsigned int meshIndex, bool forceIfBound);
+	bool trySetCBufferVarInternal(const std::string& name, const void* data, UINT size, unsigned int meshIndex);
+	void setCBufferVarInternal(const std::string& name, const void* data, UINT size, unsigned int meshIndex);
+
 	// Compiles shaders into blobs
 	virtual void compile();
 	// Called after the inputLayout is created
@@ -72,7 +81,7 @@ protected:
 	void* psBlob;
 	void* dsBlob;
 	void* hsBlob;
-
+	void* csBlob;
 
 	struct ShaderResource {
 		ShaderResource(const std::string& name, UINT slot)
@@ -87,10 +96,10 @@ protected:
 			std::string name;
 			UINT byteOffset;
 		};
-		ShaderCBuffer(std::vector<ShaderCBuffer::CBufferVariable>& vars, void* initData, UINT size, ShaderComponent::BIND_SHADER bindShader, UINT slot)
+		ShaderCBuffer(std::vector<ShaderCBuffer::CBufferVariable>& vars, void* initData, UINT size, ShaderComponent::BIND_SHADER bindShader, UINT slot, bool inComputeShader)
 			: vars(vars)
 		{
-			cBuffer = std::unique_ptr<ShaderComponent::ConstantBuffer>(ShaderComponent::ConstantBuffer::Create(initData, size, bindShader, slot));
+			cBuffer = std::unique_ptr<ShaderComponent::ConstantBuffer>(ShaderComponent::ConstantBuffer::Create(initData, size, bindShader, slot, inComputeShader));
 		}
 		std::vector<CBufferVariable> vars;
 		std::unique_ptr <ShaderComponent::ConstantBuffer> cBuffer;
@@ -105,16 +114,27 @@ protected:
 		ShaderResource res;
 		std::unique_ptr<ShaderComponent::Sampler> sampler;
 	};
+	struct ShaderRenderableTexture {
+		ShaderRenderableTexture(ShaderResource res, Texture::FORMAT format, const std::string& nameSuffix = "")
+			: res(res)
+		{
+			renderableTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(320, 180, "Renderable Texture owned by a ShaderPipeline" + nameSuffix, format));
+		}
+		ShaderResource res;
+		std::unique_ptr<RenderableTexture> renderableTexture;
+	};
 	struct ParsedData {
-		bool hasVS = false, hasPS = false, hasGS = false, hasDS = false, hasHS = false;
+		bool hasVS = false, hasPS = false, hasGS = false, hasDS = false, hasHS = false, hasCS = false;
 		std::vector<ShaderCBuffer> cBuffers;
 		std::vector<ShaderSampler> samplers;
 		std::vector<ShaderResource> textures;
+		std::vector<ShaderRenderableTexture> renderableTextures;
 		void clear() {
-			hasVS = false; hasPS = false; hasGS = false; hasDS = false; hasHS = false;
+			hasVS = false; hasPS = false; hasGS = false; hasDS = false; hasHS = false, hasCS = false;
 			cBuffers.clear();
 			samplers.clear();
 			textures.clear();
+			renderableTextures.clear();
 		}
 	};
 	ParsedData parsedData;
@@ -124,7 +144,9 @@ private:
 	void parseCBuffer(const std::string& source);
 	void parseSampler(const char* source);
 	void parseTexture(const char* source);
+	void parseRWTexture(const char* source);
 	std::string nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray = false) const;
+	std::string nextTokenAsType(const char* source, UINT& outTokenSize) const;
 	ShaderComponent::BIND_SHADER getBindShaderFromName(const std::string& name) const;
 	
 	UINT getSizeOfType(const std::string& typeName) const;
