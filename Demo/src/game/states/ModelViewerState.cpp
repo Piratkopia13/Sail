@@ -2,7 +2,7 @@
 #include "imgui.h"
 #include "Sail/debug/Instrumentor.h"
 
-#ifdef _SAIL_DX12
+#if defined(_SAIL_DX12) && defined(_DEBUG)
 #include "API/DX12/DX12API.h"
 #endif
 
@@ -151,7 +151,7 @@ bool ModelViewerState::update(float dt) {
 bool ModelViewerState::render(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
-#ifdef _SAIL_DX12
+#if defined(_SAIL_DX12) && defined(_DEBUG)
 	static int framesToCapture = 3;
 	static int frameCounter = 0;
 	if (frameCounter < framesToCapture) {
@@ -165,7 +165,7 @@ bool ModelViewerState::render(float dt) {
 	// Draw the scene
 	m_scene.draw(m_cam);
 
-#ifdef _SAIL_DX12
+#if defined(_SAIL_DX12) && defined(_DEBUG)
 	if (frameCounter < framesToCapture) {
 		m_app->getAPI<DX12API>()->endPIXCapture();
 		frameCounter++;

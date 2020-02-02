@@ -202,7 +202,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 
 
 		const auto& heap = m_context->getMainGPUDescriptorHeap();
-		unsigned int indexStart = heap->getAndStepIndex(/*10 + mipCount*/20); // TODO: read this from root parameters
+		unsigned int indexStart = heap->getAndStepIndex(10 + mipCount); // TODO: read this from root parameters
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heap->getCPUDescriptorHandleForIndex(indexStart);
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = heap->getGPUDescriptorHandleForIndex(indexStart);
 		cmdList->SetComputeRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), gpuHandle);

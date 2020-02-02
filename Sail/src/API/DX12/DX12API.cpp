@@ -230,42 +230,43 @@ void DX12API::createGlobalRootSignature() {
 
 	D3D12_ROOT_PARAMETER rootParam[GlobalRootParam::SIZE];
 
+	D3D12_ROOT_DESCRIPTOR rootDescCBV_0 = {};
 	{
 		// CBV_0
 		m_globalRootSignatureRegisters["b0"] = GlobalRootParam::CBV_0;
 
-		D3D12_ROOT_DESCRIPTOR rootDescCBV = {};
-		rootDescCBV.ShaderRegister = 0;
-		rootDescCBV.RegisterSpace = 0;
+		rootDescCBV_0.ShaderRegister = 0;
+		rootDescCBV_0.RegisterSpace = 0;
 
 		rootParam[GlobalRootParam::CBV_0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootParam[GlobalRootParam::CBV_0].Descriptor = rootDescCBV;
+		rootParam[GlobalRootParam::CBV_0].Descriptor = rootDescCBV_0;
 		rootParam[GlobalRootParam::CBV_0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	}
+	D3D12_ROOT_DESCRIPTOR rootDescCBV_1 = {};
 	{
 		// CBV_1
 		m_globalRootSignatureRegisters["b1"] = GlobalRootParam::CBV_1;
 
-		D3D12_ROOT_DESCRIPTOR rootDescCBV = {};
-		rootDescCBV.ShaderRegister = 1;
-		rootDescCBV.RegisterSpace = 0;
+		rootDescCBV_1.ShaderRegister = 1;
+		rootDescCBV_1.RegisterSpace = 0;
 
 		rootParam[GlobalRootParam::CBV_1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootParam[GlobalRootParam::CBV_1].Descriptor = rootDescCBV;
+		rootParam[GlobalRootParam::CBV_1].Descriptor = rootDescCBV_1;
 		rootParam[GlobalRootParam::CBV_1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	}
+	D3D12_ROOT_DESCRIPTOR rootDescCBV_2 = {};
 	{
 		// CBV_2
 		m_globalRootSignatureRegisters["b2"] = GlobalRootParam::CBV_2;
 
-		D3D12_ROOT_DESCRIPTOR rootDescCBV = {};
-		rootDescCBV.ShaderRegister = 2;
-		rootDescCBV.RegisterSpace = 0;
+		rootDescCBV_2.ShaderRegister = 2;
+		rootDescCBV_2.RegisterSpace = 0;
 
 		rootParam[GlobalRootParam::CBV_2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootParam[GlobalRootParam::CBV_2].Descriptor = rootDescCBV;
+		rootParam[GlobalRootParam::CBV_2].Descriptor = rootDescCBV_2;
 		rootParam[GlobalRootParam::CBV_2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	}
+	D3D12_DESCRIPTOR_RANGE descRangeSRV_UAV[2];
 	{
 		// DT_SRV_0TO9_UAV_10TO20
 		for (unsigned int i = 0; i <= 9; i++) {
@@ -275,73 +276,72 @@ void DX12API::createGlobalRootSignature() {
 			m_globalRootSignatureRegisters["u" + std::to_string(i)] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
 		}
 
-		D3D12_DESCRIPTOR_RANGE descRangeSrv[2];
-		descRangeSrv[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		descRangeSrv[0].NumDescriptors = 10;
-		descRangeSrv[0].BaseShaderRegister = 0;
-		descRangeSrv[0].RegisterSpace = 0;
-		descRangeSrv[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		descRangeSRV_UAV[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		descRangeSRV_UAV[0].NumDescriptors = 10;
+		descRangeSRV_UAV[0].BaseShaderRegister = 0;
+		descRangeSRV_UAV[0].RegisterSpace = 0;
+		descRangeSRV_UAV[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-		descRangeSrv[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-		descRangeSrv[1].NumDescriptors = 10;
-		descRangeSrv[1].BaseShaderRegister = 10;
-		descRangeSrv[1].RegisterSpace = 0;
-		descRangeSrv[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		descRangeSRV_UAV[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+		descRangeSRV_UAV[1].NumDescriptors = 10;
+		descRangeSRV_UAV[1].BaseShaderRegister = 10;
+		descRangeSRV_UAV[1].RegisterSpace = 0;
+		descRangeSRV_UAV[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 		D3D12_ROOT_DESCRIPTOR_TABLE dtSrv;
-		dtSrv.NumDescriptorRanges = ARRAYSIZE(descRangeSrv);
-		dtSrv.pDescriptorRanges = descRangeSrv;
+		dtSrv.NumDescriptorRanges = ARRAYSIZE(descRangeSRV_UAV);
+		dtSrv.pDescriptorRanges = descRangeSRV_UAV;
 
 		rootParam[GlobalRootParam::DT_SRV_0TO9_UAV_10TO20].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 		rootParam[GlobalRootParam::DT_SRV_0TO9_UAV_10TO20].DescriptorTable = dtSrv;
 		rootParam[GlobalRootParam::DT_SRV_0TO9_UAV_10TO20].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	}
+	D3D12_ROOT_DESCRIPTOR rootDescSRV_10 = {};
 	{
 		// SRV_10
 		m_globalRootSignatureRegisters["t10"] = GlobalRootParam::SRV_10;
 
-		D3D12_ROOT_DESCRIPTOR rootDesc = {};
-		rootDesc.ShaderRegister = 10;
-		rootDesc.RegisterSpace = 0;
+		rootDescSRV_10.ShaderRegister = 10;
+		rootDescSRV_10.RegisterSpace = 0;
 
 		rootParam[GlobalRootParam::SRV_10].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-		rootParam[GlobalRootParam::SRV_10].Descriptor = rootDesc;
+		rootParam[GlobalRootParam::SRV_10].Descriptor = rootDescSRV_10;
 		rootParam[GlobalRootParam::SRV_10].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	}
+	D3D12_ROOT_DESCRIPTOR rootDescSRV_11 = {};
 	{
 		// SRV_11
 		m_globalRootSignatureRegisters["t11"] = GlobalRootParam::SRV_11;
 
-		D3D12_ROOT_DESCRIPTOR rootDesc = {};
-		rootDesc.ShaderRegister = 11;
-		rootDesc.RegisterSpace = 0;
+		rootDescSRV_11.ShaderRegister = 11;
+		rootDescSRV_11.RegisterSpace = 0;
 
 		rootParam[GlobalRootParam::SRV_11].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-		rootParam[GlobalRootParam::SRV_11].Descriptor = rootDesc;
+		rootParam[GlobalRootParam::SRV_11].Descriptor = rootDescSRV_11;
 		rootParam[GlobalRootParam::SRV_11].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	}
+	D3D12_ROOT_DESCRIPTOR rootDescUAV_0 = {};
 	{
 		// UAV_0
 		m_globalRootSignatureRegisters["u0"] = GlobalRootParam::UAV_0;
 
-		D3D12_ROOT_DESCRIPTOR rootDesc = {};
-		rootDesc.ShaderRegister = 0;
-		rootDesc.RegisterSpace = 0;
+		rootDescUAV_0.ShaderRegister = 0;
+		rootDescUAV_0.RegisterSpace = 0;
 
 		rootParam[GlobalRootParam::UAV_0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
-		rootParam[GlobalRootParam::UAV_0].Descriptor = rootDesc;
+		rootParam[GlobalRootParam::UAV_0].Descriptor = rootDescUAV_0;
 		rootParam[GlobalRootParam::UAV_0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	}
+	D3D12_ROOT_DESCRIPTOR rootDescUAV_1 = {};
 	{
 		// UAV_1
 		m_globalRootSignatureRegisters["u1"] = GlobalRootParam::UAV_1;
 
-		D3D12_ROOT_DESCRIPTOR rootDesc = {};
-		rootDesc.ShaderRegister = 1;
-		rootDesc.RegisterSpace = 0;
+		rootDescUAV_1.ShaderRegister = 1;
+		rootDescUAV_1.RegisterSpace = 0;
 
 		rootParam[GlobalRootParam::UAV_1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
-		rootParam[GlobalRootParam::UAV_1].Descriptor = rootDesc;
+		rootParam[GlobalRootParam::UAV_1].Descriptor = rootDescUAV_1;
 		rootParam[GlobalRootParam::UAV_1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	}
 
