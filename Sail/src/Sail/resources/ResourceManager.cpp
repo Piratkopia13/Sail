@@ -39,7 +39,8 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 void ResourceManager::loadTexture(const std::string& filename, bool useAbsolutePath) {
 	SAIL_PROFILE_FUNCTION();
 
-	m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename, useAbsolutePath)) });
+	if (!hasTexture(filename))
+		m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename, useAbsolutePath)) });
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
 	auto pos = m_textures.find(filename);
