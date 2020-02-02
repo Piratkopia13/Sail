@@ -38,7 +38,12 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 	m_textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	m_textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	m_textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	m_textureDesc.MipLevels = MIP_LEVELS;
+
+	// Calculate how many mip levels to generate, max 4 (5 including src)
+	DWORD mipCount;
+	_BitScanForward(&mipCount, (m_textureDesc.Width == 1 ? m_textureDesc.Height : m_textureDesc.Width) | (m_textureDesc.Height == 1 ? m_textureDesc.Width : m_textureDesc.Height));
+	mipCount = std::min<DWORD>(5, mipCount + 1);
+	m_textureDesc.MipLevels = mipCount;
 	
 	// A texture rarely updates its data, if at all, so it is stored in a default heap
 	state[0] = D3D12_RESOURCE_STATE_COPY_DEST;
@@ -79,10 +84,12 @@ bool DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 		if (m_textureUploadBuffer && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
 			m_textureUploadBuffer.ReleaseAndGetAddressOf();
 
-			// Generate mip maps
-			// This waits until the texture data is uploaded to the default heap since the generator reads from that source
-			DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
-			generateMips(cmdList);
+			if (m_textureDesc.MipLevels > 1) {
+				// Generate mip maps
+				// This waits until the texture data is uploaded to the default heap since the generator reads from that source
+				DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
+				generateMips(cmdList);
+			}
 
 			// Fully initialized
 			m_isInitialized = true;
@@ -159,6 +166,8 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 	bool isSRGB = false;
 
 	uint32_t srcMip = 0;
+
+	assert(m_textureDesc.MipLevels <= 5 && "No more than 5 mip levels can currently be generated, see commented line below to add that functionality");
 	//for (uint32_t srcMip = 0; srcMip < m_textureDesc.MipLevels - 1u;) {
 		dxPipeline->setCBufferVar("IsSRGB", &isSRGB, sizeof(bool));
 

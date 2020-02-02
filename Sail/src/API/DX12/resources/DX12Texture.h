@@ -12,7 +12,7 @@ public:
 	DX12Texture(const std::string& filename, bool useAbsolutePath = false);
 	~DX12Texture();
 
-	// Returns true when mip maps have been generated and the texture is ready for useage
+	// Returns true when mip maps have been generated and the texture is ready for usage
 	bool hasBeenInitialized() const;
 	// Returns true when the texture is uploaded to a default buffer
 	bool hasBeenUploaded() const;
@@ -31,8 +31,6 @@ private:
 	void generateMips(ID3D12GraphicsCommandList4* cmdList);
 
 private:
-	static const unsigned int MIP_LEVELS = 5;
-
 	std::string m_fileName;
 
 	DX12API* m_context;
