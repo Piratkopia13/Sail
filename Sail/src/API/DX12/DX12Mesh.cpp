@@ -35,7 +35,7 @@ void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
 
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	// Set offset in SRV heap for this mesh 
-	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
+	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
 
 	material->bind(cmdList);
 

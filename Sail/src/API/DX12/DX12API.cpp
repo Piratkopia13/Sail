@@ -233,7 +233,7 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_ROOT_DESCRIPTOR rootDescCBV_0 = {};
 	{
 		// CBV_0
-		m_globalRootSignatureRegisters["b0"] = GlobalRootParam::CBV_0;
+		m_globalRootSignatureRegisters["b0"] = { GlobalRootParam::CBV_0, 0 };
 
 		rootDescCBV_0.ShaderRegister = 0;
 		rootDescCBV_0.RegisterSpace = 0;
@@ -245,7 +245,7 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_ROOT_DESCRIPTOR rootDescCBV_1 = {};
 	{
 		// CBV_1
-		m_globalRootSignatureRegisters["b1"] = GlobalRootParam::CBV_1;
+		m_globalRootSignatureRegisters["b1"] = { GlobalRootParam::CBV_1, 0 };
 
 		rootDescCBV_1.ShaderRegister = 1;
 		rootDescCBV_1.RegisterSpace = 0;
@@ -257,7 +257,7 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_ROOT_DESCRIPTOR rootDescCBV_2 = {};
 	{
 		// CBV_2
-		m_globalRootSignatureRegisters["b2"] = GlobalRootParam::CBV_2;
+		m_globalRootSignatureRegisters["b2"] = { GlobalRootParam::CBV_2, 0 };
 
 		rootDescCBV_2.ShaderRegister = 2;
 		rootDescCBV_2.RegisterSpace = 0;
@@ -270,10 +270,10 @@ void DX12API::createGlobalRootSignature() {
 	{
 		// DT_SRV_0TO9_UAV_10TO20
 		for (unsigned int i = 0; i <= 9; i++) {
-			m_globalRootSignatureRegisters["t" + std::to_string(i)] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
+			m_globalRootSignatureRegisters["t" + std::to_string(i)] = { GlobalRootParam::DT_SRV_0TO9_UAV_10TO20, i };
 		}
 		for (unsigned int i = 10; i <= 20; i++) {
-			m_globalRootSignatureRegisters["u" + std::to_string(i)] = GlobalRootParam::DT_SRV_0TO9_UAV_10TO20;
+			m_globalRootSignatureRegisters["u" + std::to_string(i)] = { GlobalRootParam::DT_SRV_0TO9_UAV_10TO20, i };
 		}
 
 		descRangeSRV_UAV[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -299,7 +299,7 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_ROOT_DESCRIPTOR rootDescSRV_10 = {};
 	{
 		// SRV_10
-		m_globalRootSignatureRegisters["t10"] = GlobalRootParam::SRV_10;
+		m_globalRootSignatureRegisters["t10"] = { GlobalRootParam::SRV_10, 0 };
 
 		rootDescSRV_10.ShaderRegister = 10;
 		rootDescSRV_10.RegisterSpace = 0;
@@ -311,7 +311,7 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_ROOT_DESCRIPTOR rootDescSRV_11 = {};
 	{
 		// SRV_11
-		m_globalRootSignatureRegisters["t11"] = GlobalRootParam::SRV_11;
+		m_globalRootSignatureRegisters["t11"] = { GlobalRootParam::SRV_11, 0 };
 
 		rootDescSRV_11.ShaderRegister = 11;
 		rootDescSRV_11.RegisterSpace = 0;
@@ -323,7 +323,7 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_ROOT_DESCRIPTOR rootDescUAV_0 = {};
 	{
 		// UAV_0
-		m_globalRootSignatureRegisters["u0"] = GlobalRootParam::UAV_0;
+		m_globalRootSignatureRegisters["u0"] = { GlobalRootParam::UAV_0, 0 };
 
 		rootDescUAV_0.ShaderRegister = 0;
 		rootDescUAV_0.RegisterSpace = 0;
@@ -335,7 +335,7 @@ void DX12API::createGlobalRootSignature() {
 	D3D12_ROOT_DESCRIPTOR rootDescUAV_1 = {};
 	{
 		// UAV_1
-		m_globalRootSignatureRegisters["u1"] = GlobalRootParam::UAV_1;
+		m_globalRootSignatureRegisters["u1"] = { GlobalRootParam::UAV_1, 0 };
 
 		rootDescUAV_1.ShaderRegister = 1;
 		rootDescUAV_1.RegisterSpace = 0;
@@ -653,13 +653,13 @@ ID3D12RootSignature* DX12API::getGlobalRootSignature() const {
 	return m_globalRootSignature.Get();
 }
 
-UINT DX12API::getRootIndexFromRegister(const std::string& reg) const {
+DX12API::RootSignEntry DX12API::getRootSignEntryFromRegister(const std::string& reg) const {
 	auto it = m_globalRootSignatureRegisters.find(reg);
 	if (it != m_globalRootSignatureRegisters.end()) {
 		return it->second;
 	}
 	Logger::Error("Tried to get root index from a slot that is not bound in the global root signature!");
-	return -1;
+	return {0, 0};
 }
 
 UINT DX12API::getSwapIndex() const {

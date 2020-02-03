@@ -2,6 +2,23 @@
 #include "DescriptorHeap.h"
 #include "Sail/Application.h"
 
+DescriptorHeap::DescriptorTableInstanceBuilder::DescriptorTableInstanceBuilder() {
+	m_context = Application::getInstance()->getAPI<DX12API>();
+}
+
+void DescriptorHeap::DescriptorTableInstanceBuilder::add(const std::string& rootSigSlotName, std::function<void(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)> addFunc) {
+	DX12API::RootSignEntry entry = m_context->getRootSignEntryFromRegister(rootSigSlotName);
+
+	auto& it = m_entries.find(entry.rootSigIndex);
+	if (it != m_entries.end()) {
+		it->second.insert({ entry.dtOffset, addFunc });
+	} else {
+		auto& it = m_entries.insert({ entry.rootSigIndex, {} });
+		it.first->second.insert({ entry.dtOffset, addFunc });
+	}
+}
+
+
 DescriptorHeap::DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numDescriptors, bool shaderVisible, bool frameDependant)
 	: m_numDescriptors(numDescriptors)
 	, m_index(0)
@@ -64,6 +81,37 @@ void DescriptorHeap::setIndex(unsigned int index) {
 		Logger::Error("Tried to set descriptor heap index to a value larger than max (" + std::to_string(m_numDescriptors) + ")!");
 	}
 	m_index = index;
+}
+
+void DescriptorHeap::addAndBind(DescriptorTableInstanceBuilder& instance, ID3D12GraphicsCommandList4* cmdList, bool onCompute) {
+	for (auto const& [rootSigSlot, entry] : instance.m_entries) {
+		unsigned int lastDtOffset = 0;
+		unsigned int entriesIterated = 0;
+		for (auto const& [dtOffset, addFunc] : entry) {
+			D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+
+			// Skip slots if needed
+			getAndStepIndex(dtOffset - lastDtOffset);
+			// Get index to use and step to next
+			unsigned int handleIndex = getAndStepIndex(1);
+
+			// Bind the DT on first iteration
+			if (entriesIterated == 0) {
+				auto gpuHandle = getGPUDescriptorHandleForIndex(handleIndex);
+				if (onCompute)
+					cmdList->SetComputeRootDescriptorTable(rootSigSlot, gpuHandle);
+				else
+					cmdList->SetGraphicsRootDescriptorTable(rootSigSlot, gpuHandle);
+			}
+
+			cpuHandle = getCPUDescriptorHandleForIndex(handleIndex);
+			// Call lambda that should copy a descriptor to the cpuHandle slot
+			addFunc(cpuHandle);
+			lastDtOffset = dtOffset + 1;
+
+			entriesIterated++;
+		}
+	}
 }
 
 void DescriptorHeap::bind(ID3D12GraphicsCommandList4* cmdList) const {

@@ -208,32 +208,31 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 		dxPipeline->setCBufferVar("NumMipLevels", &mipCount, sizeof(unsigned int));
 		dxPipeline->setCBufferVar("TexelSize", &texelSize, sizeof(glm::vec2));
 
-
-
 		const auto& heap = m_context->getMainGPUDescriptorHeap();
-		unsigned int indexStart = heap->getAndStepIndex(10 + mipCount); // TODO: read this from root parameters
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heap->getCPUDescriptorHandleForIndex(indexStart);
-		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = heap->getGPUDescriptorHandleForIndex(indexStart);
-		cmdList->SetComputeRootDescriptorTable(m_context->getRootIndexFromRegister("t0"), gpuHandle);
+		DescriptorHeap::DescriptorTableInstanceBuilder instance;
 
 		// Bind source mip to t0
 		transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		
-		// Step past unused heap slots (t1-t9) to get to u10
-		cpuHandle.ptr += heap->getDescriptorIncrementSize() * 10;
+		instance.add("t0", [&](auto cpuHandle) {
+			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		});
 
 		// Bind output mips to u10+
 		for (uint32_t mip = 0; mip < mipCount; mip++) {
-			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-			uavDesc.Format = m_textureDesc.Format;
-			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-			uavDesc.Texture2D.MipSlice = srcMip + mip + 1;
-			m_context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffers[0].Get(), nullptr, &uavDesc, cpuHandle);
-			cpuHandle.ptr += heap->getDescriptorIncrementSize();
+			instance.add("u1" + std::to_string(mip), [&, mip](auto cpuHandle) {
+				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+				uavDesc.Format = m_textureDesc.Format;
+				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+				uavDesc.Texture2D.MipSlice = srcMip + mip + 1;
+				m_context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffers[0].Get(), nullptr, &uavDesc, cpuHandle);
 
-			DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffers[0].Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, srcMip + mip + 1);
+				DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffers[0].Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, srcMip + mip + 1);
+			});
 		}
+
+		// Add the instance to the heap
+		// This binds resource views in the right places in the heap according to the root signature
+		heap->addAndBind(instance, cmdList, true);
 
 		// TODO: Pad any unused mip levels with a default UAV. Doing this keeps the DX12 runtime happy.
 		/*if (mipCount < 4) {

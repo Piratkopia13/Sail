@@ -52,7 +52,7 @@ namespace ShaderComponent {
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 		auto frameIndex = m_context->getSwapIndex();
 		
-		UINT rootIndex = m_context->getRootIndexFromRegister("b" + std::to_string(m_register));
+		UINT rootIndex = m_context->getRootSignEntryFromRegister("b" + std::to_string(m_register)).rootSigIndex;
 
 		if (m_inComputeShader) {
 			dxCmdList->SetComputeRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);

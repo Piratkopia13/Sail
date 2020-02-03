@@ -98,9 +98,14 @@ public:
 	virtual void toggleFullscreen() override;
 	virtual bool onResize(WindowResizeEvent& event) override;
 
+	struct RootSignEntry {
+		UINT rootSigIndex;
+		UINT dtOffset;
+	};
+	RootSignEntry getRootSignEntryFromRegister(const std::string& reg) const;
+
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;
-	UINT getRootIndexFromRegister(const std::string& reg) const;
 	UINT getSwapIndex() const; // Returns 0 or 1
 	UINT getFrameIndex() const; // Returns 0, 1, ... NUM_SWAP_BUFFERS
 	UINT getNumGPUBuffers() const; // Always returns 2 - as no more than two buffers are needed for any gpu based resource
@@ -180,7 +185,8 @@ private:
 	wComPtr<IDXGISwapChain4> m_swapChain;
 	std::vector<wComPtr<ID3D12Resource1>> m_renderTargets;
 	wComPtr<ID3D12RootSignature> m_globalRootSignature;
-	std::unordered_map<std::string, UINT> m_globalRootSignatureRegisters;
+	// Map slot name to signature index and dt offsets
+	std::unordered_map<std::string, RootSignEntry> m_globalRootSignatureRegisters;
 
 	D3D12_VIEWPORT m_viewport;
 	D3D12_RECT m_scissorRect;
