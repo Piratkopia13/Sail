@@ -155,7 +155,8 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
     if (all(reflectionColor == -1.f)) {
         // Parse negative reflection as no color
         // Use color from only direct light and irradiance
-        ambient = irradiance * pixel.albedo * pixel.ao;
+        // ambient = irradiance * pixel.albedo * pixel.ao;
+        ambient = 0.02 * pixel.albedo * pixel.ao;
     } else {
         // Use reflectionColor parameter
         float3 prefilteredColor = reflectionColor;

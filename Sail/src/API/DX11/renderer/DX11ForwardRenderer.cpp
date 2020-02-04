@@ -39,7 +39,7 @@ void DX11ForwardRenderer::present(RenderableTexture* output) {
 			shaderPipeline->setCBufferVar("pointLights", &plData, sizeof(plData));
 		}
 
-		command.mesh->draw(*this);
+		command.mesh->draw(*this, command.material);
 	}
 }
 

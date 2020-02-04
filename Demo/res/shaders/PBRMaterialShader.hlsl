@@ -127,7 +127,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 		pixel.ao *= mrao.b;
 	}
 
-	float3 reflectionColor = 0.f;
+	float3 reflectionColor = -1.f;
 	float3 shadedColor = pbrShade(scene, pixel, reflectionColor);
 
 	// Gamma correction

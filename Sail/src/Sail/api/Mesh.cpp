@@ -26,10 +26,6 @@ Shader* Mesh::getShader() const {
 	return shader;
 }
 
-Material* Mesh::getMaterial() const {
-	return material.get();
-}
-
 unsigned int Mesh::getNumVertices() const {
 	return meshData.numVertices;
 }

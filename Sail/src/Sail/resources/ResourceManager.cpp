@@ -67,12 +67,15 @@ Model& ResourceManager::getModel(const std::string& filename, Shader* shader, bo
 	if (pos == m_fbxModels.end()) {
 		// Model was not yet loaded, load it and return
 		loadModel(filename, shader, useAbsolutePath);
-		
+
 		return *m_fbxModels.find(filename)->second->getModel();
-		//Logger::Error("Tried to access an fbx model that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().LoadFBXModel(" + filename + ") before accessing it.");
 	}
 
-	return *pos->second->getModel();
+	Model& foundModel = *pos->second->getModel();
+	if (foundModel.getMesh(0)->getShader() != shader)
+		Logger::Error("Tried to get model from resource manager that has already been loaded with a different shader!");
+
+	return foundModel;
 }
 bool ResourceManager::hasModel(const std::string& filename) {
 	return m_fbxModels.find(filename) != m_fbxModels.end();

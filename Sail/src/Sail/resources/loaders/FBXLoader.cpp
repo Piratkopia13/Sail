@@ -83,11 +83,11 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 			getGeometry(mesh, meshData);
 			std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, m_shader));
 
-			if (auto* material = dynamic_cast<PhongMaterial*>(mesh->getMaterial())) {
+			/*if (auto* material = dynamic_cast<PhongMaterial*>(mesh->getMaterial())) {
 				getMaterial(pNode, material);
 			} else {
 				Logger::Warning("Unknown material type found for fbx parsing. Only PhongMaterial can be read from files.");
-			}
+			}*/
 
 			m_model->addMesh(std::move(mesh));
 

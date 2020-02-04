@@ -17,11 +17,6 @@ Mesh* Model::addMesh(std::unique_ptr<Mesh> mesh) {
 	return m_meshes.back().get();
 }
 
-void Model::draw(const Renderer& renderer) {
-	for (auto& mesh : m_meshes)
-		mesh->draw(renderer);
-}
-
 Mesh* Model::getMesh(unsigned int index) {
 	assert(m_meshes.size() > index);
 	return m_meshes[index].get();

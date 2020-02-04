@@ -50,7 +50,11 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 	Material* material = nullptr;
 	ModelComponent* model = entity->getComponent<ModelComponent>();
 	if (model) {
-		material = model->getModel()->getMesh(0)->getMaterial();
+		if (auto* matComp = entity->getComponent<MaterialComponent>()) {
+			material = matComp->get();
+		} else {
+			ImGui::Text("Model is missing material component");
+		}
 	}
 	if (material) {
 		disableColumns();

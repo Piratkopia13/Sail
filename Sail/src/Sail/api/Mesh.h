@@ -62,10 +62,9 @@ public:
 	Mesh(Data& buildData, Shader* shader);
 	virtual ~Mesh();
 
-	virtual void draw(const Renderer& renderer, void* cmdList = nullptr) = 0;
+	virtual void draw(const Renderer& renderer, Material* material, void* cmdList = nullptr) = 0;
 
 	Shader* getShader() const;
-	Material* getMaterial() const;
 
 	unsigned int getNumVertices() const;
 	unsigned int getNumIndices() const;
@@ -74,8 +73,6 @@ public:
 	const IndexBuffer& getIndexBuffer() const;
 
 protected:
-	// TODO: allow same material for multiple meshes
-	Material::SPtr material;
 	Shader* shader;
 
 	std::unique_ptr<VertexBuffer> vertexBuffer;

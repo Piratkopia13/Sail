@@ -66,36 +66,39 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	auto* pbrShader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>(); // Load for the sake of loading (testing)
 
 	// Create/load models
-	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), phongShader);
-	m_cubeModel->getMesh(0)->getMaterial()->asPhong()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), pbrShader, glm::vec2(30.0f));
-	m_planeModel->getMesh(0)->getMaterial()->asPBR()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
-	m_planeModel->getMesh(0)->getMaterial()->asPBR()->setNormalTexture("pbr/pavingStones/normal.tga");
-	m_planeModel->getMesh(0)->getMaterial()->asPBR()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
-	//m_planeModel->getMesh(0)->getMaterial()->asPBR()->setMetalnessRoughnessAOTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 	// Create entities
 	auto e = Entity::Create("Floor");
 	e->addComponent<ModelComponent>(m_planeModel.get());
 	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+	auto* mat = e->addComponent<MaterialComponent>(Material::PBR);
+	mat->get()->asPBR()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
+	mat->get()->asPBR()->setNormalTexture("pbr/pavingStones/normal.tga");
+	mat->get()->asPBR()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
 	m_scene.addEntity(e);
 
 
-	// Random cube maze
-	//const unsigned int mazeStart = 5;
-	//const unsigned int mazeSize = 20;
-	//const float wallSize = 1.1f;
-	//for (unsigned int x = 0; x < mazeSize; x++) {
-	//	for (unsigned int y = 0; y < mazeSize; y++) {
-	//		/*if (Utils::rnd() > 0.5f)
-	//			continue;*/
+	// PBR spheres
+	Model* sphereModel = &m_app->getResourceManager().getModel("sphere.fbx", pbrShader);
+	const unsigned int gridSize = 7;
+	const float cellSize = 1.3f;
+	for (unsigned int x = 0; x < gridSize; x++) {
+		for (unsigned int y = 0; y < gridSize; y++) {
+			e = Entity::Create();
+			auto* model = e->addComponent<ModelComponent>(sphereModel);
+			auto* transform = e->addComponent<TransformComponent>(glm::vec3(x * cellSize - (cellSize * (gridSize - 1.0f) * 0.5f), y * cellSize + 1.0f, 0.f));
+			transform->setScale(0.5f);
 
-	//		e = Entity::Create();
-	//		e->addComponent<ModelComponent>(m_cubeModel.get());
-	//		e->addComponent<TransformComponent>(glm::vec3(x * wallSize + mazeStart, 0.5f, y * wallSize + mazeStart));
-	//		m_scene.addEntity(e);
-	//	}
-	//}
+			PBRMaterial* material = e->addComponent<MaterialComponent>(Material::PBR)->get()->asPBR();
+			material->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+			// Vary metalness and roughness with cell location
+			material->setRoughnessScale(1.f - (x / (float)gridSize));
+			material->setMetalnessScale(y / (float)gridSize);
+
+			m_scene.addEntity(e);
+		}
+	}
 }
 
 ModelViewerState::~ModelViewerState() {

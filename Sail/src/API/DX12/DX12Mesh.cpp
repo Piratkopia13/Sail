@@ -6,8 +6,6 @@
 #include "Sail/graphics/shader/Shader.h"
 #include "resources/DescriptorHeap.h"
 #include "shader/DX12ShaderPipeline.h"
-#include "Sail/graphics/material/PhongMaterial.h"
-#include "Sail/graphics/material/PBRMaterial.h"
 
 Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 	return SAIL_NEW DX12Mesh(buildData, shader);
@@ -19,13 +17,6 @@ DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	m_context = Application::getInstance()->getAPI<DX12API>();
-	
-	if (shader->getMaterialType() == Material::PHONG)
-		material.reset(new PhongMaterial());
-	else if (shader->getMaterialType() == Material::PBR)
-		material.reset(new PBRMaterial());
-	else
-		Logger::Error("Shader requires unknown material type");
 
 	// Create vertex buffer
 	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shader->getPipeline()->getInputLayout(), buildData));
@@ -39,8 +30,9 @@ DX12Mesh::~DX12Mesh() {
 	static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 }
 
-void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
+void DX12Mesh::draw(const Renderer& renderer, Material* material, void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+	assert(shader->getMaterialType() == material->getType() && "Shader requires a different material from the one given");
 
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	// Set offset in SRV heap for this mesh 
