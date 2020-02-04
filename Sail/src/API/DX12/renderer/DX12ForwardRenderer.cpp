@@ -73,7 +73,7 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 		// TODO: Sort meshes according to material
 		unsigned int totalInstances = commandQueue.size();
 		for (RenderCommand& command : commandQueue) {
-			DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.mesh->getMaterial()->getShader()->getPipeline());
+			DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.mesh->getShader()->getPipeline());
 			uniqueShaderPipelines.insert(shaderPipeline);
 
 			// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame

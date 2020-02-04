@@ -49,6 +49,8 @@ bool DX12ShaderPipeline::bind(void* cmdList) {
 }
 
 void* DX12ShaderPipeline::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
+//#define USE_DXIL_COMPILER
+#ifdef USE_DXIL_COMPILER
 	DXILShaderCompiler::Desc shaderDesc;
 
 	switch (shaderType) {
@@ -90,6 +92,58 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 	IDxcBlob* pShaders = nullptr;
 	ThrowIfFailed(m_dxilCompiler->compile(&shaderDesc, &pShaders));
 
+#else
+	// "Old" compilation
+
+	ID3DBlob* pShaders = nullptr;
+	ID3DBlob* errorBlob = nullptr;
+	UINT flags = 0;
+#if defined( DEBUG ) || defined( _DEBUG )
+	flags |= D3DCOMPILE_DEBUG;
+	flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+	HRESULT hr;
+	switch (shaderType) {
+	case ShaderComponent::VS:
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", flags, 0, &pShaders, &errorBlob);
+		break;
+	case ShaderComponent::PS:
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", flags, 0, &pShaders, &errorBlob);
+		break;
+	case ShaderComponent::DS:
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "DSMain", "ds_5_0", flags, 0, &pShaders, &errorBlob);
+		break;
+	case ShaderComponent::HS:
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "HSMain", "hs_5_0", flags, 0, &pShaders, &errorBlob);
+		break;
+	case ShaderComponent::GS:
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "GSMain", "gs_5_0", flags, 0, &pShaders, &errorBlob);
+		break;
+	case ShaderComponent::CS:
+		hr = D3DCompile(source.c_str(), source.length(), filepath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CSMain", "cs_5_0", flags, 0, &pShaders, &errorBlob);
+		break;
+	}
+
+	if (FAILED(hr)) {
+		// Print shader compilation error
+		if (errorBlob) {
+			char* msg = (char*)(errorBlob->GetBufferPointer());
+			std::stringstream ss;
+			ss << "Failed to compile shader (" << filepath << ")\n";
+			for (size_t i = 0; i < errorBlob->GetBufferSize(); i++) {
+				ss << msg[i];
+			}
+			OutputDebugStringA(ss.str().c_str());
+			OutputDebugStringA("\n");
+			MessageBoxA(0, ss.str().c_str(), "", 0);
+			errorBlob->Release();
+		}
+		if (pShaders)
+			pShaders->Release();
+		ThrowIfFailed(hr);
+	}
+#endif
+
 	return pShaders;
 }
 
@@ -97,8 +151,8 @@ void DX12ShaderPipeline::setTexture(const std::string& name, Texture* texture, v
 	auto* dxTexture = static_cast<DX12Texture*>(texture);
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
+	// Check if buffer is not yet initialized and, in that case, bind a standard texture
 	if (!dxTexture->hasBeenInitialized()) {
-		// TODO: check if buffer is not yet initialized and, in that case, bind a standard texture
 		dxTexture = static_cast<DX12Texture*>(&Application::getInstance()->getResourceManager().getTexture("missing.tga"));
 	}
 

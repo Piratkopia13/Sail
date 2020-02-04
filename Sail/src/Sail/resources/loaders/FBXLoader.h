@@ -4,6 +4,8 @@
 #include <string>
 #include "../../graphics/geometry/Model.h"
 
+class PhongMaterial;
+
 class FBXLoader {
 public:
 	FBXLoader(const std::string& filepath, Shader* shader);

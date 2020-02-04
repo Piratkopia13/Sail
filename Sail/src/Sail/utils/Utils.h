@@ -81,62 +81,10 @@ public:
 };
 
 class Logger {
-
 public:
-
-	inline static void Log(const std::string& msg) {
-		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		// Save currently set color
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(hstdout, &csbi);
-
-		SetConsoleTextAttribute(hstdout, 0x0F);
-		std::cout << "LOG: " << msg << std::endl;
-
-		// Revert color
-		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
-	}
-
-
-	inline static void Warning(const std::string& msg) {
-		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		// Save currently set color
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(hstdout, &csbi);
-
-		SetConsoleTextAttribute(hstdout, 0xE0);
-		std::cout << "WARNING: " << msg << std::endl;
-
-		// Revert color
-		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
-
-#ifdef _SAIL_BREAK_ON_WARNING
-		MessageBoxA(0, msg.c_str(), "Sail warning", MB_ICONWARNING);
- 		__debugbreak();
-#endif
-	}
-
-	inline static void Error(const std::string& msg) {
-		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		// Save currently set color
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(hstdout, &csbi);
-
-		SetConsoleTextAttribute(hstdout, 0xC0);
-		std::cout << "ERROR: " << msg << std::endl;
-
-		// Revert color
-		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
-
-#ifdef _SAIL_BREAK_ON_ERROR
-		MessageBoxA(0, msg.c_str(), "Sail error", MB_ICONERROR);
-		__debugbreak();
-#endif
-	}
-
+	static void Log(const std::string& msg);
+	static void Warning(const std::string& msg);
+	static void Error(const std::string& msg);
 };
 
 namespace Utils {

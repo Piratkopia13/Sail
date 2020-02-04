@@ -16,6 +16,7 @@ public:
 	virtual ~Shader();
 
 	ShaderPipeline* getPipeline();
+	Material::Type getMaterialType() const;
 
 	virtual void bind();
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
@@ -25,11 +26,13 @@ public:
 	// Compute specific
 	virtual const ComputeSettings* getComputeSettings() const { return nullptr; };
 protected:
+	void setMaterialType(Material::Type type);
 	void finish();
 protected:
 	// This is a raw pointer and not a smart pointer because reload() requires new (*) T() functionality
 	ShaderPipeline* shaderPipeline;
 private:
 	bool m_finished;
+	Material::Type m_materialType;
 
 };

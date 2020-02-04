@@ -1,6 +1,8 @@
 #include "ModelViewerState.h"
 #include "imgui.h"
 #include "Sail/debug/Instrumentor.h"
+#include "Sail/graphics/material/PhongMaterial.h"
+#include "Sail/graphics/material/PBRMaterial.h"
 
 #if defined(_SAIL_DX12) && defined(_DEBUG)
 #include "API/DX12/DX12API.h"
@@ -60,15 +62,17 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
+	auto* phongShader = &m_app->getResourceManager().getShaderSet<PhongMaterialShader>();
+	auto* pbrShader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>(); // Load for the sake of loading (testing)
 
 	// Create/load models
-	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
-	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), shader, glm::vec2(30.0f));
-	m_planeModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), phongShader);
+	m_cubeModel->getMesh(0)->getMaterial()->asPhong()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), pbrShader, glm::vec2(30.0f));
+	m_planeModel->getMesh(0)->getMaterial()->asPBR()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
+	m_planeModel->getMesh(0)->getMaterial()->asPBR()->setNormalTexture("pbr/pavingStones/normal.tga");
+	m_planeModel->getMesh(0)->getMaterial()->asPBR()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
+	//m_planeModel->getMesh(0)->getMaterial()->asPBR()->setMetalnessRoughnessAOTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 	// Create entities
 	auto e = Entity::Create("Floor");
@@ -131,7 +135,8 @@ bool ModelViewerState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
-		m_app->getResourceManager().reloadShader<MaterialShader>();
+		m_app->getResourceManager().reloadShader<PhongMaterialShader>();
+		m_app->getResourceManager().reloadShader<PBRMaterialShader>();
 	}
 
 	return true;
@@ -194,7 +199,7 @@ bool ModelViewerState::renderImgui(float dt) {
 	static auto funcNewModel = [&](const std::string& path) {
 		Logger::Log("Adding new model to scene: " + path);
 		
-		auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
+		auto* shader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>();
 		Model* fbxModel = &m_app->getResourceManager().getModel(path, shader, true);
 
 		// Remove existing model

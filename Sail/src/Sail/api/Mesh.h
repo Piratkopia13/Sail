@@ -2,9 +2,10 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include "Sail/graphics/geometry/PhongMaterial.h"
 #include "Sail/api/Renderer.h"
+#include "Sail/graphics/material/Material.h"
 
+class Shader;
 class VertexBuffer;
 class IndexBuffer;
 
@@ -63,7 +64,8 @@ public:
 
 	virtual void draw(const Renderer& renderer, void* cmdList = nullptr) = 0;
 
-	PhongMaterial* getMaterial();
+	Shader* getShader() const;
+	Material* getMaterial() const;
 
 	unsigned int getNumVertices() const;
 	unsigned int getNumIndices() const;
@@ -73,7 +75,8 @@ public:
 
 protected:
 	// TODO: allow same material for multiple meshes
-	PhongMaterial::SPtr material;
+	Material::SPtr material;
+	Shader* shader;
 
 	std::unique_ptr<VertexBuffer> vertexBuffer;
 	std::unique_ptr<IndexBuffer> indexBuffer;

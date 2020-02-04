@@ -1,6 +1,7 @@
 #include "GameState.h"
 #include "imgui.h"
 #include "Sail/debug/Instrumentor.h"
+#include "Sail/graphics/material/PhongMaterial.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
@@ -56,20 +57,20 @@ GameState::GameState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
+	auto* shader = &m_app->getResourceManager().getShaderSet<PhongMaterialShader>();
 
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
-	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+	m_cubeModel->getMesh(0)->getMaterial()->asPhong()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), shader, glm::vec2(30.0f));
-	m_planeModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	m_planeModel->getMesh(0)->getMaterial()->asPhong()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	m_planeModel->getMesh(0)->getMaterial()->asPhong()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	m_planeModel->getMesh(0)->getMaterial()->asPhong()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 	
 	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
-	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	fbxModel->getMesh(0)->getMaterial()->asPhong()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	fbxModel->getMesh(0)->getMaterial()->asPhong()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	fbxModel->getMesh(0)->getMaterial()->asPhong()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 
 	// Create entities
 	auto e = Entity::Create("Static cube");
@@ -170,7 +171,7 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
-		m_app->getResourceManager().reloadShader<MaterialShader>();
+		m_app->getResourceManager().reloadShader<PhongMaterialShader>();
 	}
 
 	return true;

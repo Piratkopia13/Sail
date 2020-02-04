@@ -14,9 +14,9 @@ public:
 		float padding;
 		glm::vec3 position = glm::vec3(0.f);
 		float attConstant = 0.f;
-		/*float attLinear;
+		float attLinear;
 		float attQuadratic;
-		float padding1, padding2;*/
+		float padding1, padding2;
 	};
 	struct DirLightBuffer {
 		DirLightBuffer() { };

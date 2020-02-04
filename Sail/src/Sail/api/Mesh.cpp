@@ -3,14 +3,14 @@
 
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
-#include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/Application.h"
+#include "Sail/api/shader/ShaderPipeline.h"
+#include "Sail/graphics/shader/Shader.h"
 
 Mesh::Mesh(Data& buildData, Shader* shader)
 	: meshData(buildData) 
-{
-	
-}
+	, shader(shader)
+{ }
 
 Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.indices);
@@ -22,7 +22,11 @@ Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.texCoords);
 }
 
-PhongMaterial* Mesh::getMaterial() {
+Shader* Mesh::getShader() const {
+	return shader;
+}
+
+Material* Mesh::getMaterial() const {
 	return material.get();
 }
 

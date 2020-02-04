@@ -1,44 +1,4 @@
-#define NUM_POINT_LIGHTS 8
-
-struct PointLight {
-	float3 color;
-	float distanceToLight;
-	float3 fragToLight;
-    float attConstant;
-    float attLinear;
-    float attQuadratic;
-};
-
-struct DirectionalLight {
-	float3 color;
-	float3 direction;
-};
-
-struct LightList {
-	DirectionalLight dirLight;
-    PointLight pointLights[NUM_POINT_LIGHTS];
-};
-
-struct Material {
-	float4 modelColor;
-	float ka;
-	float kd;
-	float ks;
-	float shininess;
-	bool hasDiffuseTexture; // TODO : Pack flags
-	bool hasNormalTexture;
-	bool hasSpecularTexture;
-};
-
-struct PhongInput {
-	Material mat;
-	float4 diffuseColor;
-	float3 normal;
-	float3 specMap;
-	float3 fragToCam;
-	LightList lights;
-};
-
+#include "variables.shared"
 
 float4 phongShade(PhongInput input) {
 

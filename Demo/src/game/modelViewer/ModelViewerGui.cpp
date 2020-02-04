@@ -1,6 +1,7 @@
 #include "ModelViewerGui.h"
 #include "Sail.h"
 #include "imgui_internal.h"
+#include "Sail/graphics/material/PhongMaterial.h"
 
 ModelViewerGui::ModelViewerGui() 
 	: m_propID(0)
@@ -46,7 +47,7 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 	// ================================
 	//			 MATERIAL GUI
 	// ================================
-	PhongMaterial* material = nullptr;
+	Material* material = nullptr;
 	ModelComponent* model = entity->getComponent<ModelComponent>();
 	if (model) {
 		material = model->getModel()->getMesh(0)->getMaterial();
@@ -54,7 +55,7 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 	if (material) {
 		disableColumns();
 		ImGui::Separator();
-		ImGui::Text("Shader pipeline: %s", material->getShader()->getPipeline()->getName().c_str()); ImGui::NextColumn();
+		ImGui::Text("Shader pipeline: %s", model->getModel()->getMesh(0)->getShader()->getPipeline()->getName().c_str()); ImGui::NextColumn();
 		ImGui::Separator();
 		enableColumns();
 

@@ -4,6 +4,7 @@
 #include "../../utils/Utils.h"
 #include "../../graphics/geometry/factory/CubeModel.h"
 #include "Sail/Application.h"
+#include "Sail/graphics/material/PhongMaterial.h"
 
 FbxManager* FBXLoader::s_manager = FbxManager::Create();
 FbxIOSettings* FBXLoader::s_ios = FbxIOSettings::Create(s_manager, IOSROOT);
@@ -81,7 +82,13 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 			Mesh::Data meshData;
 			getGeometry(mesh, meshData);
 			std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, m_shader));
-			getMaterial(pNode, mesh->getMaterial());
+
+			if (auto* material = dynamic_cast<PhongMaterial*>(mesh->getMaterial())) {
+				getMaterial(pNode, material);
+			} else {
+				Logger::Warning("Unknown material type found for fbx parsing. Only PhongMaterial can be read from files.");
+			}
+
 			m_model->addMesh(std::move(mesh));
 
 		}

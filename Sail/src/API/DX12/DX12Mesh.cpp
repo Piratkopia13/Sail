@@ -6,6 +6,8 @@
 #include "Sail/graphics/shader/Shader.h"
 #include "resources/DescriptorHeap.h"
 #include "shader/DX12ShaderPipeline.h"
+#include "Sail/graphics/material/PhongMaterial.h"
+#include "Sail/graphics/material/PBRMaterial.h"
 
 Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 	return SAIL_NEW DX12Mesh(buildData, shader);
@@ -17,7 +19,14 @@ DX12Mesh::DX12Mesh(Data& buildData, Shader* shader)
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	m_context = Application::getInstance()->getAPI<DX12API>();
-	material = std::make_shared<PhongMaterial>(shader);
+	
+	if (shader->getMaterialType() == Material::PHONG)
+		material.reset(new PhongMaterial());
+	else if (shader->getMaterialType() == Material::PBR)
+		material.reset(new PBRMaterial());
+	else
+		Logger::Error("Shader requires unknown material type");
+
 	// Create vertex buffer
 	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shader->getPipeline()->getInputLayout(), buildData));
 	// Create index buffer if indices are set
@@ -37,7 +46,7 @@ void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
 	// Set offset in SRV heap for this mesh 
 	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
 
-	material->bind(cmdList);
+	material->bind(shader, cmdList);
 
 	vertexBuffer->bind(cmdList);
 	if (indexBuffer)
@@ -54,5 +63,5 @@ void DX12Mesh::draw(const Renderer& renderer, void* cmdList) {
 	}
 
 	// Update pipeline mesh index to not overwrite this instance cbuffer data
-	static_cast<DX12ShaderPipeline*>(material->getShader()->getPipeline())->instanceFinished();
+	static_cast<DX12ShaderPipeline*>(shader->getPipeline())->instanceFinished();
 }

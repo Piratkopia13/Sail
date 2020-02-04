@@ -16,6 +16,10 @@ ShaderPipeline* Shader::getPipeline() {
 	return shaderPipeline;
 }
 
+Material::Type Shader::getMaterialType() const {
+	return m_materialType;
+}
+
 void Shader::setWireframe(bool wireframe) {
 	 shaderPipeline->setWireframe(wireframe);
 }
@@ -30,6 +34,10 @@ void Shader::bind() {
 		Logger::Error("A shader is trying to bind before it has finished its creation. Make sure to call shader::finish() at the end of the shader constructor.");
 	}
 	shaderPipeline->bind(nullptr);
+}
+
+void Shader::setMaterialType(Material::Type type) {
+	m_materialType = type;
 }
 
 void Shader::finish() {

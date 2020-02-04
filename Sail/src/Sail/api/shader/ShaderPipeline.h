@@ -1,11 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <d3d11.h>
-#include <d3dcompiler.h>
-#include <iostream>
-#include <glm/glm.hpp>
-
 #include "Sail/api/shader/ConstantBuffer.h"
 #include "Sail/api/shader/Sampler.h"
 #include "Sail/api/GraphicsAPI.h"

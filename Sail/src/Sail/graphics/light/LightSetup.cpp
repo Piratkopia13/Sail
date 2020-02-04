@@ -37,8 +37,8 @@ void LightSetup::updateBufferData() {
 	for (unsigned int i = 0; i < MAX_POINTLIGHTS_FORWARD_RENDERING; i++) {
 		if (i >= m_pls.size()) break;
 		m_plData.pLights[i].attConstant = m_pls[i].getAttenuation().constant;
-		/*m_plData.pLights[i].attLinear = m_pls[i].getAttenuation().linear;
-		m_plData.pLights[i].attQuadratic = m_pls[i].getAttenuation().quadratic;*/
+		m_plData.pLights[i].attLinear = m_pls[i].getAttenuation().linear;
+		m_plData.pLights[i].attQuadratic = m_pls[i].getAttenuation().quadratic;
 		m_plData.pLights[i].color = m_pls[i].getColor();
 		m_plData.pLights[i].position = m_pls[i].getPosition();
 	}

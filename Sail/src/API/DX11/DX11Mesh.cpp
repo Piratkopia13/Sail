@@ -5,6 +5,8 @@
 #include "Sail/Application.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "DX11API.h"
+#include "Sail/graphics/material/PhongMaterial.h"
+#include "Sail/graphics/material/PBRMaterial.h"
 
 Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 	return SAIL_NEW DX11Mesh(buildData, shader);
@@ -13,7 +15,13 @@ Mesh* Mesh::Create(Data& buildData, Shader* shader) {
 DX11Mesh::DX11Mesh(Data& buildData, Shader* shader) 
 	: Mesh(buildData, shader)
 {
-	material = std::make_shared<PhongMaterial>(shader);
+	if (shader->getMaterialType() == Material::PHONG)
+		material.reset(new PhongMaterial());
+	else if (shader->getMaterialType() == Material::PBR)
+		material.reset(new PBRMaterial());
+	else
+		Logger::Error("Shader requires unknown material type");
+
 	// Create vertex buffer
 	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shader->getPipeline()->getInputLayout(), buildData));
 	// Create index buffer if indices are set
@@ -26,7 +34,7 @@ DX11Mesh::~DX11Mesh() {
 }
 
 void DX11Mesh::draw(const Renderer& renderer, void* cmdList) {
-	material->bind();
+	material->bind(getShader());
 
 	vertexBuffer->bind();
 	if (indexBuffer)
