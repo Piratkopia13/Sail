@@ -32,7 +32,6 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 		std::string path = (useAbsolutePath) ? filename : TextureData::DEFAULT_TEXTURE_LOCATION + filename;
 		std::wstring wideFilename = std::wstring(path.begin(), path.end());
 	
-		// TODO: delete m_ddsData after upload
 		bool isCubeMap;
 		HRESULT hr = DirectX::LoadDDSTextureFromFile(m_context->getDevice(), wideFilename.c_str(), &textureDefaultBuffers[0], m_ddsData, m_subresources, 0, nullptr, &isCubeMap);
 		if (FAILED(hr)) {
@@ -41,6 +40,7 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 		textureDefaultBuffers[0]->SetName((std::wstring(L"DDS texture default buffer for ") + wideFilename).c_str());
 		// Tell parent class what state the resource currently is in
 		state[0] = D3D12_RESOURCE_STATE_COPY_DEST;
+		// No DDS texture will get auto-generated mip maps, if mip maps are wanted than they should be saved in the DDS file
 		m_generateMipMaps = false;
 
 		m_textureDesc = textureDefaultBuffers[0]->GetDesc();
@@ -48,10 +48,10 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 		createSRV(true);
 	} else {
 		// Load file using the resource manager
-		auto* texData = &getTextureData(filename, useAbsolutePath); // TODO: delete texData after upload
+		auto* texData = &getTextureData(filename, useAbsolutePath);
 
 		m_textureDesc = {};
-		m_textureDesc.Format = ConvertToDXGIFormat(texData->getFormat()); // TODO: read this from texture data
+		m_textureDesc.Format = ConvertToDXGIFormat(texData->getFormat());
 		m_textureDesc.Width = texData->getWidth();
 		m_textureDesc.Height = texData->getHeight();
 		m_textureDesc.DepthOrArraySize = 1;
@@ -62,11 +62,10 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 		m_textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 
 		m_generateMipMaps = true;
-		// Calculate how many mip levels to generate, max 4 (5 including src)
+		// Calculate how many mip levels to generate
 		DWORD mipCount;
 		_BitScanForward(&mipCount, (m_textureDesc.Width == 1 ? m_textureDesc.Height : m_textureDesc.Width) | (m_textureDesc.Height == 1 ? m_textureDesc.Width : m_textureDesc.Height));
-		mipCount = std::min<DWORD>(5, mipCount + 1);
-		m_textureDesc.MipLevels = mipCount;
+		m_textureDesc.MipLevels = mipCount + 1;
 
 		// A texture rarely updates its data, if at all, so it is stored in a default heap
 		state[0] = D3D12_RESOURCE_STATE_COPY_DEST;
@@ -89,9 +88,7 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 	});
 }
 
-DX12Texture::~DX12Texture() {
-
-}
+DX12Texture::~DX12Texture() { }
 
 bool DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
@@ -218,13 +215,6 @@ DXGI_FORMAT DX12Texture::ConvertToDXGIFormat(ResourceFormat::TEXTURE_FORMAT form
 	return dxgiFormat;
 }
 
-//void DX12Texture::releaseUploadBuffer() {
-//	if (m_textureUploadBuffer.Get()) {
-//		m_textureUploadBuffer->Release();
-//		m_textureUploadBuffer = nullptr;
-//	}
-//}
-
 const std::string& DX12Texture::getFilename() const {
 	return m_filename;
 }
@@ -244,8 +234,8 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 
 	uint32_t srcMip = 0;
 
-	assert(m_textureDesc.MipLevels <= 5 && "No more than 5 mip levels can currently be generated, see commented line below to add that functionality");
-	//for (uint32_t srcMip = 0; srcMip < m_textureDesc.MipLevels - 1u;) {
+	//assert(m_textureDesc.MipLevels <= 5 && "No more than 5 mip levels can currently be generated, see commented line below to add that functionality");
+	for (uint32_t srcMip = 0; srcMip < m_textureDesc.MipLevels - 1u;) {
 		dxPipeline->setCBufferVar("IsSRGB", &isSRGB, sizeof(bool));
 
 		uint64_t srcWidth = m_textureDesc.Width >> srcMip;
@@ -291,7 +281,14 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 		// Bind source mip to t0
 		transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		instance.add("t0", [&](auto cpuHandle) {
-			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			srvDesc.Format = m_textureDesc.Format;
+			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			srvDesc.Texture2D.MostDetailedMip = srcMip;
+			srvDesc.Texture2D.MipLevels = 1;
+
+			m_context->getDevice()->CreateShaderResourceView(textureDefaultBuffers[0].Get(), &srvDesc, cpuHandle);
 		});
 
 		// Bind output mips to u10+
@@ -322,16 +319,12 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 		unsigned int z = 1;
 		csDispatcher.dispatch(mipsShader, { x, y, z }, cmdList);
 
-
-
-
-		// Transition all subresources to the state that the texture think it is in
-		for (uint32_t mip = 0; mip < mipCount; ++mip) {
-			DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffers[0].Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, srcMip + mip + 1);
+		// Transition subresources back
+		for (uint32_t mip = 0; mip < mipCount; mip++) {
+			DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffers[0].Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, mip + srcMip + 1);
 		}
 
-		DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
-
-		//srcMip += mipCount;
-	//}
+		srcMip += mipCount;
+	}
+	DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
 }

@@ -78,16 +78,16 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 		m_scene.addEntity(e);
 	}
 
-	//{
-	//	auto e = Entity::Create("Floor");
-	//	e->addComponent<ModelComponent>(m_planeModel.get());
-	//	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	//	auto* mat = e->addComponent<MaterialComponent>(Material::PBR);
-	//	mat->get()->asPBR()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
-	//	mat->get()->asPBR()->setNormalTexture("pbr/pavingStones/normal.tga");
-	//	mat->get()->asPBR()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
-	//	m_scene.addEntity(e);
-	//}
+	{
+		auto e = Entity::Create("Floor");
+		e->addComponent<ModelComponent>(m_planeModel.get());
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		auto* mat = e->addComponent<MaterialComponent>(Material::PBR);
+		mat->get()->asPBR()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
+		mat->get()->asPBR()->setNormalTexture("pbr/pavingStones/normal.tga");
+		mat->get()->asPBR()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
+		m_scene.addEntity(e);
+	}
 
 	// PBR spheres
 	Model* sphereModel = &m_app->getResourceManager().getModel("sphere.fbx", pbrShader);

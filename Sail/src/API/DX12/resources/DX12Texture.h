@@ -20,10 +20,6 @@ public:
 	const std::string& getFilename() const;
 	ID3D12Resource* getResource() const;
 
-	// TODO: check if this method is still required
-	//		 upload buffer should be release automatically when it can
-	//void releaseUploadBuffer();
-
 	static DXGI_FORMAT ConvertToDXGIFormat(ResourceFormat::TEXTURE_FORMAT format);
 
 private:
@@ -49,6 +45,6 @@ private:
 	bool m_isUploaded;
 	bool m_isInitialized;
 
-	// TODO: delete m_ddsData after upload
+	// dds data only used for dds textures and released after upload to gpu
 	std::unique_ptr<uint8_t[]> m_ddsData;
 };
