@@ -30,7 +30,7 @@ void TextureData::load(const std::string& filename, bool useAbsolutePath) {
 	}
 }
 
-ResourceFormat::TEXTURE_FORMAT TextureData::getFormat() const {
+ResourceFormat::TextureFormat TextureData::getFormat() const {
 	return m_data.format;
 }
 

@@ -11,10 +11,11 @@ public:
 	TexturesMaterial();
 	~TexturesMaterial();
 
-	virtual void bind(Shader* shader, void* cmdList = nullptr) override;
+	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
 
 	// An empty filename will remove the texture
 	void addTexture(const std::string& filename, bool useAbsolutePath = false);
+	void clearTextures();
 
 private:
 	std::vector<Texture*> m_textures;

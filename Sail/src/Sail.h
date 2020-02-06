@@ -36,4 +36,5 @@
 #include "Sail/entities/Entity.h"
 #include "Sail/entities/components/Components.h"
 #include "Sail/graphics/Scene.h"
+#include "Sail/graphics/Environment.h"
 #include "Sail/graphics/geometry/Transform.h"

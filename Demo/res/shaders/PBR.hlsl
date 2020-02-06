@@ -92,7 +92,7 @@ struct PBRPixel {
     float ao;
 };
 
-float3 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
+float3 pbrShade(PBRScene scene, PBRPixel pixel) {
     float3 N = normalize(pixel.worldNormal); 
     float3 V = normalize(pixel.invViewDir);
 
@@ -156,29 +156,6 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
     float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
     float3 ambient = (kD * diffuse + specular) * pixel.ao;
-    // if (all(reflectionColor == -1.f)) {
-    //     // Parse negative reflection as no color
-    //     // Use color from only direct light and irradiance
-    //     // ambient = irradiance * pixel.albedo * pixel.ao;
-    //     ambient = 0.02 * pixel.albedo * pixel.ao;
-    // } else {
-    //     float NdotV = max(dot(N, V), 0.0f);
-
-    //     float lod               = getMipLevelFromRoughness(roughness);
-    //     float3 prefilteredColor = textureCubeLod(PrefilteredEnvMap, refVec, lod);
-    //     float2 envBRDF          = scene.brdfLUT.SampleLevel(scene.linearSampler, float2(NdotV, pixel.roughness), 0).xy;
-    //     float3 indirectSpecular = prefilteredColor * (F * envBRDF.x + envBRDF.y) 
-
-    //     // Use reflectionColor parameter
-    //     // float3 prefilteredColor = reflectionColor;
-
-    //     // // Assume roughness = 0
-    //     // // This is a very rough approximation used because ray traced reflections are always perfect
-    //     // // and blurring them to make accurate PBR calculations is very expensive in real-time
-    //     // float2 envBRDF = scene.brdfLUT.SampleLevel(scene.ss, float2(max(dot(N, V), 0.0f), pixel.roughness), 0).rg;
-    //     // float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-    //     ambient = (kD * diffuse + specular) * pixel.ao;
-    // }
 
     // Add the (improvised) ambient term to get the final color of the pixel
     float3 color = ambient + Lo;

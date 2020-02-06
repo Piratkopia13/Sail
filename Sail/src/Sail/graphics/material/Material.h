@@ -8,6 +8,7 @@ class PhongMaterial;
 class PBRMaterial;
 class TexturesMaterial;
 class Texture;
+class Environment;
 
 class Material {
 public:
@@ -22,7 +23,7 @@ public:
 	Material(Type type);;
 	~Material();;
 
-	virtual void bind(Shader* shader, void* cmdList = nullptr) = 0;
+	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) = 0;
 
 	Type getType() const;
 

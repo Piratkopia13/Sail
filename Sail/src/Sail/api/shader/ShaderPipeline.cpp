@@ -285,7 +285,7 @@ void ShaderPipeline::parseRWTexture(const char* source) {
 	}
 
 	// Get texture format from source, if specified
-	ResourceFormat::TEXTURE_FORMAT format = ResourceFormat::R8G8B8A8;
+	ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8;
 	const char* newLine = strchr(source, '\n');
 	size_t lineLength = newLine - source;
 	char* lineCopy = (char*)malloc(lineLength + 1);

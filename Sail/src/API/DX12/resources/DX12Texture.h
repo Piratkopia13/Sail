@@ -20,7 +20,7 @@ public:
 	const std::string& getFilename() const;
 	ID3D12Resource* getResource() const;
 
-	static DXGI_FORMAT ConvertToDXGIFormat(ResourceFormat::TEXTURE_FORMAT format);
+	static DXGI_FORMAT ConvertToDXGIFormat(ResourceFormat::TextureFormat format);
 
 private:
 	// It is used to create resource objects that needs an open command list

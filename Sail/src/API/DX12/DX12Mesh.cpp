@@ -30,7 +30,7 @@ DX12Mesh::~DX12Mesh() {
 	static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 }
 
-void DX12Mesh::draw(const Renderer& renderer, Material* material, void* cmdList) {
+void DX12Mesh::draw(const Renderer& renderer, Material* material, Environment* environment, void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 	if (material)
 		assert(shader->getMaterialType() == material->getType() && "Shader requires a different material from the one given");
@@ -40,7 +40,7 @@ void DX12Mesh::draw(const Renderer& renderer, Material* material, void* cmdList)
 	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
 
 	if (material) {
-		material->bind(shader, cmdList);
+		material->bind(shader, environment, cmdList);
 	}
 
 	vertexBuffer->bind(cmdList);

@@ -138,9 +138,11 @@ float4 PSMain(PSIn input) : SV_Target0 {
 		pixel.roughness *= mrao.g;
 		pixel.ao *= mrao.b;
 	}
+	// Invert roughness to make it correct
+	pixel.roughness = 1.f - pixel.roughness;
 
-	float3 reflectionColor = -1.f;
-	float3 shadedColor = pbrShade(scene, pixel, reflectionColor);
+	// Shade
+	float3 shadedColor = pbrShade(scene, pixel);
 
 	// Gamma correction
     float3 output = shadedColor / (shadedColor + 1.0f);

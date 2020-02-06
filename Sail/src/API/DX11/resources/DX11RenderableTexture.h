@@ -23,7 +23,7 @@ public:
 	ID3D11Texture2D* getTexture2D();
 	ID3D11Texture2D* getDepthTexture2D();
 
-	void changeFormat(ResourceFormat::TEXTURE_FORMAT newFormat) override;
+	void changeFormat(ResourceFormat::TextureFormat newFormat) override;
 
 private:
 	void createTextures();

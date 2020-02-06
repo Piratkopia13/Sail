@@ -2,7 +2,7 @@
 
 namespace ResourceFormat {
 
-	enum TEXTURE_FORMAT {
+	enum TextureFormat {
 		R8,
 		R8G8,
 		R8G8B8A8,
@@ -19,7 +19,7 @@ namespace ResourceFormat {
 		unsigned int channels;
 		float* textureDataFloat = nullptr;
 		unsigned char* textureData8bit = nullptr;
-		TEXTURE_FORMAT format = R8G8B8A8;
+		TextureFormat format = R8G8B8A8;
 	};
 
 }

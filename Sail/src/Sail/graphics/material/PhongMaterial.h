@@ -23,7 +23,7 @@ public:
 	PhongMaterial();
 	~PhongMaterial();
 
-	virtual void bind(Shader* shader, void* cmdList = nullptr) override;
+	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
 
 	void setKa(float ka);
 	void setKd(float kd);

@@ -2,8 +2,9 @@
 #include "Renderer.h"
 #include "Sail/graphics/geometry/Model.h"
 
-void Renderer::begin(Camera* camera) {
+void Renderer::begin(Camera* camera, Environment* environment) {
 	this->camera = camera;
+	this->environment = environment;
 	commandQueue.clear();
 }
 

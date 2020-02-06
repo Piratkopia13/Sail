@@ -14,7 +14,7 @@ public:
 
 	void load(const std::string& filename, bool useAbsolutePath = false);
 
-	ResourceFormat::TEXTURE_FORMAT getFormat() const;
+	ResourceFormat::TextureFormat getFormat() const;
 	unsigned int getWidth() const;
 	unsigned int getHeight() const;
 	unsigned int getBytesPerPixel() const;

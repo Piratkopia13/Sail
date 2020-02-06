@@ -31,8 +31,8 @@ private:
 
 	Scene m_scene;
 	LightSetup m_lights;
+	std::unique_ptr<Environment> m_environment;
 
 	std::unique_ptr<Model> m_planeModel;
-	std::unique_ptr<Model> m_skyboxModel;
 
 };

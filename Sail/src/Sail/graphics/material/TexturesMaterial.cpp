@@ -9,7 +9,7 @@ TexturesMaterial::TexturesMaterial()
 
 TexturesMaterial::~TexturesMaterial() { }
 
-void TexturesMaterial::bind(Shader* shader, void* cmdList) {
+void TexturesMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
 	ShaderPipeline* pipeline = shader->getPipeline();
 
 	unsigned int i = 0;
@@ -21,4 +21,8 @@ void TexturesMaterial::bind(Shader* shader, void* cmdList) {
 
 void TexturesMaterial::addTexture(const std::string& filename, bool useAbsolutePath) {
 	m_textures.emplace_back(loadTexture(filename, useAbsolutePath));
+}
+
+void TexturesMaterial::clearTextures() {
+	m_textures.clear();
 }

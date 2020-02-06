@@ -10,8 +10,14 @@ class Entity;
 
 class ModelViewerGui : public SailGuiWindow {
 public:
+    enum CallbackType {
+        CHANGE_STATE,
+        MODEL_CHANGED,
+        ENVIRONMENT_CHANGED,
+    };
+
     ModelViewerGui();
-    void render(float dt, FUNC(void()) funcSwitchState, FUNC(void(const std::string&)) callbackNewModel, Entity* entity);
+    void render(float dt, FUNC(void(CallbackType type, const std::string&)) callback, Entity* entity);
 
     // SailGuiWindow overrides
 	virtual void addProperty(const char* label, std::function<void()> prop) override;
@@ -27,8 +33,7 @@ private:
 	void disableColumns();
 
 private:
-    FUNC(void()) m_funcSwitchState;
-    FUNC(void(const std::string&)) m_callbackNewModel;
+    FUNC(void(CallbackType type, const std::string&)) m_callback;
 
     std::string m_modelName;
 

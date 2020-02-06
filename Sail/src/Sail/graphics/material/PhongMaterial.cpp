@@ -21,7 +21,7 @@ PhongMaterial::PhongMaterial()
 }
 PhongMaterial::~PhongMaterial() { }
 
-void PhongMaterial::bind(Shader* shader, void* cmdList) {
+void PhongMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
 	ShaderPipeline* pipeline = shader->getPipeline();
 	pipeline->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
 

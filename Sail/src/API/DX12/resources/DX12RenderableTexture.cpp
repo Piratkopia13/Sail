@@ -4,11 +4,11 @@
 #include "Sail/api/Window.h"
 #include "../DX12Utils.h"
 
-RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, ResourceFormat::TEXTURE_FORMAT format, bool createDepthStencilView, bool createOnlyDSV, unsigned int arraySize, bool singleBuffer) {
+RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, unsigned int arraySize, bool singleBuffer) {
 	return SAIL_NEW DX12RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, singleBuffer, 0U, 0U, name, arraySize);
 }
 
-DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, ResourceFormat::TEXTURE_FORMAT format, bool createDepthStencilView, bool createOnlyDSV, bool singleBuffer, UINT bindFlags, UINT cpuAccessFlags, const std::string& name, unsigned int arraySize)
+DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, bool singleBuffer, UINT bindFlags, UINT cpuAccessFlags, const std::string& name, unsigned int arraySize)
 	: m_width(width)
 	, m_height(height)
 	, m_cpuRtvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers())
@@ -85,7 +85,7 @@ void DX12RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
 	}
 }
 
-void DX12RenderableTexture::changeFormat(ResourceFormat::TEXTURE_FORMAT newFormat) {
+void DX12RenderableTexture::changeFormat(ResourceFormat::TextureFormat newFormat) {
 	auto newDxgiFormat = DX12Texture::ConvertToDXGIFormat(newFormat);
 	if (m_format == newDxgiFormat) {
 		return;

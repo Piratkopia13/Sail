@@ -26,7 +26,7 @@ public:
 	PBRMaterial();
 	~PBRMaterial();
 
-	virtual void bind(Shader* shader, void* cmdList = nullptr) override;
+	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
 
 	void setMetalnessScale(float metalness);
 	void setRoughnessScale(float roughness);
@@ -51,8 +51,7 @@ public:
 private:
 	PBRSettings m_pbrSettings;
 	Texture* m_brdfLutTexture;
-	Texture* m_irradianceMapTexture;
-	Texture* m_radianceMapTexture;
+	
 	Texture* m_textures[3];
 
 	UINT m_numTextures;

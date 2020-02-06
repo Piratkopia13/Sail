@@ -3,6 +3,7 @@
 #include "Sail/api/shader/ShaderPipeline.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/Application.h"
+#include "../Environment.h"
 
 PBRMaterial::PBRMaterial()
 	: Material(Material::PBR)
@@ -21,16 +22,10 @@ PBRMaterial::PBRMaterial()
 
 	Application::getInstance()->getResourceManager().loadTexture("pbr/brdfLUT.tga");
 	m_brdfLutTexture = &Application::getInstance()->getResourceManager().getTexture("pbr/brdfLUT.tga");
-
-	Application::getInstance()->getResourceManager().loadTexture("hdr/output_iem.dds");
-	m_irradianceMapTexture = &Application::getInstance()->getResourceManager().getTexture("hdr/output_iem.dds");
-
-	Application::getInstance()->getResourceManager().loadTexture("hdr/output_pmrem.dds");
-	m_radianceMapTexture = &Application::getInstance()->getResourceManager().getTexture("hdr/output_pmrem.dds");
 }
 PBRMaterial::~PBRMaterial() {}
 
-void PBRMaterial::bind(Shader* shader, void* cmdList) {
+void PBRMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
 	ShaderPipeline* pipeline = shader->getPipeline();
 	pipeline->trySetCBufferVar("sys_material", (void*)&getPBRSettings(), sizeof(PBRSettings));
 
@@ -38,8 +33,8 @@ void PBRMaterial::bind(Shader* shader, void* cmdList) {
 	// when a normal or specular texture is bound but not a diffuse one, the order will probably be wrong in dx12 shaders
 
 	pipeline->setTexture("sys_texBrdfLUT", m_brdfLutTexture, cmdList);
-	pipeline->setTexture("irradianceMap", m_irradianceMapTexture, cmdList);
-	pipeline->setTexture("radianceMap", m_radianceMapTexture, cmdList);
+	pipeline->setTexture("irradianceMap", environment->getIrradianceTexture(), cmdList);
+	pipeline->setTexture("radianceMap", environment->getRadianceTexture(), cmdList);
 
 	if (m_pbrSettings.hasAlbedoTexture) {
 		pipeline->setTexture("sys_texAlbedo", m_textures[0], cmdList);

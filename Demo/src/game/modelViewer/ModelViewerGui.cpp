@@ -11,9 +11,8 @@ ModelViewerGui::ModelViewerGui()
 	m_modelName = "None - click to load";
 }
 
-void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(const std::string&)) callbackNewModel, Entity* entity) {
-	m_funcSwitchState = funcSwitchState;
-	m_callbackNewModel = callbackNewModel;
+void ModelViewerGui::render(float dt, FUNC(void(CallbackType type, const std::string&)) callback, Entity* entity) {
+	m_callback = callback;
 
 	// Reset propID for imgui to function properly
 	m_propID = 0;
@@ -29,21 +28,29 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 	// Model customization window
 	ImGui::Begin("Model customizer");
 
-	enableColumns();
+	enableColumns(90.f);
 
+	addProperty("Environment", [&]() {
+		const char* environments[] = { "studio", "rail", "pier" };
+		static int currentEnvironmentIndex = 0;
+		ImGui::Combo("##hideLabel", &currentEnvironmentIndex, environments, IM_ARRAYSIZE(environments));
+		m_callback(CallbackType::ENVIRONMENT_CHANGED, environments[currentEnvironmentIndex]);
+	});
+	disableColumns();
+	ImGui::Separator();
+
+	enableColumns();
 	limitStringLength(m_modelName);
 	addProperty("Model", [&]() {
 		if (ImGui::Button(m_modelName.c_str(), ImVec2(m_propWidth, 0))) {
 			std::string newModel = openFileDialog(L"FBX models (*.fbx)\0*.fbx");
 			if (!newModel.empty()) {
 				m_modelName = newModel;
-				m_callbackNewModel(m_modelName);
+				m_callback(CallbackType::MODEL_CHANGED, m_modelName);
 			}
 		}
 	});
 		
-	static const char* lbl = "##hidelabel";
-	
 	// ================================
 	//			 MATERIAL GUI
 	// ================================
@@ -147,7 +154,7 @@ float ModelViewerGui::setupMenuBar(){
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("Duffle")) {
 			ImGui::MenuItem("Show demo window", NULL, &showDemoWindow);
-			if (ImGui::MenuItem("Switch to GameState", NULL)) { m_funcSwitchState(); }
+			if (ImGui::MenuItem("Switch to GameState", NULL)) { m_callback(CallbackType::CHANGE_STATE, ""); }
 			if (ImGui::MenuItem("Exit", NULL)) { PostQuitMessage(0); }
 			ImGui::EndMenu();
 		}

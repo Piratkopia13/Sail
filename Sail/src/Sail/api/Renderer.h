@@ -9,6 +9,7 @@ class Camera;
 class Model;
 class LightSetup;
 class RenderableTexture;
+class Environment;
 
 class Renderer {
 public:
@@ -22,7 +23,7 @@ public:
 	static Renderer* Create(Renderer::Type type);
 	virtual ~Renderer() {}
 
-	virtual void begin(Camera* camera);
+	virtual void begin(Camera* camera, Environment* environment);
 	void submit(Model* model, Material* material, const glm::mat4& modelMatrix);
 	virtual void submit(Mesh* mesh, Material* material, const glm::mat4& modelMatrix);
 	virtual void setLightSetup(LightSetup* lightSetup);
@@ -44,6 +45,7 @@ protected:
 
 	std::vector<RenderCommand> commandQueue;
 	Camera* camera;
+	Environment* environment;
 	LightSetup* lightSetup;
 
 };

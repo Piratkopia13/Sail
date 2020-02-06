@@ -8,24 +8,8 @@
 #include "Sail/api/Renderer.h"
 
 
-Scene::Scene() 
-	//: m_postProcessPipeline(m_renderer)
-{
+Scene::Scene()  {
 	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
-
-	// TODO: the following method ish
-	//m_postProcessPipeline.add<FXAAStage>();
-	/*m_postProcessPipeline.add<GaussianBlurStage>(1.f / 1.f);
-	m_postProcessPipeline.add<GaussianBlurStage>(1.f / 1.5f);
-	m_postProcessPipeline.add<GaussianBlurStage>(1.f / 2.f);*/
-	//m_postProcessPipeline.add<FXAAStage>();
-
-	auto window = Application::getInstance()->getWindow();
-	UINT width = window->getWindowWidth();
-	UINT height = window->getWindowHeight();
-
-	//m_deferredOutputTex = std::unique_ptr<DX11RenderableTexture>(SAIL_NEW DX11RenderableTexture(1U, width, height, false));
-
 }
 
 Scene::~Scene() {
@@ -40,10 +24,10 @@ void Scene::setLightSetup(LightSetup* lights) {
 	m_renderer->setLightSetup(lights);
 }
 
-void Scene::draw(Camera& camera) {
+void Scene::draw(Camera& camera, Environment* environment) {
 	SAIL_PROFILE_FUNCTION();
 
-	m_renderer->begin(&camera);
+	m_renderer->begin(&camera, environment);
 
 	{
 		SAIL_PROFILE_SCOPE("Submit models");

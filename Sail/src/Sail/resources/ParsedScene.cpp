@@ -7,7 +7,9 @@ const std::string ParsedScene::DEFAULT_MODEL_LOCATION = "res/models/";
 
 ParsedScene::ParsedScene(const std::string& filename, Shader* shader, bool useAbsolutePath) {
 
-	if (filename.substr(filename.size() - 3) != "fbx") {
+	std::string extension = filename.substr(filename.size() - 3);
+	std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return std::tolower(c); }); // To lower case
+	if (extension != "fbx") {
 		Logger::Error("Only FBX models are currently supported! Tried to load \"" + filename + "\"");
 	}
 

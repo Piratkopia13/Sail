@@ -56,41 +56,31 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 		m_lights.addPointLight(pl);
 	}
 
+	// Set up the environment
+	m_environment = std::make_unique<Environment>();
 	// Set up the scene
-	//m_scene->addSkybox(L"skybox_space_512.dds"); //TODO
 	m_scene.setLightSetup(&m_lights);
+	m_scene.addEntity(m_environment->getSkyboxEntity());
 
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
 	auto* phongShader = &m_app->getResourceManager().getShaderSet<PhongMaterialShader>();
 	auto* pbrShader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>();
-	auto* cubemapShader = &m_app->getResourceManager().getShaderSet<CubemapShader>();
 
 	// Create/load models
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), pbrShader, glm::vec2(30.0f));
-	m_skyboxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), cubemapShader);
 
 	// Create entities
-
 	{
-		auto e = Entity::Create("Skybox");
-		e->addComponent<ModelComponent>(m_skyboxModel.get());
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		auto* mat = e->addComponent<MaterialComponent>(Material::TEXTURES);
-		mat->get()->asTextures()->addTexture("hdr/output_skybox.dds");
-		m_scene.addEntity(e);
-	}
-
-	{
-		auto e = Entity::Create("Floor");
-		e->addComponent<ModelComponent>(m_planeModel.get());
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		auto* mat = e->addComponent<MaterialComponent>(Material::PBR);
-		mat->get()->asPBR()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
-		mat->get()->asPBR()->setNormalTexture("pbr/pavingStones/normal.tga");
-		mat->get()->asPBR()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
-		m_scene.addEntity(e);
+		//auto e = Entity::Create("Floor");
+		//e->addComponent<ModelComponent>(m_planeModel.get());
+		//e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		//auto* mat = e->addComponent<MaterialComponent>(Material::PBR);
+		//mat->get()->asPBR()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
+		//mat->get()->asPBR()->setNormalTexture("pbr/pavingStones/normal.tga");
+		//mat->get()->asPBR()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
+		//m_scene.addEntity(e);
 	}
 
 	// PBR spheres
@@ -196,7 +186,7 @@ bool ModelViewerState::render(float dt) {
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
 
 	// Draw the scene
-	m_scene.draw(m_cam);
+	m_scene.draw(m_cam, m_environment.get());
 
 #if defined(_SAIL_DX12) && defined(_DEBUG)
 	if (frameCounter < framesToCapture) {
@@ -211,10 +201,6 @@ bool ModelViewerState::render(float dt) {
 bool ModelViewerState::renderImgui(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
-	static auto funcSwitchState = [&]() {
-		requestStackPop();
-		requestStackPush(States::Game);
-	};
 	static auto modelEnt = Entity::Create();
 
 	// Add to the scene once
@@ -225,21 +211,40 @@ bool ModelViewerState::renderImgui(float dt) {
 		m_scene.addEntity(modelEnt); 
 	});
 	
-	static auto funcNewModel = [&](const std::string& path) {
-		Logger::Log("Adding new model to scene: " + path);
-		
-		auto* shader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>();
-		Model* fbxModel = &m_app->getResourceManager().getModel(path, shader, true);
+	static auto callback = [&](ModelViewerGui::CallbackType type, const std::string& path) {
+		Shader* shader;
+		Model* fbxModel;
+		switch (type) {
+		case ModelViewerGui::CHANGE_STATE:
+			requestStackPop();
+			requestStackPush(States::Game);
 
-		// Remove existing model
-		if (modelEnt->getComponent<ModelComponent>()) {
-			modelEnt->removeComponent<ModelComponent>();
+			break;
+		case ModelViewerGui::MODEL_CHANGED:
+			Logger::Log("Adding new model to scene: " + path);
+
+			shader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>();
+			fbxModel = &m_app->getResourceManager().getModel(path, shader, true);
+
+			// Remove existing model
+			if (modelEnt->getComponent<ModelComponent>()) {
+				modelEnt->removeComponent<ModelComponent>();
+			}
+			modelEnt->addComponent<ModelComponent>(fbxModel);
+
+			break;
+		case ModelViewerGui::ENVIRONMENT_CHANGED:
+			m_environment->changeTo(path);
+
+			break;
+		default:
+			break;
 		}
-		modelEnt->addComponent<ModelComponent>(fbxModel);
+		
 
 	};
 
-	m_viewerGui.render(dt, funcSwitchState, funcNewModel, modelEnt.get());
+	m_viewerGui.render(dt, callback, modelEnt.get());
 	
 	return false;
 }

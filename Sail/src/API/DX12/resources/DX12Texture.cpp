@@ -184,7 +184,7 @@ ID3D12Resource* DX12Texture::getResource() const {
 	return textureDefaultBuffers[0].Get();
 }
 
-DXGI_FORMAT DX12Texture::ConvertToDXGIFormat(ResourceFormat::TEXTURE_FORMAT format) {
+DXGI_FORMAT DX12Texture::ConvertToDXGIFormat(ResourceFormat::TextureFormat format) {
 	DXGI_FORMAT dxgiFormat;
 	switch (format) {
 	case ResourceFormat::R8:

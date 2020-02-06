@@ -62,7 +62,7 @@ public:
 	Mesh(Data& buildData, Shader* shader);
 	virtual ~Mesh();
 
-	virtual void draw(const Renderer& renderer, Material* material, void* cmdList = nullptr) = 0;
+	virtual void draw(const Renderer& renderer, Material* material, Environment* environment, void* cmdList = nullptr) = 0;
 
 	Shader* getShader() const;
 
