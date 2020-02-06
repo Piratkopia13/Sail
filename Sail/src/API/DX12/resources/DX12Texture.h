@@ -33,7 +33,7 @@ private:
 	void generateMips(ID3D12GraphicsCommandList4* cmdList);
 
 private:
-	std::string m_fileName;
+	std::string m_filename;
 
 	DX12API* m_context;
 	D3D12_RESOURCE_DESC m_textureDesc;

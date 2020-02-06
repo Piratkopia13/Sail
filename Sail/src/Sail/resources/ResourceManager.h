@@ -20,6 +20,7 @@ public:
 	void loadTextureData(const std::string& filename, bool useAbsolutePath = false);
 	TextureData& getTextureData(const std::string& filename);
 	bool hasTextureData(const std::string& filename);
+	bool releaseTextureData(const std::string& filename);
 
 	// Texture
 	void loadTexture(const std::string& filename, bool useAbsolutePath = false);

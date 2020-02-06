@@ -53,7 +53,11 @@ DX11Texture::DX11Texture(const std::string& filename, bool useAbsolutePath)
 
 		// Generate mipmaps for this texture.
 		api->getDeviceContext()->GenerateMips(m_resourceView);
+		
+		// Delete texture data from the CPU
+		Application::getInstance()->getResourceManager().releaseTextureData(filename);
 	}
+
 
 }
 

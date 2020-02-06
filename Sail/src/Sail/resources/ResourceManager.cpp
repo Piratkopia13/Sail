@@ -32,6 +32,10 @@ bool ResourceManager::hasTextureData(const std::string& filename) {
 	return m_textureDatas.find(filename) != m_textureDatas.end();
 }
 
+bool ResourceManager::releaseTextureData(const std::string& filename) {
+	return m_textureDatas.erase(filename);
+}
+
 //
 // DXTexture
 //

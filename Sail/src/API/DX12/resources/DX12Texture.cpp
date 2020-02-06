@@ -18,7 +18,7 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 	, m_isUploaded(false)
 	, m_isInitialized(false)
 	, m_initFenceVal(UINT64_MAX)
-	, m_fileName(filename)
+	, m_filename(filename)
 {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
@@ -115,6 +115,10 @@ bool DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 				DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
 				generateMips(cmdList);
 			}
+
+			// Delete texture data from the CPU
+			Application::getInstance()->getResourceManager().releaseTextureData(m_filename);
+			m_ddsData.reset();
 
 			// Fully initialized
 			m_isInitialized = true;
@@ -222,7 +226,7 @@ DXGI_FORMAT DX12Texture::ConvertToDXGIFormat(ResourceFormat::TEXTURE_FORMAT form
 //}
 
 const std::string& DX12Texture::getFilename() const {
-	return m_fileName;
+	return m_filename;
 }
 
 void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
