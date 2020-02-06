@@ -51,6 +51,8 @@ public:
 private:
 	PBRSettings m_pbrSettings;
 	Texture* m_brdfLutTexture;
+	Texture* m_irradianceMapTexture;
+	Texture* m_radianceMapTexture;
 	Texture* m_textures[3];
 
 	UINT m_numTextures;

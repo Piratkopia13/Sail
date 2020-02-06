@@ -196,6 +196,7 @@ bool ModelViewerState::renderImgui(float dt) {
 	static std::once_flag flag;
 	std::call_once(flag, [&] {
 		modelEnt->addComponent<TransformComponent>();
+		modelEnt->addComponent<MaterialComponent>(Material::PBR);
 		m_scene.addEntity(modelEnt); 
 	});
 	

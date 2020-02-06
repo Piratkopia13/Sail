@@ -8,6 +8,7 @@
 #include "Sail/graphics/geometry/Model.h"
 #include "Sail/graphics/material/PhongMaterial.h"
 #include "Sail/graphics/material/PBRMaterial.h"
+#include "Sail/utils/Utils.h"
 
 SAIL_COMPONENT MaterialComponent::MaterialComponent(Material::Type type) {
 	if (type == Material::PHONG)

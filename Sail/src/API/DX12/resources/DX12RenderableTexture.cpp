@@ -4,11 +4,11 @@
 #include "Sail/api/Window.h"
 #include "../DX12Utils.h"
 
-RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, Texture::FORMAT format, bool createDepthStencilView, bool createOnlyDSV, unsigned int arraySize, bool singleBuffer) {
+RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, ResourceFormat::TEXTURE_FORMAT format, bool createDepthStencilView, bool createOnlyDSV, unsigned int arraySize, bool singleBuffer) {
 	return SAIL_NEW DX12RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, singleBuffer, 0U, 0U, name, arraySize);
 }
 
-DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, Texture::FORMAT format, bool createDepthStencilView, bool createOnlyDSV, bool singleBuffer, UINT bindFlags, UINT cpuAccessFlags, const std::string& name, unsigned int arraySize)
+DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, ResourceFormat::TEXTURE_FORMAT format, bool createDepthStencilView, bool createOnlyDSV, bool singleBuffer, UINT bindFlags, UINT cpuAccessFlags, const std::string& name, unsigned int arraySize)
 	: m_width(width)
 	, m_height(height)
 	, m_cpuRtvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers())
@@ -23,7 +23,7 @@ DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width,
 
 	m_name = name;
 
-	m_format = convertFormat(format);
+	m_format = DX12Texture::ConvertToDXGIFormat(format);
 
 	m_numSwapBuffers = context->getNumGPUBuffers();
 	if (singleBuffer) {
@@ -85,8 +85,8 @@ void DX12RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
 	}
 }
 
-void DX12RenderableTexture::changeFormat(Texture::FORMAT newFormat) {
-	auto newDxgiFormat = convertFormat(newFormat);
+void DX12RenderableTexture::changeFormat(ResourceFormat::TEXTURE_FORMAT newFormat) {
+	auto newDxgiFormat = DX12Texture::ConvertToDXGIFormat(newFormat);
 	if (m_format == newDxgiFormat) {
 		return;
 	}
@@ -126,37 +126,6 @@ D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getRtvCDH(int frameIndex) con
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDsvCDH(int frameIndex) const {
 	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
 	return m_dsvHeapCDHs[i];
-}
-
-DXGI_FORMAT DX12RenderableTexture::convertFormat(Texture::FORMAT format) const {
-	DXGI_FORMAT dxgiFormat;
-	switch (format) {
-	case Texture::R8:
-		dxgiFormat = DXGI_FORMAT_R8_UNORM;
-		break;
-	case Texture::R8G8:
-		dxgiFormat = DXGI_FORMAT_R8G8_UNORM;
-		break;
-	case Texture::R8G8B8A8:
-		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-		break;
-	case Texture::R16_FLOAT:
-		dxgiFormat = DXGI_FORMAT_R16_FLOAT;
-		break;
-	case Texture::R16G16_FLOAT:
-		dxgiFormat = DXGI_FORMAT_R16G16_FLOAT;
-		break;
-	case Texture::R16G16B16A16_FLOAT:
-		dxgiFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		break;
-	case Texture::R32G32B32A32_FLOAT:
-		dxgiFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		break;
-	default:
-		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-		break;
-	}
-	return dxgiFormat;
 }
 
 void DX12RenderableTexture::createTextures() {	

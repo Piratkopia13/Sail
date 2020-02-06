@@ -47,36 +47,38 @@ void ModelViewerGui::render(float dt, FUNC(void()) funcSwitchState, FUNC(void(co
 	// ================================
 	//			 MATERIAL GUI
 	// ================================
-	Material* material = nullptr;
-	ModelComponent* model = entity->getComponent<ModelComponent>();
-	if (model) {
-		if (auto* matComp = entity->getComponent<MaterialComponent>()) {
-			material = matComp->get();
-		} else {
+	MaterialComponent* materialComp = nullptr;
+	ModelComponent* modelComp = entity->getComponent<ModelComponent>();
+	if (modelComp) {
+		if (!(materialComp = entity->getComponent<MaterialComponent>())) {
+			disableColumns();
+			ImGui::Separator();
 			ImGui::Text("Model is missing material component");
+			ImGui::Separator();
+			enableColumns();
 		}
 	}
-	if (material) {
+	if (materialComp) {
 		disableColumns();
 		ImGui::Separator();
-		ImGui::Text("Shader pipeline: %s", model->getModel()->getMesh(0)->getShader()->getPipeline()->getName().c_str()); ImGui::NextColumn();
+		ImGui::Text("Shader pipeline: %s", modelComp->getModel()->getMesh(0)->getShader()->getPipeline()->getName().c_str()); ImGui::NextColumn();
 		ImGui::Separator();
 		enableColumns();
 
-		model->renderEditorGui(this);
+		materialComp->renderEditorGui(this);
 	}
 
 	// ================================
 	//			TRANSFORM GUI
 	// ================================
-	TransformComponent* transform = entity->getComponent<TransformComponent>();
-	if (model && transform) {
+	TransformComponent* transformComp = entity->getComponent<TransformComponent>();
+	if (modelComp && transformComp) {
 		disableColumns();
 		ImGui::Separator();
 		ImGui::Text("Transform");
 		enableColumns(90.f);
 
-		transform->renderEditorGui(this);
+		transformComp->renderEditorGui(this);
 	}
 
 	disableColumns();

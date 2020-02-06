@@ -7,6 +7,8 @@
 #include "Sail/graphics/shader/compute/GenerateMipsComputeShader.h"
 //#include "Sail/resources/loaders/DDSTextureLoader12.h"
 
+#include "DDSTextureLoader/DDSTextureLoader12.cpp"
+
 #include <filesystem>
 
 Texture* Texture::Create(const std::string& filename, bool useAbsolutePath) {
@@ -26,40 +28,62 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 	// Don't create one resource per swap buffer
 	useOneResource = true;
 
-	m_tgaData = &getTextureData(filename, useAbsolutePath);
+	if (filename.substr(filename.length() - 3) == "dds") {
+		// DDS textures are handled separately since they use DDSTextureLoad12 and create their own default buffer
 
-	m_textureDesc = {};
-	m_textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // TODO: read this from texture data
-	m_textureDesc.Width = m_tgaData->getWidth();
-	m_textureDesc.Height = m_tgaData->getHeight();
-	m_textureDesc.DepthOrArraySize = 1;
-	m_textureDesc.SampleDesc.Count = 1;
-	m_textureDesc.SampleDesc.Quality = 0;
-	m_textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	m_textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-	m_textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-
-	// Calculate how many mip levels to generate, max 4 (5 including src)
-	DWORD mipCount;
-	_BitScanForward(&mipCount, (m_textureDesc.Width == 1 ? m_textureDesc.Height : m_textureDesc.Width) | (m_textureDesc.Height == 1 ? m_textureDesc.Width : m_textureDesc.Height));
-	mipCount = std::min<DWORD>(5, mipCount + 1);
-	m_textureDesc.MipLevels = mipCount;
+		std::string path = (useAbsolutePath) ? filename : TextureData::DEFAULT_TEXTURE_LOCATION + filename;
+		std::wstring wideFilename = std::wstring(path.begin(), path.end());
 	
-	// A texture rarely updates its data, if at all, so it is stored in a default heap
-	state[0] = D3D12_RESOURCE_STATE_COPY_DEST;
-	ThrowIfFailed(m_context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &m_textureDesc, state[0], nullptr, IID_PPV_ARGS(&textureDefaultBuffers[0])));
-	textureDefaultBuffers[0]->SetName((std::wstring(L"Texture default buffer for ") + std::wstring(filename.begin(), filename.end())).c_str());
+		// TODO: delete m_ddsData after upload
+		bool isCubeMap;
+		HRESULT hr = DirectX::LoadDDSTextureFromFile(m_context->getDevice(), wideFilename.c_str(), &textureDefaultBuffers[0], m_ddsData, m_subresources, 0, nullptr, &isCubeMap);
+		if (FAILED(hr)) {
+			assert(false && "DDS texture loading failed");
+		}
+		textureDefaultBuffers[0]->SetName((std::wstring(L"DDS texture default buffer for ") + wideFilename).c_str());
+		// Tell parent class what state the resource currently is in
+		state[0] = D3D12_RESOURCE_STATE_COPY_DEST;
+		m_generateMipMaps = false;
 
-	// Create a shader resource view (descriptor that points to the texture and describes it)
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = m_textureDesc.Format;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = m_textureDesc.MipLevels;
-	m_context->getDevice()->CreateShaderResourceView(textureDefaultBuffers[0].Get(), &srvDesc, srvHeapCDHs[0]);
+		m_textureDesc = textureDefaultBuffers[0]->GetDesc();
+		// Create a null descriptor SRV, this way the texture can be bound before it has been initialized but will show as black
+		createSRV(true);
+	} else {
+		// Load file using the resource manager
+		auto* texData = &getTextureData(filename, useAbsolutePath); // TODO: delete texData after upload
 
-	// Don't allow UAV access
-	uavHeapCDHs[0] = { 0 };
+		m_textureDesc = {};
+		m_textureDesc.Format = ConvertToDXGIFormat(texData->getFormat()); // TODO: read this from texture data
+		m_textureDesc.Width = texData->getWidth();
+		m_textureDesc.Height = texData->getHeight();
+		m_textureDesc.DepthOrArraySize = 1;
+		m_textureDesc.SampleDesc.Count = 1;
+		m_textureDesc.SampleDesc.Quality = 0;
+		m_textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		m_textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		m_textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+
+		m_generateMipMaps = true;
+		// Calculate how many mip levels to generate, max 4 (5 including src)
+		DWORD mipCount;
+		_BitScanForward(&mipCount, (m_textureDesc.Width == 1 ? m_textureDesc.Height : m_textureDesc.Width) | (m_textureDesc.Height == 1 ? m_textureDesc.Width : m_textureDesc.Height));
+		mipCount = std::min<DWORD>(5, mipCount + 1);
+		m_textureDesc.MipLevels = mipCount;
+
+		// A texture rarely updates its data, if at all, so it is stored in a default heap
+		state[0] = D3D12_RESOURCE_STATE_COPY_DEST;
+		ThrowIfFailed(m_context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &m_textureDesc, state[0], nullptr, IID_PPV_ARGS(&textureDefaultBuffers[0])));
+		textureDefaultBuffers[0]->SetName((std::wstring(L"Texture default buffer for ") + std::wstring(filename.begin(), filename.end())).c_str());
+
+		auto& textureData = m_subresources.emplace_back();
+		// Texture data will either be in HDR (float values) or not, get the correct one
+		textureData.pData = (texData->getTextureData8bit()) ? (void*)texData->getTextureData8bit() : (void*)texData->getTextureDataFloat();
+		textureData.RowPitch = texData->getWidth() * texData->getBytesPerPixel();
+		textureData.SlicePitch = textureData.RowPitch * texData->getHeight();
+
+		// Create a null descriptor SRV, this way the texture can be bound before it has been initialized but will show as black
+		createSRV(true);
+	}
 
 	// Make sure the texture is initialized on an open command list before its first use
 	m_context->scheduleResourceForInit([this](ID3D12GraphicsCommandList4* initCmdlist) {
@@ -84,7 +108,10 @@ bool DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 		if (m_textureUploadBuffer && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
 			m_textureUploadBuffer.ReleaseAndGetAddressOf();
 
-			if (m_textureDesc.MipLevels > 1) {
+			// Create the correct srv (not null)
+			createSRV(false);
+
+			if (m_generateMipMaps && m_textureDesc.MipLevels > 1) {
 				// Generate mip maps
 				// This waits until the texture data is uploaded to the default heap since the generator reads from that source
 				DX12Utils::SetResourceUAVBarrier(cmdList, textureDefaultBuffers[0].Get());
@@ -103,19 +130,15 @@ bool DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	// this function gets the size an upload buffer needs to be to upload a texture to the gpu.
 	// each row must be 256 byte aligned except for the last row, which can just be the size in bytes of the row
 	// eg. textureUploadBufferSize = ((((width * numBytesPerPixel) + 255) & ~255) * (height - 1)) + (width * numBytesPerPixel);
-	m_context->getDevice()->GetCopyableFootprints(&m_textureDesc, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
+	m_context->getDevice()->GetCopyableFootprints(&m_textureDesc, 0, m_subresources.size(), 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
 
 	// Create the upload heap
 	// This could be done in a buffer manager owned by dx12api
 	m_textureUploadBuffer.Attach(DX12Utils::CreateBuffer(m_context->getDevice(), textureUploadBufferSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties));
 	m_textureUploadBuffer->SetName(L"Texture upload buffer");
-
-	D3D12_SUBRESOURCE_DATA textureData = {};
-	textureData.pData = m_tgaData->getTextureData();
-	textureData.RowPitch = m_tgaData->getWidth() * m_tgaData->getBytesPerPixel();
-	textureData.SlicePitch = textureData.RowPitch * m_tgaData->getHeight();
+	
 	// Copy the upload buffer contents to the default heap using a helper method from d3dx12.h
-	DX12Utils::UpdateSubresources(cmdList, textureDefaultBuffers[0].Get(), m_textureUploadBuffer.Get(), 0, 0, 1, &textureData);
+	DX12Utils::UpdateSubresources(cmdList, textureDefaultBuffers[0].Get(), m_textureUploadBuffer.Get(), 0, 0, m_subresources.size(), &m_subresources[0]);
 	//transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE); // Uncomment if generateMips is disabled
 
 	auto type = cmdList->GetType();
@@ -125,9 +148,30 @@ bool DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 	m_queueUsedForUpload->scheduleSignal([this](UINT64 signaledValue) {
 		m_initFenceVal = signaledValue;
 	});
-
+	
 	m_isUploaded = true;
 	return false;
+}
+
+void DX12Texture::createSRV(bool nullDescriptor) {
+	// Create a shader resource view (descriptor that points to the texture and describes it)
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = m_textureDesc.Format;
+
+	bool isCubeMap = m_textureDesc.DepthOrArraySize == 6;
+
+	if (isCubeMap) {
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		srvDesc.TextureCube.MipLevels = m_textureDesc.MipLevels;
+	} else {
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = m_textureDesc.MipLevels;
+	}
+	m_context->getDevice()->CreateShaderResourceView((nullDescriptor) ? nullptr : textureDefaultBuffers[0].Get(), &srvDesc, srvHeapCDHs[0]);
+
+	// Don't allow UAV access
+	uavHeapCDHs[0] = { 0 };
 }
 
 bool DX12Texture::hasBeenInitialized() const {
@@ -139,6 +183,37 @@ bool DX12Texture::hasBeenUploaded() const {
 
 ID3D12Resource* DX12Texture::getResource() const {
 	return textureDefaultBuffers[0].Get();
+}
+
+DXGI_FORMAT DX12Texture::ConvertToDXGIFormat(ResourceFormat::TEXTURE_FORMAT format) {
+	DXGI_FORMAT dxgiFormat;
+	switch (format) {
+	case ResourceFormat::R8:
+		dxgiFormat = DXGI_FORMAT_R8_UNORM;
+		break;
+	case ResourceFormat::R8G8:
+		dxgiFormat = DXGI_FORMAT_R8G8_UNORM;
+		break;
+	case ResourceFormat::R8G8B8A8:
+		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case ResourceFormat::R16_FLOAT:
+		dxgiFormat = DXGI_FORMAT_R16_FLOAT;
+		break;
+	case ResourceFormat::R16G16_FLOAT:
+		dxgiFormat = DXGI_FORMAT_R16G16_FLOAT;
+		break;
+	case ResourceFormat::R16G16B16A16_FLOAT:
+		dxgiFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		break;
+	case ResourceFormat::R32G32B32A32_FLOAT:
+		dxgiFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		break;
+	default:
+		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		break;
+	}
+	return dxgiFormat;
 }
 
 //void DX12Texture::releaseUploadBuffer() {

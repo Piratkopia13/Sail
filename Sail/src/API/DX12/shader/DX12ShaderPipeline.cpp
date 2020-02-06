@@ -151,13 +151,9 @@ void DX12ShaderPipeline::setTexture(const std::string& name, Texture* texture, v
 	auto* dxTexture = static_cast<DX12Texture*>(texture);
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
-	// Check if buffer is not yet initialized and, in that case, bind a standard texture
-	if (!dxTexture->hasBeenInitialized()) {
-		dxTexture = static_cast<DX12Texture*>(&Application::getInstance()->getResourceManager().getTexture("missing.tga"));
-	}
-
 	dxTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	// Copy texture SRVs to the gpu heap
+	// The SRV will point to a null descriptor before the texture is fully initialized, and therefor show up as black
 	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 

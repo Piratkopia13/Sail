@@ -24,10 +24,12 @@ public:
 	//		 upload buffer should be release automatically when it can
 	//void releaseUploadBuffer();
 
+	static DXGI_FORMAT ConvertToDXGIFormat(ResourceFormat::TEXTURE_FORMAT format);
+
 private:
 	// It is used to create resource objects that needs an open command list
 	bool initBuffers(ID3D12GraphicsCommandList4* cmdList);
-
+	void createSRV(bool nullDescriptor);
 	void generateMips(ID3D12GraphicsCommandList4* cmdList);
 
 private:
@@ -35,6 +37,8 @@ private:
 
 	DX12API* m_context;
 	D3D12_RESOURCE_DESC m_textureDesc;
+	std::vector<D3D12_SUBRESOURCE_DATA> m_subresources;
+	bool m_generateMipMaps;
 
 	wComPtr<ID3D12Resource> m_textureUploadBuffer;
 
@@ -45,5 +49,6 @@ private:
 	bool m_isUploaded;
 	bool m_isInitialized;
 
-	TextureData* m_tgaData;
+	// TODO: delete m_ddsData after upload
+	std::unique_ptr<uint8_t[]> m_ddsData;
 };

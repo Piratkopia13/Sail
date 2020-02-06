@@ -9,12 +9,12 @@ namespace FileLoader {
 	class TGALoader {
 
 	public:
-		TGALoader(std::string filename, ResourceFormat::TextureData& textureData);
+		TGALoader(const std::string& filename, ResourceFormat::TextureData& textureData);
 		~TGALoader();
 
 
 	private:
-		bool loadTarga(std::string filename, ResourceFormat::TextureData& textureData);
+		bool loadTarga(const std::string& filename, ResourceFormat::TextureData& textureData);
 
 	private:
 

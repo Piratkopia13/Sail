@@ -277,14 +277,14 @@ void ShaderPipeline::parseRWTexture(const char* source) {
 	}
 
 	// Get texture format from source, if specified
-	Texture::FORMAT format = Texture::R8G8B8A8;
+	ResourceFormat::TEXTURE_FORMAT format = ResourceFormat::R8G8B8A8;
 	const char* newLine = strchr(source, '\n');
 	size_t lineLength = newLine - source;
 	char* lineCopy = (char*)malloc(lineLength + 1);
 	memset(lineCopy, '\0', lineLength + 1);
 	strncpy_s(lineCopy, lineLength + 1, source, lineLength);
 	if (strstr(lineCopy, "SAIL_RGBA16_FLOAT")) {
-		format = Texture::R16G16B16A16_FLOAT;
+		format = ResourceFormat::R16G16B16A16_FLOAT;
 	}
 	free(lineCopy);
 

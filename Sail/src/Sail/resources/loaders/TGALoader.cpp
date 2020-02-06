@@ -3,7 +3,7 @@
 
 namespace FileLoader {
 
-	TGALoader::TGALoader(std::string filename, ResourceFormat::TextureData& textureData) {
+	TGALoader::TGALoader(const std::string& filename, ResourceFormat::TextureData& textureData) {
 		// Load the targa image data into memory.
 		bool result = loadTarga(filename, textureData);
 		if (!result) {
@@ -16,9 +16,11 @@ namespace FileLoader {
 	TGALoader::~TGALoader() {
 	}
 	
-	bool TGALoader::loadTarga(std::string filename, ResourceFormat::TextureData& textureData) {
+	bool TGALoader::loadTarga(const std::string& filename, ResourceFormat::TextureData& textureData) {
 
 		textureData.channels = 4;
+		textureData.bitsPerChannel = 8;
+		textureData.format = ResourceFormat::R8G8B8A8;
 
 		int error, bpp, imageSize, index;
 		unsigned int i, j, k;
@@ -74,8 +76,8 @@ namespace FileLoader {
 		}
 
 		// Allocate memory for the targa destination data.
-		textureData.textureData = SAIL_NEW unsigned char[imageSize];
-		if (!textureData.textureData) {
+		textureData.textureData8bit = SAIL_NEW unsigned char[imageSize];
+		if (!textureData.textureData8bit) {
 			return false;
 		}
 
@@ -88,10 +90,10 @@ namespace FileLoader {
 		// Now copy the targa image data into the targa destination array in the correct order since the targa format is stored upside down.
 		for (j = 0; j < textureData.height; j++) {
 			for (i = 0; i < textureData.width; i++) {
-				textureData.textureData[index + 0] = targaImage[k + 2];  // Red.
-				textureData.textureData[index + 1] = targaImage[k + 1];  // Green.
-				textureData.textureData[index + 2] = targaImage[k + 0];  // Blue
-				textureData.textureData[index + 3] = targaImage[k + 3];  // Alpha
+				textureData.textureData8bit[index + 0] = targaImage[k + 2];  // Red.
+				textureData.textureData8bit[index + 1] = targaImage[k + 1];  // Green.
+				textureData.textureData8bit[index + 2] = targaImage[k + 0];  // Blue
+				textureData.textureData8bit[index + 3] = targaImage[k + 3];  // Alpha
 
 																// Increment the indexes into the targa data.
 				k += 4;

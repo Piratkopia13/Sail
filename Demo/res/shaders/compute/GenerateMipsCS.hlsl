@@ -1,3 +1,5 @@
+// #include "PBRSpecularPrefiltering.hlsl"
+
 /**
  * Compute shader to generate mipmaps for a given texture.
  * Source: https://github.com/Microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/GenerateMipsCS.hlsli
@@ -33,6 +35,7 @@ cbuffer CSGenerateMipsCB : register( b0 )
     uint SrcDimension;  // Width and height of the source texture are even or odd.
     bool IsSRGB;        // Must apply gamma correction to sRGB textures.
     float2 TexelSize;	// 1.0 / OutMip1.Dimensions
+    // bool DoPBRPrefiltering;
 }
 
 // Source mip map.
@@ -45,8 +48,9 @@ RWTexture2D<float4> OutMip2 : register( u11 ) : SAIL_IGNORE;
 RWTexture2D<float4> OutMip3 : register( u12 ) : SAIL_IGNORE;
 RWTexture2D<float4> OutMip4 : register( u13 ) : SAIL_IGNORE;
 
-// Linear clamp sampler.
+// Samplers
 SamplerState CSLinearClampSampler : register( s2 );
+// SamplerState CSLinearWrapSampler : register( s3 );
 
 // The reason for separating channels is to reduce bank conflicts in the
 // local data memory controller.  A large stride will cause more threads

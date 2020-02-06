@@ -82,7 +82,9 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 			shaderPipeline->bind(cmdList.Get());
 
 			shaderPipeline->setCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
-			shaderPipeline->setCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
+			shaderPipeline->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
+			shaderPipeline->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
+			shaderPipeline->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
 			shaderPipeline->setCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 
 			if (lightSetup) {

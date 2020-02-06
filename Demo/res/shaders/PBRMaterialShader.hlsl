@@ -53,7 +53,7 @@ PSIn VSMain(VSIn input) {
 	// World space vector pointing from the vertex position to the camera
     output.worldPos = output.position.xyz;
 
-    output.position = mul(sys_mVP, output.position);
+	output.position = mul(sys_mVP, output.position);
 	output.tbn = 0.f;
 
 	if (sys_material.hasNormalTexture) {
@@ -76,12 +76,22 @@ PSIn VSMain(VSIn input) {
 
 
 Texture2D sys_texBrdfLUT : register(t0);
-Texture2D sys_texAlbedo : register(t1);
-Texture2D sys_texNormal : register(t2);
-Texture2D sys_texMRAO : register(t3);
+TextureCube irradianceMap : register(t1);
+TextureCube radianceMap : register(t2);
+
+Texture2D sys_texAlbedo : register(t3);
+Texture2D sys_texNormal : register(t4);
+Texture2D sys_texMRAO : register(t5);
 SamplerState PSss : register(s0);
+SamplerState PSLinearSampler : register(s2);
 
 float4 PSMain(PSIn input) : SV_Target0 {
+
+	// return sys_texBrdfLUT.Sample(PSss, input.texCoords);
+	// float3 viewDir = input.worldPos - sys_cameraPos;
+	// return irradianceMap.SampleLevel(PSss, viewDir, 0);
+	// return radianceMap.SampleLevel(PSss, viewDir, 0);
+
 	PBRScene scene;
 	
 	// Lights
@@ -99,7 +109,9 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	}
 
 	scene.brdfLUT = sys_texBrdfLUT;
-	scene.ss = PSss;
+	scene.prefilterMap = radianceMap;
+	scene.irradianceMap = irradianceMap;
+	scene.linearSampler = PSLinearSampler;
 	
 	PBRPixel pixel;
     pixel.invViewDir = sys_cameraPos - input.worldPos;

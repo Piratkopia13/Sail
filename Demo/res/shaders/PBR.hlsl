@@ -78,9 +78,10 @@ inline float3 shadeWithLight(PointLight light, float3 N, float3 V, float3 F0, fl
 // PBR input structs
 struct PBRScene {
     LightList lights;
-    // SpotlightInput spotLights[NUM_SPOT_LIGHTS];
     Texture2D<float4> brdfLUT;
-    SamplerState ss;
+    TextureCube<float4> irradianceMap;
+    TextureCube<float4> prefilterMap;
+    SamplerState linearSampler;
 };
 struct PBRPixel {
     float3 worldNormal;
@@ -138,36 +139,46 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel, float3 reflectionColor) {
 
     // Use this when we have cube maps for irradiance, pre filtered reflections and brdfLUT
     float3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, pixel.roughness);
-
+    
     float3 kS = F;
     float3 kD = 1.0f - kS;
-    kD *= 1.0f - pixel.metalness;	  
+    kD *= 1.0f - pixel.metalness;
     
-    // Assume constant irradiance since game is played indoors with no or few indirect light sources
-    // This could be read from a skymap or irradiance probe
-    float3 irradiance = 0.0f;
+    float3 irradiance = scene.irradianceMap.SampleLevel(scene.linearSampler, N, 0).rgb;
     float3 diffuse    = irradiance * pixel.albedo;
     
-    float3 R = reflect(-V, N);  
+    float3 R = reflect(-V, N);
 
     // Reflection
-    float3 ambient = 0.f;
-    if (all(reflectionColor == -1.f)) {
-        // Parse negative reflection as no color
-        // Use color from only direct light and irradiance
-        // ambient = irradiance * pixel.albedo * pixel.ao;
-        ambient = 0.02 * pixel.albedo * pixel.ao;
-    } else {
-        // Use reflectionColor parameter
-        float3 prefilteredColor = reflectionColor;
+    const float MAX_REFLECTION_LOD = 4.0;
+    float3 prefilteredColor = scene.prefilterMap.SampleLevel(scene.linearSampler, R, pixel.roughness * MAX_REFLECTION_LOD).rgb;
+    float2 envBRDF  = scene.brdfLUT.SampleLevel(scene.linearSampler, float2(max(dot(N, V), 0.0f), pixel.roughness), 0).rg;
+    float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
-        // Assume roughness = 0
-        // This is a very rough approximation used because ray traced reflections are always perfect
-        // and blurring them to make accurate PBR calculations is very expensive in real-time
-        float2 envBRDF = scene.brdfLUT.SampleLevel(scene.ss, float2(max(dot(N, V), 0.0f), pixel.roughness), 0).rg;
-        float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-        ambient = (kD * diffuse + specular) * pixel.ao;
-    }
+    float3 ambient = (kD * diffuse + specular) * pixel.ao;
+    // if (all(reflectionColor == -1.f)) {
+    //     // Parse negative reflection as no color
+    //     // Use color from only direct light and irradiance
+    //     // ambient = irradiance * pixel.albedo * pixel.ao;
+    //     ambient = 0.02 * pixel.albedo * pixel.ao;
+    // } else {
+    //     float NdotV = max(dot(N, V), 0.0f);
+
+    //     float lod               = getMipLevelFromRoughness(roughness);
+    //     float3 prefilteredColor = textureCubeLod(PrefilteredEnvMap, refVec, lod);
+    //     float2 envBRDF          = scene.brdfLUT.SampleLevel(scene.linearSampler, float2(NdotV, pixel.roughness), 0).xy;
+    //     float3 indirectSpecular = prefilteredColor * (F * envBRDF.x + envBRDF.y) 
+
+    //     // Use reflectionColor parameter
+    //     // float3 prefilteredColor = reflectionColor;
+
+    //     // // Assume roughness = 0
+    //     // // This is a very rough approximation used because ray traced reflections are always perfect
+    //     // // and blurring them to make accurate PBR calculations is very expensive in real-time
+    //     // float2 envBRDF = scene.brdfLUT.SampleLevel(scene.ss, float2(max(dot(N, V), 0.0f), pixel.roughness), 0).rg;
+    //     // float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+    //     ambient = (kD * diffuse + specular) * pixel.ao;
+    // }
 
     // Add the (improvised) ambient term to get the final color of the pixel
     float3 color = ambient + Lo;
