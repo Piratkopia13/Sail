@@ -5,8 +5,6 @@
 #include "../shader/DX12ComputeShaderDispatcher.h"
 #include "../shader/DX12ShaderPipeline.h"
 #include "Sail/graphics/shader/compute/GenerateMipsComputeShader.h"
-//#include "Sail/resources/loaders/DDSTextureLoader12.h"
-
 #include "DDSTextureLoader/DDSTextureLoader12.cpp"
 
 #include <filesystem>

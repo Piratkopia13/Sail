@@ -182,6 +182,10 @@ void ShaderPipeline::parse(const std::string& source) {
 	while (src = findToken("Texture2D", src)) {
 		parseTexture(src);
 	}
+	src = cleanSource.c_str();
+	while (src = findToken("TextureCube", src)) {
+		parseTexture(src);
+	}
 
 }
 

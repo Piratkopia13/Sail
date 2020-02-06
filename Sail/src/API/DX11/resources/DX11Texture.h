@@ -1,5 +1,6 @@
 #pragma once
 
+#include <d3d11.h>
 #include "Sail/resources/TextureData.h"
 #include "Sail/api/Texture.h"
 
