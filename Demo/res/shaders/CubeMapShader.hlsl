@@ -4,47 +4,38 @@ struct VSIn {
 
 struct PSIn {
 	float4 position : SV_POSITION;
-	float clip : SV_ClipDistance0;
-	float3 camToFrag : CTF;
+	float3 texCoord : TEXCOORD;
 };
 
-cbuffer ModelData : register(b0) {
-	matrix mWorld;
-	matrix mVP;
-}
-cbuffer WorldData : register(b1) {
-	float4 clippingPlane;
-	float3 cameraPos;
+cbuffer VSSystemCBuffer : register(b0) {
+	matrix sys_mView;
+	matrix sys_mProjection;
+	float3 sys_cameraPos;
 }
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
-	input.position.w = 1.0f;
-	output.position = mul(input.position, mWorld);
+	output.texCoord = input.position.xyz;
 
-	// Calculate the distance from the vertex to the clipping plane
-	// This needs to be done with world coordinates
-	output.clip = dot(output.position, clippingPlane);
-
-	// Vector going from the camera to the fragment
-	// Used as 3D texture coordinate
-	output.camToFrag = output.position.xyz - cameraPos;
-
-	output.position = mul(output.position, mVP);
+	input.position.w = 0.f; // Eemove translation from the view matrix
+	output.position = mul(sys_mView, input.position);
+	output.position.w = 1.f;
+	output.position = mul(sys_mProjection, output.position);
 	
 	return output;
 }
 
-TextureCube cubeMap;
-SamplerState ss;
+TextureCube sys_tex0 : register(t0);
+SamplerState PSss : register(s2); // Linear sampler
 
 float4 PSMain(PSIn input) : SV_TARGET {
+	float3 color = sys_tex0.SampleLevel(PSss, input.texCoord, 0).rgb;
 
-	input.camToFrag = normalize(input.camToFrag);
-	float4 color = cubeMap.Sample(ss, input.camToFrag);
-
-	return color;
-	//return float4(1.f, 0.f, 0.f, 1.f);
+	// Gamma correction
+    float3 output = color / (color + 1.0f);
+    // Tone mapping using the Reinhard operator
+    output = pow(output, 1.0f / 2.2f);
+	return float4(output, 1.0);
 
 }

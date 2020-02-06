@@ -32,13 +32,16 @@ DX12Mesh::~DX12Mesh() {
 
 void DX12Mesh::draw(const Renderer& renderer, Material* material, void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
-	assert(shader->getMaterialType() == material->getType() && "Shader requires a different material from the one given");
+	if (material)
+		assert(shader->getMaterialType() == material->getType() && "Shader requires a different material from the one given");
 
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	// Set offset in SRV heap for this mesh 
 	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
 
-	material->bind(shader, cmdList);
+	if (material) {
+		material->bind(shader, cmdList);
+	}
 
 	vertexBuffer->bind(cmdList);
 	if (indexBuffer)

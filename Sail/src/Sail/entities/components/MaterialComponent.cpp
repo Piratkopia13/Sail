@@ -6,15 +6,20 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "Sail/api/Texture.h"
 #include "Sail/graphics/geometry/Model.h"
+#include "Sail/utils/Utils.h"
 #include "Sail/graphics/material/PhongMaterial.h"
 #include "Sail/graphics/material/PBRMaterial.h"
-#include "Sail/utils/Utils.h"
+#include "Sail/graphics/material/TexturesMaterial.h"
 
-SAIL_COMPONENT MaterialComponent::MaterialComponent(Material::Type type) {
+SAIL_COMPONENT MaterialComponent::MaterialComponent(Material::Type type)
+	: m_textureFilter(L"All supported textures (*.tga;*.hdr;*.dds)\0*.tga;*.hdr;*.dds")
+{
 	if (type == Material::PHONG)
 		m_material.reset(new PhongMaterial());
 	else if (type == Material::PBR)
 		m_material.reset(new PBRMaterial());
+	else if (type == Material::TEXTURES)
+		m_material.reset(new TexturesMaterial());
 	else
 		Logger::Error("Shader requires unknown material type");
 }
@@ -54,7 +59,7 @@ void MaterialComponent::renderPhongMaterialGui(SailGuiWindow* window, PhongMater
 	window->addProperty("Diffuse", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(diffuseTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(L"TGA textures (*.tga)\0*.tga");
+			std::string filename = window->openFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setDiffuseTexture(filename, true);
 			}
@@ -70,7 +75,7 @@ void MaterialComponent::renderPhongMaterialGui(SailGuiWindow* window, PhongMater
 	window->addProperty("Normal", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(normalTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(L"TGA textures (*.tga)\0*.tga");
+			std::string filename = window->openFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setNormalTexture(filename, true);
 			}
@@ -86,7 +91,7 @@ void MaterialComponent::renderPhongMaterialGui(SailGuiWindow* window, PhongMater
 	window->addProperty("Specular", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(specularTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(L"TGA textures (*.tga)\0*.tga");
+			std::string filename = window->openFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setSpecularTexture(filename, true);
 			}
@@ -116,7 +121,7 @@ void MaterialComponent::renderPBRMaterialGui(SailGuiWindow* window, PBRMaterial*
 	window->addProperty("Albedo", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(diffuseTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(L"TGA textures (*.tga)\0*.tga");
+			std::string filename = window->openFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setAlbedoTexture(filename, true);
 			}
@@ -132,7 +137,7 @@ void MaterialComponent::renderPBRMaterialGui(SailGuiWindow* window, PBRMaterial*
 	window->addProperty("Normal", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(normalTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(L"TGA textures (*.tga)\0*.tga");
+			std::string filename = window->openFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setNormalTexture(filename, true);
 			}
@@ -148,7 +153,7 @@ void MaterialComponent::renderPBRMaterialGui(SailGuiWindow* window, PBRMaterial*
 	window->addProperty("MRAO", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(specularTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(L"TGA textures (*.tga)\0*.tga");
+			std::string filename = window->openFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setMetalnessRoughnessAOTexture(filename, true);
 			}

@@ -1,8 +1,5 @@
 #include "ModelViewerState.h"
 #include "imgui.h"
-#include "Sail/debug/Instrumentor.h"
-#include "Sail/graphics/material/PhongMaterial.h"
-#include "Sail/graphics/material/PBRMaterial.h"
 
 #if defined(_SAIL_DX12) && defined(_DEBUG)
 #include "API/DX12/DX12API.h"
@@ -63,21 +60,34 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
 	auto* phongShader = &m_app->getResourceManager().getShaderSet<PhongMaterialShader>();
-	auto* pbrShader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>(); // Load for the sake of loading (testing)
+	auto* pbrShader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>();
+	auto* cubemapShader = &m_app->getResourceManager().getShaderSet<CubemapShader>();
 
 	// Create/load models
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), pbrShader, glm::vec2(30.0f));
+	m_skyboxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), cubemapShader);
 
 	// Create entities
-	auto e = Entity::Create("Floor");
-	e->addComponent<ModelComponent>(m_planeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	auto* mat = e->addComponent<MaterialComponent>(Material::PBR);
-	mat->get()->asPBR()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
-	mat->get()->asPBR()->setNormalTexture("pbr/pavingStones/normal.tga");
-	mat->get()->asPBR()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
-	m_scene.addEntity(e);
 
+	{
+		auto e = Entity::Create("Skybox");
+		e->addComponent<ModelComponent>(m_skyboxModel.get());
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		auto* mat = e->addComponent<MaterialComponent>(Material::TEXTURES);
+		mat->get()->asTextures()->addTexture("hdr/output_skybox.dds");
+		m_scene.addEntity(e);
+	}
+
+	//{
+	//	auto e = Entity::Create("Floor");
+	//	e->addComponent<ModelComponent>(m_planeModel.get());
+	//	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+	//	auto* mat = e->addComponent<MaterialComponent>(Material::PBR);
+	//	mat->get()->asPBR()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
+	//	mat->get()->asPBR()->setNormalTexture("pbr/pavingStones/normal.tga");
+	//	mat->get()->asPBR()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
+	//	m_scene.addEntity(e);
+	//}
 
 	// PBR spheres
 	Model* sphereModel = &m_app->getResourceManager().getModel("sphere.fbx", pbrShader);
@@ -85,7 +95,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	const float cellSize = 1.3f;
 	for (unsigned int x = 0; x < gridSize; x++) {
 		for (unsigned int y = 0; y < gridSize; y++) {
-			e = Entity::Create();
+			auto e = Entity::Create();
 			auto* model = e->addComponent<ModelComponent>(sphereModel);
 			auto* transform = e->addComponent<TransformComponent>(glm::vec3(x * cellSize - (cellSize * (gridSize - 1.0f) * 0.5f), y * cellSize + 1.0f, 0.f));
 			transform->setScale(0.5f);
@@ -140,6 +150,7 @@ bool ModelViewerState::processInput(float dt) {
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
 		m_app->getResourceManager().reloadShader<PhongMaterialShader>();
 		m_app->getResourceManager().reloadShader<PBRMaterialShader>();
+		m_app->getResourceManager().reloadShader<CubemapShader>();
 	}
 
 	return true;

@@ -20,14 +20,6 @@ Material::Type Shader::getMaterialType() const {
 	return m_materialType;
 }
 
-void Shader::setWireframe(bool wireframe) {
-	 shaderPipeline->setWireframe(wireframe);
-}
-
-void Shader::setCullMode(GraphicsAPI::Culling cullMode) {
-	shaderPipeline->setCullMode(cullMode);
-}
-
 void Shader::bind() {
 	Logger::Warning("Is shader::bind() used?"); // TODO: check if this method should exist, or if all binding is done directly through shaderPipeline
 	if (!m_finished) {

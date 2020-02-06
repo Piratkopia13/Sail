@@ -81,17 +81,17 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 
 			shaderPipeline->bind(cmdList.Get());
 
-			shaderPipeline->setCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
+			shaderPipeline->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
 			shaderPipeline->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
 			shaderPipeline->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
 			shaderPipeline->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
-			shaderPipeline->setCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+			shaderPipeline->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 
 			if (lightSetup) {
 				auto& dlData = lightSetup->getDirLightData();
 				auto& plData = lightSetup->getPointLightsData();
-				shaderPipeline->setCBufferVar("dirLight", &dlData, sizeof(dlData));
-				shaderPipeline->setCBufferVar("pointLights", &plData, sizeof(plData));
+				shaderPipeline->trySetCBufferVar("dirLight", &dlData, sizeof(dlData));
+				shaderPipeline->trySetCBufferVar("pointLights", &plData, sizeof(plData));
 			}
 
 			command.mesh->draw(*this, command.material, cmdList.Get());

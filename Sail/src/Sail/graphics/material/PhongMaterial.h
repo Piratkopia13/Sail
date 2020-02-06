@@ -59,6 +59,6 @@ private:
 	PhongSettings m_phongSettings;
 	Texture* m_textures[3];
 
-	UINT m_numTextures;
+	unsigned int m_numTextures;
 
 };

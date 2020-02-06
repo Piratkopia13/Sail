@@ -332,8 +332,8 @@ void DX12ShaderPipeline::createGraphicsPipelineState() {
 
 	// Specify depth stencil state descriptor.
 	D3D12_DEPTH_STENCIL_DESC dsDesc{};
-	dsDesc.DepthEnable = enableDepth;
-	dsDesc.DepthWriteMask = (enableDepthWrite) ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+	dsDesc.DepthEnable = depthMask != GraphicsAPI::BUFFER_DISABLED;
+	dsDesc.DepthWriteMask = (depthMask != GraphicsAPI::WRITE_MASK) ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
 	dsDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
 	dsDesc.StencilEnable = FALSE;
 	dsDesc.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;

@@ -32,7 +32,7 @@ private:
 	Scene m_scene;
 	LightSetup m_lights;
 
-	std::unique_ptr<Model> m_cubeModel;
 	std::unique_ptr<Model> m_planeModel;
+	std::unique_ptr<Model> m_skyboxModel;
 
 };

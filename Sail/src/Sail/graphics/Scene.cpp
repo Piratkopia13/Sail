@@ -54,12 +54,12 @@ void Scene::draw(Camera& camera) {
 				TransformComponent* transform = entity->getComponent<TransformComponent>();
 				if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
-				MaterialComponent* material = entity->getComponent<MaterialComponent>();
-				if (!material)	Logger::Warning("Tried to draw entity that is missing a MaterialComponent!");
+				Material* material = nullptr;
+				// Material is not required for rendering and may be set to nullptr
+				if (MaterialComponent* materialComp = entity->getComponent<MaterialComponent>())
+					material = materialComp->get();
 
-				// Material is required for rendering but if missing it wont throw error, only warning
-				if (material)
-					m_renderer->submit(model->getModel(), material->get(), transform->getMatrix());
+				m_renderer->submit(model->getModel(), material, transform->getMatrix());
 			}
 		}
 	}

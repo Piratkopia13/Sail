@@ -6,6 +6,7 @@
 class Shader;
 class PhongMaterial;
 class PBRMaterial;
+class TexturesMaterial;
 class Texture;
 
 class Material {
@@ -13,8 +14,9 @@ public:
 	typedef std::shared_ptr<Material> SPtr;
 public:
 	enum Type {
-		None = 0,
-		PHONG, PBR
+		NONE = 0,
+		PHONG, PBR,
+		TEXTURES
 	};
 
 	Material(Type type);;
@@ -26,6 +28,7 @@ public:
 
 	PhongMaterial* asPhong();
 	PBRMaterial* asPBR();
+	TexturesMaterial* asTextures();
 
 protected:
 	Texture* loadTexture(const std::string& filename, bool useAbsolutePath = false);

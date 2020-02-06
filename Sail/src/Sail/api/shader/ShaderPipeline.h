@@ -35,8 +35,7 @@ public:
 	virtual void setWireframe(bool wireframeState);
 	virtual void setCullMode(GraphicsAPI::Culling newCullMode);
 	virtual void setNumRenderTargets(unsigned int numRenderTargets);
-	virtual void enableDepthStencil(bool enable);
-	virtual void enableDepthWriting(bool enable);
+	virtual void setDepthMask(GraphicsAPI::DepthMask newDepthMask);
 	virtual void setBlending(GraphicsAPI::Blending blendMode);
 
 	bool isComputeShader() const;
@@ -66,8 +65,7 @@ protected:
 	bool wireframe;
 	GraphicsAPI::Culling cullMode;
 	unsigned int numRenderTargets;
-	bool enableDepth;
-	bool enableDepthWrite;
+	GraphicsAPI::DepthMask depthMask;
 	GraphicsAPI::Blending blendMode;
 
 	void* vsBlob; // Used for the input layout

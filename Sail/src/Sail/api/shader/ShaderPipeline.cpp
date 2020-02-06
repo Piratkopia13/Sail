@@ -19,8 +19,7 @@ ShaderPipeline::ShaderPipeline(const std::string& filename)
 	, wireframe(false)
 	, cullMode(GraphicsAPI::Culling::NO_CULLING)
 	, numRenderTargets(1)
-	, enableDepth(true)
-	, enableDepthWrite(true)
+	, depthMask(GraphicsAPI::DepthMask::NO_MASK)
 	, blendMode(GraphicsAPI::NO_BLENDING)
 {
 	inputLayout = std::unique_ptr<InputLayout>(InputLayout::Create());
@@ -35,6 +34,11 @@ bool ShaderPipeline::bindInternal(void* cmdList, unsigned int meshIndex, bool fo
 	// This is to cut down on shader state changes
 	if (!forceIfBound && CurrentlyBoundShader == this)
 		return false;
+
+	auto* context = Application::getInstance()->getAPI();
+	context->setDepthMask(depthMask);
+	context->setBlending(blendMode);
+	context->setFaceCulling(cullMode);
 
 	for (auto& it : parsedData.cBuffers) {
 		it.cBuffer->bind(meshIndex, cmdList);
@@ -352,12 +356,8 @@ void ShaderPipeline::setNumRenderTargets(unsigned int numRenderTargets) {
 	this->numRenderTargets = numRenderTargets;
 }
 
-void ShaderPipeline::enableDepthStencil(bool enable) {
-	this->enableDepth = enable;
-}
-
-void ShaderPipeline::enableDepthWriting(bool enable) {
-	this->enableDepthWrite = enable;
+void ShaderPipeline::setDepthMask(GraphicsAPI::DepthMask newDepthMask) {
+	this->depthMask = newDepthMask;
 }
 
 void ShaderPipeline::setBlending(GraphicsAPI::Blending blendMode) {

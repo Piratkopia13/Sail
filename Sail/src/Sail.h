@@ -8,6 +8,8 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
+#include "Sail/debug/Instrumentor.h"
+
 #include "sail/KeyCodes.h"
 #include "sail/MouseButtonCodes.h"
 #include "Sail/Application.h"
@@ -19,8 +21,12 @@
 #include "Sail/graphics/camera/FlyingCameraController.h"
 #include "Sail/graphics/geometry/Model.h"
 #include "Sail/graphics/light/LightSetup.h"
+#include "Sail/graphics/material/PhongMaterial.h"
+#include "Sail/graphics/material/PBRMaterial.h"
+#include "Sail/graphics/material/TexturesMaterial.h"
 #include "Sail/graphics/shader/material/PhongMaterialShader.h"
 #include "Sail/graphics/shader/material/PBRMaterialShader.h"
+#include "Sail/graphics/shader/basic/CubemapShader.h"
 #include "Sail/graphics/shader/compute/GenerateMipsComputeShader.h"
 #include "Sail/graphics/geometry/factory/CubeModel.h"
 #include "Sail/graphics/geometry/factory/ConeModel.h"

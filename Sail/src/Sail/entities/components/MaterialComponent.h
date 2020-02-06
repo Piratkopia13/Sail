@@ -23,5 +23,6 @@ private:
 	void renderPBRMaterialGui(SailGuiWindow* window, PBRMaterial* material);
 
 private:
+	const LPCWSTR m_textureFilter;
 	Material::SPtr m_material;
 };
