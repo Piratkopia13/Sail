@@ -5,6 +5,10 @@
 #include "API/DX12/DX12API.h"
 #endif
 
+// Command line parsing
+#include <shellapi.h>
+#include <atlstr.h>
+
 ModelViewerState::ModelViewerState(StateStack& stack)
 : State(stack)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
@@ -171,8 +175,18 @@ bool ModelViewerState::render(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
 #if defined(_SAIL_DX12) && defined(_DEBUG)
-	static int framesToCapture = 3;
+	static int framesToCapture = 0;
 	static int frameCounter = 0;
+
+	int numArgs;
+	LPWSTR* args = CommandLineToArgvW(GetCommandLineW(), &numArgs);
+	if (numArgs > 2) {
+		std::string arg = std::string(CW2A(args[1]));
+		if (arg.find("pixCaptureStartupFrames")) {
+			framesToCapture = std::atoi(CW2A(args[2]));
+		}
+	}
+	
 	if (frameCounter < framesToCapture) {
 		m_app->getAPI<DX12API>()->beginPIXCapture();
 	}
