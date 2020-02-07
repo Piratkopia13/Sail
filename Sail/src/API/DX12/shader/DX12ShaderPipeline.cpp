@@ -150,7 +150,7 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 void DX12ShaderPipeline::setTexture(const std::string& name, Texture* texture, void* cmdList) {
 	auto* dxTexture = static_cast<DX12Texture*>(texture);
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-
+	
 	dxTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	// Copy texture SRVs to the gpu heap
 	// The SRV will point to a null descriptor before the texture is fully initialized, and therefor show up as black
