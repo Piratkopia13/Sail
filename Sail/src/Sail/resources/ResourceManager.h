@@ -6,10 +6,8 @@
 #include "Sail/api/Texture.h"
 #include "ParsedScene.h"
 
-//class DeferredGeometryShader;
 class ShaderPipeline;
 class Shader;
-//class SoundManager;
 
 class ResourceManager {
 public:
@@ -35,39 +33,12 @@ public:
 	// ShaderSets
 	template <typename T>
 	void loadShaderSet();
-
 	template <typename T>
-	T& getShaderSet() {
-		auto pos = m_shaderSets.find(typeid(T).name());
-		if (pos == m_shaderSets.end()) {
-			// ShaderSet was not yet loaded, load it and return
-			loadShaderSet<T>();
-			return dynamic_cast<T&>(*(m_shaderSets.find(typeid(T).name())->second));
-		}
-
-		return dynamic_cast<T&>(*pos->second);
-	}
+	T& getShaderSet();
 	template <typename T>
-	bool hasShaderSet() {
-		return m_shaderSets.find(typeid(T).name()) != m_shaderSets.end();
-	}
-
+	bool hasShaderSet();
 	template <typename T>
-	void reloadShader() {
-		std::string name = typeid(T).name();
-		auto it = m_shaderSets.find(name);
-		if (it == m_shaderSets.end()) {
-			Logger::Log("Cannot reload shader " + name + " since it is not loaded in the first place.");
-			return;
-		}
-		T* shader = dynamic_cast<T*>(it->second);
-		shader->~T();
-		shader = new (shader) T();
-		Logger::Log("Reloaded shader " + name);
-	}
-
-	// SoundManager
-	//SoundManager* getSoundManager();
+	void reloadShader();
 
 private:
 	// Textures mapped to their filenames
@@ -77,9 +48,6 @@ private:
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
 	// ShaderSets mapped to their identifiers
 	std::map<std::string, Shader*> m_shaderSets;
-	// SoundManager containing all sounds
-	//std::unique_ptr<SoundManager> m_soundManager;
-
 };
 
 template <typename T>
@@ -87,4 +55,35 @@ void ResourceManager::loadShaderSet() {
 	// Insert and get the new ShaderSet
 	//m_shaderSets.insert({ typeid(T).name(), std::make_unique<T>() });
 	m_shaderSets.insert({ typeid(T).name(), SAIL_NEW T() });
+}
+
+template <typename T>
+T& ResourceManager::getShaderSet() {
+	auto pos = m_shaderSets.find(typeid(T).name());
+	if (pos == m_shaderSets.end()) {
+		// ShaderSet was not yet loaded, load it and return
+		loadShaderSet<T>();
+		return dynamic_cast<T&>(*(m_shaderSets.find(typeid(T).name())->second));
+	}
+
+	return dynamic_cast<T&>(*pos->second);
+}
+
+template <typename T>
+bool ResourceManager::hasShaderSet() {
+	return m_shaderSets.find(typeid(T).name()) != m_shaderSets.end();
+}
+
+template <typename T>
+void ResourceManager::reloadShader() {
+	std::string name = typeid(T).name();
+	auto it = m_shaderSets.find(name);
+	if (it == m_shaderSets.end()) {
+		Logger::Log("Cannot reload shader " + name + " since it is not loaded in the first place.");
+		return;
+	}
+	T* shader = dynamic_cast<T*>(it->second);
+	shader->~T();
+	shader = new (shader) T();
+	Logger::Log("Reloaded shader " + name);
 }

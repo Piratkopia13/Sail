@@ -1,12 +1,9 @@
 #include "pch.h"
 #include "ResourceManager.h"
-//#include "../graphics/shader/deferred/DeferredGeometryShader.h"
-//#include "audio/SoundManager.h"
 #include "Sail/graphics/shader/Shader.h"
 #include "Sail/api/shader/ShaderPipeline.h"
 
 ResourceManager::ResourceManager() {
-	//m_soundManager = std::make_unique<SoundManager>();
 }
 ResourceManager::~ResourceManager() {
 	for (auto it : m_shaderSets) {
@@ -84,14 +81,3 @@ std::shared_ptr<Model> ResourceManager::getModel(const std::string& filename, Sh
 bool ResourceManager::hasModel(const std::string& filename) {
 	return m_fbxModels.find(filename) != m_fbxModels.end();
 }
-
-//void ResourceManager::reloadShaders() {
-//	for (auto it = m_shaderSets.begin(); it != m_shaderSets.end(); ++it)
-//		it->second->reload();
-//}
-
-
-// Sound Manager
-//SoundManager* ResourceManager::getSoundManager() {
-//	return m_soundManager.get();
-//}

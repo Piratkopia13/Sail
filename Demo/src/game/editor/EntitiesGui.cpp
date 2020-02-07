@@ -103,6 +103,43 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 				ImGui::EndTooltip();
 			}
 		}
+		// Component count and add component button
+		{
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text((std::to_string(selectedEntity->getAllComponents().size()) + " components").c_str());
+			ImGui::SameLine();
+			const char* addComponentBtnText = "Add component";
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(addComponentBtnText).x);
+			ImVec2 popupPos;
+			popupPos.x = ImGui::GetWindowPos().x + ImGui::GetCursorPos().x;
+			ImGui::Button(addComponentBtnText);
+			if (ImGui::IsItemClicked()) {
+				ImGui::OpenPopup("ComponentList");
+				popupPos.y = ImGui::GetWindowPos().y + ImGui::GetCursorPos().y;
+				ImGui::SetNextWindowPos(popupPos);
+			}
+			if (ImGui::BeginPopup("ComponentList")) {
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
+				int selectedNewComponentIndex = -1;
+				const char* componentNames[] { "ModelComponent", "TransformComponent", "MaterialComponent" };
+				if (ImGui::ListBox("##hideLabel", &selectedNewComponentIndex, componentNames, IM_ARRAYSIZE(componentNames))) {
+
+					if (selectedNewComponentIndex == 0) {
+						auto* defaultShader = &Application::getInstance()->getResourceManager().getShaderSet<PBRMaterialShader>();
+						selectedEntity->addComponent<ModelComponent>(ModelFactory::CubeModel::Create(glm::vec3(0.5f), defaultShader));
+					} else if (selectedNewComponentIndex == 1) {
+						selectedEntity->addComponent<TransformComponent>();
+					} else if (selectedNewComponentIndex == 2) {
+						selectedEntity->addComponent<MaterialComponent>(Material::PBR);
+					}
+
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::PopStyleColor(1);
+				ImGui::EndPopup();
+			}
+			
+		}
 
 		float w = ImGui::GetWindowContentRegionWidth();
 		static float sz1 = 100.f;
