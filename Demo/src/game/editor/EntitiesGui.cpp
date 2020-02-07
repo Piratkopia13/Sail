@@ -8,22 +8,22 @@ EntitiesGui::EntitiesGui() { }
 void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 	newFrame();
 	
-	Entity* selectedEntity = nullptr;
+	static int selectedEntityIndex = -1;
+	Entity::SPtr selectedEntity = nullptr;
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 8.f));
 		ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoScrollbar);
 
-		static int selectedIndex = -1;
 		if (ImGui::ListBoxHeader("##hideLabel", ImGui::GetWindowSize())) {
 			for (unsigned int i = 0; i < entities.size(); i++) {
 				ImGui::PushID(i);
 				auto& item = entities[i];
-				const bool itemSelected = (i == selectedIndex);
+				const bool itemSelected = (i == selectedEntityIndex);
 				const char* itemText = (item->getName() != "") ? item->getName().c_str() : "Unnamed";
 				if (ImGui::Selectable(itemText, itemSelected)) {
-					selectedIndex = i;
+					selectedEntityIndex = i;
 				}
 				ImGui::SameLine();
 				std::string hintText = std::to_string(item->getAllComponents().size()) + " components";
@@ -37,8 +37,8 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			ImGui::ListBoxFooter();
 		}
 
-		if (selectedIndex < entities.size()) {
-			selectedEntity = entities[selectedIndex].get();
+		if (selectedEntityIndex < entities.size()) {
+			selectedEntity = entities[selectedEntityIndex];
 		}
 
 		ImGui::End();
@@ -53,6 +53,33 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			ImGui::Text("Select an entity to view details");
 			ImGui::End();
 			return;
+		}
+
+		// Entity renaming and removing
+		{
+			float trashButtonWidth = 21.f;
+			ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x);
+			char buf[256];
+			strcpy_s(buf, selectedEntity->getName().c_str());
+			if (ImGui::InputTextWithHint("##entityName", "Entity name", buf, IM_ARRAYSIZE(buf), ImGuiInputTextFlags_AutoSelectAll)) {
+				selectedEntity->setName(buf);
+			}
+			if (ImGui::IsItemHovered()) {
+				ImGui::BeginTooltip();
+				ImGui::Text("Rename the entity");
+				ImGui::EndTooltip();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
+				Logger::Log("Removed entity " + selectedEntity->getName());
+				entities.erase(std::remove(entities.begin(), entities.end(), selectedEntity), entities.end());
+				selectedEntityIndex = -1; // Unselect
+			}
+			if (ImGui::IsItemHovered()) {
+				ImGui::BeginTooltip();
+				ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.2f, 1.f), "Delete the entity");
+				ImGui::EndTooltip();
+			}
 		}
 
 		float w = ImGui::GetWindowContentRegionWidth();
