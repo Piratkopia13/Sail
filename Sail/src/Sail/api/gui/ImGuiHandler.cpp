@@ -17,7 +17,7 @@ void ImGuiHandler::applySailStyle() {
 
 	ImVec4* colors = style.Colors;
 	colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
-	colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
+	colors[ImGuiCol_TextDisabled] = ImVec4(1.0f, 0.93f, 0.77f, 0.39f);
 	colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.15f, 0.17f, 0.82f);
 	colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 0.00f);
 	colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
@@ -40,7 +40,7 @@ void ImGuiHandler::applySailStyle() {
 	colors[ImGuiCol_Button] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
 	colors[ImGuiCol_ButtonHovered] = ImVec4(1.0f, 0.51f, 0.28f, 1.00f);
 	colors[ImGuiCol_ButtonActive] = ImVec4(1.0f, 0.5f, 0.4f, 1.00f);
-	colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.29f, 0.55f);
+	colors[ImGuiCol_Header] = ImVec4(0.62f, 0.41f, 0.31f, 0.70f);
 	colors[ImGuiCol_HeaderHovered] = ImVec4(0.98f, 0.52f, 0.26f, 0.80f);
 	colors[ImGuiCol_HeaderActive] = ImVec4(0.98f, 0.52f, 0.26f, 1.00f);
 	colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
@@ -51,9 +51,9 @@ void ImGuiHandler::applySailStyle() {
 	colors[ImGuiCol_ResizeGripActive] = ImVec4(0.98f, 0.52f, 0.26f, 0.95f);
 	colors[ImGuiCol_Tab] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
 	colors[ImGuiCol_TabHovered] = ImVec4(0.98f, 0.52f, 0.26f, 0.80f);
-	colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+	colors[ImGuiCol_TabActive] = ImVec4(0.62f, 0.41f, 0.31f, 0.70f);
 	colors[ImGuiCol_TabUnfocused] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
-	colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+	colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
 	colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
 	colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
 	colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);

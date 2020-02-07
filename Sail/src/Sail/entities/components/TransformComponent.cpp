@@ -6,6 +6,7 @@
 #include "glm/gtc/type_ptr.hpp"
 
 void TransformComponent::renderEditorGui(SailGuiWindow* window) {
+	window->enableColumns(90.f);
 	window->addProperty("Translation", [&] {
 		static float translation[3];
 		memcpy(translation, glm::value_ptr(getTranslation()), sizeof(translation));
@@ -27,4 +28,5 @@ void TransformComponent::renderEditorGui(SailGuiWindow* window) {
 			setScale(glm::make_vec3(scale));
 		}
 	});
+	window->disableColumns();
 }

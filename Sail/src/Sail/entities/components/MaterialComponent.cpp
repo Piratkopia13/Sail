@@ -11,7 +11,7 @@
 #include "Sail/graphics/material/PBRMaterial.h"
 #include "Sail/graphics/material/TexturesMaterial.h"
 
-SAIL_COMPONENT MaterialComponent::MaterialComponent(Material::Type type)
+MaterialComponent::MaterialComponent(Material::Type type)
 	: m_textureFilter(L"All supported textures (*.tga;*.hdr;*.dds)\0*.tga;*.hdr;*.dds")
 {
 	if (type == Material::PHONG)
@@ -25,6 +25,7 @@ SAIL_COMPONENT MaterialComponent::MaterialComponent(Material::Type type)
 }
 
 void MaterialComponent::renderEditorGui(SailGuiWindow* window) {
+	window->enableColumns();
 	PhongMaterial* phongMat = nullptr;
 	if (phongMat = dynamic_cast<PhongMaterial*>(m_material.get())) {
 		renderPhongMaterialGui(window, phongMat);
@@ -36,8 +37,9 @@ void MaterialComponent::renderEditorGui(SailGuiWindow* window) {
 		renderPBRMaterialGui(window, pbrMat);
 		return;
 	}
+	window->disableColumns();
 
-	window->newSection("Unknown material type");
+	ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.2f, 1.0f), "Unknown material type");
 }
 
 void MaterialComponent::renderPhongMaterialGui(SailGuiWindow* window, PhongMaterial* material) {
@@ -53,13 +55,13 @@ void MaterialComponent::renderPhongMaterialGui(SailGuiWindow* window, PhongMater
 
 	float trashButtonWidth = 21.f;
 	std::string diffuseTexName = (material->getTexture(0)) ? material->getTexture(0)->getName() : "None - click to load";
-	window->limitStringLength(diffuseTexName);
+	window->LimitStringLength(diffuseTexName);
 
 	window->setOption("setWidth", false);
 	window->addProperty("Diffuse", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(diffuseTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(m_textureFilter);
+			std::string filename = window->OpenFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setDiffuseTexture(filename, true);
 			}
@@ -71,11 +73,11 @@ void MaterialComponent::renderPhongMaterialGui(SailGuiWindow* window, PhongMater
 	});
 
 	std::string normalTexName = (material->getTexture(1)) ? material->getTexture(1)->getName() : "None - click to load";
-	window->limitStringLength(normalTexName);
+	window->LimitStringLength(normalTexName);
 	window->addProperty("Normal", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(normalTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(m_textureFilter);
+			std::string filename = window->OpenFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setNormalTexture(filename, true);
 			}
@@ -87,11 +89,11 @@ void MaterialComponent::renderPhongMaterialGui(SailGuiWindow* window, PhongMater
 	});
 
 	std::string specularTexName = (material->getTexture(2)) ? material->getTexture(2)->getName() : "None - click to load";
-	window->limitStringLength(specularTexName);
+	window->LimitStringLength(specularTexName);
 	window->addProperty("Specular", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(specularTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(m_textureFilter);
+			std::string filename = window->OpenFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setSpecularTexture(filename, true);
 			}
@@ -115,13 +117,13 @@ void MaterialComponent::renderPBRMaterialGui(SailGuiWindow* window, PBRMaterial*
 
 	float trashButtonWidth = 21.f;
 	std::string diffuseTexName = (material->getTexture(0)) ? material->getTexture(0)->getName() : "None - click to load";
-	window->limitStringLength(diffuseTexName);
+	window->LimitStringLength(diffuseTexName);
 
 	window->setOption("setWidth", false);
 	window->addProperty("Albedo", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(diffuseTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(m_textureFilter);
+			std::string filename = window->OpenFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setAlbedoTexture(filename, true);
 			}
@@ -133,11 +135,11 @@ void MaterialComponent::renderPBRMaterialGui(SailGuiWindow* window, PBRMaterial*
 	});
 
 	std::string normalTexName = (material->getTexture(1)) ? material->getTexture(1)->getName() : "None - click to load";
-	window->limitStringLength(normalTexName);
+	window->LimitStringLength(normalTexName);
 	window->addProperty("Normal", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(normalTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(m_textureFilter);
+			std::string filename = window->OpenFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setNormalTexture(filename, true);
 			}
@@ -149,11 +151,11 @@ void MaterialComponent::renderPBRMaterialGui(SailGuiWindow* window, PBRMaterial*
 	});
 
 	std::string specularTexName = (material->getTexture(2)) ? material->getTexture(2)->getName() : "None - click to load";
-	window->limitStringLength(specularTexName);
+	window->LimitStringLength(specularTexName);
 	window->addProperty("MRAO", [&]() {
 		float colWidth = ImGui::GetColumnWidth() - 10.f;
 		if (ImGui::Button(specularTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-			std::string filename = window->openFileDialog(m_textureFilter);
+			std::string filename = window->OpenFileDialog(m_textureFilter);
 			if (!filename.empty()) {
 				material->setMetalnessRoughnessAOTexture(filename, true);
 			}

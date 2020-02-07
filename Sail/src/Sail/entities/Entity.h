@@ -24,6 +24,8 @@ public:
 	const std::string& getName() const;
 	Entity(const std::string& name = "");
 
+	std::unordered_map<int, Component::Ptr>& getAllComponents();
+
 private:
 	std::unordered_map<int, Component::Ptr> m_components;
 	std::string m_name;

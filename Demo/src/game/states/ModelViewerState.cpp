@@ -155,7 +155,12 @@ bool ModelViewerState::update(float dt) {
 
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
-	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " | FPS: " + std::to_string(m_app->getFPS()));
+#ifdef _DEBUG
+	std::string config = "Debug";
+#else
+	std::string config = "Release";
+#endif
+	m_app->getWindow()->setWindowTitle("Sail | Game Engine Demo | " + Application::getPlatformName() + " " + config + " | FPS: " + std::to_string(m_app->getFPS()));
 
 	return true;
 }
@@ -211,16 +216,16 @@ bool ModelViewerState::renderImgui(float dt) {
 		m_scene.addEntity(modelEnt); 
 	});
 	
-	static auto callback = [&](ModelViewerGui::CallbackType type, const std::string& path) {
+	static auto callback = [&](EditorGui::CallbackType type, const std::string& path) {
 		Shader* shader;
 		Model* fbxModel;
 		switch (type) {
-		case ModelViewerGui::CHANGE_STATE:
+		case EditorGui::CHANGE_STATE:
 			requestStackPop();
 			requestStackPush(States::Game);
 
 			break;
-		case ModelViewerGui::MODEL_CHANGED:
+		case EditorGui::MODEL_CHANGED:
 			Logger::Log("Adding new model to scene: " + path);
 
 			shader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>();
@@ -233,7 +238,7 @@ bool ModelViewerState::renderImgui(float dt) {
 			modelEnt->addComponent<ModelComponent>(fbxModel);
 
 			break;
-		case ModelViewerGui::ENVIRONMENT_CHANGED:
+		case EditorGui::ENVIRONMENT_CHANGED:
 			m_environment->changeTo(path);
 
 			break;
@@ -245,6 +250,7 @@ bool ModelViewerState::renderImgui(float dt) {
 	};
 
 	m_viewerGui.render(dt, callback, modelEnt.get());
+	m_entitiesGui.render(m_scene.getEntites());
 	
 	return false;
 }

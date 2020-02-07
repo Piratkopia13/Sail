@@ -63,3 +63,7 @@ void Scene::draw(Camera& camera, Environment* environment) {
 		}
 	}
 }
+
+std::vector<Entity::SPtr>& Scene::getEntites() {
+	return m_entities;
+}

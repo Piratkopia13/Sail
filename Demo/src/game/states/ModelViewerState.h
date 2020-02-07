@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Sail.h"
-#include "../modelViewer/ModelViewerGui.h"
+#include "../editor/EntitiesGui.h"
+#include "../editor/EditorGui.h"
 
 class ModelViewerState : public State {
 public:
@@ -20,7 +21,8 @@ public:
 private:
 	Application* m_app;
 
-	ModelViewerGui m_viewerGui;
+	EditorGui m_viewerGui;
+	EntitiesGui m_entitiesGui;
 
 	// Camera
 	PerspectiveCamera m_cam;

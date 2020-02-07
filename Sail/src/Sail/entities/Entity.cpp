@@ -11,6 +11,10 @@ Entity::Entity(const std::string& name)
 
 }
 
+std::unordered_map<int, Component::Ptr>& Entity::getAllComponents() {
+	return m_components;
+}
+
 Entity::~Entity() {
 
 }

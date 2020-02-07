@@ -18,6 +18,8 @@ public:
 	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera, Environment* environment = nullptr);
 
+	std::vector<Entity::SPtr>& getEntites();
+
 private:
 	std::vector<Entity::SPtr> m_entities;
 	std::unique_ptr<Renderer> m_renderer;
