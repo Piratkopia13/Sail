@@ -20,7 +20,7 @@ private:
 	void init(const std::string& folderName);
 
 private:
-	std::unique_ptr<Model> m_skyboxModel;
+	std::shared_ptr<Model> m_skyboxModel;
 	Entity::SPtr m_skyboxEntity;
 
 	Texture* m_irradianceMapTexture;

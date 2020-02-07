@@ -161,7 +161,7 @@ namespace ModelFactory {
 			buildData.texCoords = texCoords;
 			buildData.normals = normals;
 
-			std::unique_ptr<Model> model = std::make_unique<Model>(buildData, shader);
+			std::unique_ptr<Model> model = std::make_unique<Model>(buildData, shader, "ConeModel from factory");
 
 			return model;
 

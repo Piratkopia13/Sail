@@ -17,7 +17,7 @@ Scene::~Scene() {
 }
 
 void Scene::addEntity(Entity::SPtr entity) {
-	m_entities.push_back(entity);
+	m_entities.emplace_back(entity);
 }
 
 void Scene::setLightSetup(LightSetup* lights) {
@@ -43,7 +43,7 @@ void Scene::draw(Camera& camera, Environment* environment) {
 				if (MaterialComponent* materialComp = entity->getComponent<MaterialComponent>())
 					material = materialComp->get();
 
-				m_renderer->submit(model->getModel(), material, transform->getMatrix());
+				m_renderer->submit(model->getModel().get(), material, transform->getMatrix());
 			}
 		}
 	}

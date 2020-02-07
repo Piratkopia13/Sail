@@ -15,12 +15,12 @@ ParsedScene::ParsedScene(const std::string& filename, Shader* shader, bool useAb
 
 	std::string filepath = (useAbsolutePath) ? filename : DEFAULT_MODEL_LOCATION + filename;
 	FBXLoader loader(filepath, shader);
-	m_model = std::move(loader.getModel());
+	m_model = loader.getModel();
 }
 
 ParsedScene::~ParsedScene() {
 }
 
-Model* ParsedScene::getModel() {
-	return m_model.get();
+std::shared_ptr<Model> ParsedScene::getModel() {
+	return m_model;
 }

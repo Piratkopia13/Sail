@@ -1,12 +1,16 @@
 #include "pch.h"
 #include "Model.h"
 
-Model::Model(Mesh::Data& buildData, Shader* shader) {
+Model::Model(Mesh::Data& buildData, Shader* shader, const std::string& name)
+	: m_name(name)
+{
 	// TODO: reuse mesh if it has already been loaded
 	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(buildData, shader)));
 }
 
-Model::Model() {
+Model::Model(const std::string& name)
+	: m_name(name)
+{
 }
 
 Model::~Model() {
@@ -24,4 +28,8 @@ Mesh* Model::getMesh(unsigned int index) {
 
 unsigned int Model::getNumberOfMeshes() const {
 	return static_cast<unsigned int>(m_meshes.size());
+}
+
+const std::string& Model::getName() const {
+	return m_name;
 }

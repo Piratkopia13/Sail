@@ -35,6 +35,6 @@ private:
 	LightSetup m_lights;
 	std::unique_ptr<Environment> m_environment;
 
-	std::unique_ptr<Model> m_planeModel;
+	std::shared_ptr<Model> m_planeModel;
 
 };

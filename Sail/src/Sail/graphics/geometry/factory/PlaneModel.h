@@ -7,7 +7,7 @@ namespace ModelFactory {
 
 	class PlaneModel {
 	public:
-		static std::unique_ptr<Model> Create(const glm::vec2& halfSizes, Shader* shader, const glm::vec2& texCoordScale = glm::vec2(1.f)) {
+		static std::shared_ptr<Model> Create(const glm::vec2& halfSizes, Shader* shader, const glm::vec2& texCoordScale = glm::vec2(1.f)) {
 
 			const int numVerts = 4;
 			Mesh::vec3* positions = SAIL_NEW Mesh::vec3[numVerts]{
@@ -63,9 +63,7 @@ namespace ModelFactory {
 			buildData.numIndices = numIndices;
 			buildData.indices = indices;
 
-			std::unique_ptr<Model> model = std::make_unique<Model>(buildData, shader);
-
-			return model;
+			return std::make_shared<Model>(buildData, shader, "PlaneModel from factory");
 
 		}
 	};

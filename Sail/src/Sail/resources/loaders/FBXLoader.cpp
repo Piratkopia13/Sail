@@ -15,7 +15,7 @@ FBXLoader::FBXLoader(const std::string& filepath, Shader* shader)
 {
 	s_manager->SetIOSettings(s_ios);
 
-	m_model = std::make_unique<Model>();
+	m_model = std::make_unique<Model>(filepath);
 	m_scene = parseFBX(filepath);
 	
 	// Triangulate all meshes in the scene
@@ -48,7 +48,7 @@ FBXLoader::~FBXLoader() {
 		m_scene->Destroy();
 }
 
-std::unique_ptr<Model>& FBXLoader::getModel() {
+std::shared_ptr<Model>& FBXLoader::getModel() {
 	return m_model;
 }
 

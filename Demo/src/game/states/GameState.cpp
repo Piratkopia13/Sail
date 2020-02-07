@@ -62,100 +62,100 @@ GameState::GameState(StateStack& stack)
 	// Create/load models
 	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
 	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), shader, glm::vec2(30.0f));
-	
-	
-	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
+	//
+	//
+	auto fbxModel = m_app->getResourceManager().getModel("sphere.fbx", shader);
 
-	// Create entities
-	{
-		auto e = Entity::Create("Static cube");
-		e->addComponent<ModelComponent>(m_cubeModel.get());
-		e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
-		auto* mat = e->addComponent<MaterialComponent>(Material::PHONG);
-		mat->get()->asPhong()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-		m_scene.addEntity(e);
-	}
+	//// Create entities
+	//{
+	//	auto e = Entity::Create("Static cube");
+	//	e->addComponent<ModelComponent>(m_cubeModel);
+	//	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
+	//	auto* mat = e->addComponent<MaterialComponent>(Material::PHONG);
+	//	mat->get()->asPhong()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+	//	m_scene.addEntity(e);
+	//}
 
-	{
-		auto e = Entity::Create("Floor");
-		e->addComponent<ModelComponent>(m_planeModel.get());
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		auto* mat = e->addComponent<MaterialComponent>(Material::PHONG);
-		mat->get()->asPhong()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-		mat->get()->asPhong()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-		mat->get()->asPhong()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-		m_scene.addEntity(e);
-	}
+	//{
+	//	auto e = Entity::Create("Floor");
+	//	e->addComponent<ModelComponent>(m_planeModel);
+	//	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+	//	auto* mat = e->addComponent<MaterialComponent>(Material::PHONG);
+	//	mat->get()->asPhong()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	//	mat->get()->asPhong()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	//	mat->get()->asPhong()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	//	m_scene.addEntity(e);
+	//}
 
-	Entity::SPtr parentEntity;
-	{
-		parentEntity = Entity::Create("Clingy cube");
-		parentEntity->addComponent<ModelComponent>(m_cubeModel.get());
-		parentEntity->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
-		parentEntity->addComponent<MaterialComponent>(Material::PHONG);
-		m_scene.addEntity(parentEntity);
-	}
+	//Entity::SPtr parentEntity;
+	//{
+	//	parentEntity = Entity::Create("Clingy cube");
+	//	parentEntity->addComponent<ModelComponent>(m_cubeModel);
+	//	parentEntity->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+	//	parentEntity->addComponent<MaterialComponent>(Material::PHONG);
+	//	m_scene.addEntity(parentEntity);
+	//}
 
-	{
-		// Add some cubes which are connected through parenting
-		m_texturedCubeEntity = Entity::Create("Textured parent cube");
-		m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
-		m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
-		auto* mat = m_texturedCubeEntity->addComponent<MaterialComponent>(Material::PHONG);
-		mat->get()->asPhong()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-		mat->get()->asPhong()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-		mat->get()->asPhong()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-		m_texturedCubeEntity->setName("MovingCube");
-		m_scene.addEntity(m_texturedCubeEntity);
-		parentEntity->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
-	}
+	//{
+	//	// Add some cubes which are connected through parenting
+	//	m_texturedCubeEntity = Entity::Create("Textured parent cube");
+	//	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
+	//	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
+	//	auto* mat = m_texturedCubeEntity->addComponent<MaterialComponent>(Material::PHONG);
+	//	mat->get()->asPhong()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	//	mat->get()->asPhong()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	//	mat->get()->asPhong()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	//	m_texturedCubeEntity->setName("MovingCube");
+	//	m_scene.addEntity(m_texturedCubeEntity);
+	//	parentEntity->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
+	//}
 
-	{
-		auto e = Entity::Create("CubeRoot");
-		e->addComponent<ModelComponent>(m_cubeModel.get());
-		e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
-		e->addComponent<MaterialComponent>(Material::PHONG);
-		m_scene.addEntity(e);
-		m_transformTestEntities.push_back(e);
-	}
+	//{
+	//	auto e = Entity::Create("CubeRoot");
+	//	e->addComponent<ModelComponent>(m_cubeModel);
+	//	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	//	e->addComponent<MaterialComponent>(Material::PHONG);
+	//	m_scene.addEntity(e);
+	//	m_transformTestEntities.push_back(e);
+	//}
 
-	{
-		auto e = Entity::Create("CubeChild");
-		e->addComponent<ModelComponent>(m_cubeModel.get());
-		e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
-		e->addComponent<MaterialComponent>(Material::PHONG);
-		m_scene.addEntity(e);
-		m_transformTestEntities.push_back(e);
-	}
+	//{
+	//	auto e = Entity::Create("CubeChild");
+	//	e->addComponent<ModelComponent>(m_cubeModel);
+	//	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
+	//	e->addComponent<MaterialComponent>(Material::PHONG);
+	//	m_scene.addEntity(e);
+	//	m_transformTestEntities.push_back(e);
+	//}
 
-	{
-		auto e = Entity::Create("CubeChildChild");
-		e->addComponent<ModelComponent>(m_cubeModel.get());
-		e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
-		e->addComponent<MaterialComponent>(Material::PHONG);
-		m_scene.addEntity(e);
-		m_transformTestEntities.push_back(e);
-	}
-
-
+	//{
+	//	auto e = Entity::Create("CubeChildChild");
+	//	e->addComponent<ModelComponent>(m_cubeModel);
+	//	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
+	//	e->addComponent<MaterialComponent>(Material::PHONG);
+	//	m_scene.addEntity(e);
+	//	m_transformTestEntities.push_back(e);
+	//}
 
 
-	// Random cube maze
-	const unsigned int mazeStart = 5;
-	const unsigned int mazeSize = 20;
-	const float wallSize = 1.1f;
-	for (unsigned int x = 0; x < mazeSize; x++) {
-		for (unsigned int y = 0; y < mazeSize; y++) {
-			/*if (Utils::rnd() > 0.5f)
-				continue;*/
 
-			auto e = Entity::Create();
-			e->addComponent<ModelComponent>(m_cubeModel.get());
-			e->addComponent<TransformComponent>(glm::vec3(x * wallSize + mazeStart, 0.5f, y * wallSize + mazeStart));
-			e->addComponent<MaterialComponent>(Material::PHONG);
-			m_scene.addEntity(e);
-		}
-	}
+
+	//// Random cube maze
+	//const unsigned int mazeStart = 5;
+	//const unsigned int mazeSize = 20;
+	//const float wallSize = 1.1f;
+	//for (unsigned int x = 0; x < mazeSize; x++) {
+	//	for (unsigned int y = 0; y < mazeSize; y++) {
+	//		/*if (Utils::rnd() > 0.5f)
+	//			continue;*/
+
+	//		auto e = Entity::Create();
+	//		e->addComponent<ModelComponent>(m_cubeModel);
+	//		e->addComponent<TransformComponent>(glm::vec3(x * wallSize + mazeStart, 0.5f, y * wallSize + mazeStart));
+	//		e->addComponent<MaterialComponent>(Material::PHONG);
+	//		m_scene.addEntity(e);
+	//	}
+	//}
 }
 
 GameState::~GameState() {

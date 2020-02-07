@@ -13,7 +13,7 @@ Environment::Environment(const std::string& folderName) {
 	m_skyboxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), cubemapShader);
 
 	m_skyboxEntity = Entity::Create("Skybox");
-	m_skyboxEntity->addComponent<ModelComponent>(m_skyboxModel.get());
+	m_skyboxEntity->addComponent<ModelComponent>(m_skyboxModel);
 	m_skyboxEntity->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 	m_skyboxEntity->addComponent<MaterialComponent>(Material::TEXTURES);
 

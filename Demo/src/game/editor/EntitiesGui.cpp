@@ -11,24 +11,45 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 	static int selectedEntityIndex = -1;
 	Entity::SPtr selectedEntity = nullptr;
 	{
+		bool entityAddedThisFrame = false;
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 8.f));
 		ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoScrollbar);
+		ImGui::PopStyleVar(3);
 
-		if (ImGui::ListBoxHeader("##hideLabel", ImGui::GetWindowSize())) {
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y);
+		ImGui::AlignTextToFramePadding();
+		ImGui::Text((std::to_string(entities.size()) + " entities in the world").c_str());
+		ImGui::SameLine();
+		const char* newEntityBtnText = "Add entity";
+		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(newEntityBtnText).x - ImGui::GetStyle().ItemInnerSpacing.x * 2.f - ImGui::GetStyle().ItemSpacing.x);
+		if (ImGui::Button(newEntityBtnText)) {
+			selectedEntity = entities.emplace_back(Entity::Create("New entity"));
+			entityAddedThisFrame = true;
+		}
+
+
+		if (ImGui::ListBoxHeader("##hideLabel", ImVec2(ImGui::GetWindowWidth(), ImGui::GetWindowHeight() - 50.f))) {
 			for (unsigned int i = 0; i < entities.size(); i++) {
 				ImGui::PushID(i);
 				auto& item = entities[i];
 				const bool itemSelected = (i == selectedEntityIndex);
 				const char* itemText = (item->getName() != "") ? item->getName().c_str() : "Unnamed";
+				ImGui::SetCursorPosX(ImGui::GetStyle().ItemSpacing.x);
 				if (ImGui::Selectable(itemText, itemSelected)) {
 					selectedEntityIndex = i;
+				}
+				// Always select newly added entities
+				if (entityAddedThisFrame && item == selectedEntity) {
+					selectedEntityIndex = i;
+					ImGui::SetScrollHere();
 				}
 				ImGui::SameLine();
 				std::string hintText = std::to_string(item->getAllComponents().size()) + " components";
 				float textWidth = ImGui::CalcTextSize(hintText.c_str()).x;
-				ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - textWidth);
+				ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - textWidth - ImGui::GetStyle().ItemSpacing.x);
 				ImGui::TextDisabled(hintText.c_str());
 				if (itemSelected)
 					ImGui::SetItemDefaultFocus();
@@ -37,12 +58,13 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			ImGui::ListBoxFooter();
 		}
 
+		// Select the entity from the list if valid
 		if (selectedEntityIndex < entities.size()) {
 			selectedEntity = entities[selectedEntityIndex];
 		}
 
 		ImGui::End();
-		ImGui::PopStyleVar(3);
+		//ImGui::PopStyleVar(3);
 
 	}
 	Component* selectedComponent = nullptr;
@@ -97,6 +119,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 					ImGui::PushID(i);
 					const bool itemSelected = (i == selectedIndex);
 					std::string& itemText = item.second->getStaticName();
+					ImGui::SetCursorPosX(ImGui::GetStyle().ItemSpacing.x);
 					if (ImGui::Selectable(itemText.c_str(), itemSelected)) {
 						selectedIndex = i;
 						selectedComponentID = item.first;
@@ -104,7 +127,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 					ImGui::SameLine();
 					std::string hintText = ICON_FA_SMILE_O;
 					float textWidth = ImGui::CalcTextSize(hintText.c_str()).x;
-					ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - textWidth);
+					ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - textWidth - ImGui::GetStyle().ItemSpacing.x);
 					ImGui::TextDisabled(hintText.c_str());
 					if (itemSelected)
 						ImGui::SetItemDefaultFocus();

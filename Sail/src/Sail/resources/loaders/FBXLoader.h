@@ -11,7 +11,7 @@ public:
 	FBXLoader(const std::string& filepath, Shader* shader);
 	~FBXLoader();
 
-	std::unique_ptr<Model>& getModel();
+	std::shared_ptr<Model>& getModel();
 
 private:
 	FbxScene* parseFBX(const std::string& filename);
@@ -28,7 +28,7 @@ private:
 
 	std::string m_filepath;
 	Shader* m_shader;
-	std::unique_ptr<Model> m_model;
+	std::shared_ptr<Model> m_model;
 	//std::vector<Mesh::Data> m_meshDataList;
 
 	/*Material::PhongSettings m_matSettings;

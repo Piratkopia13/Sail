@@ -4,8 +4,6 @@
 #include <memory>
 #include "components/Component.h"
 
-//#define MOVE(x) std::move(x)
-
 class Entity {
 public:
 	typedef std::shared_ptr<Entity> SPtr;

@@ -12,9 +12,9 @@ public:
 	ParsedScene(const std::string& filename, Shader* shader, bool useAbsolutePath = false);
 
 	~ParsedScene();
-	Model* getModel();
+	std::shared_ptr<Model> getModel();
 
 private:
-	std::unique_ptr<Model> m_model;
+	std::shared_ptr<Model> m_model;
 
 };

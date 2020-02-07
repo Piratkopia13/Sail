@@ -1,17 +1,18 @@
 #pragma once
 
 #include "Component.h"
-
-class Model;
+#include "Sail/graphics/geometry/Model.h"
 
 class ModelComponent : public Component {
 public:
 	SAIL_COMPONENT
-	ModelComponent(Model* model);
+	ModelComponent(Model::SPtr model);
 	~ModelComponent() { }
 
-	Model* getModel();
+	Model::SPtr getModel();
+
+	void renderEditorGui(SailGuiWindow* window) override;
 
 private:
-	Model* m_model;
+	Model::SPtr m_model;
 };

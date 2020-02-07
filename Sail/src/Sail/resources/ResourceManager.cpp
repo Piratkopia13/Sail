@@ -66,17 +66,17 @@ void ResourceManager::loadModel(const std::string& filename, Shader* shader, boo
 	// Insert the new model
 	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shader, useAbsolutePath) });
 }
-Model& ResourceManager::getModel(const std::string& filename, Shader* shader, bool useAbsolutePath) {
+std::shared_ptr<Model> ResourceManager::getModel(const std::string& filename, Shader* shader, bool useAbsolutePath) {
 	auto pos = m_fbxModels.find(filename);
 	if (pos == m_fbxModels.end()) {
 		// Model was not yet loaded, load it and return
 		loadModel(filename, shader, useAbsolutePath);
 
-		return *m_fbxModels.find(filename)->second->getModel();
+		return m_fbxModels.find(filename)->second->getModel();
 	}
 
-	Model& foundModel = *pos->second->getModel();
-	if (foundModel.getMesh(0)->getShader() != shader)
+	auto foundModel = pos->second->getModel();
+	if (foundModel->getMesh(0)->getShader() != shader)
 		Logger::Error("Tried to get model from resource manager that has already been loaded with a different shader!");
 
 	return foundModel;

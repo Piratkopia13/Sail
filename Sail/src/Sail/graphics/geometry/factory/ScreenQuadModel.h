@@ -37,7 +37,7 @@ namespace ModelFactory {
 			data.indices = indices;
 			data.texCoords = texCoords;
 
-			return std::make_unique<Model>(data, shader);
+			return std::make_unique<Model>(data, shader, "ScreenQuadModel from factory");
 		}
 	};
 	

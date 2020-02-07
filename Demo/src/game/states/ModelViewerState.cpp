@@ -84,7 +84,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	}
 
 	// PBR spheres
-	Model* sphereModel = &m_app->getResourceManager().getModel("sphere.fbx", pbrShader);
+	auto sphereModel = m_app->getResourceManager().getModel("sphere.fbx", pbrShader);
 	const unsigned int gridSize = 7;
 	const float cellSize = 1.3f;
 	for (unsigned int x = 0; x < gridSize; x++) {
@@ -218,7 +218,7 @@ bool ModelViewerState::renderImgui(float dt) {
 	
 	static auto callback = [&](EditorGui::CallbackType type, const std::string& path) {
 		Shader* shader;
-		Model* fbxModel;
+		std::shared_ptr<Model> fbxModel;
 		switch (type) {
 		case EditorGui::CHANGE_STATE:
 			requestStackPop();
@@ -229,7 +229,7 @@ bool ModelViewerState::renderImgui(float dt) {
 			Logger::Log("Adding new model to scene: " + path);
 
 			shader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>();
-			fbxModel = &m_app->getResourceManager().getModel(path, shader, true);
+			fbxModel = m_app->getResourceManager().getModel(path, shader, true);
 
 			// Remove existing model
 			if (modelEnt->getComponent<ModelComponent>()) {
