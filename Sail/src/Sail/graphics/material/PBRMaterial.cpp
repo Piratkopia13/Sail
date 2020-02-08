@@ -58,15 +58,9 @@ void PBRMaterial::bind(Shader* shader, Environment* environment, void* cmdList) 
 #endif
 	}
 
-	if (m_pbrSettings.hasAlbedoTexture) {
-		pipeline->setTexture("sys_texAlbedo", m_textures[0], cmdList);
-	}
-	if (m_pbrSettings.hasNormalTexture) {
-		pipeline->setTexture("sys_texNormal", m_textures[1], cmdList);
-	}
-	if (m_pbrSettings.hasMetalnessRoughnessAOTexture) {
-		pipeline->setTexture("sys_texMRAO", m_textures[2], cmdList);
-	}
+	pipeline->setTexture("sys_texAlbedo", m_textures[0], cmdList);
+	pipeline->setTexture("sys_texNormal", m_textures[1], cmdList);
+	pipeline->setTexture("sys_texMRAO", m_textures[2], cmdList);
 }
 
 void PBRMaterial::setMetalnessScale(float metalness) {
