@@ -18,7 +18,7 @@ PBRMaterial::PBRMaterial()
 {
 	m_pbrSettings.metalnessScale = 1.f;
 	m_pbrSettings.roughnessScale = 1.f;
-	m_pbrSettings.aoScale = 1.f;
+	m_pbrSettings.aoIntensity = 0.f;
 
 	m_pbrSettings.hasAlbedoTexture = 0;
 	m_pbrSettings.hasNormalTexture = 0;
@@ -71,8 +71,8 @@ void PBRMaterial::setRoughnessScale(float roughness) {
 	m_pbrSettings.roughnessScale = roughness;
 }
 
-void PBRMaterial::setAOScale(float ao) {
-	m_pbrSettings.aoScale = ao;
+void PBRMaterial::setAOIntensity(float intensity) {
+	m_pbrSettings.aoIntensity = intensity;
 }
 
 void PBRMaterial::setColor(const glm::vec4& color) {

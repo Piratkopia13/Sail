@@ -10,6 +10,7 @@
 #include "Sail/graphics/material/PhongMaterial.h"
 #include "Sail/graphics/material/PBRMaterial.h"
 #include "Sail/graphics/material/TexturesMaterial.h"
+#include "imgui_internal.h"
 
 MaterialComponent::MaterialComponent(Material::Type type)
 	: m_textureFilter(L"All supported textures (*.tga;*.hdr;*.dds)\0*.tga;*.hdr;*.dds")
@@ -32,6 +33,8 @@ void MaterialComponent::renderEditorGui(SailGuiWindow* window) {
 		return;
 	}
 
+	window->disableColumns();
+	window->enableColumns(120.f);
 	PBRMaterial* pbrMat = nullptr;
 	if (pbrMat = dynamic_cast<PBRMaterial*>(m_material.get())) {
 		renderPBRMaterialGui(window, pbrMat);
@@ -109,7 +112,9 @@ void MaterialComponent::renderPhongMaterialGui(SailGuiWindow* window, PhongMater
 void MaterialComponent::renderPBRMaterialGui(SailGuiWindow* window, PBRMaterial* material) {
 	window->addProperty("Metalness scale", [&] { ImGui::SliderFloat("##hideLabel", &material->getPBRSettings().metalnessScale, 0.f, 1.f); });
 	window->addProperty("Roughness scale", [&] { ImGui::SliderFloat("##hideLabel", &material->getPBRSettings().roughnessScale, 0.f, 1.f); });
-	window->addProperty("AO scale", [&] { ImGui::SliderFloat("##hideLabel", &material->getPBRSettings().aoScale, 0.f, 1.f); });
+	window->addProperty("AO intensity", [&] { 
+		ImGui::SliderFloat("##hideLabel", &material->getPBRSettings().aoIntensity, -0.7f, 0.7f);
+	});
 
 	window->addProperty("Color", [&] { ImGui::ColorEdit4("##hideLabel", glm::value_ptr(material->getPBRSettings().modelColor)); });
 

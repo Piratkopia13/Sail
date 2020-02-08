@@ -14,7 +14,7 @@ public:
 		glm::vec4 modelColor;
 		float metalnessScale;
 		float roughnessScale;
-		float aoScale;
+		float aoIntensity;
 		float padding1;
 		int hasAlbedoTexture;
 		int hasNormalTexture;
@@ -30,7 +30,7 @@ public:
 
 	void setMetalnessScale(float metalness);
 	void setRoughnessScale(float roughness);
-	void setAOScale(float ao);
+	void setAOIntensity(float intensity);
 	void setColor(const glm::vec4& color);
 
 	// An empty filename will remove the texture

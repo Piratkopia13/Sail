@@ -125,12 +125,12 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
 	pixel.metalness = sys_material.metalnessScale;
 	pixel.roughness = sys_material.roughnessScale;
-	pixel.ao = sys_material.aoScale;
+	pixel.ao = 1.f;
 	if (sys_material.hasMRAOTexture) {
 		float3 mrao = sys_texMRAO.Sample(PSss, input.texCoords).rgb;
 		pixel.metalness *= mrao.r;
 		pixel.roughness *= 1.f - mrao.g; // Invert roughness from texture to make it correct
-		pixel.ao *= mrao.b;
+		pixel.ao = mrao.b + sys_material.aoIntensity;
 	}
 
 	// Shade

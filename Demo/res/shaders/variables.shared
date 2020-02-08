@@ -26,7 +26,7 @@ struct PBRMaterial {
 	float4 modelColor;
 	float metalnessScale;
 	float roughnessScale;
-	float aoScale;
+	float aoIntensity;
 	float padding1;
 	bool hasAlbedoTexture;
 	bool hasNormalTexture;
