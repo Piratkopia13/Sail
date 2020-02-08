@@ -54,7 +54,7 @@ void Environment::init(const std::string& folderName) {
 	resman.loadTexture(radianceFilename);
 	m_radianceMapTexture = &resman.getTexture(radianceFilename);
 
-	auto* mat = m_skyboxEntity->getComponent<MaterialComponent>();
+	auto mat = m_skyboxEntity->getComponent<MaterialComponent>();
 	mat->get()->asTextures()->clearTextures();
 	mat->get()->asTextures()->addTexture(skyboxFilename);
 }

@@ -42,13 +42,11 @@ inline float3 shadeWithLight(PointLight light, float3 N, float3 V, float3 F0, fl
     float3 L = normalize(light.fragToLight);
     float3 H = normalize(V + L);
 
-    float distance = light.distanceToLight;
-    // Standard attenuation
-    float attenuation = 1.f / (light.attConstant + light.attLinear * distance + light.attQuadratic * distance * distance);
-    // Tweaked UE4 attenuation
-    // float lightRadius = light.reachRadius;
-    // float attenuation = pow(saturate(1.f - pow(distance/lightRadius, 4.f)), 2.f) / (distance * distance + 1.f);
-    // attenuation *= 8.f;
+    float distance = length(light.fragToLight);
+    // UE4 attenuation
+    float attenuation = pow(saturate(1.f - pow(distance/light.attRadius, 4.f)), 2.f) / (distance * distance + 1.f);
+    // An intensity of anything else than 1 will not be physically accurate, this is up to the artist
+    attenuation *= light.intensity;
     
     float3 radiance   = light.color * attenuation;
 
@@ -111,25 +109,23 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel) {
             // Set up a point light that emulate a directional light
             PointLight pl;
             pl.color = dl.color;
-            pl.distanceToLight = 1.f;
+            pl.intensity = dl.intensity;
             pl.fragToLight = -dl.direction;
-            pl.attConstant = 1.f;
-            pl.attLinear = 0.f;
-            pl.attQuadratic = 0.f;
+            pl.attRadius = 1e10f;
             Lo += shadeWithLight(pl, N, V, F0, pixel.albedo, pixel.metalness, pixel.roughness);
         }
 
         // Point lights
-        // [unroll]
         PointLight p;
+        [unroll]
         for(int i = 0; i < NUM_POINT_LIGHTS; i++) {
             p = scene.lights.pointLights[i];
-            // Ignore point light if color is black
-            if (all(p.color == 0.0f)) {
+            // Ignore point light if color is black or intensity is zero
+            if (p.intensity == 0.f || all(p.color == 0.0f)) {
                 continue;
             }
             // Ignore lights that are too far away
-            // if (p.distanceToLight > p.reachRadius) {
+            // if (length(p.fragToLight) > p.reachRadius) {
             //     continue;
             // }
 

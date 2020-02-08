@@ -27,6 +27,7 @@ class SailGuiWindow;
 class Component {
 public:
 	typedef std::unique_ptr<Component> Ptr;
+	typedef std::shared_ptr<Component> SPtr;
 public:
 	Component() {}
 	virtual ~Component() {}

@@ -138,7 +138,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			if (ImGui::BeginPopup("ComponentList")) {
 				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
 				int selectedNewComponentIndex = -1;
-				const char* componentNames[] { "ModelComponent", "TransformComponent", "MaterialComponent" };
+				const char* componentNames[] { "ModelComponent", "TransformComponent", "MaterialComponent", "PointLightComponent", "DirectionalLightComponent" };
 				if (ImGui::ListBox("##hideLabel", &selectedNewComponentIndex, componentNames, IM_ARRAYSIZE(componentNames))) {
 
 					if (selectedNewComponentIndex == 0) {
@@ -148,6 +148,10 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 						selectedEntity->addComponent<TransformComponent>();
 					} else if (selectedNewComponentIndex == 2) {
 						selectedEntity->addComponent<MaterialComponent>(Material::PBR);
+					} else if (selectedNewComponentIndex == 3) {
+						selectedEntity->addComponent<PointLightComponent>();
+					} else if (selectedNewComponentIndex == 4) {
+						selectedEntity->addComponent<DirectionalLightComponent>();
 					}
 
 					ImGui::CloseCurrentPopup();

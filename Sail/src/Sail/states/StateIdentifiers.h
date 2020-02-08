@@ -7,7 +7,7 @@ namespace States {
 	enum ID {
 		None,
 		Game,
-		ModelViewer
+		Editor
 	};
 
 }

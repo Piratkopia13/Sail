@@ -1,58 +1,42 @@
 #pragma once
 
-#include "DirectionalLight.h"
-#include "PointLight.h"
 #include <vector>
+
+class DirectionalLightComponent;
+class PointLightComponent;
 
 class LightSetup {
 public:
-
 	static const UINT MAX_POINTLIGHTS_FORWARD_RENDERING = 8;  // Max number of lights as set in shader
 
 	struct PointLightStruct {
+		PointLightStruct() { }
 		glm::vec3 color = glm::vec3(0.f);
-		float padding;
+		float attRadius = 10.f;
 		glm::vec3 position = glm::vec3(0.f);
-		float attConstant = 0.f;
-		float attLinear;
-		float attQuadratic;
-		float padding1, padding2;
+		float intensity = 10.f;
 	};
 	struct DirLightBuffer {
-		DirLightBuffer() { };
+		DirLightBuffer() { }
 		glm::vec3 color = glm::vec3(0.f);
-		float padding1;
+		float intensity = 1.f;
 		glm::vec3 direction = glm::vec3(0.f);
 		float padding2;
 	};
-	struct PointLightsBuffer {
-		PointLightsBuffer() { };
-		PointLightStruct pLights[MAX_POINTLIGHTS_FORWARD_RENDERING];
-	};
-
 
 public:
 	LightSetup();
 	~LightSetup();
 
-	void addPointLight(const PointLight& pl);
-	void setDirectionalLight(const DirectionalLight& dl);
+	void addPointLight(PointLightComponent* plComp);
+	void setDirectionalLight(DirectionalLightComponent* dl);
 
-	const DirectionalLight& getDL() const;
-	const std::vector<PointLight>& getPLs() const;
-
-	const DirLightBuffer& getDirLightData() const;
-	const PointLightsBuffer& getPointLightsData() const;
+	std::tuple<void*, unsigned int> getDirLightData() const;
+	std::tuple<void*, unsigned int> getPointLightsData() const;
 
 private:
-	void updateBufferData();
-private:
-
-	DirectionalLight m_dl;
-	std::vector<PointLight> m_pls;
-	int m_numPls;
-
 	DirLightBuffer m_dlData;
-	PointLightsBuffer m_plData;
+	std::vector<PointLightStruct> m_plData;
+	unsigned int m_numPls;
 
 };

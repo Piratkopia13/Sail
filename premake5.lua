@@ -132,8 +132,6 @@ project "Sail"
 		"%{prj.name}/src/Sail/graphics/shader/postprocess/**",
 		"%{prj.name}/src/Sail/graphics/shader/instanced/**",
 		"%{prj.name}/src/Sail/graphics/shader/deferred/**",
-		"%{prj.name}/src/Sail/graphics/shader/component/ConstantBuffer**",
-		"%{prj.name}/src/Sail/graphics/shader/component/Sampler**",
 		"%{prj.name}/src/Sail/graphics/postprocessing/**",
 		"**/Quadtree.*"
 	}

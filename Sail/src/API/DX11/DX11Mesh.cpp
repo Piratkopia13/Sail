@@ -25,7 +25,10 @@ DX11Mesh::~DX11Mesh() {
 }
 
 void DX11Mesh::draw(const Renderer& renderer, Material* material, Environment* environment, void* cmdList) {
-	material->bind(getShader(), environment);
+	if (material) {
+		assert(shader->getMaterialType() == material->getType() && "Shader requires a different material from the one given");
+		material->bind(getShader(), environment);
+	}
 
 	vertexBuffer->bind();
 	if (indexBuffer)

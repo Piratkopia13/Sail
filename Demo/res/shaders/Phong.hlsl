@@ -26,7 +26,7 @@ float4 phongShade(PhongInput input) {
 	totalColor += (input.mat.kd * diffuseCoefficient + input.mat.ks * specularCoefficient) * input.diffuseColor.rgb * input.lights.dirLight.color;
 
 	// Point lights
-
+	[unroll]
 	for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
 		PointLight p = input.lights.pointLights[i];
 
@@ -43,8 +43,10 @@ float4 phongShade(PhongInput input) {
 
 		}
 
-		//float attenuation = 1.f / (1.f + p.attenuation * pow(p.distanceToLight, 2.f));
-        float attenuation = 1.f / (p.attConstant + p.attLinear * p.distanceToLight + p.attQuadratic * pow(p.distanceToLight, 2.f));
+		float distance = length(p.fragToLight);
+		// UE4 attenuation
+    	float attenuation = pow(saturate(1.f - pow(distance/p.attRadius, 4.f)), 2.f) / (distance * distance + 1.f);
+		attenuation *= p.intensity;
 
 		totalColor += (input.mat.kd * diffuseCoefficient + input.mat.ks * specularCoefficient) * input.diffuseColor.rgb * p.color * attenuation;
 

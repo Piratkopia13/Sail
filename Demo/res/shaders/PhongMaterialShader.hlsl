@@ -29,10 +29,9 @@ cbuffer VSPSSystemCBuffer : register(b0) {
 
 struct PointLightInput {
 	float3 color;
+    float attRadius;
 	float3 position;
-    float attConstant;
-    //float attLinear;
-    //float attQuadratic;
+	float intensity;
 };
 cbuffer VSLights : register(b1) {
 	DirectionalLight dirLight;
@@ -46,12 +45,9 @@ PSIn VSMain(VSIn input) {
 	output.lights.dirLight = dirLight;
 	// Copy over point lights
     for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-        output.lights.pointLights[i].attConstant = pointLights[i].attConstant;
-        output.lights.pointLights[i].attLinear = 0.1f;
-        output.lights.pointLights[i].attQuadratic = 0.02f;
-        //output.lights.pointLights[i].attLinear = pointLights[i].attLinear;
-        //output.lights.pointLights[i].attQuadratic = pointLights[i].attQuadratic;
+        output.lights.pointLights[i].attRadius = pointLights[i].attRadius;
         output.lights.pointLights[i].color = pointLights[i].color;
+        output.lights.pointLights[i].intensity = pointLights[i].intensity;
     }
 
 	input.position.w = 1.f;
@@ -67,8 +63,6 @@ PSIn VSMain(VSIn input) {
     for (uint j = 0; j < NUM_POINT_LIGHTS; j++) {
 		// World space vector poiting from the vertex position to the point light
         output.lights.pointLights[j].fragToLight = pointLights[j].position - output.position.xyz;
-		// The world space distance from the vertex to the light
-        output.lights.pointLights[j].distanceToLight = length(output.lights.pointLights[j].fragToLight);
     }
 
 

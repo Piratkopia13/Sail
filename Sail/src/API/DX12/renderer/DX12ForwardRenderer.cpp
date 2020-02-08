@@ -70,7 +70,7 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("commandQueue loop");
 
-		// TODO: Sort meshes according to material
+		// TODO: Sort meshes according to shaderPipeline
 		unsigned int totalInstances = commandQueue.size();
 		for (RenderCommand& command : commandQueue) {
 			DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.mesh->getShader()->getPipeline());
@@ -88,10 +88,10 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 			shaderPipeline->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 
 			if (lightSetup) {
-				auto& dlData = lightSetup->getDirLightData();
-				auto& plData = lightSetup->getPointLightsData();
-				shaderPipeline->trySetCBufferVar("dirLight", &dlData, sizeof(dlData));
-				shaderPipeline->trySetCBufferVar("pointLights", &plData, sizeof(plData));
+				auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
+				auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
+				shaderPipeline->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
+				shaderPipeline->trySetCBufferVar("pointLights", plData, plDataByteSize);
 			}
 
 			command.mesh->draw(*this, command.material, environment, cmdList.Get());

@@ -5,17 +5,16 @@
 
 struct PointLight {
 	float3 color;
-	float distanceToLight;
+    float attRadius;
 	float3 fragToLight;
-    float attConstant;
-    float attLinear;
-    float attQuadratic;
-    float2 padding;
+	float intensity;
 };
 
 struct DirectionalLight {
 	float3 color;
+	float intensity;
 	float3 direction;
+	float padding;
 };
 
 struct LightList {

@@ -10,7 +10,7 @@ Entity::Entity(const std::string& name)
 	, m_isBeingRendered(false)
 { }
 
-std::unordered_map<int, Component::Ptr>& Entity::getAllComponents() {
+std::unordered_map<int, Component::SPtr>& Entity::getAllComponents() {
 	return m_components;
 }
 

@@ -14,16 +14,11 @@ Renderer* Renderer::Create(Renderer::Type type) {
 	return nullptr;
 }
 
-DX11ForwardRenderer::DX11ForwardRenderer() {
+DX11ForwardRenderer::DX11ForwardRenderer() { }
 
-}
-
-DX11ForwardRenderer::~DX11ForwardRenderer() {
-
-}
+DX11ForwardRenderer::~DX11ForwardRenderer() { }
 
 void DX11ForwardRenderer::present(RenderableTexture* output) {
-
 	for (RenderCommand& command : commandQueue) {
 		ShaderPipeline* shaderPipeline = command.mesh->getShader()->getPipeline();
 		shaderPipeline->bind();
@@ -35,10 +30,10 @@ void DX11ForwardRenderer::present(RenderableTexture* output) {
 		shaderPipeline->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 
 		if (lightSetup) {
-			auto& dlData = lightSetup->getDirLightData();
-			auto& plData = lightSetup->getPointLightsData();
-			shaderPipeline->trySetCBufferVar("dirLight", &dlData, sizeof(dlData));
-			shaderPipeline->trySetCBufferVar("pointLights", &plData, sizeof(plData));
+			auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
+			auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
+			shaderPipeline->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
+			shaderPipeline->trySetCBufferVar("pointLights", plData, plDataByteSize);
 		}
 
 		command.mesh->draw(*this, command.material, environment);

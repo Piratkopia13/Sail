@@ -26,7 +26,6 @@ private:
 	std::vector<Entity::SPtr> m_transformTestEntities;
 
 	Scene m_scene;
-	LightSetup m_lights;
 
 	std::shared_ptr<Model> m_cubeModel;
 	std::shared_ptr<Model> m_planeModel;

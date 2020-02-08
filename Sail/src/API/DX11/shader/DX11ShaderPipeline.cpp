@@ -100,13 +100,21 @@ void* DX11ShaderPipeline::compileShader(const std::string& source, const std::st
 
 void DX11ShaderPipeline::setTexture(const std::string& name, Texture* texture, void* cmdList) {
 	UINT slot = findSlotFromName(name, parsedData.textures);
-	auto* srv = ((DX11Texture*)texture)->getSRV();
-	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, &srv);
+	
+	ID3D11ShaderResourceView* srv[1] = { nullptr }; // Default to a null srv (unbinds the slot)
+	if (texture) {
+		srv[0] = ((DX11Texture*)texture)->getSRV();
+	}
+	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, srv);
 }
 
 void DX11ShaderPipeline::setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList) {
 	UINT slot = findSlotFromName(name, parsedData.textures);
-	auto* srv = ((DX11RenderableTexture*)texture)->getColorSRV();
+	
+	ID3D11ShaderResourceView* srv[1] = { nullptr }; // Default to a null srv (unbinds the slot)
+	if (texture) {
+		srv[0] = *((DX11RenderableTexture*)texture)->getColorSRV();
+	}
 	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, srv);
 }
 

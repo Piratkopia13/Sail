@@ -10,23 +10,20 @@ Game::Game(HINSTANCE hInstance)
 	// Register states
 	registerStates();
 	// Set starting state
-	m_stateStack.pushState(States::ModelViewer);
-
+	m_stateStack.pushState(States::Editor);
 }
 
 Game::~Game() {	}
 
 int Game::run() {
-	
 	// Start the game loop and return when game exits
 	return startGameLoop();
 }
 
 void Game::registerStates() {
-
 	// Register all of the different states
 	m_stateStack.registerState<GameState>(States::Game);
-	m_stateStack.registerState<ModelViewerState>(States::ModelViewer);
+	m_stateStack.registerState<ModelViewerState>(States::Editor);
 }
 
 void Game::processInput(float dt) {

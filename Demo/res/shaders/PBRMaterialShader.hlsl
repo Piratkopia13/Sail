@@ -28,12 +28,9 @@ cbuffer VSPSSystemCBuffer : register(b0) {
 
 struct PointLightInput {
 	float3 color;
-	float padding1;
+    float attRadius;
 	float3 position;
-    float attConstant;
-    float attLinear;
-    float attQuadratic;
-	float2 padding2;
+	float intensity;
 };
 cbuffer PSLights : register(b1) {
 	DirectionalLight dirLight;
@@ -99,13 +96,10 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	[unroll]
 	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
 		scene.lights.pointLights[i].color = pointLights[i].color;
-		scene.lights.pointLights[i].attConstant = pointLights[i].attConstant;
-		scene.lights.pointLights[i].attLinear = pointLights[i].attLinear;
-		scene.lights.pointLights[i].attQuadratic = pointLights[i].attQuadratic;
+		scene.lights.pointLights[i].attRadius = pointLights[i].attRadius;
+		scene.lights.pointLights[i].intensity = pointLights[i].intensity;
 		// World space vector poiting from the vertex position to the point light
 		scene.lights.pointLights[i].fragToLight = pointLights[i].position - input.worldPos;
-		// The world space distance from the vertex to the light
-		scene.lights.pointLights[i].distanceToLight = length(scene.lights.pointLights[i].fragToLight);
 	}
 
 	scene.brdfLUT = sys_texBrdfLUT;

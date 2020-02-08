@@ -32,8 +32,6 @@ private:
 	std::vector<Entity::SPtr> m_transformTestEntities;
 
 	Scene m_scene;
-	LightSetup m_lights;
-	std::unique_ptr<Environment> m_environment;
 
 	std::shared_ptr<Model> m_planeModel;
 

@@ -148,6 +148,11 @@ void* DX12ShaderPipeline::compileShader(const std::string& source, const std::st
 }
 
 void DX12ShaderPipeline::setTexture(const std::string& name, Texture* texture, void* cmdList) {
+	if (!texture) {
+		// No texture bound to this slot, step past it in the heap
+		m_context->getMainGPUDescriptorHeap()->getAndStepIndex(1);
+		return;
+	}
 	auto* dxTexture = static_cast<DX12Texture*>(texture);
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	
@@ -158,6 +163,11 @@ void DX12ShaderPipeline::setTexture(const std::string& name, Texture* texture, v
 }
 
 void DX12ShaderPipeline::setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList) {
+	if (!texture) {
+		// No texture bound to this slot, step past it in the heap
+		m_context->getMainGPUDescriptorHeap()->getAndStepIndex(1);
+		return;
+	}
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	DX12RenderableTexture* dxTexture = static_cast<DX12RenderableTexture*>(texture);
 
