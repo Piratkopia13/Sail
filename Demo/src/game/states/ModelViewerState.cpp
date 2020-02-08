@@ -89,7 +89,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	const float cellSize = 1.3f;
 	for (unsigned int x = 0; x < gridSize; x++) {
 		for (unsigned int y = 0; y < gridSize; y++) {
-			auto e = Entity::Create();
+			auto e = Entity::Create("Sphere " + std::to_string(x*gridSize+y));
 			auto* model = e->addComponent<ModelComponent>(sphereModel);
 			auto* transform = e->addComponent<TransformComponent>(glm::vec3(x * cellSize - (cellSize * (gridSize - 1.0f) * 0.5f), y * cellSize + 1.0f, 0.f));
 			transform->setScale(0.5f);
@@ -206,36 +206,11 @@ bool ModelViewerState::render(float dt) {
 bool ModelViewerState::renderImgui(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
-	static auto modelEnt = Entity::Create();
-
-	// Add to the scene once
-	static std::once_flag flag;
-	std::call_once(flag, [&] {
-		modelEnt->addComponent<TransformComponent>();
-		modelEnt->addComponent<MaterialComponent>(Material::PBR);
-		m_scene.addEntity(modelEnt); 
-	});
-	
 	static auto callback = [&](EditorGui::CallbackType type, const std::string& path) {
-		Shader* shader;
-		std::shared_ptr<Model> fbxModel;
 		switch (type) {
 		case EditorGui::CHANGE_STATE:
 			requestStackPop();
 			requestStackPush(States::Game);
-
-			break;
-		case EditorGui::MODEL_CHANGED:
-			Logger::Log("Adding new model to scene: " + path);
-
-			shader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>();
-			fbxModel = m_app->getResourceManager().getModel(path, shader, true);
-
-			// Remove existing model
-			if (modelEnt->getComponent<ModelComponent>()) {
-				modelEnt->removeComponent<ModelComponent>();
-			}
-			modelEnt->addComponent<ModelComponent>(fbxModel);
 
 			break;
 		case EditorGui::ENVIRONMENT_CHANGED:
@@ -245,11 +220,9 @@ bool ModelViewerState::renderImgui(float dt) {
 		default:
 			break;
 		}
-		
-
 	};
 
-	m_viewerGui.render(dt, callback, modelEnt.get());
+	m_editorGui.render(dt, callback);
 	m_entitiesGui.render(m_scene.getEntites());
 	
 	return false;

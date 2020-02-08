@@ -12,12 +12,11 @@ class EditorGui : public SailGuiWindow {
 public:
     enum CallbackType {
         CHANGE_STATE,
-        MODEL_CHANGED,
         ENVIRONMENT_CHANGED,
     };
 
     EditorGui();
-    void render(float dt, FUNC(void(CallbackType type, const std::string&)) callback, Entity* entity);
+    void render(float dt, FUNC(void(CallbackType type, const std::string&)) callback);
 
 private:
     void setupDockspace(float menuBarHeight);

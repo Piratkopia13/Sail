@@ -7,7 +7,7 @@ EditorGui::EditorGui() {
 	m_modelName = "None - click to load";
 }
 
-void EditorGui::render(float dt, FUNC(void(CallbackType type, const std::string&)) callback, Entity* entity) {
+void EditorGui::render(float dt, FUNC(void(CallbackType type, const std::string&)) callback) {
 	newFrame();
 	m_callback = callback;
 
@@ -32,57 +32,6 @@ void EditorGui::render(float dt, FUNC(void(CallbackType type, const std::string&
 	disableColumns();
 
 	ImGui::End();
-	//ImGui::Separator();
-	//enableColumns();
-	//LimitStringLength(m_modelName);
-	//addProperty("Model", [&]() {
-	//	if (ImGui::Button(m_modelName.c_str(), ImVec2(propWidth, 0))) {
-	//		std::string newModel = OpenFileDialog(L"FBX models (*.fbx)\0*.fbx");
-	//		if (!newModel.empty()) {
-	//			m_modelName = newModel;
-	//			m_callback(CallbackType::MODEL_CHANGED, m_modelName);
-	//		}
-	//	}
-	//});
-	//	
-	//// ================================
-	////			 MATERIAL GUI
-	//// ================================
-	//MaterialComponent* materialComp = nullptr;
-	//ModelComponent* modelComp = entity->getComponent<ModelComponent>();
-	//if (modelComp) {
-	//	if (!(materialComp = entity->getComponent<MaterialComponent>())) {
-	//		disableColumns();
-	//		ImGui::Separator();
-	//		ImGui::Text("Model is missing material component");
-	//		ImGui::Separator();
-	//		enableColumns();
-	//	}
-	//}
-	//if (materialComp) {
-	//	disableColumns();
-	//	ImGui::Separator();
-	//	ImGui::Text("Shader pipeline: %s", modelComp->getModel()->getMesh(0)->getShader()->getPipeline()->getName().c_str()); ImGui::NextColumn();
-	//	ImGui::Separator();
-	//	enableColumns();
-
-	//	materialComp->renderEditorGui(this);
-	//}
-
-	//// ================================
-	////			TRANSFORM GUI
-	//// ================================
-	//TransformComponent* transformComp = entity->getComponent<TransformComponent>();
-	//if (modelComp && transformComp) {
-	//	disableColumns();
-	//	ImGui::Separator();
-	//	ImGui::Text("Transform");
-	//	enableColumns(90.f);
-
-	//	transformComp->renderEditorGui(this);
-	//}
-
-	//disableColumns();
 }
 
 void EditorGui::setupDockspace(float menuBarHeight) {

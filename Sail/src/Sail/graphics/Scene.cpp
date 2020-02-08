@@ -36,14 +36,21 @@ void Scene::draw(Camera& camera, Environment* environment) {
 			ModelComponent* model = entity->getComponent<ModelComponent>();
 			if (model) {
 				TransformComponent* transform = entity->getComponent<TransformComponent>();
-				if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
+				//if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
 
 				Material* material = nullptr;
-				// Material is not required for rendering and may be set to nullptr
+				// Material is not required for rendering and may be set to nullptr - this is a lie
 				if (MaterialComponent* materialComp = entity->getComponent<MaterialComponent>())
 					material = materialComp->get();
 
-				m_renderer->submit(model->getModel().get(), material, transform->getMatrix());
+				
+				if (transform && material) {
+					m_renderer->submit(model->getModel().get(), material, transform->getMatrix());
+					entity->setIsBeingRendered(true);
+				} else {
+					// Indicate that the entity is not being rendered for some reason, this may be shown in the gui
+					entity->setIsBeingRendered(false);
+				}
 			}
 		}
 	}

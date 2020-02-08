@@ -19,7 +19,8 @@
 // This method uses the gcc defined __COUNTER__ macro that increments with every use
 #define SAIL_COMPONENT \
 	static int getStaticID() { return __COUNTER__; } \
-	virtual std::string getStaticName() override { std::string name(__FUNCTION__); return name.substr(0, name.length() - 15); };
+	virtual int getID() override { return getStaticID(); } \
+	virtual std::string getName() override { std::string name(__FUNCTION__); return name.substr(0, name.length() - 9); }
 
 class SailGuiWindow;
 
@@ -31,8 +32,9 @@ public:
 	virtual ~Component() {}
 	virtual void renderEditorGui(SailGuiWindow* window) { ImGui::Text("This component has no properties"); };
 
-	// This method will be overriden by the SAIL_COMPONENT macro
-	virtual std::string getStaticName() = 0;
+	// These methods will be overriden by the SAIL_COMPONENT macro
+	virtual int getID() = 0;
+	virtual std::string getName() = 0;
 
 private:
 };

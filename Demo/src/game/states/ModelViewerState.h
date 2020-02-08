@@ -21,7 +21,7 @@ public:
 private:
 	Application* m_app;
 
-	EditorGui m_viewerGui;
+	EditorGui m_editorGui;
 	EntitiesGui m_entitiesGui;
 
 	// Camera

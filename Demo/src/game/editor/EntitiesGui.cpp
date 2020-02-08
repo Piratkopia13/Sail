@@ -10,6 +10,10 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 	
 	static int selectedEntityIndex = -1;
 	Entity::SPtr selectedEntity = nullptr;
+	Component* selectedComponent = nullptr;
+	float trashButtonWidth = 21.f;
+
+	// Entities window
 	{
 		bool entityAddedThisFrame = false;
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.f);
@@ -38,6 +42,19 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 				const bool itemSelected = (i == selectedEntityIndex);
 				const char* itemText = (item->getName() != "") ? item->getName().c_str() : "Unnamed";
 				ImGui::SetCursorPosX(ImGui::GetStyle().ItemSpacing.x);
+				
+				// Draw warning icon if entity is not rendered for some reason
+				if (!item->isBeingRendered()) { 
+					ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.f), ICON_FA_EXCLAMATION_TRIANGLE);
+					if (ImGui::IsItemHovered()) {
+						ImGui::SetNextWindowSize(ImVec2(200.f, 0.f));
+						ImGui::BeginTooltip();
+						ImGui::TextWrapped("Entity is not being drawn in the scene, it might be missing required components");
+						ImGui::EndTooltip();
+					}
+					ImGui::SameLine();
+				}
+
 				if (ImGui::Selectable(itemText, itemSelected)) {
 					selectedEntityIndex = i;
 				}
@@ -67,7 +84,8 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 		//ImGui::PopStyleVar(3);
 
 	}
-	Component* selectedComponent = nullptr;
+
+	// Components window
 	{
 		ImGui::Begin("Details");
 
@@ -79,7 +97,6 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 
 		// Entity renaming and removing
 		{
-			float trashButtonWidth = 21.f;
 			ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x);
 			char buf[256];
 			strcpy_s(buf, selectedEntity->getName().c_str());
@@ -95,11 +112,11 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
 				Logger::Log("Removed entity " + selectedEntity->getName());
 				entities.erase(std::remove(entities.begin(), entities.end(), selectedEntity), entities.end());
-				selectedEntityIndex = -1; // Unselect
+				selectedEntityIndex = -1; // Deselect
 			}
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
-				ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.2f, 1.f), "Delete the entity");
+				ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.2f, 1.f), "Delete this entity");
 				ImGui::EndTooltip();
 			}
 		}
@@ -141,24 +158,24 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			
 		}
 
+		static int selectedComponentIndex = -1;
 		float w = ImGui::GetWindowContentRegionWidth();
 		static float sz1 = 100.f;
 		static float sz2 = 300.f;
-		SailGuiWindow::DrawSplitter(false, 5.f, &sz1, &sz2, 20.f, 20.f, w);
+		SailGuiWindow::DrawSplitter(false, 3.f, &sz1, &sz2, 20.f, 20.f, w);
 		float adjustedSz1 = sz1 - ImGui::GetStyle().FramePadding.y;
 		ImGui::BeginChild("Components", ImVec2(w, adjustedSz1));
 		if (selectedEntity) {
-			static int selectedIndex = -1;
 			static int selectedComponentID = -1;
 			if (ImGui::ListBoxHeader("##hideLabel", ImVec2(w, adjustedSz1))) {
 				int i = 0;
 				for (auto& item : selectedEntity->getAllComponents()) {
 					ImGui::PushID(i);
-					const bool itemSelected = (i == selectedIndex);
-					std::string& itemText = item.second->getStaticName();
+					const bool itemSelected = (i == selectedComponentIndex);
+					std::string& itemText = item.second->getName();
 					ImGui::SetCursorPosX(ImGui::GetStyle().ItemSpacing.x);
 					if (ImGui::Selectable(itemText.c_str(), itemSelected)) {
-						selectedIndex = i;
+						selectedComponentIndex = i;
 						selectedComponentID = item.first;
 					}
 					ImGui::SameLine();
@@ -181,12 +198,28 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 		}
 
 		ImGui::EndChild();
-		ImGui::BeginChild("Details", ImVec2(w, ImGui::GetWindowSize().y - sz1 + ImGui::GetStyle().FramePadding.y));
+		ImGui::BeginChild("Details", ImVec2(w, 0));
 
 		ImGui::Separator();
 		ImGui::Spacing(); ImGui::Spacing();
+		
 		if (selectedComponent) {
+			// Render component properties
 			selectedComponent->renderEditorGui(this);
+
+			// Remove component button
+			ImGui::Separator();
+			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
+				Logger::Log("Removed a component with id " + std::to_string(selectedComponent->getID()));
+				selectedEntity->removeComponentByID(selectedComponent->getID());
+				selectedComponentIndex = -1; // Deselect
+				selectedComponent = nullptr;
+			}
+			if (ImGui::IsItemHovered()) {
+				ImGui::BeginTooltip();
+				ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.2f, 1.f), "Delete this component");
+				ImGui::EndTooltip();
+			}
 		} else {
 			ImGui::Text("Select a component to view its properties");
 		}

@@ -135,11 +135,9 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	if (sys_material.hasMRAOTexture) {
 		float3 mrao = sys_texMRAO.Sample(PSss, input.texCoords).rgb;
 		pixel.metalness *= mrao.r;
-		pixel.roughness *= mrao.g;
+		pixel.roughness *= 1.f - mrao.g; // Invert roughness from texture to make it correct
 		pixel.ao *= mrao.b;
 	}
-	// Invert roughness to make it correct
-	pixel.roughness = 1.f - pixel.roughness;
 
 	// Shade
 	float3 shadedColor = pbrShade(scene, pixel);

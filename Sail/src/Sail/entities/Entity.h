@@ -9,24 +9,29 @@ public:
 	typedef std::shared_ptr<Entity> SPtr;
 	static SPtr Create(const std::string& name = "");
 public:
+	Entity(const std::string& name = "");
 	virtual ~Entity();
 
 	template<typename T, typename... Targs>
 	T* addComponent(Targs... args);
 	template<typename T>
 	bool removeComponent();
+	bool removeComponentByID(int id);
 	template<typename T>
 	T* getComponent();
 	
 	void setName(const std::string& name);
 	const std::string& getName() const;
-	Entity(const std::string& name = "");
+
+	void setIsBeingRendered(bool value);
+	bool isBeingRendered() const;
 
 	std::unordered_map<int, Component::Ptr>& getAllComponents();
 
 private:
 	std::unordered_map<int, Component::Ptr> m_components;
 	std::string m_name;
+	bool m_isBeingRendered;
 };
 
 template<typename T, typename... Targs>
