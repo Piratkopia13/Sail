@@ -8,6 +8,7 @@ Entity::SPtr Entity::Create(const std::string& name) {
 Entity::Entity(const std::string& name)
 	: m_name(name)
 	, m_isBeingRendered(false)
+	, m_isSelectedInGui(false)
 { }
 
 std::unordered_map<int, Component::SPtr>& Entity::getAllComponents() {
@@ -36,4 +37,12 @@ void Entity::setIsBeingRendered(bool value) {
 
 bool Entity::isBeingRendered() const {
 	return m_isBeingRendered;
+}
+
+void Entity::setIsSelectedInGui(bool value) {
+	m_isSelectedInGui = value;
+}
+
+bool Entity::isSelectedInGui() const {
+	return m_isSelectedInGui;
 }

@@ -2,6 +2,7 @@
 
 #include "../entities/Entity.h"
 #include "camera/Camera.h"
+#include "material/OutlineMaterial.h"
 
 class Renderer;
 class Environment;
@@ -24,4 +25,5 @@ private:
 	std::vector<Entity::SPtr> m_entities;
 	std::unique_ptr<Renderer> m_renderer;
 
+	OutlineMaterial m_outlineMaterial;
 };

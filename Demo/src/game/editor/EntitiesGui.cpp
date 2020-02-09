@@ -9,7 +9,6 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 	newFrame();
 	
 	static int selectedEntityIndex = -1;
-	Entity::SPtr selectedEntity = nullptr;
 	Component* selectedComponent = nullptr;
 	float trashButtonWidth = 21.f;
 
@@ -30,7 +29,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 		const char* newEntityBtnText = "Add entity";
 		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(newEntityBtnText).x - ImGui::GetStyle().ItemInnerSpacing.x * 2.f - ImGui::GetStyle().ItemSpacing.x);
 		if (ImGui::Button(newEntityBtnText)) {
-			selectedEntity = entities.emplace_back(Entity::Create("New entity"));
+			selectEntity(entities.emplace_back(Entity::Create("New entity")));
 			entityAddedThisFrame = true;
 		}
 
@@ -59,7 +58,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 					selectedEntityIndex = i;
 				}
 				// Always select newly added entities
-				if (entityAddedThisFrame && item == selectedEntity) {
+				if (entityAddedThisFrame && item == m_selectedEntity) {
 					selectedEntityIndex = i;
 					ImGui::SetScrollHere();
 				}
@@ -77,7 +76,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 
 		// Select the entity from the list if valid
 		if (selectedEntityIndex < entities.size()) {
-			selectedEntity = entities[selectedEntityIndex];
+			selectEntity(entities[selectedEntityIndex]);
 		}
 
 		ImGui::End();
@@ -89,7 +88,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 	{
 		ImGui::Begin("Details");
 
-		if (!selectedEntity) {
+		if (!m_selectedEntity) {
 			ImGui::Text("Select an entity to view details");
 			ImGui::End();
 			return;
@@ -99,9 +98,9 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 		{
 			ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x);
 			char buf[256];
-			strcpy_s(buf, selectedEntity->getName().c_str());
+			strcpy_s(buf, m_selectedEntity->getName().c_str());
 			if (ImGui::InputTextWithHint("##entityName", "Entity name", buf, IM_ARRAYSIZE(buf), ImGuiInputTextFlags_AutoSelectAll)) {
-				selectedEntity->setName(buf);
+				m_selectedEntity->setName(buf);
 			}
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
@@ -110,8 +109,8 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			}
 			ImGui::SameLine();
 			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
-				Logger::Log("Removed entity " + selectedEntity->getName());
-				entities.erase(std::remove(entities.begin(), entities.end(), selectedEntity), entities.end());
+				Logger::Log("Removed entity " + m_selectedEntity->getName());
+				entities.erase(std::remove(entities.begin(), entities.end(), m_selectedEntity), entities.end());
 				selectedEntityIndex = -1; // Deselect
 			}
 			if (ImGui::IsItemHovered()) {
@@ -123,7 +122,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 		// Component count and add component button
 		{
 			ImGui::AlignTextToFramePadding();
-			ImGui::Text((std::to_string(selectedEntity->getAllComponents().size()) + " components").c_str());
+			ImGui::Text((std::to_string(m_selectedEntity->getAllComponents().size()) + " components").c_str());
 			ImGui::SameLine();
 			const char* addComponentBtnText = "Add component";
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(addComponentBtnText).x);
@@ -142,16 +141,16 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 				if (ImGui::ListBox("##hideLabel", &selectedNewComponentIndex, componentNames, IM_ARRAYSIZE(componentNames))) {
 
 					if (selectedNewComponentIndex == 0) {
-						auto* defaultShader = &Application::getInstance()->getResourceManager().getShaderSet<PBRMaterialShader>();
-						selectedEntity->addComponent<ModelComponent>(ModelFactory::CubeModel::Create(glm::vec3(0.5f), defaultShader));
+						auto* defaultShader = &Application::getInstance()->getResourceManager().getShaderSet<OutlineShader>();
+						m_selectedEntity->addComponent<ModelComponent>(ModelFactory::CubeModel::Create(glm::vec3(0.5f), defaultShader));
 					} else if (selectedNewComponentIndex == 1) {
-						selectedEntity->addComponent<TransformComponent>();
+						m_selectedEntity->addComponent<TransformComponent>();
 					} else if (selectedNewComponentIndex == 2) {
-						selectedEntity->addComponent<MaterialComponent>(Material::PBR);
+						m_selectedEntity->addComponent<MaterialComponent<OutlineMaterial>>();
 					} else if (selectedNewComponentIndex == 3) {
-						selectedEntity->addComponent<PointLightComponent>();
+						m_selectedEntity->addComponent<PointLightComponent>();
 					} else if (selectedNewComponentIndex == 4) {
-						selectedEntity->addComponent<DirectionalLightComponent>();
+						m_selectedEntity->addComponent<DirectionalLightComponent>();
 					}
 
 					ImGui::CloseCurrentPopup();
@@ -169,11 +168,11 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 		SailGuiWindow::DrawSplitter(false, 3.f, &sz1, &sz2, 20.f, 20.f, w);
 		float adjustedSz1 = sz1 - ImGui::GetStyle().FramePadding.y;
 		ImGui::BeginChild("Components", ImVec2(w, adjustedSz1));
-		if (selectedEntity) {
+		if (m_selectedEntity) {
 			static int selectedComponentID = -1;
 			if (ImGui::ListBoxHeader("##hideLabel", ImVec2(w, adjustedSz1))) {
 				int i = 0;
-				for (auto& item : selectedEntity->getAllComponents()) {
+				for (auto& item : m_selectedEntity->getAllComponents()) {
 					ImGui::PushID(i);
 					const bool itemSelected = (i == selectedComponentIndex);
 					std::string& itemText = item.second->getName();
@@ -195,8 +194,8 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 				ImGui::ListBoxFooter();
 			}
 
-			auto& val = selectedEntity->getAllComponents().find(selectedComponentID);
-			if (val != selectedEntity->getAllComponents().end()) {
+			auto& val = m_selectedEntity->getAllComponents().find(selectedComponentID);
+			if (val != m_selectedEntity->getAllComponents().end()) {
 				selectedComponent = val->second.get();
 			}
 		}
@@ -215,7 +214,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			ImGui::Separator();
 			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
 				Logger::Log("Removed a component with id " + std::to_string(selectedComponent->getID()));
-				selectedEntity->removeComponentByID(selectedComponent->getID());
+				m_selectedEntity->removeComponentByID(selectedComponent->getID());
 				selectedComponentIndex = -1; // Deselect
 				selectedComponent = nullptr;
 			}
@@ -232,4 +231,12 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 
 		ImGui::End();
 	}
+}
+
+void EntitiesGui::selectEntity(Entity::SPtr entity) {
+	if (m_selectedEntity) {
+		m_selectedEntity->setIsSelectedInGui(false);
+	}
+	m_selectedEntity = entity;
+	m_selectedEntity->setIsSelectedInGui(true);
 }

@@ -13,17 +13,6 @@ Material::Type Material::getType() const {
 	return m_type;
 }
 
-PhongMaterial* Material::asPhong() {
-	return dynamic_cast<PhongMaterial*>(this);
-}
-PBRMaterial* Material::asPBR() {
-	return dynamic_cast<PBRMaterial*>(this);
-}
-
-TexturesMaterial* Material::asTextures() {
-	return dynamic_cast<TexturesMaterial*>(this);
-}
-
 Texture* Material::loadTexture(const std::string& filename, bool useAbsolutePath) {
 	Texture* t = nullptr;
 	if (!filename.empty()) {

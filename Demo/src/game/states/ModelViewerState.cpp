@@ -35,19 +35,21 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 
 	auto* phongShader = &m_app->getResourceManager().getShaderSet<PhongMaterialShader>();
 	auto* pbrShader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>();
+	auto* outlineShader = &m_app->getResourceManager().getShaderSet<OutlineShader>();
 
 	// Create/load models
-	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), pbrShader, glm::vec2(30.0f));
+	auto planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), pbrShader, glm::vec2(30.0f));
+	auto cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), outlineShader);
 
 	// Create entities
 	{
 		auto e = Entity::Create("Floor");
-		e->addComponent<ModelComponent>(m_planeModel);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		auto mat = e->addComponent<MaterialComponent>(Material::PBR);
-		mat->get()->asPBR()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
-		mat->get()->asPBR()->setNormalTexture("pbr/pavingStones/normal.tga");
-		mat->get()->asPBR()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
+		e->addComponent<ModelComponent>(planeModel);
+		e->addComponent<TransformComponent>();
+		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
+		mat->get()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
+		mat->get()->setNormalTexture("pbr/pavingStones/normal.tga");
+		mat->get()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
 		m_scene.addEntity(e);
 	}
 	// Lights
@@ -97,7 +99,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 				auto transform = e->addComponent<TransformComponent>(glm::vec3(x * cellSize - (cellSize * (gridSize - 1.0f) * 0.5f), y * cellSize + 1.0f, 0.f));
 				transform->setScale(0.5f);
 
-				PBRMaterial* material = e->addComponent<MaterialComponent>(Material::PBR)->get()->asPBR();
+				PBRMaterial* material = e->addComponent<MaterialComponent<PBRMaterial>>()->get();
 				material->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 				// Vary metalness and roughness with cell location
 				material->setRoughnessScale(1.f - (x / (float)gridSize));
@@ -124,6 +126,7 @@ bool ModelViewerState::processInput(float dt) {
 		m_app->getResourceManager().reloadShader<PhongMaterialShader>();
 		m_app->getResourceManager().reloadShader<PBRMaterialShader>();
 		m_app->getResourceManager().reloadShader<CubemapShader>();
+		m_app->getResourceManager().reloadShader<OutlineShader>();
 	}
 
 	return true;

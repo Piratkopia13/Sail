@@ -17,7 +17,7 @@ public:
 	enum Type {
 		NONE = 0,
 		PHONG, PBR,
-		TEXTURES
+		TEXTURES, OUTLINE
 	};
 
 	Material(Type type);;
@@ -27,9 +27,10 @@ public:
 
 	Type getType() const;
 
-	PhongMaterial* asPhong();
-	PBRMaterial* asPBR();
-	TexturesMaterial* asTextures();
+	template <typename T>
+	T* getAs() {
+		return dynamic_cast<T*>(this);
+	}
 
 protected:
 	Texture* loadTexture(const std::string& filename, bool useAbsolutePath = false);

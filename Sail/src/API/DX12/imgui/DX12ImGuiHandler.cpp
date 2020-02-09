@@ -64,14 +64,19 @@ void DX12ImGuiHandler::init() {
 	// Setup Dear ImGui style
 	applySailStyle();
 
-	// Merge icons into default tool font
-	io.Fonts->AddFontDefault();
+	// Merge icons into normal font
+	//io.Fonts->AddFontDefault();
+	const std::string defaultPath = "res/fonts/";
+	float fontSize = 32.f;
+	io.Fonts->AddFontFromFileTTF(std::string(defaultPath + "OpenSans-SemiBold.ttf").c_str(), fontSize);
+	io.FontGlobalScale = 16.f / fontSize;
+	//io.FontAllowUserScaling = true;
 
 	ImFontConfig config;
 	config.MergeMode = true;
-	config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+	config.GlyphMinAdvanceX = fontSize; // Use if you want to make the icon monospaced
 	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-	io.Fonts->AddFontFromFileTTF("res/fonts/fontawesome-webfont.ttf", 13.0f, &config, icon_ranges);
+	io.Fonts->AddFontFromFileTTF("res/fonts/fontawesome-webfont.ttf", fontSize, &config, icon_ranges);
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplWin32_Init((void*)*window->getHwnd());

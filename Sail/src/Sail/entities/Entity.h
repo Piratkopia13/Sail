@@ -14,6 +14,8 @@ public:
 
 	template<typename T, typename... Targs>
 	std::shared_ptr<T> addComponent(Targs... args);
+	/*template<typename T>
+	std::shared_ptr<T> addComponentReference(std::shared_ptr<T> ref);*/
 	template<typename T>
 	bool removeComponent();
 	bool removeComponentByID(int id);
@@ -26,12 +28,16 @@ public:
 	void setIsBeingRendered(bool value);
 	bool isBeingRendered() const;
 
+	void setIsSelectedInGui(bool value);
+	bool isSelectedInGui() const;
+
 	std::unordered_map<int, Component::SPtr>& getAllComponents();
 
 private:
 	std::unordered_map<int, Component::SPtr> m_components;
 	std::string m_name;
 	bool m_isBeingRendered;
+	bool m_isSelectedInGui;
 };
 
 template<typename T, typename... Targs>
@@ -43,6 +49,16 @@ std::shared_ptr<T> Entity::addComponent(Targs... args) {
 	// Return pointer to the inserted component
 	return std::static_pointer_cast<T>(res.first->second);
 }
+
+//template<typename T>
+//std::shared_ptr<T> Entity::addComponentReference(std::shared_ptr<T> ref) {
+//	auto res = m_components.insert({ T::getStaticID(), ref });
+//	if (!res.second) {
+//		Logger::Warning("Tried to add a duplicate component to an entity");
+//	}
+//	// Return pointer to the inserted component
+//	return std::static_pointer_cast<T>(res.first->second);
+//}
 
 template<typename T>
 bool Entity::removeComponent() {

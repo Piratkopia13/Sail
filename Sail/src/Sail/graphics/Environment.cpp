@@ -15,7 +15,7 @@ Environment::Environment(const std::string& folderName) {
 	m_skyboxEntity = Entity::Create("Skybox");
 	m_skyboxEntity->addComponent<ModelComponent>(m_skyboxModel);
 	m_skyboxEntity->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	m_skyboxEntity->addComponent<MaterialComponent>(Material::TEXTURES);
+	m_skyboxEntity->addComponent<MaterialComponent<TexturesMaterial>>();
 
 	init(folderName);
 }
@@ -54,7 +54,7 @@ void Environment::init(const std::string& folderName) {
 	resman.loadTexture(radianceFilename);
 	m_radianceMapTexture = &resman.getTexture(radianceFilename);
 
-	auto mat = m_skyboxEntity->getComponent<MaterialComponent>();
-	mat->get()->asTextures()->clearTextures();
-	mat->get()->asTextures()->addTexture(skyboxFilename);
+	auto mat = m_skyboxEntity->getComponent<MaterialComponent<Material>>();
+	mat->get()->getAs<TexturesMaterial>()->clearTextures();
+	mat->get()->getAs<TexturesMaterial>()->addTexture(skyboxFilename);
 }

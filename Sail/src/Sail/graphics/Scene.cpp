@@ -7,6 +7,7 @@
 #include "Sail/Application.h"
 #include "Sail/api/Renderer.h"
 #include "Environment.h"
+#include "material/OutlineMaterial.h"
 
 
 Scene::Scene()  {
@@ -34,6 +35,17 @@ void Scene::draw(Camera& camera) {
 	{
 		SAIL_PROFILE_SCOPE("Submit models");
 
+		// Submit outline meshes first since they have to be drawn before the mesh they outline
+		//for (Entity::SPtr& entity : m_entities) {
+		//	if (entity->isSelectedInGui()) {
+		//		auto model = entity->getComponent<ModelComponent>();
+		//		auto transform = entity->getComponent<TransformComponent>();
+		//		// TODO: allow meshes to be rendered using any shader
+		//		if (model && transform)
+		//			m_renderer->submit(model->getModel().get(), &m_outlineMaterial, transform->getMatrix());
+		//	}
+		//}
+
 		for (Entity::SPtr& entity : m_entities) {
 
 			// Add all lights to the lightSetup
@@ -48,7 +60,7 @@ void Scene::draw(Camera& camera) {
 
 			Material* material = nullptr;
 			// Material is not required for rendering and may be set to nullptr - this is a lie
-			if (auto materialComp = entity->getComponent<MaterialComponent>())
+			if (auto materialComp = entity->getComponent<MaterialComponent<>>())
 				material = materialComp->get();
 
 				

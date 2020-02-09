@@ -33,6 +33,4 @@ private:
 
 	Scene m_scene;
 
-	std::shared_ptr<Model> m_planeModel;
-
 };

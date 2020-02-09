@@ -10,7 +10,6 @@ struct PSIn {
 cbuffer VSSystemCBuffer : register(b0) {
 	matrix sys_mView;
 	matrix sys_mProjection;
-	float3 sys_cameraPos;
 }
 
 PSIn VSMain(VSIn input) {
@@ -18,7 +17,7 @@ PSIn VSMain(VSIn input) {
 
 	output.texCoord = input.position.xyz;
 
-	input.position.w = 0.f; // Eemove translation from the view matrix
+	input.position.w = 0.f; // Remove translation from the view matrix
 	output.position = mul(sys_mView, input.position);
 	output.position.w = 1.f;
 	output.position = mul(sys_mProjection, output.position);
