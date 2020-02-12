@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "OutlineMaterial.h"
-#include "Sail/api/shader/ShaderPipeline.h"
-#include "Sail/graphics/shader/Shader.h"
+#include "Sail/api/shader/PipelineStateObject.h"
+#include "Sail/api/shader/Shader.h"
 
 OutlineMaterial::OutlineMaterial()
 	: Material(Material::OUTLINE)
@@ -12,10 +12,8 @@ OutlineMaterial::OutlineMaterial()
 OutlineMaterial::~OutlineMaterial() { }
 
 void OutlineMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
-	ShaderPipeline* pipeline = shader->getPipeline();
-
-	shader->getPipeline()->setCBufferVar("mat_color", &m_color, sizeof(glm::vec3));
-	shader->getPipeline()->setCBufferVar("mat_thickness", &m_thickness, sizeof(float));
+	shader->setCBufferVar("mat_color", &m_color, sizeof(glm::vec3));
+	shader->setCBufferVar("mat_thickness", &m_thickness, sizeof(float));
 }
 
 void OutlineMaterial::setColor(const glm::vec3& color) {

@@ -1,5 +1,5 @@
 #pragma once
-#include "Sail/graphics/shader/Shader.h"
+#include "Sail/api/shader/Shader.h"
 
 class ComputeShaderDispatcher {
 public:

@@ -568,44 +568,9 @@ void DX12API::resizeBuffers(UINT width, UINT height) {
 	
 }
 
-void DX12API::setDepthMask(DepthMask setting) {
-
-	/*switch (setting) {
-		case DepthMask::NO_MASK:		m_deviceContext->OMSetDepthStencilState(m_depthStencilStateEnabled, 1);
-		break;
-		case DepthMask::WRITE_MASK:	m_deviceContext->OMSetDepthStencilState(m_depthStencilStateWriteMask, 1);
-		break;
-		case DepthMask::BUFFER_DISABLED: m_deviceContext->OMSetDepthStencilState(m_depthStencilStateDisabled, 1);
-		break;
-	}*/
-
-}
-
-void DX12API::setFaceCulling(Culling setting) {
-
-	/*switch (setting) {
-		case Culling::NO_CULLING: m_deviceContext->RSSetState(m_rasterStateNoCulling);
-		break;
-		case Culling::FRONTFACE:  m_deviceContext->RSSetState(m_rasterStateFrontfaceCulling);
-		break;
-		case Culling::BACKFACE:	  m_deviceContext->RSSetState(m_rasterStateBackfaceCulling);
-		break;
-	}*/
-
-}
-
-void DX12API::setBlending(Blending setting) {
-
-	/*switch (setting) {
-		case Blending::NO_BLENDING:	m_deviceContext->OMSetBlendState(m_blendStateDisabled, NULL, 0xffffff);
-		break;
-		case Blending::ALPHA:		m_deviceContext->OMSetBlendState(m_blendStateAlpha, NULL, 0xffffff);
-		break;
-		case Blending::ADDITIVE:	m_deviceContext->OMSetBlendState(m_blendStateAdditive, NULL, 0xffffff);
-		break;
-	}*/
-
-}
+void DX12API::setDepthMask(DepthMask setting) { /* Defined the the PSO */ }
+void DX12API::setFaceCulling(Culling setting) { /* Defined the the PSO */ }
+void DX12API::setBlending(Blending setting) { /* Defined the the PSO */ }
 
 void DX12API::clear(const glm::vec4& color) {
 	m_clearColor[0] = color.r;

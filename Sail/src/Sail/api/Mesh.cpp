@@ -4,12 +4,12 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "Sail/Application.h"
-#include "Sail/api/shader/ShaderPipeline.h"
-#include "Sail/graphics/shader/Shader.h"
+#include "Sail/api/shader/PipelineStateObject.h"
+#include "Sail/api/shader/Shader.h"
 
-Mesh::Mesh(Data& buildData, Shader* shader)
+Mesh::Mesh(Data& buildData)
 	: meshData(buildData) 
-	, shader(shader)
+	, shader(nullptr)
 { }
 
 Mesh::~Mesh() {
@@ -22,8 +22,38 @@ Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.texCoords);
 }
 
+void Mesh::useShader(Shader* shader) {
+	this->shader = shader;
+}
+
 Shader* Mesh::getShader() const {
 	return shader;
+}
+
+unsigned int Mesh::getAttributesHash() {
+	unsigned int hash = 0;
+	unsigned int mul = 1;
+	if (meshData.positions) {
+		hash = InputLayout::POSITION;
+		mul *= 10;
+	}
+	if (meshData.texCoords) {
+		hash += InputLayout::TEXCOORD * mul;
+		mul *= 10;
+	}
+	if (meshData.normals) {
+		hash += InputLayout::NORMAL * mul;
+		mul *= 10;
+	}
+	if (meshData.tangents) {
+		hash += InputLayout::TANGENT * mul;
+		mul *= 10;
+	}
+	if (meshData.bitangents) {
+		hash += InputLayout::BITANGENT * mul;
+		mul *= 10;
+	}
+	return hash;
 }
 
 unsigned int Mesh::getNumVertices() const {
@@ -83,3 +113,14 @@ void Mesh::Data::deepCopy(const Data& other) {
 			this->bitangents[i] = other.bitangents[i];
 	}
 }
+
+//unsigned int Mesh::Data::calculateVertexStride() const {
+//	unsigned int stride = 0.f;
+//	if (positions) stride += sizeof(Mesh::vec3);
+//	if (normals) stride += sizeof(Mesh::vec3);
+//	if (colors) stride += sizeof(Mesh::vec4);
+//	if (texCoords) stride += sizeof(Mesh::vec2);
+//	if (tangents) stride += sizeof(Mesh::vec3);
+//	if (bitangents) stride += sizeof(Mesh::vec3);
+//	return stride;
+//}

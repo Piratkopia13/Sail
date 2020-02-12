@@ -1,14 +1,13 @@
 #include "pch.h"
 #include "Environment.h"
 #include "Sail/Application.h"
-#include "shader/basic/CubeMapShader.h"
 #include "geometry/factory/CubeModel.h"
 #include "../entities/components/Components.h"
 #include "material/TexturesMaterial.h"
 
 Environment::Environment(const std::string& folderName) {
 	// Create a skybox
-	auto* cubemapShader = &Application::getInstance()->getResourceManager().getShaderSet<CubemapShader>();
+	auto* cubemapShader = &Application::getInstance()->getResourceManager().getShaderSet(ShaderIdentifier::CubemapShader);
 
 	m_skyboxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), cubemapShader);
 

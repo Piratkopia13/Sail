@@ -3,19 +3,19 @@
 #include "Sail/Application.h"
 #include "DX12Utils.h"
 
-VertexBuffer* VertexBuffer::Create(const InputLayout& inputLayout, const Mesh::Data& modelData, bool allowUpdates) {
-	return SAIL_NEW DX12VertexBuffer(inputLayout, modelData, allowUpdates);
+VertexBuffer* VertexBuffer::Create(const Mesh::Data& modelData, bool allowUpdates) {
+	return SAIL_NEW DX12VertexBuffer(modelData, allowUpdates);
 }
 
 // When allowUpdates is enabled, there will exist one vertex buffer for each GPUBuffer,
 // otherwise there will only be one buffer since it is not allowed to change between frames
-DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::Data& modelData, bool allowUpdates)
-	: VertexBuffer(inputLayout, modelData.numVertices)
+DX12VertexBuffer::DX12VertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
+	: VertexBuffer(modelData)
 	, m_allowUpdates(allowUpdates)
 {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-	void* vertices = getVertexData(modelData);
+	void* vertices = mallocVertexData(modelData);
 	
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	auto numSwapBuffers = (m_allowUpdates) ? m_context->getNumGPUBuffers() : 1;
@@ -26,7 +26,7 @@ DX12VertexBuffer::DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::D
 	m_uploadVertexBuffers.resize(numSwapBuffers);
 	m_defaultVertexBuffers.resize(numSwapBuffers);
 
-	m_byteSize = getVertexDataSize();
+	m_byteSize = getVertexBufferSize();
 
 	for (unsigned int i = 0; i < numSwapBuffers; i++) {
 		m_uploadVertexBuffers[i].Attach(DX12Utils::CreateBuffer(m_context->getDevice(), m_byteSize,
@@ -63,12 +63,37 @@ void DX12VertexBuffer::bind(void* cmdList) {
 	// Make sure it has been initialized
 	init(dxCmdList);
 
-	D3D12_VERTEX_BUFFER_VIEW vbView = {};
-	vbView.BufferLocation = m_defaultVertexBuffers[frameIndex]->GetGPUVirtualAddress();
-	vbView.SizeInBytes = static_cast<UINT>(getVertexDataSize());
-	vbView.StrideInBytes = static_cast<UINT>(getVertexDataStride());
+	D3D12_VERTEX_BUFFER_VIEW vbView[5];
+	vbView[0].SizeInBytes = static_cast<UINT>(getPositionsDataSize());
+	vbView[0].BufferLocation = m_defaultVertexBuffers[frameIndex]->GetGPUVirtualAddress();
+	vbView[0].StrideInBytes = static_cast<UINT>(sizeof(Mesh::vec3));
+
+	vbView[1].SizeInBytes = static_cast<UINT>(getTexCoordsDataSize());
+	vbView[1].BufferLocation = vbView[0].BufferLocation + vbView[0].SizeInBytes;
+	vbView[1].StrideInBytes = static_cast<UINT>(sizeof(Mesh::vec2));
+
+	vbView[2].SizeInBytes = static_cast<UINT>(getNormalsDataSize());
+	vbView[2].BufferLocation = vbView[1].BufferLocation + vbView[1].SizeInBytes;
+	vbView[2].StrideInBytes = static_cast<UINT>(sizeof(Mesh::vec3));
+
+	vbView[3].SizeInBytes = static_cast<UINT>(getTangentsDataSize());
+	vbView[3].BufferLocation = vbView[2].BufferLocation + vbView[2].SizeInBytes;
+	vbView[3].StrideInBytes = static_cast<UINT>(sizeof(Mesh::vec3));
+
+	vbView[4].SizeInBytes = static_cast<UINT>(getBitangentsDataSize());
+	vbView[4].BufferLocation = vbView[3].BufferLocation + vbView[3].SizeInBytes;
+	vbView[4].StrideInBytes = static_cast<UINT>(sizeof(Mesh::vec3));
+
+	// Bind all missing attributes to the zero buffer (last 3 floats)
+	for (unsigned int i = 0; i < ARRAYSIZE(vbView); i++) {
+		if (vbView[i].SizeInBytes == 0) {
+			vbView[i].BufferLocation = m_defaultVertexBuffers[frameIndex]->GetGPUVirtualAddress() + m_byteSize - sizeof(float) * 3;
+			vbView[i].StrideInBytes = sizeof(float);
+			vbView[i].SizeInBytes = sizeof(float) * 3;
+		}
+	}
 	
-	dxCmdList->IASetVertexBuffers(0, 1, &vbView);
+	dxCmdList->IASetVertexBuffers(0, 5, vbView);
 }
 
 void DX12VertexBuffer::update(Mesh::Data& data) {
@@ -76,17 +101,17 @@ void DX12VertexBuffer::update(Mesh::Data& data) {
 
 	if (!m_allowUpdates) {
 		assert(false);
-		Logger::Error("update() was called on a VertexBuffer what was created without the allowUpdate flag!");
+		Logger::Error("update() was called on a VertexBuffer that was created without the allowUpdate flag!");
 		return;
 	}
 
 	auto frameIndex = m_context->getSwapIndex();
-	void* vertices = getVertexData(data);
+	void* vertices = mallocVertexData(data);
 	// Place vertices in the buffer
 	void* pData;
 	D3D12_RANGE readRange{ 0, 0 };
 	ThrowIfFailed(m_uploadVertexBuffers[frameIndex]->Map(0, &readRange, &pData));
-	memcpy(pData, vertices, getVertexDataSize());
+	memcpy(pData, vertices, getVertexBufferSize());
 	m_uploadVertexBuffers[frameIndex]->Unmap(0, nullptr);
 	free(vertices);
 

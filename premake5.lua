@@ -129,8 +129,9 @@ project "Sail"
 		"**/Skybox.*",
 		"**/ParticleEmitter.*",
 		"%{prj.name}/src/Sail/graphics/shadows/**",
-		"%{prj.name}/src/Sail/graphics/shader/postprocess/**",
-		"%{prj.name}/src/Sail/graphics/shader/instanced/**",
+		"%{prj.name}/src/Sail/graphics/shader/basic/**",
+		"%{prj.name}/src/Sail/graphics/shader/compute/**",
+		"%{prj.name}/src/Sail/graphics/shader/material/**",
 		"%{prj.name}/src/Sail/graphics/shader/deferred/**",
 		"%{prj.name}/src/Sail/graphics/postprocessing/**",
 		"**/Quadtree.*"

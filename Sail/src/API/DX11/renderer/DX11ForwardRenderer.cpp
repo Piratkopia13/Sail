@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "DX11ForwardRenderer.h"
-#include "Sail/api/shader/ShaderPipeline.h"
+#include "Sail/api/shader/PipelineStateObject.h"
 #include "Sail/graphics/light/LightSetup.h"
 #include "Sail/graphics/shader/Shader.h"
 
@@ -20,7 +20,7 @@ DX11ForwardRenderer::~DX11ForwardRenderer() { }
 
 void DX11ForwardRenderer::present(RenderableTexture* output) {
 	for (RenderCommand& command : commandQueue) {
-		ShaderPipeline* shaderPipeline = command.mesh->getShader()->getPipeline();
+		PipelineStateObject* shaderPipeline = command.mesh->getShader()->getPipeline();
 		shaderPipeline->bind();
 
 		shaderPipeline->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));

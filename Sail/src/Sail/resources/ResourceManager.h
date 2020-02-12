@@ -5,9 +5,9 @@
 #include "TextureData.h"
 #include "Sail/api/Texture.h"
 #include "ParsedScene.h"
-
-class ShaderPipeline;
-class Shader;
+#include "Sail/api/shader/Shader.h"
+#include "Sail/api/shader/PipelineStateObject.h"
+#include "Sail/graphics/shader/Shaders.h"
 
 class ResourceManager {
 public:
@@ -30,15 +30,15 @@ public:
 	std::shared_ptr<Model> getModel(const std::string& filename, Shader* shader, bool useAbsolutePath = false);
 	bool hasModel(const std::string& filename);
 
-	// ShaderSets
-	template <typename T>
-	void loadShaderSet();
-	template <typename T>
-	T& getShaderSet();
-	template <typename T>
-	bool hasShaderSet();
-	template <typename T>
-	void reloadShader();
+	// Shaders
+	void loadShaderSet(ShaderIdentifier shaderIdentifier);
+	Shader& getShaderSet(ShaderIdentifier shaderIdentifier);
+	bool hasShaderSet(ShaderIdentifier shaderIdentifier);
+	void reloadShader(ShaderIdentifier shaderIdentifier);
+
+	// PipelineStateObjects (PSOs)
+	// mesh may be null when shader is a compute shader
+	PipelineStateObject& getPSO(Shader* shader, Mesh* mesh = nullptr);
 
 private:
 	// Textures mapped to their filenames
@@ -46,44 +46,29 @@ private:
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
 	// Models mapped to their filenames
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
-	// ShaderSets mapped to their identifiers
-	std::map<std::string, Shader*> m_shaderSets;
+	// Shaders mapped to their identifiers
+	std::map<ShaderIdentifier, Shader*> m_shaders;
+	std::map<ShaderIdentifier, ShaderSettings> m_shaderSettings;
+	// PipelineStateObjects mapped to attribute and shader hashes
+	std::map<unsigned int, std::unique_ptr<PipelineStateObject>> m_psos;
 };
 
-template <typename T>
-void ResourceManager::loadShaderSet() {
-	// Insert and get the new ShaderSet
-	//m_shaderSets.insert({ typeid(T).name(), std::make_unique<T>() });
-	m_shaderSets.insert({ typeid(T).name(), SAIL_NEW T() });
-}
-
-template <typename T>
-T& ResourceManager::getShaderSet() {
-	auto pos = m_shaderSets.find(typeid(T).name());
-	if (pos == m_shaderSets.end()) {
-		// ShaderSet was not yet loaded, load it and return
-		loadShaderSet<T>();
-		return dynamic_cast<T&>(*(m_shaderSets.find(typeid(T).name())->second));
-	}
-
-	return dynamic_cast<T&>(*pos->second);
-}
-
-template <typename T>
-bool ResourceManager::hasShaderSet() {
-	return m_shaderSets.find(typeid(T).name()) != m_shaderSets.end();
-}
-
-template <typename T>
-void ResourceManager::reloadShader() {
-	std::string name = typeid(T).name();
-	auto it = m_shaderSets.find(name);
-	if (it == m_shaderSets.end()) {
-		Logger::Log("Cannot reload shader " + name + " since it is not loaded in the first place.");
-		return;
-	}
-	T* shader = dynamic_cast<T*>(it->second);
-	shader->~T();
-	shader = new (shader) T();
-	Logger::Log("Reloaded shader " + name);
-}
+//
+//template <typename T>
+//bool ResourceManager::hasShaderSet() {
+//	return m_shaderSets.find(typeid(T).name()) != m_shaderSets.end();
+//}
+//
+//template <typename T>
+//void ResourceManager::reloadShader() {
+//	std::string name = typeid(T).name();
+//	auto it = m_shaderSets.find(name);
+//	if (it == m_shaderSets.end()) {
+//		Logger::Log("Cannot reload shader " + name + " since it is not loaded in the first place.");
+//		return;
+//	}
+//	T* shader = dynamic_cast<T*>(it->second);
+//	shader->~T();
+//	shader = new (shader) T();
+//	Logger::Log("Reloaded shader " + name);
+//}

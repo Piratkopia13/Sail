@@ -1,13 +1,14 @@
 #include "pch.h"
 #include "DX12ForwardRenderer.h"
-#include "Sail/api/shader/ShaderPipeline.h"
+#include "Sail/api/shader/PipelineStateObject.h"
 #include "Sail/graphics/light/LightSetup.h"
-#include "Sail/graphics/shader/Shader.h"
+#include "Sail/api/shader/Shader.h"
 #include "Sail/Application.h"
 #include "../DX12Utils.h"
-#include "../shader/DX12ShaderPipeline.h"
+#include "../shader/DX12PipelineStateObject.h"
 #include "../resources/DescriptorHeap.h"
 #include <unordered_set>
+#include "../shader/DX12Shader.h"
 
 Renderer* Renderer::Create(Renderer::Type type) {
 	switch (type) {
@@ -66,32 +67,37 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	}
 
 	// Keep track of unique shader pipelines used this frame
-	std::unordered_set<DX12ShaderPipeline*> uniqueShaderPipelines;
+	//std::unordered_set<DX12PipelineStateObject*> uniqueShaderPipelines;
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("commandQueue loop");
+
+		auto& resman = Application::getInstance()->getResourceManager();
 
 		// TODO: Sort meshes according to shaderPipeline
 		unsigned int totalInstances = commandQueue.size();
 		for (RenderCommand& command : commandQueue) {
-			DX12ShaderPipeline* shaderPipeline = static_cast<DX12ShaderPipeline*>(command.mesh->getShader()->getPipeline());
-			uniqueShaderPipelines.insert(shaderPipeline);
+			DX12Shader* shader = static_cast<DX12Shader*>(command.mesh->getShader());
+			//uniqueShaderPipelines.insert(shaderPipeline);
 
 			// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
-			shaderPipeline->reserve(totalInstances);
+			shader->reserve(totalInstances);
 
-			shaderPipeline->bind(cmdList.Get());
+			// Find a matching pipelineStateObject and bind it
+			auto& pso = resman.getPSO(shader, command.mesh);
+			pso.bind(cmdList.Get());
+			//shaderPipeline->bind(command.mesh->getInputLayout(), cmdList.Get());
 
-			shaderPipeline->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
-			shaderPipeline->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-			shaderPipeline->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
-			shaderPipeline->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
-			shaderPipeline->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+			shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
+			shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
+			shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
+			shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
+			shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 
 			if (lightSetup) {
 				auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
 				auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
-				shaderPipeline->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
-				shaderPipeline->trySetCBufferVar("pointLights", plData, plDataByteSize);
+				shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
+				shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
 			}
 
 			command.mesh->draw(*this, command.material, environment, cmdList.Get());
@@ -99,9 +105,9 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 	}
 
 	// Reset pipelines so that they will re-bind the next frame
-	for (auto* shaderPipeline : uniqueShaderPipelines) {
+	/*for (auto* shaderPipeline : uniqueShaderPipelines) {
 		shaderPipeline->unbind();
-	}
+	}*/
 
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Execution");

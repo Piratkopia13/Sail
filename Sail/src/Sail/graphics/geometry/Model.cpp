@@ -5,7 +5,8 @@ Model::Model(Mesh::Data& buildData, Shader* shader, const std::string& name)
 	: m_name(name)
 {
 	// TODO: reuse mesh if it has already been loaded
-	m_meshes.push_back(std::unique_ptr<Mesh>(Mesh::Create(buildData, shader)));
+	auto& mesh = m_meshes.emplace_back(Mesh::Create(buildData));
+	mesh->useShader(shader);
 }
 
 Model::Model(const std::string& name)

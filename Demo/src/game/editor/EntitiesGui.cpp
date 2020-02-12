@@ -141,12 +141,12 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 				if (ImGui::ListBox("##hideLabel", &selectedNewComponentIndex, componentNames, IM_ARRAYSIZE(componentNames))) {
 
 					if (selectedNewComponentIndex == 0) {
-						auto* defaultShader = &Application::getInstance()->getResourceManager().getShaderSet<OutlineShader>();
+						auto* defaultShader = &Application::getInstance()->getResourceManager().getShaderSet(ShaderIdentifier::PBRMaterialShader);
 						m_selectedEntity->addComponent<ModelComponent>(ModelFactory::CubeModel::Create(glm::vec3(0.5f), defaultShader));
 					} else if (selectedNewComponentIndex == 1) {
 						m_selectedEntity->addComponent<TransformComponent>();
 					} else if (selectedNewComponentIndex == 2) {
-						m_selectedEntity->addComponent<MaterialComponent<OutlineMaterial>>();
+						m_selectedEntity->addComponent<MaterialComponent<PBRMaterial>>();
 					} else if (selectedNewComponentIndex == 3) {
 						m_selectedEntity->addComponent<PointLightComponent>();
 					} else if (selectedNewComponentIndex == 4) {

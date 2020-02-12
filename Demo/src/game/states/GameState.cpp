@@ -26,7 +26,7 @@ GameState::GameState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* shader = &m_app->getResourceManager().getShaderSet<PhongMaterialShader>();
+	auto* shader = &m_app->getResourceManager().getShaderSet(ShaderIdentifier::PhongMaterialShader);
 
 	// Create/load models
 	auto cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
@@ -177,7 +177,7 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
-		m_app->getResourceManager().reloadShader<PhongMaterialShader>();
+		m_app->getResourceManager().reloadShader(ShaderIdentifier::PhongMaterialShader);
 	}
 
 	return true;

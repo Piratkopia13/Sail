@@ -2,69 +2,72 @@
 #include "VertexBuffer.h"
 #include "Sail/utils/Utils.h"
 
-VertexBuffer::VertexBuffer(const InputLayout& inputLayout, unsigned int numVertices)
-	: inputLayout(inputLayout) 
+VertexBuffer::VertexBuffer(const Mesh::Data& modelData)
+	: m_vertices(nullptr)
 {
-	m_stride = inputLayout.getVertexSize();
-	if (m_stride == 0) {
-		Logger::Error("Input layout not set up properly in shader");
-		__debugbreak();
-	}
-	m_byteSize = numVertices * m_stride;
+	/*m_stride = modelData.calculateVertexStride();
+	m_byteSize = modelData.numVertices * m_stride;*/
+	m_positionsByteSize = (modelData.positions) ? sizeof(Mesh::vec3) * modelData.numVertices : 0;
+	m_texCoordsByteSize = (modelData.texCoords) ? sizeof(Mesh::vec2) * modelData.numVertices : 0;
+	m_normalsByteSize = (modelData.normals) ? sizeof(Mesh::vec3) * modelData.numVertices : 0;
+	m_tangentsByteSize = (modelData.tangents) ? sizeof(Mesh::vec3) * modelData.numVertices : 0;
+	m_bitangentsByteSize = (modelData.bitangents) ? sizeof(Mesh::vec3) * modelData.numVertices : 0;
+	m_byteSize = m_positionsByteSize + m_texCoordsByteSize + m_normalsByteSize + m_tangentsByteSize + m_bitangentsByteSize + sizeof(float) * 3;
 }
 
-void* VertexBuffer::getVertexData(const Mesh::Data& modelData) {
-	void* vertices = malloc(modelData.numVertices * m_stride);
-
-	UINT byteOffset = 0;
-	for (UINT i = 0; i < modelData.numVertices; i++) {
-		// Loop through the input layout to get the order the data should have
-		for (const InputLayout::InputType& inputType : inputLayout.getOrderedInputs()) {
-			void* addr = (char*)vertices + byteOffset;
-
-			if (inputType == InputLayout::POSITION) {
-				UINT size = sizeof(glm::vec3);
-				memcpy(addr, &modelData.positions[i], size);
-				byteOffset += size;
-			} else if (inputType == InputLayout::TEXCOORD) {
-				UINT size = sizeof(glm::vec2);
-				// Check if model data contains texCoords
-				if (modelData.texCoords)
-					memcpy(addr, &modelData.texCoords[i], size);
-				else
-					memset(addr, 0, size);
-				byteOffset += size;
-			} else if (inputType == InputLayout::NORMAL) {
-				UINT size = sizeof(glm::vec3);
-				if (modelData.normals)
-					memcpy(addr, &modelData.normals[i], size);
-				else
-					memset(addr, 0, size);
-				byteOffset += size;
-			} else if (inputType == InputLayout::TANGENT) {
-				UINT size = sizeof(glm::vec3);
-				if (modelData.tangents)
-					memcpy(addr, &modelData.tangents[i], size);
-				else
-					memset(addr, 0, size);
-				byteOffset += size;
-			} else if (inputType == InputLayout::BITANGENT) {
-				UINT size = sizeof(glm::vec3);
-				if (modelData.bitangents)
-					memcpy(addr, &modelData.bitangents[i], size);
-				else
-					memset(addr, 0, size);
-				byteOffset += size;
-			}
-		}
+void* VertexBuffer::mallocVertexData(const Mesh::Data& modelData) {
+	void* vertices = malloc(m_byteSize);
+	char* addr = (char*)vertices;
+	if (modelData.positions) {
+		memcpy(addr, &modelData.positions->vec, m_positionsByteSize);
+		addr += m_positionsByteSize;
 	}
+	if (modelData.texCoords) {
+		memcpy(addr, &modelData.texCoords->vec, m_texCoordsByteSize);
+		addr += m_texCoordsByteSize;
+	} 
+	if (modelData.normals) {
+		memcpy(addr, &modelData.normals->vec, m_normalsByteSize);
+		addr += m_normalsByteSize;
+	}
+	if (modelData.tangents) {
+		memcpy(addr, &modelData.tangents->vec, m_tangentsByteSize);
+		addr += m_tangentsByteSize;
+	}
+	if (modelData.bitangents) {
+		memcpy(addr, &modelData.bitangents->vec, m_bitangentsByteSize);
+		addr += m_bitangentsByteSize;
+	}
+	// Set last 3 floats to 0, this will be bound to any shader inputs that tries to access data not available in the mesh
+	memset(addr, 0.f, sizeof(float) * 3);
+
 	return vertices;
 }
 
-unsigned int VertexBuffer::getVertexDataSize() const {
-	return m_byteSize;
+unsigned int VertexBuffer::getPositionsDataSize() const {
+	return m_positionsByteSize;
 }
 
-unsigned int VertexBuffer::getVertexDataStride() const {
-	return m_stride;
+unsigned int VertexBuffer::getTexCoordsDataSize() const {
+	return m_texCoordsByteSize;
 }
+
+unsigned int VertexBuffer::getNormalsDataSize() const {
+	return m_normalsByteSize;
+}
+
+unsigned int VertexBuffer::getTangentsDataSize() const {
+	return m_tangentsByteSize;
+}
+
+unsigned int VertexBuffer::getBitangentsDataSize() const {
+	return m_bitangentsByteSize;
+}
+
+unsigned int VertexBuffer::getVertexBufferSize() const {
+	return m_byteSize;
+}
+//
+//unsigned int VertexBuffer::getVertexDataStride() const {
+//	return m_stride;
+//}

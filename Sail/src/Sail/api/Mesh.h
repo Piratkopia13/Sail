@@ -45,6 +45,7 @@ public:
 	struct Data {
 		Data() : numIndices(0), numInstances(0), indices(nullptr), numVertices(0), normals(nullptr), positions(nullptr), colors(nullptr), texCoords(nullptr), tangents(nullptr), bitangents(nullptr) {};
 		void deepCopy(const Data& other);
+		//unsigned int calculateVertexStride() const;
 		unsigned int numIndices;
 		unsigned long* indices;
 		unsigned int numVertices;
@@ -58,13 +59,17 @@ public:
 	};
 
 public:
-	static Mesh* Create(Data& buildData, Shader* shader);
-	Mesh(Data& buildData, Shader* shader);
+	static Mesh* Create(Data& buildData);
+	Mesh(Data& buildData);
 	virtual ~Mesh();
 
+	void useShader(Shader* shader);
 	virtual void draw(const Renderer& renderer, Material* material, Environment* environment, void* cmdList = nullptr) = 0;
 
 	Shader* getShader() const;
+
+	// Returns a unique hash for the combination of vertex data used in the mesh (positions, normals, etc)
+	unsigned int getAttributesHash();
 
 	unsigned int getNumVertices() const;
 	unsigned int getNumIndices() const;

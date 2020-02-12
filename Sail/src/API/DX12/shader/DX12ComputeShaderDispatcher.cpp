@@ -4,7 +4,8 @@
 #include "../resources/DescriptorHeap.h"
 #include "../resources/DX12Texture.h"
 #include "../DX12Utils.h"
-#include "API/DX12/shader/DX12ShaderPipeline.h"
+#include "API/DX12/shader/DX12PipelineStateObject.h"
+#include "DX12Shader.h"
 
 ComputeShaderDispatcher* ComputeShaderDispatcher::Create() {
 	return SAIL_NEW DX12ComputeShaderDispatcher();
@@ -24,12 +25,13 @@ void DX12ComputeShaderDispatcher::begin(void* cmdList) {
 }
 
 void DX12ComputeShaderDispatcher::dispatch(Shader& computeShader, const glm::vec3& threadGroupCount, void* cmdList) {
-	assert(computeShader.getPipeline()->isComputeShader()); // Not a compute shader
-	auto* dxShaderPipeline = static_cast<DX12ShaderPipeline*>(computeShader.getPipeline());
+	assert(computeShader.isComputeShader()); // Not a compute shader
+	//auto* dxShaderPipeline = static_cast<DX12PipelineStateObject*>(computeShader.getPipeline()); // TODO: fix
+	auto& shaderPipeline = Application::getInstance()->getResourceManager().getPSO(&computeShader);
 	
 
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-	const auto& settings = computeShader.getComputeSettings();
+	//const auto& settings = computeShader.getSettings().computeShaderSettings;
 
 	//// Resize output textures
 	//for (unsigned int i = 0; i < settings->numOutputTextures; i++) {
@@ -54,7 +56,7 @@ void DX12ComputeShaderDispatcher::dispatch(Shader& computeShader, const glm::vec
 	//	m_context->getMainGPUDescriptorHeap()->getAndStepIndex(10 - settings->numInputTextures);
 	//}
 	// Bind output resources
-	dxShaderPipeline->bind(dxCmdList);
+	shaderPipeline.bind(dxCmdList); // TODO: FIX
 
 	assert(threadGroupCount.x <= D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION && "There are too many x threads!!");
 	assert(threadGroupCount.y <= D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION && "There are too many y threads!!");
@@ -62,7 +64,7 @@ void DX12ComputeShaderDispatcher::dispatch(Shader& computeShader, const glm::vec
 
 	dxCmdList->Dispatch(threadGroupCount.x, threadGroupCount.y, threadGroupCount.z);
 
-	dxShaderPipeline->instanceFinished();
+	static_cast<DX12Shader&>(computeShader).instanceFinished(); // TOOD: fIX
 
 	//return *computeShader.getComputeOutput();
 }

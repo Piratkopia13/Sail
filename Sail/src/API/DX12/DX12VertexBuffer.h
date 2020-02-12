@@ -4,7 +4,7 @@
 
 class DX12VertexBuffer : public VertexBuffer {
 public:
-	DX12VertexBuffer(const InputLayout& inputLayout, const Mesh::Data& modelData, bool allowUpdates = false);
+	DX12VertexBuffer(const Mesh::Data& modelData, bool allowUpdates = false);
 	~DX12VertexBuffer();
 
 	virtual void bind(void* cmdList) override;

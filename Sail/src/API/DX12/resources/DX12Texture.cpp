@@ -3,8 +3,7 @@
 #include "Sail/Application.h"
 #include "../DX12Utils.h"
 #include "../shader/DX12ComputeShaderDispatcher.h"
-#include "../shader/DX12ShaderPipeline.h"
-#include "Sail/graphics/shader/compute/GenerateMipsComputeShader.h"
+#include "../shader/DX12PipelineStateObject.h"
 #include "DDSTextureLoader/DDSTextureLoader12.cpp"
 
 #include <filesystem>
@@ -66,6 +65,7 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 		DWORD mipCount;
 		_BitScanForward(&mipCount, (m_textureDesc.Width == 1 ? m_textureDesc.Height : m_textureDesc.Width) | (m_textureDesc.Height == 1 ? m_textureDesc.Width : m_textureDesc.Height));
 		m_textureDesc.MipLevels = mipCount + 1;
+		//m_textureDesc.MipLevels = 1;
 
 		// A texture rarely updates its data, if at all, so it is stored in a default heap
 		state[0] = D3D12_RESOURCE_STATE_COPY_DEST;
@@ -222,12 +222,10 @@ const std::string& DX12Texture::getFilename() const {
 void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-	auto& mipsShader = Application::getInstance()->getResourceManager().getShaderSet<GenerateMipsComputeShader>();
+	auto& mipsShader = Application::getInstance()->getResourceManager().getShaderSet(ShaderIdentifier::GenerateMipsComputeShader);
+	auto& settings = mipsShader.getSettings().computeShaderSettings;
 	DX12ComputeShaderDispatcher csDispatcher;
-	const auto& settings = mipsShader.getComputeSettings();
 	csDispatcher.begin(cmdList);
-
-	auto* dxPipeline = mipsShader.getPipeline();
 
 	// TODO: read this from texture data
 	bool isSRGB = false;
@@ -236,7 +234,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 
 	//assert(m_textureDesc.MipLevels <= 5 && "No more than 5 mip levels can currently be generated, see commented line below to add that functionality");
 	for (uint32_t srcMip = 0; srcMip < m_textureDesc.MipLevels - 1u;) {
-		dxPipeline->setCBufferVar("IsSRGB", &isSRGB, sizeof(bool));
+		mipsShader.setCBufferVar("IsSRGB", &isSRGB, sizeof(bool));
 
 		uint64_t srcWidth = m_textureDesc.Width >> srcMip;
 		uint32_t srcHeight = m_textureDesc.Height >> srcMip;
@@ -248,7 +246,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 		// 0b10(2): Width is even, height is odd.
 		// 0b11(3): Both width and height are odd.
 		unsigned int srcDimension = (srcHeight & 1) << 1 | (srcWidth & 1);
-		dxPipeline->setCBufferVar("SrcDimension", &srcDimension, sizeof(unsigned int));
+		mipsShader.setCBufferVar("SrcDimension", &srcDimension, sizeof(unsigned int));
 
 		// How many mipmap levels to compute this pass (max 4 mips per pass)
 		DWORD mipCount;
@@ -271,9 +269,9 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 
 		glm::vec2 texelSize = glm::vec2(1.0f / (float)dstWidth, 1.0f / (float)dstHeight);
 
-		dxPipeline->setCBufferVar("SrcMipLevel", &srcMip, sizeof(unsigned int));
-		dxPipeline->setCBufferVar("NumMipLevels", &mipCount, sizeof(unsigned int));
-		dxPipeline->setCBufferVar("TexelSize", &texelSize, sizeof(glm::vec2));
+		mipsShader.setCBufferVar("SrcMipLevel", &srcMip, sizeof(unsigned int));
+		mipsShader.setCBufferVar("NumMipLevels", &mipCount, sizeof(unsigned int));
+		mipsShader.setCBufferVar("TexelSize", &texelSize, sizeof(glm::vec2));
 
 		const auto& heap = m_context->getMainGPUDescriptorHeap();
 		DescriptorHeap::DescriptorTableInstanceBuilder instance;
@@ -314,8 +312,8 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 		}*/
 
 		// Dispatch compute shader to generate mip levels
-		unsigned int x = (unsigned int)glm::ceil(dstWidth * settings->threadGroupXScale);
-		unsigned int y = (unsigned int)glm::ceil(dstHeight * settings->threadGroupYScale);
+		unsigned int x = (unsigned int)glm::ceil(dstWidth * settings.threadGroupXScale);
+		unsigned int y = (unsigned int)glm::ceil(dstHeight * settings.threadGroupYScale);
 		unsigned int z = 1;
 		csDispatcher.dispatch(mipsShader, { x, y, z }, cmdList);
 

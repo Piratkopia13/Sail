@@ -5,12 +5,12 @@
 #include "../resources/DX11Texture.h"
 #include "../resources/DX11RenderableTexture.h"
 
-ShaderPipeline* ShaderPipeline::Create(const std::string& filename) {
+PipelineStateObject* PipelineStateObject::Create(const std::string& filename) {
 	return SAIL_NEW DX11ShaderPipeline(filename);
 }
 
 DX11ShaderPipeline::DX11ShaderPipeline(const std::string& filename) 
-	: ShaderPipeline(filename)
+	: PipelineStateObject(filename)
 	, m_vs(nullptr)
 	, m_ps(nullptr)
 	, m_ds(nullptr)
@@ -32,7 +32,7 @@ DX11ShaderPipeline::~DX11ShaderPipeline() {
 }
 
 bool DX11ShaderPipeline::bind(void* cmdList) {
-	if (!ShaderPipeline::bind(cmdList)) {
+	if (!PipelineStateObject::bind(cmdList)) {
 		return false;
 	}
 
@@ -119,7 +119,7 @@ void DX11ShaderPipeline::setRenderableTexture(const std::string& name, Renderabl
 }
 
 void DX11ShaderPipeline::compile() {
-	ShaderPipeline::compile();
+	PipelineStateObject::compile();
 
 	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
 

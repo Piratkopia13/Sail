@@ -81,7 +81,8 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 
 			Mesh::Data meshData;
 			getGeometry(mesh, meshData);
-			std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, m_shader));
+			auto mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData));
+			mesh->useShader(m_shader);
 
 			/*if (auto* material = dynamic_cast<PhongMaterial*>(mesh->getMaterial())) {
 				getMaterial(pNode, material);

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <d3d11.h>
-#include "Sail/api/shader/ShaderPipeline.h"
+#include "Sail/api/shader/PipelineStateObject.h"
 
-class DX11ShaderPipeline : public ShaderPipeline {
+class DX11ShaderPipeline : public PipelineStateObject {
 public:
 	DX11ShaderPipeline(const std::string& filename);
 	~DX11ShaderPipeline();

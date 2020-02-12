@@ -33,9 +33,9 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* phongShader = &m_app->getResourceManager().getShaderSet<PhongMaterialShader>();
-	auto* pbrShader = &m_app->getResourceManager().getShaderSet<PBRMaterialShader>();
-	auto* outlineShader = &m_app->getResourceManager().getShaderSet<OutlineShader>();
+	auto* phongShader = &m_app->getResourceManager().getShaderSet(ShaderIdentifier::PhongMaterialShader);
+	auto* pbrShader = &m_app->getResourceManager().getShaderSet(ShaderIdentifier::PBRMaterialShader);
+	auto* outlineShader = &m_app->getResourceManager().getShaderSet(ShaderIdentifier::OutlineShader);
 
 	// Create/load models
 	auto planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), pbrShader, glm::vec2(30.0f));
@@ -123,10 +123,10 @@ bool ModelViewerState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
-		m_app->getResourceManager().reloadShader<PhongMaterialShader>();
-		m_app->getResourceManager().reloadShader<PBRMaterialShader>();
-		m_app->getResourceManager().reloadShader<CubemapShader>();
-		m_app->getResourceManager().reloadShader<OutlineShader>();
+		m_app->getResourceManager().reloadShader(ShaderIdentifier::PhongMaterialShader);
+		m_app->getResourceManager().reloadShader(ShaderIdentifier::PBRMaterialShader);
+		m_app->getResourceManager().reloadShader(ShaderIdentifier::CubemapShader);
+		m_app->getResourceManager().reloadShader(ShaderIdentifier::OutlineShader);
 	}
 
 	return true;
