@@ -22,7 +22,7 @@ void ModelComponent::renderEditorGui(SailGuiWindow* window) {
 		if (ImGui::Button(modelName.c_str(), ImVec2(ImGui::GetColumnWidth(), 0))) {
 			std::string newModel = window->OpenFileDialog(L"FBX models (*.fbx)\0*.fbx");
 			if (!newModel.empty()) {
-				m_model = Application::getInstance()->getResourceManager().getModel(newModel, m_model->getMesh(0)->getShader(), true);
+				m_model = Application::getInstance()->getResourceManager().getModel(newModel, m_model->getMesh(0)->getDefaultShader(), true);
 				Logger::Log("load a new model");
 			}
 		}

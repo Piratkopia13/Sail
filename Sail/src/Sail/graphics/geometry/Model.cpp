@@ -6,7 +6,7 @@ Model::Model(Mesh::Data& buildData, Shader* shader, const std::string& name)
 {
 	// TODO: reuse mesh if it has already been loaded
 	auto& mesh = m_meshes.emplace_back(Mesh::Create(buildData));
-	mesh->useShader(shader);
+	mesh->setDefaultShader(shader);
 }
 
 Model::Model(const std::string& name)

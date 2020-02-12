@@ -9,7 +9,7 @@
 
 Mesh::Mesh(Data& buildData)
 	: meshData(buildData) 
-	, shader(nullptr)
+	, defaultShader(nullptr)
 { }
 
 Mesh::~Mesh() {
@@ -22,12 +22,12 @@ Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.texCoords);
 }
 
-void Mesh::useShader(Shader* shader) {
-	this->shader = shader;
+void Mesh::setDefaultShader(Shader* shader) {
+	this->defaultShader = shader;
 }
 
-Shader* Mesh::getShader() const {
-	return shader;
+Shader* Mesh::getDefaultShader() const {
+	return defaultShader;
 }
 
 unsigned int Mesh::getAttributesHash() {

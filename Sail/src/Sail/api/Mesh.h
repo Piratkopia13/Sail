@@ -63,10 +63,10 @@ public:
 	Mesh(Data& buildData);
 	virtual ~Mesh();
 
-	void useShader(Shader* shader);
-	virtual void draw(const Renderer& renderer, Material* material, Environment* environment, void* cmdList = nullptr) = 0;
+	virtual void draw(const Renderer& renderer, Material* material, Shader* shader, Environment* environment, void* cmdList = nullptr) = 0;
 
-	Shader* getShader() const;
+	Shader* getDefaultShader() const;
+	void setDefaultShader(Shader* shader);
 
 	// Returns a unique hash for the combination of vertex data used in the mesh (positions, normals, etc)
 	unsigned int getAttributesHash();
@@ -78,7 +78,7 @@ public:
 	const IndexBuffer& getIndexBuffer() const;
 
 protected:
-	Shader* shader;
+	Shader* defaultShader;
 
 	std::unique_ptr<VertexBuffer> vertexBuffer;
 	std::unique_ptr<IndexBuffer> indexBuffer;

@@ -10,6 +10,7 @@ class Model;
 class LightSetup;
 class RenderableTexture;
 class Environment;
+class Shader;
 
 class Renderer {
 public:
@@ -24,21 +25,23 @@ public:
 	virtual ~Renderer() {}
 
 	virtual void begin(Camera* camera, Environment* environment);
-	void submit(Model* model, Material* material, const glm::mat4& modelMatrix);
-	virtual void submit(Mesh* mesh, Material* material, const glm::mat4& modelMatrix);
+	void submit(Model* model, Shader* shader, Material* material, const glm::mat4& modelMatrix);
+	virtual void submit(Mesh* mesh, Shader* shader, Material* material, const glm::mat4& modelMatrix);
 	virtual void setLightSetup(LightSetup* lightSetup);
 	virtual void end();
 	virtual void present(RenderableTexture* output = nullptr) = 0;
 
 protected:
 	struct RenderCommand {
-		RenderCommand(Mesh* mesh, Material* material, const glm::mat4& transform)
+		RenderCommand(Mesh* mesh, Shader* shader, Material* material, const glm::mat4& transform)
 			: mesh(mesh)
+			, shader(shader)
 			, material(material)
 			, transform(transform)
 		{}
 
 		Mesh* mesh;
+		Shader* shader;
 		glm::mat4 transform;
 		Material* material;
 	};

@@ -108,12 +108,7 @@ std::shared_ptr<Model> ResourceManager::getModel(const std::string& filename, Sh
 
 		return m_fbxModels.find(filename)->second->getModel();
 	}
-
-	auto foundModel = pos->second->getModel();
-	if (foundModel->getMesh(0)->getShader() != shader)
-		Logger::Error("Tried to get model from resource manager that has already been loaded with a different shader!");
-
-	return foundModel;
+	return pos->second->getModel();
 }
 bool ResourceManager::hasModel(const std::string& filename) {
 	return m_fbxModels.find(filename) != m_fbxModels.end();

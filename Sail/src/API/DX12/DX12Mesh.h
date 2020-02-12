@@ -8,7 +8,7 @@ public:
 	DX12Mesh(Data& buildData);
 	~DX12Mesh();
 
-	virtual void draw(const Renderer& renderer, Material* material, Environment* environment, void* cmdList) override;
+	virtual void draw(const Renderer& renderer, Material* material, Shader* shader, Environment* environment, void* cmdList) override;
 
 private:
 	DX12API* m_context;

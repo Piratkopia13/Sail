@@ -30,8 +30,16 @@ DX12Mesh::~DX12Mesh() {
 	static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 }
 
-void DX12Mesh::draw(const Renderer& renderer, Material* material, Environment* environment, void* cmdList) {
+void DX12Mesh::draw(const Renderer& renderer, Material* material, Shader* shader, Environment* environment, void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
+	if (!shader)
+		shader = defaultShader;
+	if (!shader) {
+		Logger::Warning("Tried to draw mesh with no shader");
+		return;
+	}
+
 	if (material)
 		assert(shader->getMaterialType() == material->getType() && "Shader requires a different material from the one given");
 

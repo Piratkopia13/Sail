@@ -76,7 +76,7 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 		// TODO: Sort meshes according to shaderPipeline
 		unsigned int totalInstances = commandQueue.size();
 		for (RenderCommand& command : commandQueue) {
-			DX12Shader* shader = static_cast<DX12Shader*>(command.mesh->getShader());
+			DX12Shader* shader = static_cast<DX12Shader*>(command.shader);
 			//uniqueShaderPipelines.insert(shaderPipeline);
 
 			// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
@@ -100,7 +100,7 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 				shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
 			}
 
-			command.mesh->draw(*this, command.material, environment, cmdList.Get());
+			command.mesh->draw(*this, command.material, shader, environment, cmdList.Get());
 		}
 	}
 

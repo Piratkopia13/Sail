@@ -15,7 +15,6 @@ Scene::Scene()  {
 
 	// Set up the environment
 	m_environment = std::make_unique<Environment>();
-	addEntity(m_environment->getSkyboxEntity());
 }
 
 Scene::~Scene() { }
@@ -35,16 +34,26 @@ void Scene::draw(Camera& camera) {
 	{
 		SAIL_PROFILE_SCOPE("Submit models");
 
+		// Submit skybox
+		{
+			auto e = m_environment->getSkyboxEntity();
+			auto model = e->getComponent<ModelComponent>();
+			auto transform = e->getComponent<TransformComponent>();
+			auto material = e->getComponent<MaterialComponent<>>();
+			m_renderer->submit(model->getModel().get(), model->getModel()->getMesh(0)->getDefaultShader(), material->get(), transform->getMatrix());
+		}
+
 		// Submit outline meshes first since they have to be drawn before the mesh they outline
-		//for (Entity::SPtr& entity : m_entities) {
-		//	if (entity->isSelectedInGui()) {
-		//		auto model = entity->getComponent<ModelComponent>();
-		//		auto transform = entity->getComponent<TransformComponent>();
-		//		// TODO: allow meshes to be rendered using any shader
-		//		if (model && transform)
-		//			m_renderer->submit(model->getModel().get(), &m_outlineMaterial, transform->getMatrix());
-		//	}
-		//}
+		auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(ShaderIdentifier::OutlineShader);
+		for (Entity::SPtr& entity : m_entities) {
+			if (entity->isSelectedInGui()) {
+				auto model = entity->getComponent<ModelComponent>();
+				auto transform = entity->getComponent<TransformComponent>();
+				
+				if (model && transform)
+					m_renderer->submit(model->getModel().get(), outlineShader, &m_outlineMaterial, transform->getMatrix());
+			}
+		}
 
 		for (Entity::SPtr& entity : m_entities) {
 
@@ -65,7 +74,7 @@ void Scene::draw(Camera& camera) {
 
 				
 			if (model && transform && material) {
-				m_renderer->submit(model->getModel().get(), material, transform->getMatrix());
+				m_renderer->submit(model->getModel().get(), model->getModel()->getMesh(0)->getDefaultShader(), material, transform->getMatrix());
 				entity->setIsBeingRendered(true);
 			} else {
 				// Indicate that the entity is not being rendered for some reason, this may be shown in the gui
