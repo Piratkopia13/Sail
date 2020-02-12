@@ -69,7 +69,7 @@ bool PipelineStateObject::bindInternal(void* cmdList, bool forceIfBound) {
 	shader->bind(cmdList);
 
 	// Set input layout as active
-	//settings.inputLayout->bind();
+	inputLayout->bind();
 
 	// Set this shader as bound
 	CurrentlyBoundPSO = this;

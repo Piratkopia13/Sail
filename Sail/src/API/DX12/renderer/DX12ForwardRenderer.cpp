@@ -85,7 +85,6 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 			// Find a matching pipelineStateObject and bind it
 			auto& pso = resman.getPSO(shader, command.mesh);
 			pso.bind(cmdList.Get());
-			//shaderPipeline->bind(command.mesh->getInputLayout(), cmdList.Get());
 
 			shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
 			shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
