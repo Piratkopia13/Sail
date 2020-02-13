@@ -222,7 +222,7 @@ const std::string& DX12Texture::getFilename() const {
 void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-	auto& mipsShader = Application::getInstance()->getResourceManager().getShaderSet(ShaderIdentifier::GenerateMipsComputeShader);
+	auto& mipsShader = Application::getInstance()->getResourceManager().getShaderSet(Shaders::GenerateMipsComputeShader);
 	auto& settings = mipsShader.getSettings().computeShaderSettings;
 	DX12ComputeShaderDispatcher csDispatcher;
 	csDispatcher.begin(cmdList);

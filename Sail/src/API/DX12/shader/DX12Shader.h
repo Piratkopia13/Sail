@@ -8,7 +8,7 @@ class DX12API;
 
 class DX12Shader : public Shader, public IEventListener {
 public:
-	DX12Shader(ShaderSettings settings);
+	DX12Shader(Shaders::ShaderSettings settings);
 	~DX12Shader();
 
 	virtual void bind(void* cmdList) const override;

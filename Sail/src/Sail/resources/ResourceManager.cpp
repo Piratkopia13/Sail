@@ -6,41 +6,46 @@
 
 ResourceManager::ResourceManager() {
 	{
-		ShaderSettings settings;
+		Shaders::ShaderSettings settings;
 		settings.filename = "PBRMaterialShader.hlsl";
 		settings.materialType = Material::PBR;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
-		m_shaderSettings.insert({ PBRMaterialShader, settings });
+		settings.identifier = Shaders::PBRMaterialShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
 	}
 	{
-		ShaderSettings settings;
+		Shaders::ShaderSettings settings;
 		settings.filename = "PhongMaterialShader.hlsl";
 		settings.materialType = Material::PHONG;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
-		m_shaderSettings.insert({ PhongMaterialShader, settings });
+		settings.identifier = Shaders::PhongMaterialShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
 	}
 	{
-		ShaderSettings settings;
+		Shaders::ShaderSettings settings;
 		settings.filename = "OutlineShader.hlsl";
 		settings.materialType = Material::OUTLINE;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::FRONTFACE;
-		m_shaderSettings.insert({ OutlineShader, settings });
+		settings.identifier = Shaders::OutlineShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
 	}
 	{
-		ShaderSettings settings;
+		Shaders::ShaderSettings settings;
 		settings.filename = "CubemapShader.hlsl";
 		settings.materialType = Material::TEXTURES;
 		settings.defaultPSOSettings.depthMask = GraphicsAPI::BUFFER_DISABLED;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::FRONTFACE;
-		m_shaderSettings.insert({ CubemapShader, settings });
+		settings.identifier = Shaders::CubemapShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
 	}
 	{
-		ShaderSettings settings;
+		Shaders::ShaderSettings settings;
 		settings.filename = "compute/GenerateMipsCS.hlsl";
 		settings.materialType = Material::NONE;
 		settings.computeShaderSettings.threadGroupXScale = 1.0f / 8.0f;
 		settings.computeShaderSettings.threadGroupYScale = 1.0f / 8.0f;
-		m_shaderSettings.insert({ GenerateMipsComputeShader, settings });
+		settings.identifier = Shaders::GenerateMipsComputeShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
 	}
 }
 ResourceManager::~ResourceManager() {
@@ -115,11 +120,11 @@ bool ResourceManager::hasModel(const std::string& filename) {
 	return m_fbxModels.find(filename) != m_fbxModels.end();
 }
 
-void ResourceManager::loadShaderSet(ShaderIdentifier shaderIdentifier) {
+void ResourceManager::loadShaderSet(Shaders::ShaderIdentifier shaderIdentifier) {
 	m_shaders.insert({ shaderIdentifier, Shader::Create(m_shaderSettings[shaderIdentifier]) });
 }
 
-Shader& ResourceManager::getShaderSet(ShaderIdentifier shaderIdentifier) {
+Shader& ResourceManager::getShaderSet(Shaders::ShaderIdentifier shaderIdentifier) {
 	auto pos = m_shaders.find(shaderIdentifier);
 	if (pos == m_shaders.end()) {
 		// ShaderSet was not yet loaded, load it and return
@@ -130,11 +135,11 @@ Shader& ResourceManager::getShaderSet(ShaderIdentifier shaderIdentifier) {
 	return *pos->second;
 }
 
-bool ResourceManager::hasShaderSet(ShaderIdentifier shaderIdentifier) {
+bool ResourceManager::hasShaderSet(Shaders::ShaderIdentifier shaderIdentifier) {
 	return m_shaders.find(shaderIdentifier) != m_shaders.end();
 }
 
-void ResourceManager::reloadShader(ShaderIdentifier shaderIdentifier) {
+void ResourceManager::reloadShader(Shaders::ShaderIdentifier shaderIdentifier) {
 	auto it = m_shaders.find(shaderIdentifier);
 	if (it == m_shaders.end()) {
 		Logger::Log("Cannot reload shader " + std::to_string(shaderIdentifier) + " since it is not loaded in the first place.");

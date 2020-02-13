@@ -40,8 +40,10 @@ void DX12Mesh::draw(const Renderer& renderer, Material* material, Shader* shader
 		return;
 	}
 
-	if (material)
-		assert(shader->getMaterialType() == material->getType() && "Shader requires a different material from the one given");
+	if (material && shader->getMaterialType() != material->getType()) {
+		Logger::Warning("Shader requires a different material from the one given");
+		return;
+	}
 
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	// Set offset in SRV heap for this mesh 

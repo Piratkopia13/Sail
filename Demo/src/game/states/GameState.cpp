@@ -26,7 +26,7 @@ GameState::GameState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* shader = &m_app->getResourceManager().getShaderSet(ShaderIdentifier::PhongMaterialShader);
+	auto* shader = &m_app->getResourceManager().getShaderSet(Shaders::PhongMaterialShader);
 
 	// Create/load models
 	auto cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);

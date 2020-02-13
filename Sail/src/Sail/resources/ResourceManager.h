@@ -31,10 +31,10 @@ public:
 	bool hasModel(const std::string& filename);
 
 	// Shaders
-	void loadShaderSet(ShaderIdentifier shaderIdentifier);
-	Shader& getShaderSet(ShaderIdentifier shaderIdentifier);
-	bool hasShaderSet(ShaderIdentifier shaderIdentifier);
-	void reloadShader(ShaderIdentifier shaderIdentifier);
+	void loadShaderSet(Shaders::ShaderIdentifier shaderIdentifier);
+	Shader& getShaderSet(Shaders::ShaderIdentifier shaderIdentifier);
+	bool hasShaderSet(Shaders::ShaderIdentifier shaderIdentifier);
+	void reloadShader(Shaders::ShaderIdentifier shaderIdentifier);
 	void reloadAllShaders();
 
 	// PipelineStateObjects (PSOs)
@@ -48,8 +48,8 @@ private:
 	// Models mapped to their filenames
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
 	// Shaders mapped to their identifiers
-	std::map<ShaderIdentifier, Shader*> m_shaders;
-	std::map<ShaderIdentifier, ShaderSettings> m_shaderSettings;
+	std::map<Shaders::ShaderIdentifier, Shader*> m_shaders;
+	std::map<Shaders::ShaderIdentifier, Shaders::ShaderSettings> m_shaderSettings;
 	// PipelineStateObjects mapped to attribute and shader hashes
 	std::map<unsigned int, std::unique_ptr<PipelineStateObject>> m_psos;
 };

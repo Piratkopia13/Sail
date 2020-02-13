@@ -4,15 +4,9 @@
 #include "Sail/graphics/material/Material.h"
 
 #include "Sail/api/gui/SailGuiWindow.h"
-//#include "imgui.h"
-//#include "glm/gtc/type_ptr.hpp"
-//#include "Sail/api/Texture.h"
-//#include "Sail/graphics/geometry/Model.h"
-//#include "Sail/utils/Utils.h"
 #include "Sail/graphics/material/PhongMaterial.h"
 #include "Sail/graphics/material/PBRMaterial.h"
-//#include "Sail/graphics/material/TexturesMaterial.h"
-//#include "imgui_internal.h"
+#include "Sail/graphics/material/OutlineMaterial.h"
 
 template <typename T = Material>
 class MaterialComponent : public Component {
@@ -32,16 +26,18 @@ public:
 
 	void renderEditorGui(SailGuiWindow* window) override {
 		window->enableColumns();
-		PhongMaterial* phongMat = nullptr;
-		if (phongMat = dynamic_cast<PhongMaterial*>(m_material.get())) {
+		if (PhongMaterial* phongMat = dynamic_cast<PhongMaterial*>(m_material.get())) {
 			renderPhongMaterialGui(window, phongMat);
+			return;
+		}
+		if (OutlineMaterial* outlineMat = dynamic_cast<OutlineMaterial*>(m_material.get())) {
+			renderOutlineMaterialGui(window, outlineMat);
 			return;
 		}
 
 		window->disableColumns();
-		window->enableColumns(120.f);
-		PBRMaterial* pbrMat = nullptr;
-		if (pbrMat = dynamic_cast<PBRMaterial*>(m_material.get())) {
+		window->enableColumns(120.f);;
+		if (PBRMaterial* pbrMat = dynamic_cast<PBRMaterial*>(m_material.get())) {
 			renderPBRMaterialGui(window, pbrMat);
 			return;
 		}
@@ -114,7 +110,6 @@ private:
 		});
 		window->setOption("setWidth", true);
 	}
-
 	void renderPBRMaterialGui(SailGuiWindow* window, PBRMaterial* material) {
 		window->addProperty("Metalness scale", [&] { ImGui::SliderFloat("##hideLabel", &material->getPBRSettings().metalnessScale, 0.f, 1.f); });
 		window->addProperty("Roughness scale", [&] { ImGui::SliderFloat("##hideLabel", &material->getPBRSettings().roughnessScale, 0.f, 1.f); });
@@ -178,7 +173,20 @@ private:
 		});
 		window->setOption("setWidth", true);
 	}
-
+	void renderOutlineMaterialGui(SailGuiWindow* window, OutlineMaterial* material) {
+		window->addProperty("Color", [&] { 
+			glm::vec3 color = material->getColor();
+			if (ImGui::ColorEdit3("##hideLabel", glm::value_ptr(color))) {
+				material->setColor(color);
+			}
+		});
+		window->addProperty("Thickness", [&] { 
+			float thickness = material->getThickness();
+			if (ImGui::SliderFloat("##hideLabel", &thickness, 0.f, 0.2f)) {
+				material->setThickness(thickness);
+			}
+		});
+	}
 private:
 	const LPCWSTR m_textureFilter;
 	std::shared_ptr<T> m_material;

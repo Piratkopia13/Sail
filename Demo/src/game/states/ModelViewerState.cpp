@@ -33,9 +33,9 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* phongShader = &m_app->getResourceManager().getShaderSet(ShaderIdentifier::PhongMaterialShader);
-	auto* pbrShader = &m_app->getResourceManager().getShaderSet(ShaderIdentifier::PBRMaterialShader);
-	auto* outlineShader = &m_app->getResourceManager().getShaderSet(ShaderIdentifier::OutlineShader);
+	auto* phongShader = &m_app->getResourceManager().getShaderSet(Shaders::PhongMaterialShader);
+	auto* pbrShader = &m_app->getResourceManager().getShaderSet(Shaders::PBRMaterialShader);
+	auto* outlineShader = &m_app->getResourceManager().getShaderSet(Shaders::OutlineShader);
 
 	// Create/load models
 	auto planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), pbrShader, glm::vec2(30.0f));

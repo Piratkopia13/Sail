@@ -7,7 +7,7 @@
 
 Environment::Environment(const std::string& folderName) {
 	// Create a skybox
-	auto* cubemapShader = &Application::getInstance()->getResourceManager().getShaderSet(ShaderIdentifier::CubemapShader);
+	auto* cubemapShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::CubemapShader);
 
 	m_skyboxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), cubemapShader);
 

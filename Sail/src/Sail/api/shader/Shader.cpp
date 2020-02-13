@@ -5,7 +5,7 @@
 const std::string Shader::DEFAULT_SHADER_LOCATION = "res/shaders/";
 unsigned int Shader::s_id = 0;
 
-Shader::Shader(ShaderSettings settings)
+Shader::Shader(Shaders::ShaderSettings settings)
 	: m_filename(settings.filename)
 	, parser(settings.filename)
 	, m_settings(settings)
@@ -40,7 +40,7 @@ unsigned int Shader::getAttributesHash() const {
 	return parser.getParsedData().attributesHash;
 }
 
-const ShaderSettings& Shader::getSettings() const {
+const Shaders::ShaderSettings& Shader::getSettings() const {
 	return m_settings;
 }
 

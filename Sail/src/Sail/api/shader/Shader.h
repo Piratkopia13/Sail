@@ -8,12 +8,12 @@
 class Shader {
 public:
 	// allocAddr is used to allow reloading/recreating shaders without changing their memory address
-	static Shader* Create(ShaderSettings settings, Shader* allocAddr = nullptr);
+	static Shader* Create(Shaders::ShaderSettings settings, Shader* allocAddr = nullptr);
 
 	friend class PipelineStateObject;
 	static const std::string DEFAULT_SHADER_LOCATION;
 	
-	Shader(ShaderSettings settings);
+	Shader(Shaders::ShaderSettings settings);
 	virtual ~Shader();
 
 	// filepath is used for include paths and error messages 
@@ -23,7 +23,7 @@ public:
 
 	unsigned int getID() const;
 	unsigned int getAttributesHash() const;
-	const ShaderSettings& getSettings() const;
+	const Shaders::ShaderSettings& getSettings() const;
 
 	virtual void bind(void* cmdList) const;
 	
@@ -50,7 +50,7 @@ protected:
 
 private:
 	unsigned int m_id;
-	ShaderSettings m_settings;
+	Shaders::ShaderSettings m_settings;
 	std::string m_filename;
 	Material::Type m_materialType;
 	void* m_vsBlob;

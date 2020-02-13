@@ -33,6 +33,14 @@ void ModelComponent::renderEditorGui(SailGuiWindow* window) {
 		}
 	});
 
+	window->addProperty("Shader", [&]() {
+		auto& resman = Application::getInstance()->getResourceManager();
+		int selectedShaderIndex = m_model->getMesh(0)->getDefaultShader()->getSettings().identifier;
+		if (ImGui::Combo("##hideLabel", &selectedShaderIndex, Shaders::shaderNames, Shaders::Size)) {
+			m_model->getMesh(0)->setDefaultShader(&resman.getShaderSet((Shaders::ShaderIdentifier)selectedShaderIndex));
+		}
+	});
+
 	window->disableColumns();
 	ImGui::Text("Internal references to this model: %i", m_model.use_count());
 

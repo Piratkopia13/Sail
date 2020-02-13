@@ -5,7 +5,7 @@
 
 class DX11Shader : public Shader {
 public:
-	DX11Shader(ShaderSettings settings);
+	DX11Shader(Shaders::ShaderSettings settings);
 	~DX11Shader();
 
 	virtual void bind(void* cmdList) const override;

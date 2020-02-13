@@ -44,7 +44,7 @@ void Scene::draw(Camera& camera) {
 		}
 
 		// Submit outline meshes first since they have to be drawn before the mesh they outline
-		auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(ShaderIdentifier::OutlineShader);
+		auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
 		for (Entity::SPtr& entity : m_entities) {
 			if (entity->isSelectedInGui()) {
 				auto model = entity->getComponent<ModelComponent>();

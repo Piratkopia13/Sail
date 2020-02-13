@@ -32,7 +32,10 @@ void DX11Mesh::draw(const Renderer& renderer, Material* material, Shader* shader
 	}
 	
 	if (material) {
-		assert(shader->getMaterialType() == material->getType() && "Shader requires a different material from the one given");
+		if (shader->getMaterialType() != material->getType()) {
+			Logger::Warning("Shader requires a different material from the one given");
+			return;
+		}
 		material->bind(shader, environment);
 	}
 

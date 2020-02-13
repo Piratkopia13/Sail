@@ -135,27 +135,22 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 				ImGui::SetNextWindowPos(popupPos);
 			}
 			if (ImGui::BeginPopup("ComponentList")) {
-				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.f, 0.f, 0.f, 0.f));
-				int selectedNewComponentIndex = -1;
-				const char* componentNames[] { "ModelComponent", "TransformComponent", "MaterialComponent", "PointLightComponent", "DirectionalLightComponent" };
-				if (ImGui::ListBox("##hideLabel", &selectedNewComponentIndex, componentNames, IM_ARRAYSIZE(componentNames))) {
-
-					if (selectedNewComponentIndex == 0) {
-						auto* defaultShader = &Application::getInstance()->getResourceManager().getShaderSet(ShaderIdentifier::PBRMaterialShader);
-						m_selectedEntity->addComponent<ModelComponent>(ModelFactory::CubeModel::Create(glm::vec3(0.5f), defaultShader));
-					} else if (selectedNewComponentIndex == 1) {
-						m_selectedEntity->addComponent<TransformComponent>();
-					} else if (selectedNewComponentIndex == 2) {
-						m_selectedEntity->addComponent<MaterialComponent<PBRMaterial>>();
-					} else if (selectedNewComponentIndex == 3) {
-						m_selectedEntity->addComponent<PointLightComponent>();
-					} else if (selectedNewComponentIndex == 4) {
-						m_selectedEntity->addComponent<DirectionalLightComponent>();
+				for (unsigned int i = 0; i < AddableComponent::Size; i++) {
+					if (i == AddableComponent::MaterialComponent) {
+						if (ImGui::BeginMenu(m_componentNames[i])) {
+							for (unsigned int j = 0; j < AddableMaterial::Size; j++) {
+								if (ImGui::MenuItem(m_materialNames[j])) {
+									addMaterialComponent((AddableMaterial::Type)j);
+								}
+							}
+							ImGui::EndMenu();
+						}
+					} else {
+						if (ImGui::MenuItem(m_componentNames[i])) {
+							addComponent((AddableComponent::Type)i);
+						}
 					}
-
-					ImGui::CloseCurrentPopup();
 				}
-				ImGui::PopStyleColor(1);
 				ImGui::EndPopup();
 			}
 			
@@ -239,4 +234,40 @@ void EntitiesGui::selectEntity(Entity::SPtr entity) {
 	}
 	m_selectedEntity = entity;
 	m_selectedEntity->setIsSelectedInGui(true);
+}
+
+void EntitiesGui::addComponent(AddableComponent::Type comp) {
+	auto* defaultShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PBRMaterialShader);
+
+	switch (comp) {
+	case AddableComponent::ModelComponent:
+		m_selectedEntity->addComponent<ModelComponent>(ModelFactory::CubeModel::Create(glm::vec3(0.5f), defaultShader));
+		break;
+	case AddableComponent::TransformComponent:
+		m_selectedEntity->addComponent<TransformComponent>();
+		break;
+	case AddableComponent::PointLightComponent:
+		m_selectedEntity->addComponent<PointLightComponent>();
+		break;
+	case AddableComponent::DirectionalLightComponent:
+		m_selectedEntity->addComponent<DirectionalLightComponent>();
+		break;
+	}
+}
+
+void EntitiesGui::addMaterialComponent(AddableMaterial::Type comp) {
+	switch (comp) {
+	case AddableMaterial::PBRMaterial:
+		m_selectedEntity->addComponent<MaterialComponent<PBRMaterial>>();
+		break;
+	case AddableMaterial::PhongMaterial:
+		m_selectedEntity->addComponent<MaterialComponent<PhongMaterial>>();
+		break;
+	case AddableMaterial::TexturesMaterial:
+		m_selectedEntity->addComponent<MaterialComponent<TexturesMaterial>>();
+		break;
+	case AddableMaterial::OutlineMaterial:
+		m_selectedEntity->addComponent<MaterialComponent<OutlineMaterial>>();
+		break;
+	}
 }
