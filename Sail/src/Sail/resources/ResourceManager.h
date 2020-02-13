@@ -52,23 +52,3 @@ private:
 	// PipelineStateObjects mapped to attribute and shader hashes
 	std::map<unsigned int, std::unique_ptr<PipelineStateObject>> m_psos;
 };
-
-//
-//template <typename T>
-//bool ResourceManager::hasShaderSet() {
-//	return m_shaderSets.find(typeid(T).name()) != m_shaderSets.end();
-//}
-//
-//template <typename T>
-//void ResourceManager::reloadShader() {
-//	std::string name = typeid(T).name();
-//	auto it = m_shaderSets.find(name);
-//	if (it == m_shaderSets.end()) {
-//		Logger::Log("Cannot reload shader " + name + " since it is not loaded in the first place.");
-//		return;
-//	}
-//	T* shader = dynamic_cast<T*>(it->second);
-//	shader->~T();
-//	shader = new (shader) T();
-//	Logger::Log("Reloaded shader " + name);
-//}
