@@ -35,6 +35,7 @@ public:
 	Shader& getShaderSet(ShaderIdentifier shaderIdentifier);
 	bool hasShaderSet(ShaderIdentifier shaderIdentifier);
 	void reloadShader(ShaderIdentifier shaderIdentifier);
+	void reloadAllShaders();
 
 	// PipelineStateObjects (PSOs)
 	// mesh may be null when shader is a compute shader

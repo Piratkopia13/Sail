@@ -9,8 +9,11 @@
 #include "../resources/DX12Texture.h"
 #include "../resources/DX12RenderableTexture.h"
 
-Shader* Shader::Create(ShaderSettings settings) {
-	return SAIL_NEW DX12Shader(settings);
+Shader* Shader::Create(ShaderSettings settings, Shader* allocAddr) {
+	if (!allocAddr)
+		return SAIL_NEW DX12Shader(settings);
+	else
+		return new (allocAddr) DX12Shader(settings);
 }
 
 DX12Shader::DX12Shader(ShaderSettings settings)

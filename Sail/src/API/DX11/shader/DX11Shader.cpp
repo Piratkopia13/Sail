@@ -6,8 +6,11 @@
 #include "../resources/DX11Texture.h"
 #include "../resources/DX11RenderableTexture.h"
 
-Shader* Shader::Create(ShaderSettings settings) {
-	return SAIL_NEW DX11Shader(settings);
+Shader* Shader::Create(ShaderSettings settings, Shader* allocAddr) {
+	if (!allocAddr)
+		return SAIL_NEW DX11Shader(settings);
+	else
+		return new (allocAddr) DX11Shader(settings);
 }
 
 DX11Shader::DX11Shader(ShaderSettings settings)

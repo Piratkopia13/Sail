@@ -2,6 +2,7 @@
 #include "ResourceManager.h"
 #include "Sail/api/shader/PipelineStateObject.h"
 #include "../api/shader/Shader.h"
+#include "../Application.h"
 
 ResourceManager::ResourceManager() {
 	{
@@ -140,10 +141,19 @@ void ResourceManager::reloadShader(ShaderIdentifier shaderIdentifier) {
 		return;
 	}
 	Shader* shader = it->second;
-	shader->~Shader();
-	//shader = new (shader) Shader::Create(m_shaderSettings[shaderIdentifier]);  // TODO: fix
-	shader = Shader::Create(m_shaderSettings[shaderIdentifier]);
+	shader->~Shader(); // Delete old shader
+	Shader::Create(m_shaderSettings[shaderIdentifier], shader); // Allocate new shader on the same memory address as the old
 	Logger::Log("Reloaded shader " + std::to_string(shaderIdentifier));
+}
+
+void ResourceManager::reloadAllShaders() {
+	Application::getInstance()->getAPI()->waitForGPU();
+	for (auto& it : m_shaders) {
+		Shader* shader = it.second;
+		shader->~Shader(); // Delete old shader
+		Shader::Create(m_shaderSettings[it.first], shader); // Allocate new shader on the same memory address as the old
+		Logger::Log("Reloaded shader " + std::to_string(it.first));
+	}
 }
 
 PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {

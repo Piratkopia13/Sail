@@ -123,10 +123,7 @@ bool ModelViewerState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
-		m_app->getResourceManager().reloadShader(ShaderIdentifier::PhongMaterialShader);
-		m_app->getResourceManager().reloadShader(ShaderIdentifier::PBRMaterialShader);
-		m_app->getResourceManager().reloadShader(ShaderIdentifier::CubemapShader);
-		m_app->getResourceManager().reloadShader(ShaderIdentifier::OutlineShader);
+		m_app->getResourceManager().reloadAllShaders();
 	}
 
 	return true;

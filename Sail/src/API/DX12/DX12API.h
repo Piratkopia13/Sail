@@ -97,6 +97,7 @@ public:
 	virtual unsigned int getMemoryBudget() const override;
 	virtual void toggleFullscreen() override;
 	virtual bool onResize(WindowResizeEvent& event) override;
+	virtual void waitForGPU() override;
 
 	struct RootSignEntry {
 		UINT rootSigIndex;
@@ -136,7 +137,6 @@ public:
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;
 
-	void waitForGPU();
 private:
 	void createDevice();
 	void createCmdInterfacesAndSwapChain(Win32Window* window);

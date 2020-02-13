@@ -177,7 +177,7 @@ bool GameState::processInput(float dt) {
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
-		m_app->getResourceManager().reloadShader(ShaderIdentifier::PhongMaterialShader);
+		m_app->getResourceManager().reloadAllShaders();
 	}
 
 	return true;

@@ -7,7 +7,8 @@
 
 class Shader {
 public:
-	static Shader* Create(ShaderSettings settings);
+	// allocAddr is used to allow reloading/recreating shaders without changing their memory address
+	static Shader* Create(ShaderSettings settings, Shader* allocAddr = nullptr);
 
 	friend class PipelineStateObject;
 	static const std::string DEFAULT_SHADER_LOCATION;
