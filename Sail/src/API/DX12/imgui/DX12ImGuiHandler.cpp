@@ -80,7 +80,7 @@ void DX12ImGuiHandler::init() {
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplWin32_Init((void*)*window->getHwnd());
-	ImGui_ImplDX12_Init(m_context->getDevice(), DX12API::NUM_GPU_BUFFERS,
+	ImGui_ImplDX12_Init(m_context->getDevice(), DX12API::NUM_SWAP_BUFFERS,
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		m_descHeap->getCPUDescriptorHandleForIndex(0),
 		m_descHeap->getGPUDescriptorHandleForIndex(0));
