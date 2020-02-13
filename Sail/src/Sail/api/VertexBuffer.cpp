@@ -5,8 +5,6 @@
 VertexBuffer::VertexBuffer(const Mesh::Data& modelData)
 	: m_vertices(nullptr)
 {
-	/*m_stride = modelData.calculateVertexStride();
-	m_byteSize = modelData.numVertices * m_stride;*/
 	m_positionsByteSize = (modelData.positions) ? sizeof(Mesh::vec3) * modelData.numVertices : 0;
 	m_texCoordsByteSize = (modelData.texCoords) ? sizeof(Mesh::vec2) * modelData.numVertices : 0;
 	m_normalsByteSize = (modelData.normals) ? sizeof(Mesh::vec3) * modelData.numVertices : 0;
@@ -38,7 +36,7 @@ void* VertexBuffer::mallocVertexData(const Mesh::Data& modelData) {
 		memcpy(addr, &modelData.bitangents->vec, m_bitangentsByteSize);
 		addr += m_bitangentsByteSize;
 	}
-	// Set last 3 floats to 0, this will be bound to any shader inputs that tries to access data not available in the mesh
+	// Set last floats to 0, this will be bound to any shader inputs that tries to access data not available in the mesh
 	memset(addr, 0.f, sizeof(float) * 3);
 
 	return vertices;
@@ -67,7 +65,3 @@ unsigned int VertexBuffer::getBitangentsDataSize() const {
 unsigned int VertexBuffer::getVertexBufferSize() const {
 	return m_byteSize;
 }
-//
-//unsigned int VertexBuffer::getVertexDataStride() const {
-//	return m_stride;
-//}

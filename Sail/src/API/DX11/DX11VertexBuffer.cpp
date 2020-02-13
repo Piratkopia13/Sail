@@ -97,7 +97,7 @@ void DX11VertexBuffer::bind(void* cmdList) {
 			vertBuffers[i] = m_vertBuffer; // All use the same buffer
 			if (sizes[i] == 0) {
 				offsets[i] = getVertexBufferSize() - sizeof(float) * 3;
-				strides[i] = sizeof(float);
+				strides[i] = 0;
 			}
 		}
 

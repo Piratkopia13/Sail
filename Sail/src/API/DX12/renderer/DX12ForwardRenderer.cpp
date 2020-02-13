@@ -66,8 +66,6 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 		//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 	}
 
-	// Keep track of unique shader pipelines used this frame
-	//std::unordered_set<DX12PipelineStateObject*> uniqueShaderPipelines;
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("commandQueue loop");
 
@@ -102,11 +100,6 @@ void DX12ForwardRenderer::present(RenderableTexture* output) {
 			command.mesh->draw(*this, command.material, shader, environment, cmdList.Get());
 		}
 	}
-
-	// Reset pipelines so that they will re-bind the next frame
-	/*for (auto* shaderPipeline : uniqueShaderPipelines) {
-		shaderPipeline->unbind();
-	}*/
 
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Execution");

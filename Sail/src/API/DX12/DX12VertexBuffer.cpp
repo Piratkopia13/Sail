@@ -88,7 +88,7 @@ void DX12VertexBuffer::bind(void* cmdList) {
 	for (unsigned int i = 0; i < ARRAYSIZE(vbView); i++) {
 		if (vbView[i].SizeInBytes == 0) {
 			vbView[i].BufferLocation = m_defaultVertexBuffers[frameIndex]->GetGPUVirtualAddress() + m_byteSize - sizeof(float) * 3;
-			vbView[i].StrideInBytes = sizeof(float);
+			vbView[i].StrideInBytes = 0;
 			vbView[i].SizeInBytes = sizeof(float) * 3;
 		}
 	}

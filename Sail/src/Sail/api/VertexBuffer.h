@@ -22,7 +22,6 @@ protected:
 	unsigned int getBitangentsDataSize() const;
 	
 	unsigned int getVertexBufferSize() const;
-	//unsigned int getVertexDataStride() const;
 
 private:
 	void* m_vertices;
@@ -32,6 +31,4 @@ private:
 	unsigned int m_tangentsByteSize;
 	unsigned int m_bitangentsByteSize;
 	unsigned int m_byteSize;
-	//unsigned int m_stride;
-
 };
