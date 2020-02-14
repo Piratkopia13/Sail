@@ -10,10 +10,11 @@ namespace Shaders {
 		PhongMaterialShader,
 		OutlineShader,
 		CubemapShader,
+		NUM_GRAPHICS_SHADERS,
 		GenerateMipsComputeShader,
-		Size
+		NUM_TOTAL_SHADERS
 	};
-	static const char* shaderNames[]{ "PBRMaterialShader", "PhongMaterialShader", "OutlineMaterialShader", "CubemapShader", "GenerateMipsComputeShader" };
+	static const char* shaderNames[]{ "PBRMaterialShader", "PhongMaterialShader", "OutlineMaterialShader", "CubemapShader", "-", "GenerateMipsComputeShader" };
 	
 	struct ComputeShaderSettings {
 		float threadGroupXScale = 1.0f;

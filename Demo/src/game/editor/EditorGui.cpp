@@ -64,10 +64,12 @@ void EditorGui::setupDockspace(float menuBarHeight) {
 }
 
 float EditorGui::setupMenuBar(){
-	static bool showDemoWindow;
+	static bool showDemoWindow = false;
+	static bool showResourcesWindow = false;
 	ImVec2 menuBarSize;
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("Duffle")) {
+			ImGui::MenuItem("Resource tracker", NULL, &showResourcesWindow);
 			ImGui::MenuItem("Show demo window", NULL, &showDemoWindow);
 			if (ImGui::MenuItem("Switch to GameState", NULL)) { m_callback(CallbackType::CHANGE_STATE, ""); }
 			if (ImGui::MenuItem("Exit", NULL)) { PostQuitMessage(0); }
@@ -79,6 +81,9 @@ float EditorGui::setupMenuBar(){
 	}
 	if (showDemoWindow) {
 		ImGui::ShowDemoWindow();
+	}
+	if (showResourcesWindow) {
+		m_resourceManagerGui.render();
 	}
 	return menuBarSize.y;
 }

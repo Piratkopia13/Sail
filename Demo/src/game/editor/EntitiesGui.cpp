@@ -135,10 +135,10 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 				ImGui::SetNextWindowPos(popupPos);
 			}
 			if (ImGui::BeginPopup("ComponentList")) {
-				for (unsigned int i = 0; i < AddableComponent::Size; i++) {
+				for (unsigned int i = 0; i < AddableComponent::NUM_COMPONENTS; i++) {
 					if (i == AddableComponent::MaterialComponent) {
 						if (ImGui::BeginMenu(m_componentNames[i])) {
-							for (unsigned int j = 0; j < AddableMaterial::Size; j++) {
+							for (unsigned int j = 0; j < AddableMaterial::NUM_MATERIALS; j++) {
 								if (ImGui::MenuItem(m_materialNames[j])) {
 									addMaterialComponent((AddableMaterial::Type)j);
 								}

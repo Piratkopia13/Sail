@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "ModelComponent.h"
-#include "Sail/api/gui/SailGuiWindow.h"
+#include "Sail/gui/SailGuiWindow.h"
 #include "Sail/graphics/geometry/Model.h"
 #include "Sail/utils/Utils.h"
 #include "Sail/Application.h"
@@ -36,7 +36,7 @@ void ModelComponent::renderEditorGui(SailGuiWindow* window) {
 	window->addProperty("Shader", [&]() {
 		auto& resman = Application::getInstance()->getResourceManager();
 		int selectedShaderIndex = m_model->getMesh(0)->getDefaultShader()->getSettings().identifier;
-		if (ImGui::Combo("##hideLabel", &selectedShaderIndex, Shaders::shaderNames, Shaders::Size)) {
+		if (ImGui::Combo("##hideLabel", &selectedShaderIndex, Shaders::shaderNames, Shaders::NUM_GRAPHICS_SHADERS)) {
 			m_model->getMesh(0)->setDefaultShader(&resman.getShaderSet((Shaders::ShaderIdentifier)selectedShaderIndex));
 		}
 	});

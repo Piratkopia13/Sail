@@ -65,3 +65,11 @@ glm::vec4 TextureData::getPixel(unsigned int x, unsigned int y) {
 					m_data.textureData8bit[y * m_data.width * m_data.channels + (x * m_data.channels) + 3]);
 
 }
+
+unsigned int TextureData::getAllocatedMemorySize() const {
+	unsigned int total = 0;
+	if (m_data.textureData8bit || m_data.textureDataFloat) {
+		total += m_data.width * m_data.height * m_data.channels * (m_data.bitsPerChannel / 8);
+	}
+	return total;
+}

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "TransformComponent.h"
 
-#include "Sail/api/gui/SailGuiWindow.h"
+#include "Sail/gui/SailGuiWindow.h"
 #include "imgui.h"
 #include "glm/gtc/type_ptr.hpp"
 

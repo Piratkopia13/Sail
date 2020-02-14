@@ -182,3 +182,27 @@ PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {
 
 	return *pos->second;
 }
+
+unsigned int ResourceManager::getTextureDataSize() const {
+	unsigned int total = 0;
+	for (const auto& it : m_textureDatas) {
+		total += it.second->getAllocatedMemorySize();
+	}
+	return total;
+}
+
+unsigned int ResourceManager::getTextureDataCount() const {
+	return m_textureDatas.size();
+}
+
+unsigned int ResourceManager::getFBXModelCount() const {
+	return m_fbxModels.size();
+}
+
+unsigned int ResourceManager::getShaderCount() const {
+	return m_shaders.size();
+}
+
+unsigned int ResourceManager::getPSOCount() const {
+	return m_psos.size();
+}

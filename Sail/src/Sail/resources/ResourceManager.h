@@ -41,6 +41,13 @@ public:
 	// mesh may be null when shader is a compute shader
 	PipelineStateObject& getPSO(Shader* shader, Mesh* mesh = nullptr);
 
+	// Storage information
+	unsigned int getTextureDataSize() const;
+	unsigned int getTextureDataCount() const;
+	unsigned int getFBXModelCount() const;
+	unsigned int getShaderCount() const;
+	unsigned int getPSOCount() const;
+
 private:
 	// Textures mapped to their filenames
 	std::map<std::string, std::unique_ptr<TextureData>> m_textureDatas;

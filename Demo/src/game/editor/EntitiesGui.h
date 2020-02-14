@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Sail/api/gui/SailGuiWindow.h"
+#include "Sail/gui/SailGuiWindow.h"
 #include "Sail/entities/Entity.h"
 
 namespace AddableComponent {
@@ -10,7 +10,7 @@ namespace AddableComponent {
         MaterialComponent,
         PointLightComponent,
         DirectionalLightComponent,
-        Size
+        NUM_COMPONENTS
     };
 }
 namespace AddableMaterial {
@@ -19,7 +19,7 @@ namespace AddableMaterial {
         PhongMaterial,
         TexturesMaterial,
         OutlineMaterial,
-		Size
+        NUM_MATERIALS
 	};
 }
 class EntitiesGui : public SailGuiWindow {
@@ -29,8 +29,8 @@ public:
 
 private:
     // Should match order of AddableComponent
-	const char* m_componentNames[AddableComponent::Size] = { "ModelComponent", "TransformComponent", "MaterialComponent", "PointLightComponent", "DirectionalLightComponent" };
-	const char* m_materialNames[AddableMaterial::Size] = { "PBR", "Phong", "Textures", "Outline" };
+	const char* m_componentNames[AddableComponent::NUM_COMPONENTS] = { "ModelComponent", "TransformComponent", "MaterialComponent", "PointLightComponent", "DirectionalLightComponent" };
+	const char* m_materialNames[AddableMaterial::NUM_MATERIALS] = { "PBR", "Phong", "Textures", "Outline" };
 
 private:
     void selectEntity(Entity::SPtr entity);

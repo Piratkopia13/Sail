@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "DirectionalLightComponent.h"
 
-#include "Sail/api/gui/SailGuiWindow.h"
+#include "Sail/gui/SailGuiWindow.h"
 #include "imgui.h"
 
 DirectionalLightComponent::DirectionalLightComponent(const glm::vec3& color, const glm::vec3& dir)

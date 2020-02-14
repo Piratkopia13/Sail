@@ -3,7 +3,7 @@
 #include "Component.h"
 #include "Sail/graphics/material/Material.h"
 
-#include "Sail/api/gui/SailGuiWindow.h"
+#include "Sail/gui/SailGuiWindow.h"
 #include "Sail/graphics/material/PhongMaterial.h"
 #include "Sail/graphics/material/PBRMaterial.h"
 #include "Sail/graphics/material/OutlineMaterial.h"

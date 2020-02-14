@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "PointLightComponent.h"
 
-#include "Sail/api/gui/SailGuiWindow.h"
+#include "Sail/gui/SailGuiWindow.h"
 #include "imgui.h"
 
 PointLightComponent::PointLightComponent() 

@@ -2,7 +2,8 @@
 
 #include <functional>
 #include <windows.h>
-#include "Sail/api/gui/SailGuiWindow.h"
+#include "Sail/gui/SailGuiWindow.h"
+#include "Sail/gui/ResourceManagerGui.h"
 
 #define FUNC(a) std::function<a>
 
@@ -24,6 +25,7 @@ private:
 	float setupMenuBar();
 
 private:
+    ResourceManagerGui m_resourceManagerGui;
     FUNC(void(CallbackType type, const std::string&)) m_callback;
 
     std::string m_modelName;

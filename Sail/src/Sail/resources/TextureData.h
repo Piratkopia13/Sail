@@ -22,6 +22,8 @@ public:
 	float* getTextureDataFloat() const;
 	glm::vec4 getPixel(unsigned int x, unsigned int y);
 
+	unsigned int getAllocatedMemorySize() const;
+
 private:
 	ResourceFormat::TextureData m_data;
 
