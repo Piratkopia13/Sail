@@ -21,6 +21,7 @@ PSIn VSMain(VSIn input) {
 	output.position = mul(sys_mView, input.position);
 	output.position.w = 1.f;
 	output.position = mul(sys_mProjection, output.position);
+	output.position.z = 1.0f; // Draw at the back of the depth range
 	
 	return output;
 }

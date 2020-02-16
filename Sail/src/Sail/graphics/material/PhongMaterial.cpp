@@ -33,6 +33,18 @@ void PhongMaterial::bind(Shader* shader, Environment* environment, void* cmdList
 	shader->setTexture("sys_texSpecular", m_textures[2], cmdList);
 }
 
+Shader* PhongMaterial::getShader(Renderer::Type rendererType) const {
+	auto& resman = Application::getInstance()->getResourceManager();
+	switch (rendererType) {
+	case Renderer::FORWARD:
+		return &resman.getShaderSet(Shaders::PhongMaterialShader);
+		break;
+	default:
+		return nullptr;
+		break;
+	}
+}
+
 void PhongMaterial::setKa(float ka) {
 	m_phongSettings.ka = ka;
 }

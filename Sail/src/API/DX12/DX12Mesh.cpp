@@ -33,8 +33,6 @@ DX12Mesh::~DX12Mesh() {
 void DX12Mesh::draw(const Renderer& renderer, Material* material, Shader* shader, Environment* environment, void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-	if (!shader)
-		shader = defaultShader;
 	if (!shader) {
 		Logger::Warning("Tried to draw mesh with no shader");
 		return;

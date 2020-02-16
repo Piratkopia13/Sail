@@ -11,6 +11,7 @@ public:
 	~OutlineMaterial();
 
 	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	Shader* getShader(Renderer::Type rendererType) const override;
 
 	void setColor(const glm::vec3& color);
 	const glm::vec3& getColor() const;

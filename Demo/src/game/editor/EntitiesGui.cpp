@@ -237,11 +237,10 @@ void EntitiesGui::selectEntity(Entity::SPtr entity) {
 }
 
 void EntitiesGui::addComponent(AddableComponent::Type comp) {
-	auto* defaultShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PBRMaterialShader);
 
 	switch (comp) {
 	case AddableComponent::ModelComponent:
-		m_selectedEntity->addComponent<ModelComponent>(ModelFactory::CubeModel::Create(glm::vec3(0.5f), defaultShader));
+		m_selectedEntity->addComponent<ModelComponent>(ModelFactory::CubeModel::Create(glm::vec3(0.5f)));
 		break;
 	case AddableComponent::TransformComponent:
 		m_selectedEntity->addComponent<TransformComponent>();

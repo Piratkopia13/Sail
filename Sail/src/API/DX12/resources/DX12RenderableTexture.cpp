@@ -55,7 +55,7 @@ void DX12RenderableTexture::begin(void* cmdList) {
 
 	//transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE* dsvCdh = (m_hasDepthTextures) ? &m_dsvHeapCDHs[getSwapIndex()] : &context->getDepthStencilViewCDH();
+	const D3D12_CPU_DESCRIPTOR_HANDLE* dsvCdh = (m_hasDepthTextures) ? &m_dsvHeapCDHs[getSwapIndex()] : &context->getDsvCDH();
 	dxCmdList->OMSetRenderTargets(1, &m_rtvHeapCDHs[getSwapIndex()], true, dsvCdh);
 
 	dxCmdList->RSSetViewports(1, context->getViewport());
@@ -145,7 +145,7 @@ void DX12RenderableTexture::createTextures() {
 		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 
-		D3D12_CLEAR_VALUE clearValue = { textureDesc.Format, { 0.01f, 0.01f, 0.01f, 1.0f } };
+		D3D12_CLEAR_VALUE clearValue = { textureDesc.Format, { 0.0f, 0.0f, 0.0f, 0.0f } };
 
 		state[i] = D3D12_RESOURCE_STATE_COMMON;
 		// A texture rarely updates its data, if at all, so it is stored in a default heap

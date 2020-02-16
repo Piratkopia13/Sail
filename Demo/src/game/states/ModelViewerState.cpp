@@ -18,14 +18,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 
 	// Get the Application instance
 	m_app = Application::getInstance();
-	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
-
-	// Textures needs to be loaded before they can be used
-	// TODO: automatically load textures when needed so the following can be removed
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
-
+	
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
 	m_camController.lookAt(glm::vec3(0.f));
@@ -33,14 +26,9 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	//auto* phongShader = &m_app->getResourceManager().getShaderSet(Shaders::PhongMaterialShader);
-	//auto* pbrShader = &m_app->getResourceManager().getShaderSet(Shaders::PBRMaterialShader);
-	//auto* outlineShader = &m_app->getResourceManager().getShaderSet(Shaders::OutlineShader);
-	auto* pbrShader = &m_app->getResourceManager().getShaderSet(Shaders::DeferredGeometryPassShader); // Deferred
-
 	// Create/load models
-	auto planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), pbrShader, glm::vec2(30.0f));
-	//auto cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), outlineShader);
+	auto planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), glm::vec2(30.0f));
+	//auto cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f));
 
 	// Create entities
 	{
@@ -90,7 +78,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	}
 	// PBR spheres
 	{
-		auto sphereModel = m_app->getResourceManager().getModel("sphere.fbx", pbrShader);
+		auto sphereModel = m_app->getResourceManager().getModel("sphere.fbx");
 		const unsigned int gridSize = 7;
 		const float cellSize = 1.3f;
 		for (unsigned int x = 0; x < gridSize; x++) {

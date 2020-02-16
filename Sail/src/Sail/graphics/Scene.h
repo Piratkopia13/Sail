@@ -23,7 +23,8 @@ public:
 private:
 	std::unique_ptr<Environment> m_environment;
 	std::vector<Entity::SPtr> m_entities;
-	std::unique_ptr<Renderer> m_renderer;
+	std::unique_ptr<Renderer> m_deferredRenderer;
+	std::unique_ptr<Renderer> m_forwardRenderer;
 
 	OutlineMaterial m_outlineMaterial;
 };

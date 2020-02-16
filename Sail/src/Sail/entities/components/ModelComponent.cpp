@@ -22,7 +22,7 @@ void ModelComponent::renderEditorGui(SailGuiWindow* window) {
 		if (ImGui::Button(modelName.c_str(), ImVec2(ImGui::GetColumnWidth(), 0))) {
 			std::string newModel = window->OpenFileDialog(L"FBX models (*.fbx)\0*.fbx");
 			if (!newModel.empty()) {
-				m_model = Application::getInstance()->getResourceManager().getModel(newModel, m_model->getMesh(0)->getDefaultShader(), true);
+				m_model = Application::getInstance()->getResourceManager().getModel(newModel, true);
 				Logger::Log("load a new model");
 			}
 		}
@@ -30,14 +30,6 @@ void ModelComponent::renderEditorGui(SailGuiWindow* window) {
 			ImGui::BeginTooltip();
 			ImGui::Text("Load a new model from file");
 			ImGui::EndTooltip();
-		}
-	});
-
-	window->addProperty("Shader", [&]() {
-		auto& resman = Application::getInstance()->getResourceManager();
-		int selectedShaderIndex = m_model->getMesh(0)->getDefaultShader()->getSettings().identifier;
-		if (ImGui::Combo("##hideLabel", &selectedShaderIndex, Shaders::shaderNames, Shaders::NUM_GRAPHICS_SHADERS)) {
-			m_model->getMesh(0)->setDefaultShader(&resman.getShaderSet((Shaders::ShaderIdentifier)selectedShaderIndex));
 		}
 	});
 

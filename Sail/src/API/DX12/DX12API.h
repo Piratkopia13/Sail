@@ -115,7 +115,6 @@ public:
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
 	ID3D12Resource* getCurrentRenderTargetResource();
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
-	const D3D12_CPU_DESCRIPTOR_HANDLE& getDepthStencilViewCDH() const;
 	IDXGISwapChain4* const getSwapChain() const;
 	const D3D12_VIEWPORT* getViewport() const;
 	const D3D12_RECT* getScissorRect() const;
@@ -134,6 +133,7 @@ public:
 	void initResources(ID3D12GraphicsCommandList4* cmdList);
 
 	void initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type = D3D12_COMMAND_LIST_TYPE_DIRECT, LPCWSTR name = L"Unnamed Commmand list or allocator object");
+	void clearBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToRender(ID3D12GraphicsCommandList4* cmdList) const;
 	void prepareToPresent(ID3D12GraphicsCommandList4* cmdList) const;

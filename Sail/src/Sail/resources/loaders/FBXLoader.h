@@ -8,7 +8,7 @@ class PhongMaterial;
 
 class FBXLoader {
 public:
-	FBXLoader(const std::string& filepath, Shader* shader);
+	FBXLoader(const std::string& filepath);
 	~FBXLoader();
 
 	std::shared_ptr<Model>& getModel();
@@ -27,13 +27,7 @@ private:
 	FbxScene* m_scene;
 
 	std::string m_filepath;
-	Shader* m_shader;
 	std::shared_ptr<Model> m_model;
-	//std::vector<Mesh::Data> m_meshDataList;
 
-	/*Material::PhongSettings m_matSettings;
-	std::string m_matDiffuseTex;
-	std::string m_matSpecularTex;
-	std::string m_matNormalTex;*/
 
 };

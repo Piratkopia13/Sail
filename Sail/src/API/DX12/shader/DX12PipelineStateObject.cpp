@@ -161,7 +161,7 @@ void DX12PipelineStateObject::createGraphicsPipelineState() {
 	D3D12_DEPTH_STENCIL_DESC dsDesc{};
 	dsDesc.DepthEnable = settings.depthMask != GraphicsAPI::BUFFER_DISABLED;
 	dsDesc.DepthWriteMask = (settings.depthMask != GraphicsAPI::WRITE_MASK) ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
-	dsDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	dsDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 	dsDesc.StencilEnable = FALSE;
 	dsDesc.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
 	dsDesc.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;

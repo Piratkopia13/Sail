@@ -655,10 +655,6 @@ const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getDsvCDH() const {
 	return m_dsvDescHandle;
 }
 
-const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getDepthStencilViewCDH() const {
-	return m_dsvDescHandle;
-}
-
 IDXGISwapChain4* const DX12API::getSwapChain() const {
 	return m_swapChain.Get();
 }
@@ -726,14 +722,16 @@ void DX12API::initCommand(Command& cmd, D3D12_COMMAND_LIST_TYPE type, LPCWSTR na
 	cmd.list->Close();
 }
 
+void DX12API::clearBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
+	// Clear
+	cmdList->ClearRenderTargetView(m_currentRenderTargetCDH, m_clearColor, 0, nullptr);
+	cmdList->ClearDepthStencilView(m_dsvDescHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+}
+
 void DX12API::renderToBackBuffer(ID3D12GraphicsCommandList4* cmdList) const {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	cmdList->OMSetRenderTargets(1, &m_currentRenderTargetCDH, true, &m_dsvDescHandle);
-
-	// Clear
-	cmdList->ClearRenderTargetView(m_currentRenderTargetCDH, m_clearColor, 0, nullptr);
-	cmdList->ClearDepthStencilView(m_dsvDescHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	cmdList->RSSetViewports(1, &m_viewport);
 	cmdList->RSSetScissorRects(1, &m_scissorRect);

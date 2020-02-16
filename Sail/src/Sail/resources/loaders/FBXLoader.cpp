@@ -9,9 +9,8 @@
 FbxManager* FBXLoader::s_manager = FbxManager::Create();
 FbxIOSettings* FBXLoader::s_ios = FbxIOSettings::Create(s_manager, IOSROOT);
 
-FBXLoader::FBXLoader(const std::string& filepath, Shader* shader)
+FBXLoader::FBXLoader(const std::string& filepath)
 	: m_filepath(filepath)
-	, m_shader(shader)
 {
 	s_manager->SetIOSettings(s_ios);
 
@@ -39,7 +38,7 @@ FBXLoader::FBXLoader(const std::string& filepath, Shader* shader)
 	} else {
 		Logger::Warning("Failed to load fbx file '" + filepath + "', using default cube.");
 		glm::vec3 halfSizes = glm::vec3(0.5, 0.5, 0.5);
-		m_model = ModelFactory::CubeModel::Create(halfSizes, shader);
+		m_model = ModelFactory::CubeModel::Create(halfSizes);
 	}
 }
 
@@ -82,7 +81,6 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 			Mesh::Data meshData;
 			getGeometry(mesh, meshData);
 			auto mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData));
-			mesh->setDefaultShader(m_shader);
 
 			/*if (auto* material = dynamic_cast<PhongMaterial*>(mesh->getMaterial())) {
 				getMaterial(pNode, material);

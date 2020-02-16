@@ -32,89 +32,116 @@ DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_command.list->SetName(L"Forward Renderer main command list");
 }
 
-DX12ForwardRenderer::~DX12ForwardRenderer() {
+DX12ForwardRenderer::~DX12ForwardRenderer() { }
 
+void DX12ForwardRenderer::begin(Camera* camera, Environment* environment) {
+	Renderer::begin(camera, environment);
 }
 
-void DX12ForwardRenderer::present(RenderableTexture* output) {
+void* DX12ForwardRenderer::present(Renderer::RenderFlag flags, void* skippedPrepCmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-	assert(!output); // Render to texture is currently not implemented for DX12!
+	ID3D12GraphicsCommandList4* cmdList = nullptr;
+	if (flags & Renderer::RenderFlag::SkipPreparation) {
+		if (skippedPrepCmdList)
+			cmdList = static_cast<ID3D12GraphicsCommandList4*>(skippedPrepCmdList);
+		else
+			Logger::Error("DX12ForwardRenderer present was called with skipPreparation flag but no cmdList was passed");
+	}
 
+	if (!(flags & Renderer::RenderFlag::SkipPreparation))
+		cmdList = runFramePreparation();
+	if (!(flags & Renderer::RenderFlag::SkipRendering))
+		runRenderingPass(cmdList);
+	if (!(flags & Renderer::RenderFlag::SkipExecution))
+		runFrameExecution(cmdList);
+
+	return cmdList;
+}
+
+ID3D12GraphicsCommandList4* DX12ForwardRenderer::runFramePreparation() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Frame preparation");
 	auto frameIndex = m_context->getFrameIndex();
 
 	auto& allocator = m_command.allocators[frameIndex];
 	auto& cmdList = m_command.list;
 
-	{
-		SAIL_PROFILE_API_SPECIFIC_SCOPE("Preparation");
 
-		// Reset allocators and lists for this frame
-		allocator->Reset();
-		cmdList->Reset(allocator.Get(), nullptr);
+	// Reset allocators and lists for this frame
+	allocator->Reset();
+	cmdList->Reset(allocator.Get(), nullptr);
 
-		// Bind the descriptor heap that will contain all SRVs for this frame
-		m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
+	// Bind the descriptor heap that will contain all SRVs for this frame
+	m_context->getMainGPUDescriptorHeap()->bind(cmdList.Get());
 
-		// Initialize resources
-		// This executes texture mip generation
-		m_context->initResources(cmdList.Get());
+	// Initialize resources
+	// This executes texture mip generation
+	m_context->initResources(cmdList.Get());
 
-		// Transition back buffer to render target
-		m_context->prepareToRender(cmdList.Get());
+	// Transition back buffer to render target
+	m_context->prepareToRender(cmdList.Get());
 
-		m_context->renderToBackBuffer(cmdList.Get());
-		cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
-		cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_context->renderToBackBuffer(cmdList.Get());
+	m_context->clearBackBuffer(cmdList.Get());
 
-		// Bind mesh-common constant buffers (camera)
-		// TODO: bind camera cbuffer here
-		//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
-	}
+	cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
+	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	{
-		SAIL_PROFILE_API_SPECIFIC_SCOPE("commandQueue loop");
+	// Bind mesh-common constant buffers (camera)
+	// TODO: bind camera cbuffer here
+	//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 
-		auto& resman = Application::getInstance()->getResourceManager();
+	return cmdList.Get();
+}
 
-		// TODO: Sort meshes according to shaderPipeline
-		unsigned int totalInstances = commandQueue.size();
-		for (RenderCommand& command : commandQueue) {
-			DX12Shader* shader = static_cast<DX12Shader*>(command.shader);
-			//uniqueShaderPipelines.insert(shaderPipeline);
+void DX12ForwardRenderer::runRenderingPass(ID3D12GraphicsCommandList4* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Rendering pass");
 
-			// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
-			shader->reserve(totalInstances);
+	auto& resman = Application::getInstance()->getResourceManager();
 
-			// Find a matching pipelineStateObject and bind it
-			auto& pso = resman.getPSO(shader, command.mesh);
-			pso.bind(cmdList.Get());
+	// TODO: Sort meshes according to shaderPipeline
+	unsigned int totalInstances = commandQueue.size();
+	for (RenderCommand& command : commandQueue) {
+		DX12Shader* shader = static_cast<DX12Shader*>(command.shader);
+		//uniqueShaderPipelines.insert(shaderPipeline);
 
-			shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+		// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
+		shader->reserve(totalInstances);
 
-			if (lightSetup) {
-				auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
-				auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
-				shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
-				shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
-			}
+		// Find a matching pipelineStateObject and bind it
+		auto& pso = resman.getPSO(shader, command.mesh);
+		pso.bind(cmdList);
 
-			command.mesh->draw(*this, command.material, shader, environment, cmdList.Get());
+		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
+		shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
+		shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
+		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
+		shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+
+		if (lightSetup) {
+			auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
+			auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
+			shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
+			shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
 		}
+
+		command.mesh->draw(*this, command.material, shader, environment, cmdList);
 	}
+}
 
-	{
-		SAIL_PROFILE_API_SPECIFIC_SCOPE("Execution");
+void DX12ForwardRenderer::runFrameExecution(ID3D12GraphicsCommandList4* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Frame execution");
 
-		// Lastly - transition back buffer to present
-		m_context->prepareToPresent(cmdList.Get());
-		// Execute command list
-		cmdList->Close();
-		m_context->getDirectQueue()->executeCommandLists({ cmdList.Get() });
-	}
+	// Lastly - transition back buffer to present
+	m_context->prepareToPresent(cmdList);
+	// Execute command list
+	cmdList->Close();
+	m_context->getDirectQueue()->executeCommandLists({ cmdList });
+}
 
+void DX12ForwardRenderer::useDepthBuffer(void* buffer, void* cmdList) {
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvCdh;
+	dsvCdh.ptr = (size_t)buffer;
+	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
+	dxCmdList->OMSetRenderTargets(1, &m_context->getCurrentRenderTargetCDH(), true, &dsvCdh);
 }

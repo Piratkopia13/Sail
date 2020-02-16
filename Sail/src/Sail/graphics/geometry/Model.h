@@ -11,7 +11,7 @@ public:
 
 public: 
 	Model(const std::string& name);
-	Model(Mesh::Data& data, Shader* shader, const std::string& name);
+	Model(Mesh::Data& data, const std::string& name);
 	~Model();
 
 	Mesh* addMesh(std::unique_ptr<Mesh> mesh);

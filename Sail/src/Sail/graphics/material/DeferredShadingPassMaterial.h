@@ -5,13 +5,14 @@
 
 class Shader;
 
-class CustomMaterial : public Material {
+class DeferredShadingPassMaterial : public Material {
 
 public:
-	CustomMaterial();
-	~CustomMaterial();
+	DeferredShadingPassMaterial();
+	~DeferredShadingPassMaterial();
 
 	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	Shader* getShader(Renderer::Type rendererType) const override;
 
 	void setBindFunc(std::function<void(Shader*, Environment*, void*)> func);
 

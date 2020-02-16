@@ -62,6 +62,21 @@ void PBRMaterial::bind(Shader* shader, Environment* environment, void* cmdList) 
 	shader->setTexture("sys_texMRAO", m_textures[2], cmdList);
 }
 
+Shader* PBRMaterial::getShader(Renderer::Type rendererType) const {
+	auto& resman = Application::getInstance()->getResourceManager();
+	switch (rendererType) {
+	case Renderer::FORWARD:
+		return &resman.getShaderSet(Shaders::PBRMaterialShader);
+		break;
+	case Renderer::DEFERRED:
+		return &resman.getShaderSet(Shaders::DeferredGeometryPassShader);
+		break;
+	default:
+		return nullptr;
+		break;
+	}
+}
+
 void PBRMaterial::setMetalnessScale(float metalness) {
 	m_pbrSettings.metalnessScale = metalness;
 }

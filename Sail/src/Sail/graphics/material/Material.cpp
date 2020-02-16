@@ -5,7 +5,9 @@
 #include "PBRMaterial.h"
 #include "TexturesMaterial.h"
 
-Material::Material(Type type) : m_type(type) { }
+Material::Material(Type type) 
+	: m_type(type) 
+{ }
 
 Material::~Material() { }
 

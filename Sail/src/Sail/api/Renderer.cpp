@@ -22,6 +22,10 @@ void Renderer::setLightSetup(LightSetup* lightSetup) {
 	this->lightSetup = lightSetup;
 }
 
-void Renderer::end() {
+void Renderer::useDepthBuffer(void* buffer, void* cmdList) { }
 
+void* Renderer::getDepthBuffer() {
+	return nullptr;
 }
+
+void Renderer::end() { }

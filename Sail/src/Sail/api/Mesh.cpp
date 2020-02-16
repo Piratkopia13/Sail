@@ -9,7 +9,6 @@
 
 Mesh::Mesh(Data& buildData)
 	: meshData(buildData) 
-	, defaultShader(nullptr)
 { }
 
 Mesh::~Mesh() {
@@ -20,14 +19,6 @@ Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.colors);
 	Memory::SafeDeleteArr(meshData.tangents);
 	Memory::SafeDeleteArr(meshData.texCoords);
-}
-
-void Mesh::setDefaultShader(Shader* shader) {
-	this->defaultShader = shader;
-}
-
-Shader* Mesh::getDefaultShader() const {
-	return defaultShader;
 }
 
 unsigned int Mesh::getAttributesHash() {

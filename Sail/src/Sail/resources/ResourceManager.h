@@ -26,8 +26,8 @@ public:
 	bool hasTexture(const std::string& filename);
 
 	// Models
-	void loadModel(const std::string& filename, Shader* shader, bool useAbsolutePath = false);
-	std::shared_ptr<Model> getModel(const std::string& filename, Shader* shader, bool useAbsolutePath = false);
+	void loadModel(const std::string& filename, bool useAbsolutePath = false);
+	std::shared_ptr<Model> getModel(const std::string& filename, bool useAbsolutePath = false);
 	bool hasModel(const std::string& filename);
 
 	// Shaders

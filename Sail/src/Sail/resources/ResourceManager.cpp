@@ -34,7 +34,6 @@ ResourceManager::ResourceManager() {
 		Shaders::ShaderSettings settings;
 		settings.filename = "forward/CubemapShader.hlsl";
 		settings.materialType = Material::TEXTURES;
-		settings.defaultPSOSettings.depthMask = GraphicsAPI::BUFFER_DISABLED;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::FRONTFACE;
 		settings.identifier = Shaders::CubemapShader;
 		m_shaderSettings.insert({ settings.identifier, settings });
@@ -127,15 +126,15 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 // Model
 //
 
-void ResourceManager::loadModel(const std::string& filename, Shader* shader, bool useAbsolutePath) {
+void ResourceManager::loadModel(const std::string& filename, bool useAbsolutePath) {
 	// Insert the new model
-	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, shader, useAbsolutePath) });
+	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, useAbsolutePath) });
 }
-std::shared_ptr<Model> ResourceManager::getModel(const std::string& filename, Shader* shader, bool useAbsolutePath) {
+std::shared_ptr<Model> ResourceManager::getModel(const std::string& filename, bool useAbsolutePath) {
 	auto pos = m_fbxModels.find(filename);
 	if (pos == m_fbxModels.end()) {
 		// Model was not yet loaded, load it and return
-		loadModel(filename, shader, useAbsolutePath);
+		loadModel(filename, useAbsolutePath);
 
 		return m_fbxModels.find(filename)->second->getModel();
 	}

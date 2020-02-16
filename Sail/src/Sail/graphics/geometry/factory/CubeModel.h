@@ -7,7 +7,7 @@ namespace ModelFactory {
 
 	class CubeModel {
 	public:
-		static std::shared_ptr<Model> Create(const glm::vec3& halfSizes, Shader* shader) {
+		static std::shared_ptr<Model> Create(const glm::vec3& halfSizes) {
 
 			const int numVerts = 36;
 
@@ -161,7 +161,7 @@ namespace ModelFactory {
 			buildData.texCoords = texCoords;
 			buildData.normals = normals;
 
-			return std::make_shared<Model>(buildData, shader, "CubeModel from factory");
+			return std::make_shared<Model>(buildData, "CubeModel from factory");
 
 		}
 	};

@@ -2,6 +2,7 @@
 #include "OutlineMaterial.h"
 #include "Sail/api/shader/PipelineStateObject.h"
 #include "Sail/api/shader/Shader.h"
+#include "Sail/Application.h"
 
 OutlineMaterial::OutlineMaterial()
 	: Material(Material::OUTLINE)
@@ -14,6 +15,18 @@ OutlineMaterial::~OutlineMaterial() { }
 void OutlineMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
 	shader->setCBufferVar("mat_color", &m_color, sizeof(glm::vec3));
 	shader->setCBufferVar("mat_thickness", &m_thickness, sizeof(float));
+}
+
+Shader* OutlineMaterial::getShader(Renderer::Type rendererType) const {
+	auto& resman = Application::getInstance()->getResourceManager();
+	switch (rendererType) {
+	case Renderer::FORWARD:
+		return &resman.getShaderSet(Shaders::OutlineShader);
+		break;
+	default:
+		return nullptr;
+		break;
+	}
 }
 
 void OutlineMaterial::setColor(const glm::vec3& color) {

@@ -15,9 +15,9 @@ GameState::GameState(StateStack& stack)
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	/*Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");*/
 
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
@@ -26,12 +26,10 @@ GameState::GameState(StateStack& stack)
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* shader = &m_app->getResourceManager().getShaderSet(Shaders::PhongMaterialShader);
-
 	// Create/load models
-	auto cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
-	auto planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), shader, glm::vec2(30.0f));
-	auto fbxModel = m_app->getResourceManager().getModel("sphere.fbx", shader);
+	auto cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f));
+	auto planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), glm::vec2(30.0f));
+	auto fbxModel = m_app->getResourceManager().getModel("sphere.fbx");
 
 	// Create entities
 

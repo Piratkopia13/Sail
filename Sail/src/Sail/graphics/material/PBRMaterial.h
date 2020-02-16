@@ -8,6 +8,7 @@ class Shader;
 class PBRMaterial : public Material {
 public:
 	typedef std::shared_ptr<PBRMaterial> SPtr;
+
 public:
 	// Matching shader struct
 	struct PBRSettings {
@@ -27,6 +28,7 @@ public:
 	~PBRMaterial();
 
 	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	Shader* getShader(Renderer::Type rendererType) const override;
 
 	void setMetalnessScale(float metalness);
 	void setRoughnessScale(float roughness);

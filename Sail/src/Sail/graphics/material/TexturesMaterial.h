@@ -2,6 +2,7 @@
 
 #include "Material.h"
 #include <vector>
+#include "../shader/Shaders.h"
 
 class Texture;
 class Shader;
@@ -12,6 +13,8 @@ public:
 	~TexturesMaterial();
 
 	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	Shader* getShader(Renderer::Type rendererType) const override;
+	void setForwardShader(Shaders::ShaderIdentifier shaderId);
 
 	// An empty filename will remove the texture
 	void addTexture(const std::string& filename, bool useAbsolutePath = false);
@@ -20,5 +23,6 @@ public:
 private:
 	std::vector<Texture*> m_textures;
 	unsigned int m_numTextures;
+	Shader* m_forwardShader;
 
 };

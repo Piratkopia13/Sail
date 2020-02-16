@@ -7,7 +7,7 @@ namespace ModelFactory {
 
 	class ConeModel {
 	public:
-		static std::unique_ptr<Model> Create(const glm::vec3& halfSizes, Shader* shader) {
+		static std::unique_ptr<Model> Create(const glm::vec3& halfSizes) {
 
 			const int numVerts = 36;
 
@@ -161,7 +161,7 @@ namespace ModelFactory {
 			buildData.texCoords = texCoords;
 			buildData.normals = normals;
 
-			std::unique_ptr<Model> model = std::make_unique<Model>(buildData, shader, "ConeModel from factory");
+			std::unique_ptr<Model> model = std::make_unique<Model>(buildData, "ConeModel from factory");
 
 			return model;
 

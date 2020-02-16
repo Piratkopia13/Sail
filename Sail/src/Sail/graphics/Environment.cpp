@@ -7,14 +7,14 @@
 
 Environment::Environment(const std::string& folderName) {
 	// Create a skybox
-	auto* cubemapShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::CubemapShader);
 
-	m_skyboxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), cubemapShader);
+	m_skyboxModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f));
 
 	m_skyboxEntity = Entity::Create("Skybox");
 	m_skyboxEntity->addComponent<ModelComponent>(m_skyboxModel);
 	m_skyboxEntity->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	m_skyboxEntity->addComponent<MaterialComponent<TexturesMaterial>>();
+	auto& mat = m_skyboxEntity->addComponent<MaterialComponent<TexturesMaterial>>();
+	mat->get()->setForwardShader(Shaders::CubemapShader);
 
 	init(folderName);
 }

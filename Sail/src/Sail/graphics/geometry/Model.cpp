@@ -1,18 +1,16 @@
 #include "pch.h"
 #include "Model.h"
 
-Model::Model(Mesh::Data& buildData, Shader* shader, const std::string& name)
+Model::Model(Mesh::Data& buildData, const std::string& name)
 	: m_name(name)
 {
 	// TODO: reuse mesh if it has already been loaded
 	auto& mesh = m_meshes.emplace_back(Mesh::Create(buildData));
-	mesh->setDefaultShader(shader);
 }
 
 Model::Model(const std::string& name)
 	: m_name(name)
-{
-}
+{ }
 
 Model::~Model() {
 }

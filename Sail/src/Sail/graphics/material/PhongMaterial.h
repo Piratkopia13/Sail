@@ -24,6 +24,7 @@ public:
 	~PhongMaterial();
 
 	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	Shader* getShader(Renderer::Type rendererType) const override;
 
 	void setKa(float ka);
 	void setKd(float kd);

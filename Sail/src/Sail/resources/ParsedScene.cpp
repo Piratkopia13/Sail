@@ -5,7 +5,7 @@
 
 const std::string ParsedScene::DEFAULT_MODEL_LOCATION = "res/models/";
 
-ParsedScene::ParsedScene(const std::string& filename, Shader* shader, bool useAbsolutePath) {
+ParsedScene::ParsedScene(const std::string& filename, bool useAbsolutePath) {
 
 	std::string extension = filename.substr(filename.size() - 3);
 	std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return std::tolower(c); }); // To lower case
@@ -14,7 +14,7 @@ ParsedScene::ParsedScene(const std::string& filename, Shader* shader, bool useAb
 	}
 
 	std::string filepath = (useAbsolutePath) ? filename : DEFAULT_MODEL_LOCATION + filename;
-	FBXLoader loader(filepath, shader);
+	FBXLoader loader(filepath);
 	m_model = loader.getModel();
 }
 

@@ -7,7 +7,7 @@ namespace ModelFactory {
 
 	class ScreenQuadModel {
 	public:
-		static std::unique_ptr<Model> Create(Shader* shader) {
+		static std::unique_ptr<Model> Create() {
 			glm::vec2 halfSizes(1.f, 1.f);
 
 			const int numVerts = 4;
@@ -37,7 +37,7 @@ namespace ModelFactory {
 			data.indices = indices;
 			data.texCoords = texCoords;
 
-			return std::make_unique<Model>(data, shader, "ScreenQuadModel from factory");
+			return std::make_unique<Model>(data, "ScreenQuadModel from factory");
 		}
 	};
 	

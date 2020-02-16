@@ -11,7 +11,8 @@
 
 
 Scene::Scene()  {
-	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::DEFERRED));
+	m_deferredRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::DEFERRED));
+	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 
 	// Set up the environment
 	m_environment = std::make_unique<Environment>();
@@ -27,36 +28,18 @@ void Scene::draw(Camera& camera) {
 	SAIL_PROFILE_FUNCTION();
 
 	LightSetup lightSetup;
-	m_renderer->setLightSetup(&lightSetup);
-
-	m_renderer->begin(&camera, m_environment.get());
-
+	m_forwardRenderer->setLightSetup(&lightSetup);
+	m_deferredRenderer->setLightSetup(&lightSetup);
+	
+	// Begin default pass
+	m_forwardRenderer->begin(&camera, m_environment.get());
+	m_deferredRenderer->begin(&camera, m_environment.get());
+	auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
+	// Drawing of meshes
 	{
 		SAIL_PROFILE_SCOPE("Submit models");
 
-		//// Submit skybox
-		//{
-		//	auto e = m_environment->getSkyboxEntity();
-		//	auto model = e->getComponent<ModelComponent>();
-		//	auto transform = e->getComponent<TransformComponent>();
-		//	auto material = e->getComponent<MaterialComponent<>>();
-		//	m_renderer->submit(model->getModel().get(), model->getModel()->getMesh(0)->getDefaultShader(), material->get(), transform->getMatrix());
-		//}
-
-		// Submit outline meshes first since they have to be drawn before the mesh they outline
-		auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
 		for (Entity::SPtr& entity : m_entities) {
-			if (entity->isSelectedInGui()) {
-				auto model = entity->getComponent<ModelComponent>();
-				auto transform = entity->getComponent<TransformComponent>();
-				
-				if (model && transform)
-					m_renderer->submit(model->getModel().get(), outlineShader, &m_outlineMaterial, transform->getMatrix());
-			}
-		}
-
-		for (Entity::SPtr& entity : m_entities) {
-
 			// Add all lights to the lightSetup
 			auto plComp = entity->getComponent<PointLightComponent>();
 			if (plComp) lightSetup.addPointLight(plComp.get());
@@ -65,16 +48,22 @@ void Scene::draw(Camera& camera) {
 
 			auto model = entity->getComponent<ModelComponent>();
 			auto transform = entity->getComponent<TransformComponent>();
-			//if (!transform)	Logger::Error("Tried to draw entity that is missing a TransformComponent!");
+
+			// Submit a copy for rendering as outline if selected in gui
+			if (entity->isSelectedInGui() && model && transform)
+				m_forwardRenderer->submit(model->getModel().get(), outlineShader, &m_outlineMaterial, transform->getMatrix());
 
 			Material* material = nullptr;
-			// Material is not required for rendering and may be set to nullptr - this is a lie
 			if (auto materialComp = entity->getComponent<MaterialComponent<>>())
 				material = materialComp->get();
 
-				
 			if (model && transform && material) {
-				m_renderer->submit(model->getModel().get(), model->getModel()->getMesh(0)->getDefaultShader(), material, transform->getMatrix());
+				Shader* shader = nullptr;
+				if (shader = material->getShader(Renderer::DEFERRED))
+					m_deferredRenderer->submit(model->getModel().get(), shader, material, transform->getMatrix());
+				else if (shader = material->getShader(Renderer::FORWARD))
+					m_forwardRenderer->submit(model->getModel().get(), shader, material, transform->getMatrix());
+				
 				entity->setIsBeingRendered(true);
 			} else {
 				// Indicate that the entity is not being rendered for some reason, this may be shown in the gui
@@ -82,11 +71,23 @@ void Scene::draw(Camera& camera) {
 			}
 		}
 	}
+	// Draw skybox last
+	{
+		auto e = m_environment->getSkyboxEntity();
+		auto model = e->getComponent<ModelComponent>();
+		auto transform = e->getComponent<TransformComponent>();
+		auto material = e->getComponent<MaterialComponent<>>();
+		m_forwardRenderer->submit(model->getModel().get(), material->get()->getShader(Renderer::FORWARD), material->get(), transform->getMatrix());
+	}
 
-	m_renderer->end();
-	m_renderer->present();
+	m_deferredRenderer->end();
+	m_forwardRenderer->end();
+	void* cmdList = m_deferredRenderer->present(Renderer::SkipExecution);
+	m_forwardRenderer->useDepthBuffer(m_deferredRenderer->getDepthBuffer(), cmdList);
+	m_forwardRenderer->present(Renderer::SkipPreparation, cmdList); // Execute deferred and forward default pass
 
-	m_renderer->setLightSetup(nullptr);
+	m_deferredRenderer->setLightSetup(nullptr);
+	m_forwardRenderer->setLightSetup(nullptr);
 }
 
 std::vector<Entity::SPtr>& Scene::getEntites() {
