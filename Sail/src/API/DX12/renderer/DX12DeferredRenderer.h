@@ -18,9 +18,9 @@ public:
 	void runGeometryPass(ID3D12GraphicsCommandList4* cmdList);
 	void runShadingPass(ID3D12GraphicsCommandList4* cmdList);
 	void runFrameExecution(ID3D12GraphicsCommandList4* cmdList);
+
+private:
 	D3D12_CPU_DESCRIPTOR_HANDLE getGeometryPassDsv();
-
-
 private:
 	DX12API* m_context;
 	DX12API::Command m_command;

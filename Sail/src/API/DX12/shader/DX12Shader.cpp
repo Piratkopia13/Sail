@@ -161,11 +161,11 @@ unsigned int DX12Shader::getMeshIndex() const {
 	return m_meshIndex[swapIndex];
 }
 
-void DX12Shader::setTexture(const std::string& name, Texture* texture, void* cmdList) {
+bool DX12Shader::setTexture(const std::string& name, Texture* texture, void* cmdList) {
 	if (!texture) {
 		// No texture bound to this slot, step past it in the heap
 		m_context->getMainGPUDescriptorHeap()->getAndStepIndex(1);
-		return;
+		return false;
 	}
 	auto* dxTexture = static_cast<DX12Texture*>(texture);
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
@@ -174,6 +174,7 @@ void DX12Shader::setTexture(const std::string& name, Texture* texture, void* cmd
 	// Copy texture SRVs to the gpu heap
 	// The SRV will point to a null descriptor before the texture is fully initialized, and therefor show up as black
 	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	return true;
 }
 
 void DX12Shader::setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList) {

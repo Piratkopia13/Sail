@@ -12,7 +12,7 @@ public:
 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
 
-	virtual void setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) override;
+	virtual bool setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) override;
 	virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) override;
 
 protected:

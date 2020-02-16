@@ -155,9 +155,9 @@ bool DX11API::init(Window* window) {
 	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
 	depthStencilDesc.DepthEnable = true;
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
-	depthStencilDesc.StencilEnable = true;
+	depthStencilDesc.StencilEnable = false;
 	depthStencilDesc.StencilReadMask = 0xFF;
 	depthStencilDesc.StencilWriteMask = 0xFF;
 
@@ -181,7 +181,7 @@ bool DX11API::init(Window* window) {
 	ThrowIfFailed(m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilStateWriteMask));
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 
-	// Create the depth stencil state with disbled depth testing
+	// Create the depth stencil state with disabled depth testing
 	depthStencilDesc.DepthEnable = false;
 	ThrowIfFailed(m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilStateDisabled));
 
@@ -434,6 +434,10 @@ unsigned int DX11API::getMemoryBudget() const {
 
 ID3D11RenderTargetView* const* DX11API::getBackBufferRTV() const {
 	return &m_renderTargetView;
+}
+
+D3D11_VIEWPORT const* DX11API::getViewport() const {
+	return &m_viewport;
 }
 
 ID3DUserDefinedAnnotation* DX11API::getPerfProfiler() {

@@ -69,7 +69,7 @@ public:
 	void parse(const std::string& source);
 
 	const ParsedData& getParsedData() const;
-	unsigned int findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const;
+	int findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const;
 
 private:
 	void parseCBuffer(const std::string& source);

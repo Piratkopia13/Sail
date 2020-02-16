@@ -13,6 +13,7 @@ DX11RenderableTexture::DX11RenderableTexture(UINT aaSamples, UINT width, UINT he
 	, m_hasDepthStencilView(createDepthStencilView)
 	, m_dxColorTexture(nullptr)
 	, m_dxDepthTexture(nullptr)
+	, m_renderTargetView(nullptr)
 	, m_aaSamples(aaSamples)
 	, m_nonMSAAColorTexture2D(nullptr)
 	, m_nonMSAAColorSRV(nullptr)

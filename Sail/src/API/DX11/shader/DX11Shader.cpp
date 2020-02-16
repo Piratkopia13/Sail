@@ -78,7 +78,7 @@ void* DX11Shader::compileShader(const std::string& source, const std::string& fi
 
 	ID3D10Blob* shader = nullptr;
 	ID3D10Blob* errorMsg;
-	if (FAILED(D3DCompile(source.c_str(), source.size(), DEFAULT_SHADER_LOCATION.c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), shaderVersion.c_str(), D3DCOMPILE_DEBUG, 0, &shader, &errorMsg))) {
+	if (FAILED(D3DCompile(source.c_str(), source.size(), filepath.c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), shaderVersion.c_str(), D3DCOMPILE_DEBUG, 0, &shader, &errorMsg))) {
 		OutputDebugString(L"\n Failed to compile shader\n\n");
 
 		char* msg = (char*)(errorMsg->GetBufferPointer());
@@ -95,18 +95,20 @@ void* DX11Shader::compileShader(const std::string& source, const std::string& fi
 	return shader;
 }
 
-void DX11Shader::setTexture(const std::string& name, Texture* texture, void* cmdList) {
-	UINT slot = parser.findSlotFromName(name, parser.getParsedData().textures);
+bool DX11Shader::setTexture(const std::string& name, Texture* texture, void* cmdList) {
+	int slot = parser.findSlotFromName(name, parser.getParsedData().textures);
+	if (slot == -1) return false; // Texture doesn't exist in shader
 
 	ID3D11ShaderResourceView* srv[1] = { nullptr }; // Default to a null srv (unbinds the slot)
 	if (texture) {
 		srv[0] = ((DX11Texture*)texture)->getSRV();
 	}
 	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, srv);
+	return true;
 }
 
 void DX11Shader::setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList) {
-	UINT slot = parser.findSlotFromName(name, parser.getParsedData().textures);
+	int slot = parser.findSlotFromName(name, parser.getParsedData().textures);
 
 	ID3D11ShaderResourceView* srv[1] = { nullptr }; // Default to a null srv (unbinds the slot)
 	if (texture) {

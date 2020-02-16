@@ -155,9 +155,6 @@ bool ModelViewerState::render(float dt) {
 	}
 #endif
 
-	// Clear back buffer
-	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
-
 	// Draw the scene
 	m_scene.draw(m_cam);
 

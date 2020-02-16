@@ -31,6 +31,7 @@ public:
 	ID3D11DepthStencilView* getDepthStencilView() const;
 	UINT getAASamples();
 	ID3D11RenderTargetView* const* getBackBufferRTV() const;
+	D3D11_VIEWPORT const* getViewport() const;
 	ID3DUserDefinedAnnotation* getPerfProfiler();
 	void renderToBackBuffer() const;
 

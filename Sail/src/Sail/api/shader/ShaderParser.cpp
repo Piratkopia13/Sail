@@ -292,11 +292,11 @@ UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
 	return 0;
 }
 
-UINT ShaderParser::findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const {
+int ShaderParser::findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const {
 	for (auto& resource : resources) {
 		if (resource.name == name)
 			return resource.slot;
 	}
-	Logger::Error("Could not find shader resource named \"" + name + "\"");
+	//Logger::Error("Could not find shader resource named \"" + name + "\"");
 	return -1;
 }
