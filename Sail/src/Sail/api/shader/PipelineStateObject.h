@@ -17,9 +17,10 @@ public:
 	public:
 		bool wireframe = false;
 		GraphicsAPI::Culling cullMode = GraphicsAPI::NO_CULLING;
-		unsigned int numRenderTargets = 1;
 		GraphicsAPI::DepthMask depthMask = GraphicsAPI::NO_MASK;
 		GraphicsAPI::Blending blendMode = GraphicsAPI::NO_BLENDING;
+		unsigned int numRenderTargets = 1;
+		std::unordered_map<unsigned int, ResourceFormat::TextureFormat> rtFormats;
 	};
 
 public:

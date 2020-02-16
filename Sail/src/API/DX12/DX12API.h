@@ -113,6 +113,7 @@ public:
 
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
+	ID3D12Resource* getCurrentRenderTargetResource();
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDsvCDH() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getDepthStencilViewCDH() const;
 	IDXGISwapChain4* const getSwapChain() const;

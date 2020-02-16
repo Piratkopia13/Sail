@@ -15,8 +15,8 @@ class Shader;
 class Renderer {
 public:
 	enum Type {
-		FORWARD
-		//DEFERRED
+		FORWARD,
+		DEFERRED
 		//RAYTRACED
 		//TILED
 	};

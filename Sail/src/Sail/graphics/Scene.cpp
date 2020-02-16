@@ -11,7 +11,7 @@
 
 
 Scene::Scene()  {
-	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_renderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::DEFERRED));
 
 	// Set up the environment
 	m_environment = std::make_unique<Environment>();
@@ -34,14 +34,14 @@ void Scene::draw(Camera& camera) {
 	{
 		SAIL_PROFILE_SCOPE("Submit models");
 
-		// Submit skybox
-		{
-			auto e = m_environment->getSkyboxEntity();
-			auto model = e->getComponent<ModelComponent>();
-			auto transform = e->getComponent<TransformComponent>();
-			auto material = e->getComponent<MaterialComponent<>>();
-			m_renderer->submit(model->getModel().get(), model->getModel()->getMesh(0)->getDefaultShader(), material->get(), transform->getMatrix());
-		}
+		//// Submit skybox
+		//{
+		//	auto e = m_environment->getSkyboxEntity();
+		//	auto model = e->getComponent<ModelComponent>();
+		//	auto transform = e->getComponent<TransformComponent>();
+		//	auto material = e->getComponent<MaterialComponent<>>();
+		//	m_renderer->submit(model->getModel().get(), model->getModel()->getMesh(0)->getDefaultShader(), material->get(), transform->getMatrix());
+		//}
 
 		// Submit outline meshes first since they have to be drawn before the mesh they outline
 		auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);

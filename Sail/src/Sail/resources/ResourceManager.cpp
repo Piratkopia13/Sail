@@ -5,9 +5,10 @@
 #include "../Application.h"
 
 ResourceManager::ResourceManager() {
+	// Forward shaders
 	{
 		Shaders::ShaderSettings settings;
-		settings.filename = "PBRMaterialShader.hlsl";
+		settings.filename = "forward/PBRMaterialShader.hlsl";
 		settings.materialType = Material::PBR;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
 		settings.identifier = Shaders::PBRMaterialShader;
@@ -15,7 +16,7 @@ ResourceManager::ResourceManager() {
 	}
 	{
 		Shaders::ShaderSettings settings;
-		settings.filename = "PhongMaterialShader.hlsl";
+		settings.filename = "forward/PhongMaterialShader.hlsl";
 		settings.materialType = Material::PHONG;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
 		settings.identifier = Shaders::PhongMaterialShader;
@@ -23,7 +24,7 @@ ResourceManager::ResourceManager() {
 	}
 	{
 		Shaders::ShaderSettings settings;
-		settings.filename = "OutlineShader.hlsl";
+		settings.filename = "forward/OutlineShader.hlsl";
 		settings.materialType = Material::OUTLINE;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::FRONTFACE;
 		settings.identifier = Shaders::OutlineShader;
@@ -31,13 +32,37 @@ ResourceManager::ResourceManager() {
 	}
 	{
 		Shaders::ShaderSettings settings;
-		settings.filename = "CubemapShader.hlsl";
+		settings.filename = "forward/CubemapShader.hlsl";
 		settings.materialType = Material::TEXTURES;
 		settings.defaultPSOSettings.depthMask = GraphicsAPI::BUFFER_DISABLED;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::FRONTFACE;
 		settings.identifier = Shaders::CubemapShader;
 		m_shaderSettings.insert({ settings.identifier, settings });
 	}
+	// Deferred shaders
+	{
+		Shaders::ShaderSettings settings;
+		settings.filename = "deferred/GeometryPassShader.hlsl";
+		settings.materialType = Material::PBR;
+		settings.defaultPSOSettings.numRenderTargets = 4;
+		settings.defaultPSOSettings.rtFormats.insert({ 0, ResourceFormat::R16G16B16A16_FLOAT });
+		settings.defaultPSOSettings.rtFormats.insert({ 1, ResourceFormat::R16G16B16A16_FLOAT });
+		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
+		settings.identifier = Shaders::DeferredGeometryPassShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
+	}
+	{
+		Shaders::ShaderSettings settings;
+		settings.filename = "deferred/ShadingPassShader.hlsl";
+		settings.materialType = Material::CUSTOM;
+		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
+		settings.defaultPSOSettings.depthMask = GraphicsAPI::BUFFER_DISABLED;
+		settings.identifier = Shaders::DeferredShadingPassShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
+	}
+
+
+	// Compute shaders
 	{
 		Shaders::ShaderSettings settings;
 		settings.filename = "compute/GenerateMipsCS.hlsl";

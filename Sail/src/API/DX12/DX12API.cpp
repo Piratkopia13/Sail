@@ -414,17 +414,17 @@ void DX12API::createDepthStencilResources(Win32Window* window) {
 	m_dsDescriptorHeap->SetName(L"Depth/Stencil Resource Heap");
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 
 	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
 	D3D12_RESOURCE_DESC bufferDesc{};
-	bufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	bufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	bufferDesc.Width = window->getWindowWidth();
 	bufferDesc.Height = window->getWindowHeight();
 	bufferDesc.DepthOrArraySize = 1;
@@ -645,6 +645,10 @@ DescriptorHeap* const DX12API::getMainGPUDescriptorHeap() const {
 
 const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getCurrentRenderTargetCDH() const {
 	return m_currentRenderTargetCDH;
+}
+
+ID3D12Resource* DX12API::getCurrentRenderTargetResource() {
+	return m_currentRenderTargetResource;
 }
 
 const D3D12_CPU_DESCRIPTOR_HANDLE& DX12API::getDsvCDH() const {

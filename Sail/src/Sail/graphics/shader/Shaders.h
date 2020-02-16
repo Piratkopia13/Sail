@@ -10,6 +10,8 @@ namespace Shaders {
 		PhongMaterialShader,
 		OutlineShader,
 		CubemapShader,
+		DeferredGeometryPassShader,
+		DeferredShadingPassShader,
 		NUM_GRAPHICS_SHADERS,
 		GenerateMipsComputeShader,
 		NUM_TOTAL_SHADERS

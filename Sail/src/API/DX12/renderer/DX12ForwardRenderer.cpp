@@ -9,13 +9,19 @@
 #include "../resources/DescriptorHeap.h"
 #include <unordered_set>
 #include "../shader/DX12Shader.h"
+#include "DX12DeferredRenderer.h"
 
 Renderer* Renderer::Create(Renderer::Type type) {
 	switch (type) {
 	case FORWARD:
 		return new DX12ForwardRenderer();
+		break;
+	case DEFERRED:
+		return new DX12DeferredRenderer();
+		break;
 	default:
 		Logger::Error("Tried to create a renderer of unknown or unimplemented type: " + std::to_string(type));
+		break;
 	}
 	return nullptr;
 }

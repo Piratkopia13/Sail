@@ -1,4 +1,4 @@
-#include "Phong.hlsl"
+#include "../Phong.hlsl"
 
 struct VSIn {
 	float4 position : POSITION0;

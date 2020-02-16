@@ -17,7 +17,8 @@ public:
 	enum Type {
 		NONE = 0,
 		PHONG, PBR,
-		TEXTURES, OUTLINE
+		TEXTURES, OUTLINE,
+		CUSTOM
 	};
 
 	Material(Type type);;

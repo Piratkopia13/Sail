@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "PlaneModel.h"
+#include "../Model.h"
 
 namespace ModelFactory {
 

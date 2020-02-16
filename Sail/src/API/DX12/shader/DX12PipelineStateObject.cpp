@@ -4,6 +4,7 @@
 #include "DX12InputLayout.h"
 #include "../DX12API.h"
 #include "Sail/api/shader/Shader.h"
+#include "../resources/DX12Texture.h"
 
 std::unique_ptr<DXILShaderCompiler> DX12PipelineStateObject::m_dxilCompiler = nullptr;
 
@@ -44,10 +45,6 @@ bool DX12PipelineStateObject::bind(void* cmdList) {
 	return true;
 }
 
-void DX12PipelineStateObject::setRenderTargetFormat(unsigned int rtIndex, DXGI_FORMAT format) {
-	m_rtFormats[rtIndex] = format;
-}
-
 void DX12PipelineStateObject::createGraphicsPipelineState() {
 	auto vsD3DBlob = static_cast<ID3DBlob*>(shader->getVsBlob());
 	auto psD3DBlob = static_cast<ID3DBlob*>(shader->getPsBlob());
@@ -85,8 +82,8 @@ void DX12PipelineStateObject::createGraphicsPipelineState() {
 
 	// Specify render target and depthstencil usage
 	for (unsigned int i = 0; i < settings.numRenderTargets; i++) {
-		if (m_rtFormats.find(i) != m_rtFormats.end()) {
-			gpsd.RTVFormats[i] = m_rtFormats[i];
+		if (settings.rtFormats.find(i) != settings.rtFormats.end()) {
+			gpsd.RTVFormats[i] = DX12Texture::ConvertToDXGIFormat(settings.rtFormats[i]);
 		} else {
 			gpsd.RTVFormats[i] = DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
@@ -173,7 +170,7 @@ void DX12PipelineStateObject::createGraphicsPipelineState() {
 	dsDesc.BackFace = defaultStencilOp;
 
 	gpsd.DepthStencilState = dsDesc;
-	gpsd.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	gpsd.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	ThrowIfFailed(m_context->getDevice()->CreateGraphicsPipelineState(&gpsd, IID_PPV_ARGS(&m_pipelineState)));
 }

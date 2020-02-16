@@ -1,4 +1,4 @@
-#include "variables.shared"
+#include "../variables.shared"
 
 float3 fresnelSchlick(float cosTheta, float3 F0) {
     return F0 + (1.0f - F0) * pow(1.0f - cosTheta, 5.0f);
@@ -125,9 +125,9 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel) {
                 continue;
             }
             // Ignore lights that are too far away
-            // if (length(p.fragToLight) > p.reachRadius) {
-            //     continue;
-            // }
+            if (length(p.fragToLight) > p.attRadius) {
+                continue;
+            }
 
             Lo += shadeWithLight(p, N, V, F0, pixel.albedo, pixel.metalness, pixel.roughness);
         }
