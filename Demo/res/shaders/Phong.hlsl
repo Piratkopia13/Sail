@@ -1,4 +1,4 @@
-#include "variables.shared"
+#include "../variables.shared"
 
 float4 phongShade(PhongInput input) {
 
