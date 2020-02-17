@@ -32,3 +32,7 @@ std::tuple<void*, unsigned int> LightSetup::getDirLightData() const {
 std::tuple<void*, unsigned int> LightSetup::getPointLightsData() const {
 	return { (void*)m_plData.data(), sizeof(PointLightStruct) * MAX_POINTLIGHTS_FORWARD_RENDERING };
 }
+
+unsigned int LightSetup::getNumPLs() const {
+	return m_numPls;
+}

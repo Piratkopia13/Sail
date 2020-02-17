@@ -7,7 +7,7 @@ class PointLightComponent;
 
 class LightSetup {
 public:
-	static const UINT MAX_POINTLIGHTS_FORWARD_RENDERING = 8;  // Max number of lights as set in shader
+	static const UINT MAX_POINTLIGHTS_FORWARD_RENDERING = 128;  // Max number of lights as set in shader
 
 	struct PointLightStruct {
 		PointLightStruct() { }
@@ -33,6 +33,7 @@ public:
 
 	std::tuple<void*, unsigned int> getDirLightData() const;
 	std::tuple<void*, unsigned int> getPointLightsData() const;
+	unsigned int getNumPLs() const;
 
 private:
 	DirLightBuffer m_dlData;

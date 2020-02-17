@@ -1,4 +1,4 @@
-#include "../PBR.hlsl"
+#include "../variables.shared"
 
 struct VSIn {
 	float4 position : POSITION0;

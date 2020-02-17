@@ -1,3 +1,10 @@
+struct PointLightInput {
+	float3 color;
+    float attRadius;
+	float3 position;
+	float intensity;
+};
+
 #include "../PBR.hlsl"
 
 struct VSIn {
@@ -12,14 +19,9 @@ struct PSIn {
 cbuffer PSSystemCBuffer : register(b0) {
     matrix sys_mViewInv;
     float3 sys_cameraPos;
+    uint sys_numPLights;
 }
 
-struct PointLightInput {
-	float3 color;
-    float attRadius;
-	float3 position;
-	float intensity;
-};
 cbuffer PSLights : register(b1) {
 	DirectionalLight dirLight;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
@@ -61,15 +63,9 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	PBRScene scene;
 	
 	// Lights
-	scene.lights.dirLight = dirLight;
-	[unroll]
-	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-		scene.lights.pointLights[i].color = pointLights[i].color;
-		scene.lights.pointLights[i].attRadius = pointLights[i].attRadius;
-		scene.lights.pointLights[i].intensity = pointLights[i].intensity;
-		// World space vector poiting from the vertex position to the point light
-		scene.lights.pointLights[i].fragToLight = pointLights[i].position - worldPos;
-	}
+	scene.dirLight = dirLight;
+	scene.pointLights = pointLights;
+	scene.numPLs = sys_numPLights;
 
 	scene.brdfLUT = sys_texBrdfLUT;
 	scene.prefilterMap = radianceMap;
@@ -77,7 +73,8 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	scene.linearSampler = PSLinearSampler;
 	
 	PBRPixel pixel;
-    pixel.invViewDir = sys_cameraPos - worldPos;
+    pixel.worldPos = worldPos;
+	pixel.camPos = sys_cameraPos;
 
 	pixel.albedo = def_albedo.Sample(PSss, input.texCoord).rgb;
 
