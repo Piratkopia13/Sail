@@ -59,6 +59,16 @@ ResourceManager::ResourceManager() {
 		settings.identifier = Shaders::DeferredShadingPassShader;
 		m_shaderSettings.insert({ settings.identifier, settings });
 	}
+	{
+		Shaders::ShaderSettings settings;
+		settings.filename = "deferred/ssao.hlsl";
+		settings.materialType = Material::CUSTOM;
+		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
+		settings.defaultPSOSettings.depthMask = GraphicsAPI::BUFFER_DISABLED;
+		settings.defaultPSOSettings.rtFormats.insert({ 0, ResourceFormat::R8 });
+		settings.identifier = Shaders::SSAOShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
+	}
 
 
 	// Compute shaders
@@ -69,6 +79,22 @@ ResourceManager::ResourceManager() {
 		settings.computeShaderSettings.threadGroupXScale = 1.0f / 8.0f;
 		settings.computeShaderSettings.threadGroupYScale = 1.0f / 8.0f;
 		settings.identifier = Shaders::GenerateMipsComputeShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
+	}
+	{
+		Shaders::ShaderSettings settings;
+		settings.filename = "postprocess/GaussianBlurHorizontal.hlsl";
+		settings.materialType = Material::NONE;
+		settings.computeShaderSettings.threadGroupXScale = 1.0f / 256.0f;
+		settings.identifier = Shaders::GaussianBlurHorizontalComputeShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
+	}
+	{
+		Shaders::ShaderSettings settings;
+		settings.filename = "postprocess/GaussianBlurVertical.hlsl";
+		settings.materialType = Material::NONE;
+		settings.computeShaderSettings.threadGroupYScale = 1.0f / 256.0f;
+		settings.identifier = Shaders::GaussianBlurVerticalComputeShader;
 		m_shaderSettings.insert({ settings.identifier, settings });
 	}
 }

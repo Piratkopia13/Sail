@@ -12,8 +12,11 @@ namespace Shaders {
 		CubemapShader,
 		DeferredGeometryPassShader,
 		DeferredShadingPassShader,
+		SSAOShader,
 		NUM_GRAPHICS_SHADERS,
 		GenerateMipsComputeShader,
+		GaussianBlurHorizontalComputeShader,
+		GaussianBlurVerticalComputeShader,
 		NUM_TOTAL_SHADERS
 	};
 	static const char* shaderNames[]{ "PBRMaterialShader", "PhongMaterialShader", "OutlineMaterialShader", "CubemapShader", "-", "GenerateMipsComputeShader" };

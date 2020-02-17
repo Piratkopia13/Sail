@@ -97,6 +97,7 @@ namespace Utils {
 	glm::vec4 getRandomColor();
 	float clamp(float val, float min, float max);
 	float smootherstep(float edge0, float edge1, float x);
+	float lerp(float a, float b, float f);
 
 	static std::random_device rd;
 	static std::mt19937 gen(rd());

@@ -54,7 +54,9 @@ PSIn VSMain(VSIn input) {
 		output.tbn = tbn;
     }
 
-	output.normal = mul((float3x3) sys_mWorld, normalize(input.normal));
+	// float4 worldNormal = mul(sys_mWorld, float4(normalize(input.normal), 0.f));
+	// output.normal = mul(sys_mView, worldNormal).xyz;
+    output.normal = mul(sys_mWorld, float4(normalize(input.normal), 0.f)).xyz;
 	output.texCoords = input.texCoords;
 
 	return output;
@@ -76,7 +78,7 @@ GBuffers PSMain(PSIn input) {
 
 	GBuffers gbuffers;
 
-    gbuffers.positions = float4(input.vsPos * 0.5f + 0.5f, 1.f);
+    gbuffers.positions = float4(input.vsPos, 1.f);
 
 	float3 albedo = sys_material.modelColor.rgb;
 	if (sys_material.hasAlbedoTexture)
@@ -91,7 +93,8 @@ GBuffers PSMain(PSIn input) {
 		
         worldNormal = mul(normalize(normalSample * 2.f - 1.f), input.tbn);
 	}
-    gbuffers.worldNormals = float4(worldNormal * 0.5f + 0.5f, 1.0f);
+    gbuffers.worldNormals = float4(worldNormal, 1.0f);
+    // gbuffers.worldNormals = float4(normalize(input.normal), 1.0f);
 
 	float metalness = sys_material.metalnessScale;
 	float roughness = sys_material.roughnessScale;

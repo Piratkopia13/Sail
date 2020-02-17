@@ -55,6 +55,10 @@ float Utils::smootherstep(float edge0, float edge1, float x) {
 	return x * x * x * (x * (x * 6 - 15) + 10);
 }
 
+float Utils::lerp(float a, float b, float f) {
+	return a + f * (b - a);
+}
+
 
 glm::vec4 Utils::getRandomColor() {
 	return glm::vec4(Utils::rnd(), Utils::rnd(), Utils::rnd(), 1);

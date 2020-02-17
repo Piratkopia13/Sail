@@ -140,12 +140,13 @@ void ShaderParser::parseCBuffer(const std::string& source) {
 		std::string type = nextToken(src);
 		src += type.size();
 		UINT tokenSize;
-		std::string name = nextTokenAsName(src, tokenSize, true);
+		int elementsInArray = 1;
+		std::string name = nextTokenAsName(src, tokenSize, &elementsInArray);
 		src = nextLine(src);
 
 		// Push the name and byteOffset to the vector
 		vars.push_back({ name, size });
-		size += getSizeOfType(type);
+		size += getSizeOfType(type) * elementsInArray;
 
 		/*Logger::Log("Type: " + type);
 		Logger::Log("Name: " + name);*/
@@ -226,21 +227,26 @@ void ShaderParser::parseRWTexture(const char* source) {
 	m_parsedData.renderableTextures.emplace_back(ShaderResource(name, slot), format, nameSuffix);
 }
 
-std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize, bool allowArray) const {
+std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize, int* arrayElements) const {
 	std::string name = nextToken(source);
 	outTokenSize = (UINT)name.size() + 1U; /// +1 to account for the space before the name
 	if (name[name.size() - 1] == ';') {
 		name = name.substr(0, name.size() - 1); // Remove ending ';'
 	}
 	bool isArray = name[name.size() - 1] == ']';
-	if (!allowArray && isArray) {
+	if (!arrayElements && isArray) {
 		Logger::Error("Shader resource with name \"" + name + "\" is of unsupported type - array");
 	}
 	if (isArray) {
-		// remove [asd] part from the name
-		auto start = name.find("[");
-		auto size = name.substr(start).find(']') + 1;
-		name.erase(start, size);
+		// remove [asd] part from the name, iterativly to handle multidimensional arrays [asd][asd]
+		size_t start = 0;
+		while ((start = name.find("[")) != name.npos) {
+			auto size = name.substr(start).find(']') + 1;
+			// Add array size as long as the size is defined numerically and not with a macro
+			if (isdigit(*name.substr(start+1).c_str()))
+				*arrayElements *= std::stoi(name.substr(start+1, size-2));
+			name.erase(start, size);
+		}
 	}
 	return name;
 }

@@ -47,6 +47,7 @@ Texture2D def_positions     : register(t3);
 Texture2D def_worldNormals  : register(t4);
 Texture2D def_albedo        : register(t5);
 Texture2D def_mrao          : register(t6);
+Texture2D<float> tex_ssao   : register(t7);
 SamplerState PSss            : register(s0);
 SamplerState PSLinearSampler : register(s2);
 
@@ -57,7 +58,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// return irradianceMap.SampleLevel(PSss, viewDir, 0);
 	// return radianceMap.SampleLevel(PSss, viewDir, 0);
 
-    float3 worldPos = mul(sys_mViewInv, def_positions.Sample(PSss, input.texCoord) * 2.f - 1.f).xyz;
+    float3 worldPos = mul(sys_mViewInv, def_positions.Sample(PSss, input.texCoord)).xyz;
     // return float4(worldPos / 50.f, 1.0f);
 
 	PBRScene scene;
@@ -78,14 +79,17 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
 	pixel.albedo = def_albedo.Sample(PSss, input.texCoord).rgb;
 
-	pixel.worldNormal = def_worldNormals.Sample(PSss, input.texCoord).rgb * 2.f - 1.f;
+	pixel.worldNormal = def_worldNormals.Sample(PSss, input.texCoord).rgb;
     // return float4(pixel.worldNormal / 2.f, 1.0f);
     
     float3 mrao = def_mrao.Sample(PSss, input.texCoord).rgb;
 	pixel.metalness = mrao.r;
 	pixel.roughness = mrao.g;
 	pixel.ao = mrao.b;
-	
+	pixel.ao *= pow(tex_ssao.Sample(PSLinearSampler, input.texCoord).r, 5.f);
+
+    // return float4(pixel.ao, pixel.ao, pixel.ao, 1.0f);
+
     // Shade
 	float3 shadedColor = pbrShade(scene, pixel);
 

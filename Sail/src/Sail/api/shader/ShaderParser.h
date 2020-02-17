@@ -76,7 +76,7 @@ private:
 	void parseSampler(const char* source);
 	void parseTexture(const char* source);
 	void parseRWTexture(const char* source);
-	std::string nextTokenAsName(const char* source, unsigned int& outTokenSize, bool allowArray = false) const;
+	std::string nextTokenAsName(const char* source, unsigned int& outTokenSize, int* arrayElements = nullptr) const;
 	std::string nextTokenAsType(const char* source, unsigned int& outTokenSize) const;
 	ShaderComponent::BIND_SHADER getBindShaderFromName(const std::string& name) const;
 
