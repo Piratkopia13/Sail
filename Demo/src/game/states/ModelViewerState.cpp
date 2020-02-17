@@ -76,7 +76,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 		pl->setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
 		m_scene.addEntity(e);
 
-	/*	for (unsigned int x = 0; x < 10; x++) {
+		for (unsigned int x = 0; x < 10; x++) {
 			for (unsigned int y = 0; y < 10; y++) {
 				e = Entity::Create("Another point light");
 				pl = e->addComponent<PointLightComponent>();
@@ -84,7 +84,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 				pl->setPosition(glm::vec3(3.f * x, 0.1f, 3.f * y));
 				m_scene.addEntity(e);
 			}
-		}*/
+		}
 	}
 	// PBR spheres
 	{

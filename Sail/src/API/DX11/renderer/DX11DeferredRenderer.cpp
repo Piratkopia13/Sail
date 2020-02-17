@@ -98,8 +98,10 @@ void DX11DeferredRenderer::runShadingPass() {
 	if (lightSetup) {
 		auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
 		auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
+		unsigned int numPLs = lightSetup->getNumPLs();
 		shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
 		shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
+		shader->trySetCBufferVar("sys_numPLights", &numPLs, sizeof(unsigned int));
 	}
 
 	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {

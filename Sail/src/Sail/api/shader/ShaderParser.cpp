@@ -284,7 +284,7 @@ UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "PBRMaterial")						return 4 * 12;
 	if (typeName == "DirectionalLight")					return 32;
 	if (typeName == "PointLight")						return 32;
-	if (typeName == "PointLightInput")					return 4 * 8 * 8; // last 8 is NUM_POINT_LIGHTS
+	if (typeName == "PointLightInput")					return 4 * 8 * 128; // last 128 is NUM_POINT_LIGHTS
 	if (typeName == "DeferredPointLightData")			return 48;
 	if (typeName == "DeferredDirLightData")				return 32;
 
