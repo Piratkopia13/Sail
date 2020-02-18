@@ -13,7 +13,7 @@ Game::Game(HINSTANCE hInstance)
 	m_stateStack.pushState(States::Editor);
 
 	// Set default settings
-	getSettings().set(Settings::Graphics_SSAO, false);
+	getSettings().set(Settings::Graphics_SSAO, true);
 }
 
 Game::~Game() {	}

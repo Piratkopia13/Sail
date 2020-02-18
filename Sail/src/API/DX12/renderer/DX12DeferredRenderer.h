@@ -6,6 +6,7 @@
 #include "../DX12API.h"
 #include "../resources/DX12RenderableTexture.h"
 #include "Sail/graphics/material/DeferredShadingPassMaterial.h"
+#include "Sail/graphics/SSAO.h"
 
 class DX12DeferredRenderer : public Renderer, public IEventListener {
 public:
@@ -25,7 +26,6 @@ public:
 
 private:
 	D3D12_CPU_DESCRIPTOR_HANDLE getGeometryPassDsv();
-	void initSSAO();
 
 private:
 	DX12API* m_context;
@@ -36,14 +36,7 @@ private:
 	std::unique_ptr<Model> m_screenQuadModel;
 	DeferredShadingPassMaterial m_shadingPassMaterial;
 
-	// SSAO
-	std::unique_ptr<DX12RenderableTexture> m_ssaoOutputTexture;
-	DX12RenderableTexture* m_ssaoBlurredTexture;
-	float m_ssaoResScale;
-	float m_ssaoWidth;
-	float m_ssaoHeight;
-	std::vector<glm::vec4> m_ssaoKernel;
-	std::vector<glm::vec4> m_ssaoNoise;
-
-
+	std::unique_ptr<SSAO> m_ssao;
+	DX12RenderableTexture* m_ssaoShadingTexture;
+	
 };
