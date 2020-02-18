@@ -25,6 +25,8 @@ public:
 
 private:
 	D3D12_CPU_DESCRIPTOR_HANDLE getGeometryPassDsv();
+	void initSSAO();
+
 private:
 	DX12API* m_context;
 	DX12API::Command m_command;

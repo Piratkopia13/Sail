@@ -8,6 +8,7 @@
 
 #include "utils/Timer.h"
 #include "resources/ResourceManager.h"
+#include "Settings.h"
 
 class Application {
 
@@ -35,6 +36,7 @@ public:
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
 	ResourceManager& getResourceManager();
+	Settings& getSettings();
 	const UINT getFPS() const;
 
 private:
@@ -43,6 +45,7 @@ private:
 	std::unique_ptr<GraphicsAPI> m_api;
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	ResourceManager m_resourceManager;
+	Settings m_settings;
 
 	Timer m_timer;
 	UINT m_fps;

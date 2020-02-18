@@ -174,6 +174,11 @@ ImGuiHandler* const Application::getImGuiHandler() {
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
 }
+
+Settings& Application::getSettings() {
+	return m_settings;
+}
+
 const UINT Application::getFPS() const {
 	return m_fps;
 }

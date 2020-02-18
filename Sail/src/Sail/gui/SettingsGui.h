@@ -1,9 +1,9 @@
 #pragma once
 #include "Sail/gui/SailGuiWindow.h"
 
-class ResourceManagerGui : public SailGuiWindow {
+class SettingsGui : public SailGuiWindow {
 public:
-	ResourceManagerGui();
+	SettingsGui();
 	void render();
-	
+
 };

@@ -20,17 +20,16 @@ void EditorGui::render(float dt, FUNC(void(CallbackType type, const std::string&
 	}
 
 	// Environment settings window
-	ImGui::Begin("Environment");
-
-	enableColumns(90.f);
-	addProperty("Environment", [&]() {
-		const char* environments[] = { "studio", "rail", "pier" };
-		static int currentEnvironmentIndex = 0;
-		ImGui::Combo("##hideLabel", &currentEnvironmentIndex, environments, IM_ARRAYSIZE(environments));
-		m_callback(CallbackType::ENVIRONMENT_CHANGED, environments[currentEnvironmentIndex]);
-	});
-	disableColumns();
-
+	if (ImGui::Begin("Environment")) {
+		enableColumns(90.f);
+		addProperty("Environment", [&]() {
+			const char* environments[] = { "studio", "rail", "pier" };
+			static int currentEnvironmentIndex = 0;
+			ImGui::Combo("##hideLabel", &currentEnvironmentIndex, environments, IM_ARRAYSIZE(environments));
+			m_callback(CallbackType::ENVIRONMENT_CHANGED, environments[currentEnvironmentIndex]);
+		});
+		disableColumns();
+	}
 	ImGui::End();
 }
 
@@ -66,10 +65,12 @@ void EditorGui::setupDockspace(float menuBarHeight) {
 float EditorGui::setupMenuBar(){
 	static bool showDemoWindow = false;
 	static bool showResourcesWindow = false;
+	static bool showSettingsWindow = false;
 	ImVec2 menuBarSize;
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("Duffle")) {
 			ImGui::MenuItem("Resource tracker", NULL, &showResourcesWindow);
+			ImGui::MenuItem("Settings", NULL, &showSettingsWindow);
 			ImGui::MenuItem("Show demo window", NULL, &showDemoWindow);
 			if (ImGui::MenuItem("Switch to GameState", NULL)) { m_callback(CallbackType::CHANGE_STATE, ""); }
 			if (ImGui::MenuItem("Exit", NULL)) { PostQuitMessage(0); }
@@ -79,12 +80,15 @@ float EditorGui::setupMenuBar(){
 		menuBarSize = ImGui::GetWindowSize();
 		ImGui::EndMainMenuBar();
 	}
-	if (showDemoWindow) {
+	if (showDemoWindow)
 		ImGui::ShowDemoWindow();
-	}
-	if (showResourcesWindow) {
+
+	if (showResourcesWindow)
 		m_resourceManagerGui.render();
-	}
+
+	if (showSettingsWindow)
+		m_settingsGui.render();
+
 	return menuBarSize.y;
 }
 

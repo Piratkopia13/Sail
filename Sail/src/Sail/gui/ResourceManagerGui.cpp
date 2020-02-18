@@ -3,11 +3,10 @@
 #include "imgui.h"
 #include "../Application.h"
 
-ResourceManagerGui::ResourceManagerGui() {
-
-}
+ResourceManagerGui::ResourceManagerGui() { }
 
 void ResourceManagerGui::render() {
+	newFrame();
 	auto& resman = Application::getInstance()->getResourceManager();
 
 	if (ImGui::Begin("Resource tracker")) {

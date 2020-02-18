@@ -32,38 +32,8 @@ DX12DeferredRenderer::DX12DeferredRenderer() {
 	m_screenQuadModel = ModelFactory::ScreenQuadModel::Create();
 
 	// SSAO
-	{
-		m_ssaoResScale = 1 / 2.f; // Half res
-
-		m_ssaoWidth = windowWidth * m_ssaoResScale;
-		m_ssaoHeight = windowHeight * m_ssaoResScale;
-		m_ssaoOutputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(
-			RenderableTexture::Create(m_ssaoWidth, m_ssaoHeight, "SSAO output ", ResourceFormat::R8)));
-
-		std::uniform_real_distribution<float> randomFloats(0.f, 1.f); // random floats between 0 - 1
-		std::default_random_engine generator;
-		for (unsigned int i = 0; i < 64; ++i) {
-			glm::vec3 sample(
-				randomFloats(generator) * 2.f - 1.f,
-				randomFloats(generator) * 2.f - 1.f,
-				randomFloats(generator)
-			);
-			sample = glm::normalize(sample);
-			sample *= randomFloats(generator);
-			float scale = (float)i / 64.f;
-			scale = Utils::lerp(0.1f, 1.0f, scale * scale);
-			sample *= scale;
-			m_ssaoKernel.push_back(glm::vec4(sample, 0.0f));
-		}
-
-		for (unsigned int i = 0; i < 16; i++) {
-			glm::vec4 noise(
-				randomFloats(generator) * 2.f - 1.f,
-				randomFloats(generator) * 2.f - 1.f,
-				0.f,
-				0.f);
-			m_ssaoNoise.push_back(noise);
-		}
+	if (app->getSettings().getBool(Settings::Graphics_SSAO)) {
+		initSSAO();
 	}
 }
 
@@ -73,6 +43,16 @@ DX12DeferredRenderer::~DX12DeferredRenderer() {
 
 void* DX12DeferredRenderer::present(Renderer::RenderFlag flags, void* skippedPrepCmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
+	bool doSSAO = Application::getInstance()->getSettings().getBool(Settings::Graphics_SSAO);
+	if (!m_ssaoOutputTexture && doSSAO) {
+		// Handle enabling of ssao in runtime
+		initSSAO();
+	} else if (m_ssaoOutputTexture && !doSSAO) {
+		// Handle disabling of ssao in runtime
+		m_context->waitForGPU();
+		m_ssaoOutputTexture.reset();
+	}
 
 	ID3D12GraphicsCommandList4* cmdList = nullptr;
 	if (flags & Renderer::RenderFlag::SkipPreparation) {
@@ -86,8 +66,8 @@ void* DX12DeferredRenderer::present(Renderer::RenderFlag flags, void* skippedPre
 		cmdList = runFramePreparation();
 	if (!(flags & Renderer::RenderFlag::SkipRendering)) {
 		runGeometryPass(cmdList);
-		runSSAO(cmdList);
-		//m_ssaoBlurredTexture = m_ssaoOutputTexture.get(); // Uncomment if ssao is disabled
+		if (doSSAO)
+			runSSAO(cmdList);
 		runShadingPass(cmdList);
 	}
 	if (!(flags & Renderer::RenderFlag::SkipExecution))
@@ -178,6 +158,7 @@ void DX12DeferredRenderer::runGeometryPass(ID3D12GraphicsCommandList4* cmdList) 
 void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Shading pass");
 	auto& resman = Application::getInstance()->getResourceManager();
+	bool useSSAO = Application::getInstance()->getSettings().getBool(Settings::Graphics_SSAO);
 
 	// Transition back buffer to render target
 	m_context->prepareToRender(cmdList);
@@ -189,7 +170,8 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	// Transition gbuffers to pixel shader resources
 	for (int i = 0; i < NUM_GBUFFERS; i++)
 		m_gbufferTextures[i]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE); // TODO: transition in batch
-	m_ssaoBlurredTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	if (useSSAO)
+		m_ssaoBlurredTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::DeferredShadingPassShader);
 	auto* mesh = m_screenQuadModel->getMesh(0);
@@ -200,6 +182,8 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 
 	shader->trySetCBufferVar("sys_mViewInv", &glm::inverse(camera->getViewMatrix()), sizeof(glm::mat4));
 	shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+	int useSSAOInt = (int)useSSAO;
+	shader->trySetCBufferVar("useSSAO", &useSSAOInt, sizeof(int));
 
 	if (lightSetup) {
 		auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
@@ -222,7 +206,8 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 		shader->setRenderableTexture("def_worldNormals", m_gbufferTextures[1].get(), cmdList);
 		shader->setRenderableTexture("def_albedo", m_gbufferTextures[2].get(), cmdList);
 		shader->setRenderableTexture("def_mrao", m_gbufferTextures[3].get(), cmdList);
-		shader->setRenderableTexture("tex_ssao", m_ssaoBlurredTexture, cmdList);
+		if (useSSAO)
+			shader->setRenderableTexture("tex_ssao", m_ssaoBlurredTexture, cmdList);
 	};
 	m_shadingPassMaterial.setBindFunc(materialFunc);
 
@@ -364,4 +349,42 @@ bool DX12DeferredRenderer::onEvent(Event& event) {
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12DeferredRenderer::getGeometryPassDsv() {
 	return m_gbufferTextures[0]->getDsvCDH();
+}
+
+void DX12DeferredRenderer::initSSAO() {
+	auto* app = Application::getInstance();
+	auto windowWidth = app->getWindow()->getWindowWidth();
+	auto windowHeight = app->getWindow()->getWindowHeight();
+
+	m_ssaoResScale = 1 / 2.f; // Half res
+
+	m_ssaoWidth = windowWidth * m_ssaoResScale;
+	m_ssaoHeight = windowHeight * m_ssaoResScale;
+	m_ssaoOutputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(
+		RenderableTexture::Create(m_ssaoWidth, m_ssaoHeight, "SSAO output ", ResourceFormat::R8)));
+
+	std::uniform_real_distribution<float> randomFloats(0.f, 1.f); // random floats between 0 - 1
+	std::default_random_engine generator;
+	for (unsigned int i = 0; i < 64; ++i) {
+		glm::vec3 sample(
+			randomFloats(generator) * 2.f - 1.f,
+			randomFloats(generator) * 2.f - 1.f,
+			randomFloats(generator)
+		);
+		sample = glm::normalize(sample);
+		sample *= randomFloats(generator);
+		float scale = (float)i / 64.f;
+		scale = Utils::lerp(0.1f, 1.0f, scale * scale);
+		sample *= scale;
+		m_ssaoKernel.push_back(glm::vec4(sample, 0.0f));
+	}
+
+	for (unsigned int i = 0; i < 16; i++) {
+		glm::vec4 noise(
+			randomFloats(generator) * 2.f - 1.f,
+			randomFloats(generator) * 2.f - 1.f,
+			0.f,
+			0.f);
+		m_ssaoNoise.push_back(noise);
+	}
 }
