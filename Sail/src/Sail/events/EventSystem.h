@@ -4,6 +4,8 @@
 #include "IEventListener.h"
 #include <set>
 
+// Simple subscription based event system courtesy of Samuel Asp
+
 class EventSystem {
 public:
 	EventSystem(const EventSystem&) = delete;

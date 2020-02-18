@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Sail/api/Renderer.h"
+#include "Sail/events/Events.h"
 #include <glm/glm.hpp>
 #include "../DX12API.h"
 #include "../resources/DX12RenderableTexture.h"
 #include "Sail/graphics/material/DeferredShadingPassMaterial.h"
 
-class DX12DeferredRenderer : public Renderer {
+class DX12DeferredRenderer : public Renderer, public IEventListener {
 public:
 	DX12DeferredRenderer();
 	~DX12DeferredRenderer();
@@ -19,6 +20,8 @@ public:
 	void runShadingPass(ID3D12GraphicsCommandList4* cmdList);
 	void runSSAO(ID3D12GraphicsCommandList4* cmdList);
 	void runFrameExecution(ID3D12GraphicsCommandList4* cmdList);
+
+	bool onEvent(Event& event) override;
 
 private:
 	D3D12_CPU_DESCRIPTOR_HANDLE getGeometryPassDsv();
@@ -34,6 +37,7 @@ private:
 	// SSAO
 	std::unique_ptr<DX12RenderableTexture> m_ssaoOutputTexture;
 	DX12RenderableTexture* m_ssaoBlurredTexture;
+	float m_ssaoResScale;
 	float m_ssaoWidth;
 	float m_ssaoHeight;
 	std::vector<glm::vec4> m_ssaoKernel;

@@ -14,6 +14,8 @@
 #include "../shader/DX12ComputeShaderDispatcher.h"
 
 DX12DeferredRenderer::DX12DeferredRenderer() {
+	EventSystem::getInstance()->subscribeToEvent(Event::WINDOW_RESIZE, this);
+
 	auto* app = Application::getInstance();
 	m_context = app->getAPI<DX12API>();
 	m_context->initCommand(m_command);
@@ -31,9 +33,10 @@ DX12DeferredRenderer::DX12DeferredRenderer() {
 
 	// SSAO
 	{
-		m_ssaoWidth = windowWidth / 2.f;
-		m_ssaoHeight = windowHeight / 2.f;
+		m_ssaoResScale = 1 / 2.f; // Half res
 
+		m_ssaoWidth = windowWidth * m_ssaoResScale;
+		m_ssaoHeight = windowHeight * m_ssaoResScale;
 		m_ssaoOutputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(
 			RenderableTexture::Create(m_ssaoWidth, m_ssaoHeight, "SSAO output ", ResourceFormat::R8)));
 
@@ -61,13 +64,11 @@ DX12DeferredRenderer::DX12DeferredRenderer() {
 				0.f);
 			m_ssaoNoise.push_back(noise);
 		}
-
 	}
-
 }
 
 DX12DeferredRenderer::~DX12DeferredRenderer() {
-
+	EventSystem::getInstance()->unsubscribeFromEvent(Event::WINDOW_RESIZE, this);
 }
 
 void* DX12DeferredRenderer::present(Renderer::RenderFlag flags, void* skippedPrepCmdList) {
@@ -344,6 +345,21 @@ void DX12DeferredRenderer::runFrameExecution(ID3D12GraphicsCommandList4* cmdList
 	// Execute command list
 	cmdList->Close();
 	m_context->getDirectQueue()->executeCommandLists({ cmdList });
+}
+
+bool DX12DeferredRenderer::onEvent(Event& event) {
+	auto resizeEvent = [&](WindowResizeEvent& event) {
+		for (unsigned i = 0; i < NUM_GBUFFERS; i++) {
+			m_gbufferTextures[i]->resize(event.getWidth(), event.getHeight());
+		}
+		m_ssaoWidth = event.getWidth() * m_ssaoResScale;
+		m_ssaoHeight = event.getHeight() * m_ssaoResScale;
+		m_ssaoOutputTexture->resize(m_ssaoWidth, m_ssaoHeight);
+
+		return true;
+	};
+	EventHandler::HandleType<WindowResizeEvent>(event, resizeEvent);
+	return true;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12DeferredRenderer::getGeometryPassDsv() {
