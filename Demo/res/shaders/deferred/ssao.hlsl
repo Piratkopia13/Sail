@@ -12,6 +12,7 @@ cbuffer PSSystemCBuffer : register(b0) {
     matrix sys_mProjection;
     float4 kernel[64];
     float4 noise[4][4];
+    float2 windowSize;
 }
 
 PSIn VSMain(VSIn input) {
@@ -29,15 +30,11 @@ Texture2D def_positions       : register(t0);
 Texture2D def_worldNormals    : register(t1);
 SamplerState PSssNearestClamp : register(s3); // Use to sample positions
 
-// Tile noise texture over screen based on screen dimensions divided by noise size
-// static const float2 noiseScale = float2(1600.f/4.f, 900.f/4.f); // screen = 1600x900
-static const float2 windowSize = float2(800.f, 450.f);
-
 float PSMain(PSIn input) : SV_Target0 {
     float3 fragPos      = def_positions.Sample(PSssNearestClamp, input.texCoord).xyz;
     float3 worldNormal  = def_worldNormals.Sample(PSssNearestClamp, input.texCoord).xyz;
     float3 vsNormal     = mul(sys_mView, float4(normalize(worldNormal), 0.f)).xyz; // should be changed to inverse transpose to support non-uniformly scaled objects
-    float3 randomVec    = noise[(input.texCoord.x * windowSize.x) % 4][(input.texCoord.y * windowSize.y) % 4].xyz;
+    float3 randomVec    = noise[(input.texCoord.x * windowSize.x) % 4][(input.texCoord.y * windowSize.y) % 4].xyz; // Tile noise texture over screen based on screen dimensions modulus noise size
 
     // return float4(fragPos, 1.0f);
     // return float4(vsNormal * 0.5f + 0.5f, 1.0f);

@@ -33,6 +33,9 @@ private:
 
 	// SSAO
 	std::unique_ptr<DX12RenderableTexture> m_ssaoOutputTexture;
+	DX12RenderableTexture* m_ssaoBlurredTexture;
+	float m_ssaoWidth;
+	float m_ssaoHeight;
 	std::vector<glm::vec4> m_ssaoKernel;
 	std::vector<glm::vec4> m_ssaoNoise;
 

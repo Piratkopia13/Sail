@@ -49,15 +49,15 @@ void Shader::bind(void* cmdList) const {
 	bindInternal(0U, cmdList);
 }
 
-//RenderableTexture* Shader::getRenderableTexture(const std::string& name) const {
-//	for (auto& it : parser.getParsedData().renderableTextures) {
-//		if (it.res.name == name) {
-//			return it.renderableTexture.get();
-//		}
-//	}
-//	Logger::Error("Tried to get a RenderableTexture named \"" + name + "\" which does not exist in the Shader.");
-//	return nullptr;
-//}
+RenderableTexture* Shader::getRenderableTexture(const std::string& name) const {
+	for (auto& it : parser.getParsedData().renderableTextures) {
+		if (it.res.name == name) {
+			return it.renderableTexture.get();
+		}
+	}
+	Logger::Error("Tried to get a RenderableTexture named \"" + name + "\" which does not exist in the Shader.");
+	return nullptr;
+}
 
 // TODO: size isn't really needed, can be read from the byteOffset of the next var
 void Shader::setCBufferVar(const std::string& name, const void* data, unsigned int size) {

@@ -20,7 +20,7 @@ DX12ComputeShaderDispatcher::~DX12ComputeShaderDispatcher() { }
 void DX12ComputeShaderDispatcher::begin(void* cmdList) {
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 
-	m_context->getMainGPUDescriptorHeap()->bind(dxCmdList);
+	//m_context->getMainGPUDescriptorHeap()->bind(dxCmdList);
 	dxCmdList->SetComputeRootSignature(m_context->getGlobalRootSignature());
 }
 
@@ -64,7 +64,7 @@ void DX12ComputeShaderDispatcher::dispatch(Shader& computeShader, const glm::vec
 
 	dxCmdList->Dispatch(threadGroupCount.x, threadGroupCount.y, threadGroupCount.z);
 
-	static_cast<DX12Shader&>(computeShader).instanceFinished(); // TOOD: fIX
+	static_cast<DX12Shader&>(computeShader).instanceFinished();
 
 	//return *computeShader.getComputeOutput();
 }

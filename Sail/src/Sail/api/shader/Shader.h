@@ -27,7 +27,7 @@ public:
 
 	virtual void bind(void* cmdList) const;
 	
-	//RenderableTexture* getRenderableTexture(const std::string& name) const;
+	RenderableTexture* getRenderableTexture(const std::string& name) const;
 
 	virtual bool setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) = 0;
 	virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) = 0;

@@ -5,7 +5,7 @@
 //=============================================================================
 #include "GaussianBlurCommon.hlsl"
 
-Texture2D input : register(t0);
+Texture2D input : register(t0) : SAIL_IGNORE;
 RWTexture2D<float4> output : register(u10) : SAIL_RGBA16_FLOAT;
 
 cbuffer CSData : register(b0) {

@@ -212,14 +212,14 @@ void ResourceManager::reloadAllShaders() {
 }
 
 PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {
-	unsigned int hash = 0;
+	unsigned int hash = shader->getID() * 10e5;
 	unsigned int meshHash = 0;
 	if (mesh) {
 		// Return a PSO that matches the attribute order in the mesh and the shader
 		// The combination is hashed in a uint like "xxxxxyyyyy" where x is the shader id and y is the attribute hash
 		meshHash = mesh->getAttributesHash();
 		assert(shader->getID() < 21473 && "Too many Shader instances exist, how did that even happen?");
-		hash = meshHash + shader->getID() * 10e5;
+		hash += meshHash;
 	} else {
 		assert(shader->isComputeShader() && "A mesh has to be specified for all shader types except compute shaders when getting a PSO");
 	}

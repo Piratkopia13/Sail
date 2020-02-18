@@ -86,7 +86,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	pixel.metalness = mrao.r;
 	pixel.roughness = mrao.g;
 	pixel.ao = mrao.b;
-	pixel.ao *= pow(tex_ssao.Sample(PSLinearSampler, input.texCoord).r, 5.f);
+	pixel.ao *= pow(tex_ssao.Sample(PSLinearSampler, input.texCoord).r, 3.f);
 
     // return float4(pixel.ao, pixel.ao, pixel.ao, 1.0f);
 
