@@ -155,6 +155,117 @@ void DX12DeferredRenderer::runGeometryPass(ID3D12GraphicsCommandList4* cmdList) 
 	}
 }
 
+void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION("SSAO");
+	auto& resman = Application::getInstance()->getResourceManager();
+
+	auto* ssaoRenderTarget = static_cast<DX12RenderableTexture*>(m_ssao->getRenderTargetTexture());
+	ssaoRenderTarget->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	ssaoRenderTarget->clear({ 0.0f, 0.0f, 0.0f, 0.0f }, cmdList);
+	cmdList->OMSetRenderTargets(1, &ssaoRenderTarget->getRtvCDH(), true, nullptr);
+
+	D3D12_VIEWPORT viewport = { 0 };
+	viewport.Width = m_ssao->getRenderTargetWidth();
+	viewport.Height = m_ssao->getRenderTargetHeight();
+	viewport.MaxDepth = 1.0f;
+	D3D12_RECT scissorRect = { 0 };
+	scissorRect.right = (long)m_ssao->getRenderTargetWidth();
+	scissorRect.bottom = (long)m_ssao->getRenderTargetHeight();
+
+	cmdList->RSSetViewports(1, &viewport);
+	cmdList->RSSetScissorRects(1, &scissorRect);
+
+
+	// Transition gbuffers to pixel shader resources
+	m_gbufferTextures[0]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	m_gbufferTextures[1]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::SSAOShader);
+	auto* mesh = m_screenQuadModel->getMesh(0);
+
+	// Find a matching pipelineStateObject and bind it
+	auto& pso = resman.getPSO(shader, mesh);
+	pso.bind(cmdList);
+
+	shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
+	shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
+	auto& [kernelData, kernelDataSize] = m_ssao->getKernel();
+	shader->trySetCBufferVar("kernel", kernelData, kernelDataSize);
+	auto& [noiseData, noiseDataSize] = m_ssao->getNoise();
+	shader->trySetCBufferVar("noise", noiseData, noiseDataSize);
+	glm::vec2 ssaoSize(m_ssao->getRenderTargetWidth(), m_ssao->getRenderTargetHeight());
+	shader->trySetCBufferVar("windowSize", &ssaoSize, sizeof(glm::vec2));
+
+	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {
+		// Bind GBuffer textures
+		shader->setRenderableTexture("def_positions", m_gbufferTextures[0].get(), cmdList);
+		shader->setRenderableTexture("def_worldNormals", m_gbufferTextures[1].get(), cmdList);
+	};
+	m_shadingPassMaterial.setBindFunc(materialFunc);
+
+	mesh->draw(*this, &m_shadingPassMaterial, shader, environment, cmdList);
+
+	// Blur ssao output
+	auto& blurHorizontalShader = Application::getInstance()->getResourceManager().getShaderSet(Shaders::GaussianBlurHorizontalComputeShader);
+	auto& blurVerticalShader = Application::getInstance()->getResourceManager().getShaderSet(Shaders::GaussianBlurVerticalComputeShader);
+
+	auto& settingsHorizontal = blurHorizontalShader.getSettings().computeShaderSettings;
+	auto& settingsVertical = blurVerticalShader.getSettings().computeShaderSettings;
+	float textureSizeDiff = 1.f;
+
+	const auto& heap = m_context->getMainGPUDescriptorHeap();
+	DX12ComputeShaderDispatcher csDispatcher;
+	csDispatcher.begin(cmdList);
+
+	// Dispatch horizontal blur pass
+	{
+		blurHorizontalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float));
+
+		DescriptorHeap::DescriptorTableInstanceBuilder instance;
+
+		instance.add("t0", [&](auto cpuHandle) { }); // TODO: figure out why this line is needed for u10 to bind (something is probably wrong in addAndBind)
+		instance.add("u10", [&](auto cpuHandle) {
+			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, ssaoRenderTarget->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			ssaoRenderTarget->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		});
+
+		// Add the instance to the heap
+		// This binds resource views in the right places in the heap according to the root signature
+		heap->addAndBind(instance, cmdList, true);
+
+		unsigned int x = (unsigned int)glm::ceil(m_ssao->getRenderTargetWidth() * settingsHorizontal.threadGroupXScale);
+		unsigned int y = (unsigned int)glm::ceil(m_ssao->getRenderTargetHeight() * settingsHorizontal.threadGroupYScale);
+		unsigned int z = 1;
+		csDispatcher.dispatch(blurHorizontalShader, { x, y, z }, cmdList);
+	}
+
+	// Dispatch vertical blur pass
+	{
+		blurVerticalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float));
+
+		DescriptorHeap::DescriptorTableInstanceBuilder instance;
+
+		m_ssaoShadingTexture = static_cast<DX12RenderableTexture*>(blurVerticalShader.getRenderableTexture("output"));
+		m_ssaoShadingTexture->resize(m_ssao->getRenderTargetWidth(), m_ssao->getRenderTargetHeight());
+		instance.add("t0", [&](auto cpuHandle) {
+			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, ssaoRenderTarget->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			ssaoRenderTarget->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		});
+		instance.add("u10", [&](auto cpuHandle) {
+			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, m_ssaoShadingTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			m_ssaoShadingTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		});
+
+		heap->addAndBind(instance, cmdList, true);
+
+		unsigned int x = (unsigned int)glm::ceil(m_ssao->getRenderTargetWidth() * settingsVertical.threadGroupXScale);
+		unsigned int y = (unsigned int)glm::ceil(m_ssao->getRenderTargetHeight() * settingsVertical.threadGroupYScale);
+		unsigned int z = 1;
+		csDispatcher.dispatch(blurVerticalShader, { x, y, z }, cmdList);
+	}
+	//m_ssaoBlurredTexture = m_ssaoOutputTexture.get();
+}
+
 void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Shading pass");
 	auto& resman = Application::getInstance()->getResourceManager();
@@ -212,117 +323,6 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	m_shadingPassMaterial.setBindFunc(materialFunc);
 
 	mesh->draw(*this, &m_shadingPassMaterial, shader, environment, cmdList);
-}
-
-void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
-	SAIL_PROFILE_API_SPECIFIC_FUNCTION("SSAO");
-	auto& resman = Application::getInstance()->getResourceManager();
-
-	auto* ssaoRenderTarget = static_cast<DX12RenderableTexture*>(m_ssao->getRenderTargetTexture());
-	ssaoRenderTarget->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	ssaoRenderTarget->clear({ 0.0f, 0.0f, 0.0f, 0.0f }, cmdList);
-	cmdList->OMSetRenderTargets(1, &ssaoRenderTarget->getRtvCDH(), true, nullptr);
-
-	D3D12_VIEWPORT viewport = { 0 };
-	viewport.Width = m_ssao->getRenderTargetWidth();
-	viewport.Height = m_ssao->getRenderTargetHeight();
-	viewport.MaxDepth = 1.0f;
-	D3D12_RECT scissorRect = {0};
-	scissorRect.right = (long)m_ssao->getRenderTargetWidth();
-	scissorRect.bottom = (long)m_ssao->getRenderTargetHeight();
-
-	cmdList->RSSetViewports(1, &viewport);
-	cmdList->RSSetScissorRects(1, &scissorRect);
-
-
-	// Transition gbuffers to pixel shader resources
-	m_gbufferTextures[0]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	m_gbufferTextures[1]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::SSAOShader);
-	auto* mesh = m_screenQuadModel->getMesh(0);
-
-	// Find a matching pipelineStateObject and bind it
-	auto& pso = resman.getPSO(shader, mesh);
-	pso.bind(cmdList);
-
-	shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-	shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
-	auto& [kernelData, kernelDataSize] = m_ssao->getKernel();
-	shader->trySetCBufferVar("kernel", kernelData, kernelDataSize);
-	auto& [noiseData, noiseDataSize] = m_ssao->getNoise();
-	shader->trySetCBufferVar("noise", noiseData, noiseDataSize);
-	glm::vec2 ssaoSize(m_ssao->getRenderTargetWidth(), m_ssao->getRenderTargetHeight());
-	shader->trySetCBufferVar("windowSize", &ssaoSize, sizeof(glm::vec2));
-
-	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {
-		// Bind GBuffer textures
-		shader->setRenderableTexture("def_positions", m_gbufferTextures[0].get(), cmdList);
-		shader->setRenderableTexture("def_worldNormals", m_gbufferTextures[1].get(), cmdList);
-	};
-	m_shadingPassMaterial.setBindFunc(materialFunc);
-
-	mesh->draw(*this, &m_shadingPassMaterial, shader, environment, cmdList);
-
-	// Blur ssao output
-	auto& blurHorizontalShader = Application::getInstance()->getResourceManager().getShaderSet(Shaders::GaussianBlurHorizontalComputeShader);
-	auto& blurVerticalShader = Application::getInstance()->getResourceManager().getShaderSet(Shaders::GaussianBlurVerticalComputeShader);
-
-	auto& settingsHorizontal = blurHorizontalShader.getSettings().computeShaderSettings;
-	auto& settingsVertical = blurVerticalShader.getSettings().computeShaderSettings;
-	float textureSizeDiff = 1.f;
-	
-	const auto& heap = m_context->getMainGPUDescriptorHeap();
-	DX12ComputeShaderDispatcher csDispatcher;
-	csDispatcher.begin(cmdList);
-
-	// Dispatch horizontal blur pass
-	{
-		blurHorizontalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float));
-
-		DescriptorHeap::DescriptorTableInstanceBuilder instance;
-
-		instance.add("t0", [&](auto cpuHandle) { }); // TODO: figure out why this line is needed for u10 to bind (something is probably wrong in addAndBind)
-		instance.add("u10", [&](auto cpuHandle) {
-			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, ssaoRenderTarget->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			ssaoRenderTarget->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		});
-
-		// Add the instance to the heap
-		// This binds resource views in the right places in the heap according to the root signature
-		heap->addAndBind(instance, cmdList, true);
-
-		unsigned int x = (unsigned int)glm::ceil(m_ssao->getRenderTargetWidth() * settingsHorizontal.threadGroupXScale);
-		unsigned int y = (unsigned int)glm::ceil(m_ssao->getRenderTargetHeight() * settingsHorizontal.threadGroupYScale);
-		unsigned int z = 1;
-		csDispatcher.dispatch(blurHorizontalShader, { x, y, z }, cmdList);
-	}
-
-	// Dispatch vertical blur pass
-	{
-		blurVerticalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float));
-
-		DescriptorHeap::DescriptorTableInstanceBuilder instance;
-
-		m_ssaoShadingTexture = static_cast<DX12RenderableTexture*>(blurVerticalShader.getRenderableTexture("output"));
-		m_ssaoShadingTexture->resize(m_ssao->getRenderTargetWidth(), m_ssao->getRenderTargetHeight());
-		instance.add("t0", [&](auto cpuHandle) {
-			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, ssaoRenderTarget->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			ssaoRenderTarget->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-		});
-		instance.add("u10", [&](auto cpuHandle) {
-			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, m_ssaoShadingTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			m_ssaoShadingTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		});
-
-		heap->addAndBind(instance, cmdList, true);
-
-		unsigned int x = (unsigned int)glm::ceil(m_ssao->getRenderTargetWidth() * settingsVertical.threadGroupXScale);
-		unsigned int y = (unsigned int)glm::ceil(m_ssao->getRenderTargetHeight() * settingsVertical.threadGroupYScale);
-		unsigned int z = 1;
-		csDispatcher.dispatch(blurVerticalShader, { x, y, z }, cmdList);
-	}
-	//m_ssaoBlurredTexture = m_ssaoOutputTexture.get();
 }
 
 void DX12DeferredRenderer::runFrameExecution(ID3D12GraphicsCommandList4* cmdList) {

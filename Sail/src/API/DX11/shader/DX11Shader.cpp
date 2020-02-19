@@ -20,6 +20,7 @@ DX11Shader::DX11Shader(Shaders::ShaderSettings settings)
 	, m_ds(nullptr)
 	, m_hs(nullptr)
 	, m_gs(nullptr)
+	, m_cs(nullptr)
 {
 	compile();
 }
@@ -30,6 +31,7 @@ DX11Shader::~DX11Shader() {
 	Memory::SafeRelease(m_ds);
 	Memory::SafeRelease(m_hs);
 	Memory::SafeRelease(m_gs);
+	Memory::SafeRelease(m_cs);
 }
 
 void DX11Shader::bind(void* cmdList) const {
@@ -44,6 +46,7 @@ void DX11Shader::bind(void* cmdList) const {
 	devCon->GSSetShader(m_gs, 0, 0);
 	devCon->DSSetShader(m_ds, 0, 0);
 	devCon->HSSetShader(m_hs, 0, 0);
+	devCon->CSSetShader(m_cs, 0, 0);
 }
 
 void* DX11Shader::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
@@ -103,7 +106,11 @@ bool DX11Shader::setTexture(const std::string& name, Texture* texture, void* cmd
 	if (texture) {
 		srv[0] = ((DX11Texture*)texture)->getSRV();
 	}
-	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, srv);
+	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
+	if (isComputeShader())
+		devCon->CSSetShaderResources(slot, 1, srv);
+	else
+		devCon->PSSetShaderResources(slot, 1, srv);
 	return true;
 }
 
@@ -114,43 +121,61 @@ void DX11Shader::setRenderableTexture(const std::string& name, RenderableTexture
 	if (texture) {
 		srv[0] = *((DX11RenderableTexture*)texture)->getColorSRV();
 	}
-	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->PSSetShaderResources(slot, 1, srv);
+	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
+	if (isComputeShader())
+		devCon->CSSetShaderResources(slot, 1, srv);
+	else
+		devCon->PSSetShaderResources(slot, 1, srv);
+}
+
+void DX11Shader::setRenderableTextureUAV(const std::string& name, RenderableTexture* texture) {
+	int slot = parser.findSlotFromName(name, parser.getParsedData().textures);
+
+	UINT counts[1] = { 1 };
+	ID3D11UnorderedAccessView* uav[1] = { nullptr }; // Default to a null srv (unbinds the slot)
+	if (texture) {
+		uav[0] = *((DX11RenderableTexture*)texture)->getColorUAV();
+	}
+	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
+	if (isComputeShader())
+		devCon->CSSetUnorderedAccessViews(slot, 1, uav, counts);
+	else
+		assert(false && "Non compute shader SRVs have to be set via OMSetRenderTargetsAndUAVs method, this is currently not supported. Maybe fix?");
 }
 
 void DX11Shader::compile() {
 	Shader::compile();
 
-	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
+	auto* device = Application::getInstance()->getAPI<DX11API>()->getDevice();
 
 	// Emulate pipeline with individual shader objects
-	if (getVsBlob()) {
-		//std::cout << "has vs" << std::endl;
-		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(getVsBlob());
-		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateVertexShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_vs));
-		//Memory::safeRelease(compiledShader);
+	if (void* blob = getVsBlob()) {
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(blob);
+		ThrowIfFailed(device->CreateVertexShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_vs));
 	}
-	if (getPsBlob()) {
-		//std::cout << "has ps" << std::endl;
-		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(getPsBlob());
-		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreatePixelShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_ps));
+	if (void* blob = getPsBlob()) {
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(blob);
+		ThrowIfFailed(device->CreatePixelShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_ps));
 		Memory::SafeRelease(compiledShader);
 	}
-	if (getGsBlob()) {
-		//std::cout << "has gs" << std::endl;
-		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(getGsBlob());
-		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateGeometryShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_gs));
+	if (void* blob = getGsBlob()) {
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(blob);
+		ThrowIfFailed(device->CreateGeometryShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_gs));
 		Memory::SafeRelease(compiledShader);
 	}
-	if (getDsBlob()) {
-		//std::cout << "has ds" << std::endl;
-		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(getDsBlob());
-		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateDomainShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_ds));
+	if (void* blob = getDsBlob()) {
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(blob);
+		ThrowIfFailed(device->CreateDomainShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_ds));
 		Memory::SafeRelease(compiledShader);
 	}
-	if (getHsBlob()) {
-		//std::cout << "has hs" << std::endl;
-		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(getHsBlob());
-		ThrowIfFailed(Application::getInstance()->getAPI<DX11API>()->getDevice()->CreateHullShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_hs));
+	if (void* blob = getHsBlob()) {
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(blob);
+		ThrowIfFailed(device->CreateHullShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_hs));
+		Memory::SafeRelease(compiledShader);
+	}
+	if (void* blob = getCsBlob()) {
+		ID3D10Blob* compiledShader = static_cast<ID3D10Blob*>(blob);
+		ThrowIfFailed(device->CreateComputeShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_cs));
 		Memory::SafeRelease(compiledShader);
 	}
 }

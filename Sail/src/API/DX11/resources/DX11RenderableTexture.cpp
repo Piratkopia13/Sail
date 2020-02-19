@@ -2,12 +2,13 @@
 #include "../DX11API.h"
 #include "DX11RenderableTexture.h"
 #include "Sail/Application.h"
+#include "DX11Texture.h"
 
 RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, unsigned int arraySize, bool singleBuffer) {
-	return SAIL_NEW DX11RenderableTexture(1, width, height, createDepthStencilView, createOnlyDSV, 0U, 0U);
+	return SAIL_NEW DX11RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, 0U, 0U);
 }
 
-DX11RenderableTexture::DX11RenderableTexture(UINT aaSamples, UINT width, UINT height, bool createDepthStencilView, bool createOnlyDSV, UINT bindFlags, UINT cpuAccessFlags)
+DX11RenderableTexture::DX11RenderableTexture(UINT aaSamples, UINT width, UINT height, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, UINT bindFlags, UINT cpuAccessFlags)
 	: m_width(width)
 	, m_height(height)
 	, m_hasDepthStencilView(createDepthStencilView)
@@ -17,12 +18,14 @@ DX11RenderableTexture::DX11RenderableTexture(UINT aaSamples, UINT width, UINT he
 	, m_aaSamples(aaSamples)
 	, m_nonMSAAColorTexture2D(nullptr)
 	, m_nonMSAAColorSRV(nullptr)
+	, m_uav(nullptr)
 	, m_nonMSAADepthSRV(nullptr)
 	, m_depthStencilView(nullptr)
 	, m_onlyDSV(createOnlyDSV)
 	, m_bindFlags(bindFlags)
 	, m_cpuAccessFlags(cpuAccessFlags)
 {
+	m_format = DX11Texture::ConvertToDXGIFormat(format);
 	createTextures();
 }
 
@@ -31,6 +34,7 @@ DX11RenderableTexture::~DX11RenderableTexture() {
 	Memory::SafeDelete(m_dxDepthTexture);
 	Memory::SafeRelease(m_renderTargetView);
 	Memory::SafeRelease(m_depthStencilView);
+	Memory::SafeRelease(m_uav);
 
 	// Release the SRV if the MSAA sample count is > 1, since we created our own when this is true
 	if (m_aaSamples > 1) {
@@ -55,11 +59,11 @@ void DX11RenderableTexture::createTextures() {
 	// Color
 	if (!m_onlyDSV) {
 		Memory::SafeDelete(m_dxColorTexture);
-		m_dxColorTexture = SAIL_NEW DX11Texture(m_width, m_height, m_aaSamples, m_bindFlags, m_cpuAccessFlags);
+		m_dxColorTexture = SAIL_NEW DX11Texture(m_width, m_height, m_format, m_aaSamples, m_bindFlags | D3D11_BIND_UNORDERED_ACCESS, m_cpuAccessFlags);
 
 		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
 		ZeroMemory(&rtvDesc, sizeof(rtvDesc));
-		rtvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		rtvDesc.Format = m_format;
 		rtvDesc.ViewDimension = (m_aaSamples == 1) ? D3D11_RTV_DIMENSION_TEXTURE2D : D3D11_RTV_DIMENSION_TEXTURE2DMS;
 		rtvDesc.Texture2D.MipSlice = 0;
 
@@ -67,6 +71,15 @@ void DX11RenderableTexture::createTextures() {
 		Memory::SafeRelease(m_renderTargetView);
 		// Create the new
 		api->getDevice()->CreateRenderTargetView(m_dxColorTexture->getTexture2D(), &rtvDesc, &m_renderTargetView);
+
+		// Delete the old uav
+		Memory::SafeRelease(m_uav);
+		// Create the new uav
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc;
+		ZeroMemory(&uavDesc, sizeof(uavDesc));
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+		api->getDevice()->CreateUnorderedAccessView(m_dxColorTexture->getTexture2D(), &uavDesc, &m_uav);
 
 		if (m_aaSamples > 1) {
 
@@ -85,7 +98,7 @@ void DX11RenderableTexture::createTextures() {
 
 			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 			ZeroMemory(&srvDesc, sizeof(srvDesc));
-			srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			srvDesc.Format = m_format;
 			srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 			srvDesc.Texture2D.MostDetailedMip = 0;
 			srvDesc.Texture2D.MipLevels = 1;
@@ -94,9 +107,7 @@ void DX11RenderableTexture::createTextures() {
 			Memory::SafeRelease(m_nonMSAAColorSRV);
 			// Create the ShaderResourceView
 			api->getDevice()->CreateShaderResourceView(m_nonMSAAColorTexture2D, &srvDesc, &m_nonMSAAColorSRV);
-
 		}
-
 	}
 
 	// Depth
@@ -127,6 +138,10 @@ void DX11RenderableTexture::createTextures() {
 
 ID3D11ShaderResourceView** DX11RenderableTexture::getColorSRV() {
 	return &m_nonMSAAColorSRV;
+}
+
+ID3D11UnorderedAccessView** DX11RenderableTexture::getColorUAV() {
+	return &m_uav;
 }
 
 ID3D11ShaderResourceView** DX11RenderableTexture::getDepthSRV() {
@@ -181,7 +196,7 @@ void DX11RenderableTexture::end(void* cmdList) {
 	auto api = Application::getInstance()->getAPI<DX11API>();
 	// Create a non MSAA'd texture copy of the texture that was rendered to
 	if (m_aaSamples > 1)
-		api->getDeviceContext()->ResolveSubresource(m_nonMSAAColorTexture2D, 0, m_dxColorTexture->getTexture2D(), 0, DXGI_FORMAT_R32G32B32A32_FLOAT);
+		api->getDeviceContext()->ResolveSubresource(m_nonMSAAColorTexture2D, 0, m_dxColorTexture->getTexture2D(), 0, m_format);
 
 	// Revert render target to the back buffer
 	api->renderToBackBuffer();
@@ -197,6 +212,9 @@ void DX11RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
 }
 
 void DX11RenderableTexture::resize(int width, int height) {
+	if (width == m_width && height == m_height) {
+		return;
+	}
 	m_width = width;
 	m_height = height;
 	createTextures();

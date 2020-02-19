@@ -211,6 +211,9 @@ void ShaderParser::parseRWTexture(const char* source) {
 		slot = 0; // No slot specified, use 0 as default
 	}
 
+	// Store name and slot as a texture to allow shader to manually bind this slot
+	m_parsedData.textures.emplace_back(name, slot);
+
 	// Get texture format from source, if specified
 	ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8;
 	const char* newLine = strchr(source, '\n');
@@ -218,9 +221,21 @@ void ShaderParser::parseRWTexture(const char* source) {
 	char* lineCopy = (char*)malloc(lineLength + 1);
 	memset(lineCopy, '\0', lineLength + 1);
 	strncpy_s(lineCopy, lineLength + 1, source, lineLength);
+
+	if (strstr(lineCopy, "SAIL_NO_RESOURCE")) {
+		// Skip renderable texture resource creation
+		free(lineCopy);
+		return;
+	}
+
 	if (strstr(lineCopy, "SAIL_RGBA16_FLOAT")) {
 		format = ResourceFormat::R16G16B16A16_FLOAT;
+	} else if (strstr(lineCopy, "SAIL_R8_UNORM")) {
+		format = ResourceFormat::R8;
+	} else if (strstr(lineCopy, "SAIL_")) {
+		assert(false && "unknown format");
 	}
+	// TODO: support more formats
 	free(lineCopy);
 
 	std::string nameSuffix(" File: " + m_filename + " slot " + std::to_string(slot));
@@ -252,8 +267,10 @@ std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize
 }
 
 std::string ShaderParser::nextTokenAsType(const char* source, UINT& outTokenSize) const {
-	std::string type = nextToken(source);
-	outTokenSize = (UINT)type.size();
+	// Read until '>'
+	outTokenSize = findToken(">", source) - source;
+	std::string type;
+	type.assign(source, std::find(source, source + outTokenSize, '\0'));
 	// Remove first '<' and last '>' character
 	type = type.substr(1, type.size() - 2);
 

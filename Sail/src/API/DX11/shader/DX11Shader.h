@@ -14,6 +14,8 @@ public:
 
 	virtual bool setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) override;
 	virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) override;
+	
+	void setRenderableTextureUAV(const std::string& name, RenderableTexture* texture);
 
 protected:
 	void compile() override;
@@ -24,5 +26,6 @@ private:
 	ID3D11DomainShader* m_ds;
 	ID3D11HullShader* m_hs;
 	ID3D11GeometryShader* m_gs;
+	ID3D11ComputeShader* m_cs;
 
 };

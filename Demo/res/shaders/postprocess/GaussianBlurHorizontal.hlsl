@@ -5,7 +5,7 @@
 //=============================================================================
 #include "GaussianBlurCommon.hlsl"
 
-RWTexture2D<float4> inoutput : register(u10) : SAIL_IGNORE;
+RWTexture2D<unorm float4> inoutput : register(u10) : SAIL_NO_RESOURCE;
 
 cbuffer CSData : register(b0) {
     float textureSizeDifference;

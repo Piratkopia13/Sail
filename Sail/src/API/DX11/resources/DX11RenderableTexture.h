@@ -7,7 +7,7 @@
 class DX11RenderableTexture : public RenderableTexture {
 
 public:
-	DX11RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, bool createDepthStencilView = true, bool createOnlyDSV = false, UINT bindFlags = 0, UINT cpuAccessFlags = 0);
+	DX11RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8, bool createDepthStencilView = true, bool createOnlyDSV = false, UINT bindFlags = 0, UINT cpuAccessFlags = 0);
 	~DX11RenderableTexture();
 	
 	virtual void begin(void* cmdList = nullptr) override;
@@ -16,6 +16,7 @@ public:
 	virtual void resize(int width, int height) override;
 
 	ID3D11ShaderResourceView** getColorSRV();
+	ID3D11UnorderedAccessView** getColorUAV();
 	ID3D11ShaderResourceView** getDepthSRV();
 	ID3D11RenderTargetView** getRenderTargetView();
 	ID3D11DepthStencilView** getDepthStencilView();
@@ -30,6 +31,7 @@ private:
 
 private:
 	UINT m_width, m_height;
+	DXGI_FORMAT m_format;
 	D3D11_VIEWPORT m_viewport;
 	DX11Texture* m_dxColorTexture;
 	DX11Texture* m_dxDepthTexture;
@@ -43,6 +45,7 @@ private:
 
 	ID3D11Texture2D* m_nonMSAAColorTexture2D;
 	ID3D11ShaderResourceView* m_nonMSAAColorSRV;
+	ID3D11UnorderedAccessView* m_uav;
 	ID3D11ShaderResourceView* m_nonMSAADepthSRV;
 
 };

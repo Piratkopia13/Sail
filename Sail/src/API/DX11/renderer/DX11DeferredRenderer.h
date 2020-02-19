@@ -3,6 +3,7 @@
 #include "Sail/api/Renderer.h"
 #include "../DX11API.h"
 #include "Sail/graphics/material/DeferredShadingPassMaterial.h"
+#include "Sail/graphics/SSAO.h"
 
 class DX11RenderableTexture;
 
@@ -16,6 +17,7 @@ public:
 
 	void runFramePreparation();
 	void runGeometryPass();
+	void runSSAO();
 	void runShadingPass();
 
 private:
@@ -25,5 +27,8 @@ private:
 	std::unique_ptr<DX11RenderableTexture> m_gbufferTextures[NUM_GBUFFERS];
 	std::unique_ptr<Model> m_screenQuadModel;
 	DeferredShadingPassMaterial m_shadingPassMaterial;
+
+	std::unique_ptr<SSAO> m_ssao;
+	DX11RenderableTexture* m_ssaoShadingTexture;
 
 };
