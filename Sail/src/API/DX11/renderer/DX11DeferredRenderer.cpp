@@ -153,11 +153,11 @@ void DX11DeferredRenderer::runSSAO() {
 	// Dispatch horizontal blur pass
 	{
 		blurHorizontalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float));
+
+		blurHorizontalShader.setRenderableTextureUAV("inoutput", ssaoRenderTarget);
 		
 		auto& pso = Application::getInstance()->getResourceManager().getPSO(&blurHorizontalShader);
 		pso.bind();
-
-		blurHorizontalShader.setRenderableTextureUAV("inoutput", ssaoRenderTarget);
 
 		unsigned int x = (unsigned int)glm::ceil(m_ssao->getRenderTargetWidth() * settingsHorizontal.threadGroupXScale);
 		unsigned int y = (unsigned int)glm::ceil(m_ssao->getRenderTargetHeight() * settingsHorizontal.threadGroupYScale);

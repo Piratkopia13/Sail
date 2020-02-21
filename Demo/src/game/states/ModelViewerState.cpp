@@ -174,7 +174,6 @@ bool ModelViewerState::render(float dt) {
 		frameCounter++;
 	}
 #endif
-
 	return true;
 }
 
