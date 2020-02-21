@@ -40,35 +40,17 @@ namespace ShaderComponent {
 		// Convert filter to dx11 specific
 		D3D11_FILTER dx11Filter;
 		switch (filter) {
-		case Texture::MIN_MAG_MIP_POINT:
+		case Texture::POINT:
 			dx11Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 			break;
-		case Texture::MIN_MAG_POINT_MIP_LINEAR:
-			dx11Filter = D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
-			break;
-		case Texture::MIN_POINT_MAG_LINEAR_MIP_POINT:
-			dx11Filter = D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
-			break;
-		case Texture::MIN_POINT_MAG_MIP_LINEAR:
-			dx11Filter = D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
-			break;
-		case Texture::MIN_LINEAR_MAG_MIP_POINT:
-			dx11Filter = D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
-			break;
-		case Texture::MIN_LINEAR_MAG_POINT_MIP_LINEAR:
-			dx11Filter = D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
-			break;
-		case Texture::MIN_MAG_LINEAR_MIP_POINT:
-			dx11Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-			break;
-		case Texture::MIN_MAG_MIP_LINEAR:
+		case Texture::LINEAR:
 			dx11Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 			break;
 		case Texture::ANISOTROPIC:
 			dx11Filter = D3D11_FILTER_ANISOTROPIC;
 			break;
 		default:
-			dx11Filter = D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+			dx11Filter = D3D11_FILTER_ANISOTROPIC;
 		}
 
 

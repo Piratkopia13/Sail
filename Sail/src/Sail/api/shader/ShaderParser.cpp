@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "ShaderParser.h"
+#include "Sampler.h"
 
 using namespace Utils::String;
 
@@ -11,7 +12,7 @@ const ShaderParser::ParsedData& ShaderParser::getParsedData() const {
 	return m_parsedData;
 }
 
-void ShaderParser::parse(const std::string& source) {
+std::string ShaderParser::parse(const std::string& source) {
 	SAIL_PROFILE_FUNCTION();
 
 	// Find what shader types are contained in the source
@@ -100,7 +101,7 @@ void ShaderParser::parse(const std::string& source) {
 	// Process all samplers
 	src = cleanSource.c_str();
 	while (src = findToken("SamplerState", src)) {
-		parseSampler(src);
+		parseSampler(src, cleanSource);
 	}
 
 	// Process all textures
@@ -118,6 +119,7 @@ void ShaderParser::parse(const std::string& source) {
 		parseTexture(src);
 	}
 
+	return cleanSource;
 }
 
 void ShaderParser::parseCBuffer(const std::string& source) {
@@ -164,18 +166,48 @@ void ShaderParser::parseCBuffer(const std::string& source) {
 	//Logger::Log(src);
 }
 
-void ShaderParser::parseSampler(const char* source) {
+void ShaderParser::parseSampler(const char* sourceChar, std::string& source) {
 	UINT tokenSize = 0;
-	std::string name = nextTokenAsName(source, tokenSize);
-	source += tokenSize;
+	std::string name = nextTokenAsName(sourceChar, tokenSize);
+	sourceChar += tokenSize;
+
+	const char* newLine = strchr(sourceChar, '\n');
+	size_t lineLength = newLine - sourceChar;
+	char* lineCopy = (char*)malloc(lineLength + 1);
+	memset(lineCopy, '\0', lineLength + 1);
+	strncpy_s(lineCopy, lineLength + 1, sourceChar, lineLength);
+
+	// Parse "SAIL_X" macros in source and replace register slot if found
+	bool replaceRegisterSlot = false;
+	ShaderComponent::Sampler::ShaderInfo samplerInfo;
+	auto& samplerMap = ShaderComponent::Sampler::GetShaderSlotsMap();
+	std::string macro;
+	for (auto& it : samplerMap) {
+		if (strstr(lineCopy, it.first.c_str())) {
+			samplerInfo = it.second;
+			replaceRegisterSlot = true;
+			macro = it.first;
+			break;
+		}
+	}
+	assert(!(!replaceRegisterSlot && strstr(lineCopy, "SAIL_")) && "Unrecognized macro found on sampler");
+	free(lineCopy);
+	
+	int slot = 0;
+	if (replaceRegisterSlot) {
+		slot = samplerInfo.slot;
+		std::string newReg = "register(s";
+		newReg += std::to_string(slot);
+		newReg += "); // SLOT REPLACED BY SAIL SHADERPARSER!";
+		source.replace(source.find(macro), macro.length()+1, newReg); // +1 to include the ending semicolon
+	} else {
+		slot = findNextIntOnLine(sourceChar);
+		if (slot == -1) slot = 0; // No slot specified, use 0 as default
+	}
 
 	auto bindShader = getBindShaderFromName(name);
-
-	int slot = findNextIntOnLine(source);
-	if (slot == -1) slot = 0; // No slot specified, use 0 as default
-
 	ShaderResource res(name, static_cast<UINT>(slot));
-	m_parsedData.samplers.emplace_back(res, Texture::WRAP, Texture::ANISOTROPIC, bindShader, slot);
+	m_parsedData.samplers.emplace_back(res, samplerInfo.addressMode, samplerInfo.filter, bindShader, slot);
 }
 
 void ShaderParser::parseTexture(const char* source) {

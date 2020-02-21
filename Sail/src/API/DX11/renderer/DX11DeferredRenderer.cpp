@@ -65,7 +65,7 @@ void DX11DeferredRenderer::runFramePreparation() {
 	ID3D11RenderTargetView* rtvs[NUM_GBUFFERS];
 	for (unsigned int i = 0; i < NUM_GBUFFERS; i++) {
 		rtvs[i] = *m_gbufferTextures[i]->getRenderTargetView();
-		m_gbufferTextures[i]->clear(glm::vec4(0.f, 0.f, 0.f, 1.0f));
+		m_gbufferTextures[i]->clear(glm::vec4(0.f, 0.f, (i == 0) ? FLT_MAX : 0.f, 0.0f)); // The position buffer z is cleared to FLT_MAX to fix ssao issue on skybox background
 	}
 	devCon->OMSetRenderTargets(NUM_GBUFFERS, rtvs, *m_gbufferTextures[0]->getDepthStencilView());
 	devCon->RSSetViewports(1, m_context->getViewport());

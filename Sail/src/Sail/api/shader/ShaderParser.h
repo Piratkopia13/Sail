@@ -66,14 +66,14 @@ private:
 public:
 	ShaderParser(const std::string& filename);
 
-	void parse(const std::string& source);
+	std::string parse(const std::string& source);
 
 	const ParsedData& getParsedData() const;
 	int findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const;
 
 private:
 	void parseCBuffer(const std::string& source);
-	void parseSampler(const char* source);
+	void parseSampler(const char* sourceChar, std::string& source); // source argument is not const since this method is allowed to change the it!
 	void parseTexture(const char* source);
 	void parseRWTexture(const char* source);
 	std::string nextTokenAsName(const char* source, unsigned int& outTokenSize, int* arrayElements = nullptr) const;

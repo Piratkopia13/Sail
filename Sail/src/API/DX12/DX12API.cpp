@@ -6,6 +6,7 @@
 #include "Sail/Application.h"
 #include "Sail/events/Events.h"
 #include <iomanip>
+#include "Sail/api/shader/Sampler.h"
 
 const UINT DX12API::NUM_SWAP_BUFFERS = 3;
 const UINT DX12API::NUM_GPU_BUFFERS = 2;
@@ -346,48 +347,74 @@ void DX12API::createGlobalRootSignature() {
 	}
 
 	// Static samplers
-	D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[4];
-	{
-		// Anisotropic wrap
-		staticSamplerDesc[0] = {};
-		staticSamplerDesc[0].Filter = D3D12_FILTER_ANISOTROPIC;
-		staticSamplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		staticSamplerDesc[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		staticSamplerDesc[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		staticSamplerDesc[0].MipLODBias = 0.f;
-		staticSamplerDesc[0].MaxAnisotropy = 16;
-		staticSamplerDesc[0].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-		staticSamplerDesc[0].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
-		staticSamplerDesc[0].MinLOD = 0.f;
-		staticSamplerDesc[0].MaxLOD = FLT_MAX;
-		staticSamplerDesc[0].ShaderRegister = 0;
-		staticSamplerDesc[0].RegisterSpace = 0;
-		staticSamplerDesc[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	auto& samplerMap = ShaderComponent::Sampler::GetShaderSlotsMap();
+	D3D12_STATIC_SAMPLER_DESC* staticSamplerDesc = SAIL_NEW D3D12_STATIC_SAMPLER_DESC[samplerMap.size()];
+	unsigned int i = 0;
+	for (auto& it : samplerMap) {
+		staticSamplerDesc[i] = {};
+		staticSamplerDesc[i].MipLODBias = 0.f;
+		staticSamplerDesc[i].MaxAnisotropy = 16;
+		staticSamplerDesc[i].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+		staticSamplerDesc[i].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+		staticSamplerDesc[i].MinLOD = 0.f;
+		staticSamplerDesc[i].MaxLOD = FLT_MAX;
+		staticSamplerDesc[i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		staticSamplerDesc[i].ShaderRegister = it.second.slot;
+		staticSamplerDesc[i].RegisterSpace = 0;
 
-		// Point wrap
-		staticSamplerDesc[1] = staticSamplerDesc[0];
-		staticSamplerDesc[1].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-		staticSamplerDesc[1].ShaderRegister = 1;
+		switch (it.second.filter) {
+		case Texture::ANISOTROPIC:
+			staticSamplerDesc[i].Filter = D3D12_FILTER_ANISOTROPIC;
+			break;
+		case Texture::LINEAR:
+			staticSamplerDesc[i].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+			break;
+		case Texture::POINT:
+			staticSamplerDesc[i].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+			break;
+		default:
+			assert(false && "Unimplemented sampler filter found");
+			break;
+		}
 
-		// Linear clamp
-		staticSamplerDesc[2] = staticSamplerDesc[0];
-		staticSamplerDesc[2].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-		staticSamplerDesc[2].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		staticSamplerDesc[2].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		staticSamplerDesc[2].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		staticSamplerDesc[2].ShaderRegister = 2;
-
-		// Point clamp
-		staticSamplerDesc[3] = staticSamplerDesc[2];
-		staticSamplerDesc[3].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
-		staticSamplerDesc[3].ShaderRegister = 3;
+		switch (it.second.addressMode) {
+		case Texture::BORDER:
+			staticSamplerDesc[i].AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+			staticSamplerDesc[i].AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+			staticSamplerDesc[i].AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+			break;
+		case Texture::CLAMP:
+			staticSamplerDesc[i].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+			staticSamplerDesc[i].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+			staticSamplerDesc[i].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+			break;
+		case Texture::MIRROR:
+			staticSamplerDesc[i].AddressU = D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+			staticSamplerDesc[i].AddressV = D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+			staticSamplerDesc[i].AddressW = D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+			break;
+		case Texture::MIRROR_ONCE:
+			staticSamplerDesc[i].AddressU = D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
+			staticSamplerDesc[i].AddressV = D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
+			staticSamplerDesc[i].AddressW = D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
+			break;
+		case Texture::WRAP:
+			staticSamplerDesc[i].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+			staticSamplerDesc[i].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+			staticSamplerDesc[i].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+			break;
+		default:
+			assert(false && "Unimplemented sampler address mode found");
+			break;
+		}
+		i++;
 	}
 
 	D3D12_ROOT_SIGNATURE_DESC rsDesc;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	rsDesc.NumParameters = GlobalRootParam::SIZE;
 	rsDesc.pParameters = rootParam;
-	rsDesc.NumStaticSamplers = ARRAYSIZE(staticSamplerDesc);
+	rsDesc.NumStaticSamplers = samplerMap.size();
 	rsDesc.pStaticSamplers = staticSamplerDesc;
 
 	// Serialize and create the actual signature
@@ -400,6 +427,7 @@ void DX12API::createGlobalRootSignature() {
 		ThrowIfFailed(hr);
 	}
 	ThrowIfFailed(m_device->CreateRootSignature(0, sBlob->GetBufferPointer(), sBlob->GetBufferSize(), IID_PPV_ARGS(&m_globalRootSignature)));
+	delete staticSamplerDesc;
 }
 
 void DX12API::createShaderResources() {

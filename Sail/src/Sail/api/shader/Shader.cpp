@@ -108,7 +108,8 @@ void Shader::compile() {
 	std::string source = Utils::readFile(filepath);
 	if (source == "")
 		Logger::Error("Shader file is empty or does not exist: " + m_filename);
-	parser.parse(source);
+	// Parse source - this might modify it by changing sampler slots etc.
+	source = parser.parse(source);
 	auto& parsedData = parser.getParsedData();
 
 	if (parsedData.hasVS) {

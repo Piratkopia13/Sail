@@ -48,9 +48,9 @@ Texture2D def_positions     : register(t3);
 Texture2D def_worldNormals  : register(t4);
 Texture2D def_albedo        : register(t5);
 Texture2D def_mrao          : register(t6);
-Texture2D tex_ssao   : register(t7);
-SamplerState PSss            : register(s0);
-SamplerState PSLinearSampler : register(s2);
+Texture2D tex_ssao          : register(t7);
+SamplerState PSss            : SAIL_SAMPLER_ANIS_WRAP; // s0
+SamplerState PSLinearSampler : SAIL_SAMPLER_LINEAR_CLAMP; // s2
 
 float4 PSMain(PSIn input) : SV_Target0 {
 

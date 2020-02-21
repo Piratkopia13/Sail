@@ -8,7 +8,7 @@ namespace ShaderComponent {
 	class DX11Sampler : public Sampler {
 
 	public:
-		DX11Sampler(Texture::ADDRESS_MODE addressMode = Texture::WRAP, Texture::FILTER filter = Texture::MIN_MAG_MIP_LINEAR, BIND_SHADER bindShader = PS, unsigned int slot = 0);
+		DX11Sampler(Texture::ADDRESS_MODE addressMode = Texture::WRAP, Texture::FILTER filter = Texture::LINEAR, BIND_SHADER bindShader = PS, unsigned int slot = 0);
 		~DX11Sampler();
 
 		virtual void bind() override;
