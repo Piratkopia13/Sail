@@ -8,7 +8,7 @@
 class DX12RenderableTexture : public RenderableTexture, public virtual DX12ATexture {
 
 public:
-	DX12RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8, bool createDepthStencilView = true, bool createOnlyDSV = false, bool singleBuffer = true, UINT bindFlags = 0, UINT cpuAccessFlags = 0, const std::string& name = "Renderable Texture", unsigned int arraySize = 1);
+	DX12RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8, bool createDepthStencilView = true, bool createOnlyDSV = false, const glm::vec4& clearColor = {0.f, 0.f, 0.f, 0.f}, bool singleBuffer = true, UINT bindFlags = 0, UINT cpuAccessFlags = 0, const std::string& name = "Renderable Texture", unsigned int arraySize = 1);
 	~DX12RenderableTexture();
 
 	virtual void begin(void* cmdList = nullptr) override;
@@ -36,6 +36,7 @@ private:
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_rtvHeapCDHs;
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_dsvHeapCDHs;
 
+	glm::vec4 m_clearColor;
 	unsigned int m_numSwapBuffers;
 	std::string m_name;
 	UINT m_width, m_height;

@@ -4,17 +4,18 @@
 #include "Sail/api/Window.h"
 #include "../DX12Utils.h"
 
-RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, unsigned int arraySize, bool singleBuffer) {
-	return SAIL_NEW DX12RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, singleBuffer, 0U, 0U, name, arraySize);
+RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, const glm::vec4& clearColor, unsigned int arraySize, bool singleBuffer) {
+	return SAIL_NEW DX12RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, clearColor, singleBuffer, 0U, 0U, name, arraySize);
 }
 
-DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, bool singleBuffer, UINT bindFlags, UINT cpuAccessFlags, const std::string& name, unsigned int arraySize)
+DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, const glm::vec4& clearColor, bool singleBuffer, UINT bindFlags, UINT cpuAccessFlags, const std::string& name, unsigned int arraySize)
 	: m_width(width)
 	, m_height(height)
 	, m_cpuRtvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers())
 	, m_cpuDsvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers())
 	, m_hasDepthTextures(createDepthStencilView)
 	, m_arraySize(arraySize)
+	, m_clearColor(clearColor)
 {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
@@ -145,7 +146,7 @@ void DX12RenderableTexture::createTextures() {
 		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 
-		D3D12_CLEAR_VALUE clearValue = { textureDesc.Format, { 0.0f, 0.0f, 0.0f, 0.0f } };
+		D3D12_CLEAR_VALUE clearValue = { textureDesc.Format, {m_clearColor.x, m_clearColor.y, m_clearColor.z, m_clearColor.a} };
 
 		state[i] = D3D12_RESOURCE_STATE_COMMON;
 		// A texture rarely updates its data, if at all, so it is stored in a default heap

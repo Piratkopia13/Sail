@@ -25,8 +25,10 @@ DX12DeferredRenderer::DX12DeferredRenderer() {
 	auto windowHeight = app->getWindow()->getWindowHeight();
 
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
+		glm::vec4 clearColor(0.f);
+		clearColor.z = (i == 0) ? FLT_MAX : 0.f; // Position texture z needs this for ssao to work with skybox in background
 		m_gbufferTextures[i] = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(
-			RenderableTexture::Create(windowWidth, windowHeight, "GBuffer renderer output " + std::to_string(i), (i < 2) ? ResourceFormat::R16G16B16A16_FLOAT : ResourceFormat::R8G8B8A8, (i == 0))));
+			RenderableTexture::Create(windowWidth, windowHeight, "GBuffer renderer output " + std::to_string(i), (i < 2) ? ResourceFormat::R16G16B16A16_FLOAT : ResourceFormat::R8G8B8A8, (i == 0), false, clearColor)));
 	}
 
 	m_screenQuadModel = ModelFactory::ScreenQuadModel::Create();
@@ -110,7 +112,8 @@ ID3D12GraphicsCommandList4* DX12DeferredRenderer::runFramePreparation() {
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
 		// TODO: transition in batch
 		m_gbufferTextures[i]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-		m_gbufferTextures[i]->clear({ 0.0f, 0.0f, 0.0f, 0.0f }, cmdList.Get());
+		float z = (i == 0) ? FLT_MAX : 0.f;
+		m_gbufferTextures[i]->clear({ 0.0f, 0.0f, z, 0.0f }, cmdList.Get());
 	}
 	cmdList->RSSetViewports(1, m_context->getViewport());
 	cmdList->RSSetScissorRects(1, m_context->getScissorRect());

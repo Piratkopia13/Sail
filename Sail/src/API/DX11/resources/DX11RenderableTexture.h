@@ -7,7 +7,7 @@
 class DX11RenderableTexture : public RenderableTexture {
 
 public:
-	DX11RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8, bool createDepthStencilView = true, bool createOnlyDSV = false, UINT bindFlags = 0, UINT cpuAccessFlags = 0);
+	DX11RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8, bool createDepthStencilView = true, bool createOnlyDSV = false, const glm::vec4& clearColor = { 0.f, 0.f, 0.f, 0.f }, UINT bindFlags = 0, UINT cpuAccessFlags = 0);
 	~DX11RenderableTexture();
 	
 	virtual void begin(void* cmdList = nullptr) override;

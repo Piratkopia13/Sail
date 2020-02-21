@@ -4,11 +4,11 @@
 #include "Sail/Application.h"
 #include "DX11Texture.h"
 
-RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, unsigned int arraySize, bool singleBuffer) {
-	return SAIL_NEW DX11RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, 0U, 0U);
+RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, const glm::vec4& clearColor, unsigned int arraySize, bool singleBuffer) {
+	return SAIL_NEW DX11RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, clearColor, 0U, 0U);
 }
 
-DX11RenderableTexture::DX11RenderableTexture(UINT aaSamples, UINT width, UINT height, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, UINT bindFlags, UINT cpuAccessFlags)
+DX11RenderableTexture::DX11RenderableTexture(UINT aaSamples, UINT width, UINT height, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, const glm::vec4& clearColor, UINT bindFlags, UINT cpuAccessFlags)
 	: m_width(width)
 	, m_height(height)
 	, m_hasDepthStencilView(createDepthStencilView)
