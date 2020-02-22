@@ -13,7 +13,7 @@ public:
 	DX12DeferredRenderer();
 	~DX12DeferredRenderer();
 
-	void* present(Renderer::RenderFlag flags, void* skippedPrepCmdList = nullptr) override;
+	void* present(Renderer::PresentFlag flags, void* skippedPrepCmdList = nullptr) override;
 	void* getDepthBuffer() override;
 
 	ID3D12GraphicsCommandList4* runFramePreparation();

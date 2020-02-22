@@ -8,7 +8,7 @@ public:
 	DX11ForwardRenderer();
 	~DX11ForwardRenderer();
 
-	void* present(Renderer::RenderFlag flags, void* skippedPrepCmdList = nullptr) override;
+	void* present(Renderer::PresentFlag flags, void* skippedPrepCmdList = nullptr) override;
 	void useDepthBuffer(void* buffer, void* cmdList) override;
 
 private:

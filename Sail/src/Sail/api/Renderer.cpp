@@ -15,7 +15,12 @@ void Renderer::submit(Model* model, Shader* shader, Material* material, const gl
 }
 
 void Renderer::submit(Mesh* mesh, Shader* shader, Material* material, const glm::mat4& modelMatrix) {
-	commandQueue.emplace_back(mesh, shader, material, glm::transpose(modelMatrix));
+	auto& cmd = commandQueue.emplace_back();
+	cmd.mesh = mesh;
+	cmd.shader = shader;
+	cmd.material = material;
+	cmd.transform = glm::transpose(modelMatrix);
+	cmd.dxrFlags = MESH_STATIC;
 }
 
 void Renderer::setLightSetup(LightSetup* lightSetup) {

@@ -51,9 +51,7 @@ DX12VertexBuffer::DX12VertexBuffer(const Mesh::Data& modelData, bool allowUpdate
 	free(vertices);
 }
 
-DX12VertexBuffer::~DX12VertexBuffer() {
-
-}
+DX12VertexBuffer::~DX12VertexBuffer() { }
 
 void DX12VertexBuffer::bind(void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
@@ -117,6 +115,12 @@ void DX12VertexBuffer::update(Mesh::Data& data) {
 
 	m_hasBeenUpdated[frameIndex] = true;
 	m_hasBeenInitialized[frameIndex] = false;
+}
+
+ID3D12Resource* DX12VertexBuffer::getResource() const {
+	auto frameIndex = (m_allowUpdates) ? m_context->getSwapIndex() : 0;
+	assert(m_hasBeenInitialized[frameIndex] && "Vertex buffer has to be initialized before call to getResource()");
+	return m_defaultVertexBuffers[frameIndex].Get();
 }
 
 void DX12VertexBuffer::setAsUpdated() {

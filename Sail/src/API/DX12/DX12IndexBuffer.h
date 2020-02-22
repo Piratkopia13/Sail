@@ -8,7 +8,7 @@ public:
 	~DX12IndexBuffer();
 
 	virtual void bind(void* cmdList) override;
-	ID3D12Resource* getBuffer() const;
+	ID3D12Resource* getResource() const;
 	bool init(ID3D12GraphicsCommandList4* cmdList);
 
 private:

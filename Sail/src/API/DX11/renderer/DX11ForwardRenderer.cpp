@@ -25,15 +25,15 @@ DX11ForwardRenderer::DX11ForwardRenderer() {
 
 DX11ForwardRenderer::~DX11ForwardRenderer() { }
 
-void* DX11ForwardRenderer::present(Renderer::RenderFlag flags, void* skippedPrepCmdList) {
+void* DX11ForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrepCmdList) {
 	auto& resman = Application::getInstance()->getResourceManager();
 
-	if (!(flags & Renderer::RenderFlag::SkipPreparation)) {
+	if (!(flags & Renderer::PresentFlag::SkipPreparation)) {
 		m_context->renderToBackBuffer();
 		// Clear back buffer
 		m_context->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
 	}
-	if (!(flags & Renderer::RenderFlag::SkipRendering)) {
+	if (!(flags & Renderer::PresentFlag::SkipRendering)) {
 		for (RenderCommand& command : commandQueue) {
 			Shader* shader = command.shader;
 

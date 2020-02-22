@@ -9,7 +9,7 @@ public:
 	~DX12ForwardRenderer();
 
 	void begin(Camera* camera, Environment* environment) override;
-	void* present(Renderer::RenderFlag flags, void* skippedPrepCmdList = nullptr) override;
+	void* present(Renderer::PresentFlag flags, void* skippedPrepCmdList = nullptr) override;
 
 	ID3D12GraphicsCommandList4* runFramePreparation();
 	void runRenderingPass(ID3D12GraphicsCommandList4* cmdList);

@@ -32,7 +32,7 @@ DX11DeferredRenderer::DX11DeferredRenderer() {
 
 DX11DeferredRenderer::~DX11DeferredRenderer() { }
 
-void* DX11DeferredRenderer::present(Renderer::RenderFlag flags, void* skippedPrepCmdList) {
+void* DX11DeferredRenderer::present(Renderer::PresentFlag flags, void* skippedPrepCmdList) {
 	bool doSSAO = Application::getInstance()->getSettings().getBool(Settings::Graphics_SSAO);
 	if (!m_ssao && doSSAO) {
 		// Handle enabling of ssao in runtime
@@ -42,9 +42,9 @@ void* DX11DeferredRenderer::present(Renderer::RenderFlag flags, void* skippedPre
 		m_ssao.reset();
 	}
 
-	if (!(flags & Renderer::RenderFlag::SkipPreparation))
+	if (!(flags & Renderer::PresentFlag::SkipPreparation))
 		runFramePreparation();
-	if (!(flags & Renderer::RenderFlag::SkipRendering)) {
+	if (!(flags & Renderer::PresentFlag::SkipRendering)) {
 		runGeometryPass();
 		if (doSSAO)
 			runSSAO();

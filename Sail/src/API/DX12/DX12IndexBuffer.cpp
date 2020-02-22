@@ -66,8 +66,8 @@ void DX12IndexBuffer::bind(void* cmdList) {
 	dxCmdList->IASetIndexBuffer(&ibView);
 }
 
-ID3D12Resource* DX12IndexBuffer::getBuffer() const {
-	assert(m_hasBeenInitialized && "Index buffer has to be initialized before call to getBuffer()");
+ID3D12Resource* DX12IndexBuffer::getResource() const {
+	assert(m_hasBeenInitialized && "Index buffer has to be initialized before call to getResource()");
 	return m_defaultIndexBuffers.Get();
 }
 

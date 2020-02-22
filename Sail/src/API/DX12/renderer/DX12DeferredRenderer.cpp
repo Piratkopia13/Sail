@@ -43,7 +43,7 @@ DX12DeferredRenderer::~DX12DeferredRenderer() {
 	EventSystem::getInstance()->unsubscribeFromEvent(Event::WINDOW_RESIZE, this);
 }
 
-void* DX12DeferredRenderer::present(Renderer::RenderFlag flags, void* skippedPrepCmdList) {
+void* DX12DeferredRenderer::present(Renderer::PresentFlag flags, void* skippedPrepCmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	bool doSSAO = Application::getInstance()->getSettings().getBool(Settings::Graphics_SSAO);
@@ -57,22 +57,22 @@ void* DX12DeferredRenderer::present(Renderer::RenderFlag flags, void* skippedPre
 	}
 
 	ID3D12GraphicsCommandList4* cmdList = nullptr;
-	if (flags & Renderer::RenderFlag::SkipPreparation) {
+	if (flags & Renderer::PresentFlag::SkipPreparation) {
 		if (skippedPrepCmdList)
 			cmdList = static_cast<ID3D12GraphicsCommandList4*>(skippedPrepCmdList);
 		else
 			Logger::Error("DX12ForwardRenderer present was called with skipPreparation flag but no cmdList was passed");
 	}
 
-	if (!(flags & Renderer::RenderFlag::SkipPreparation))
+	if (!(flags & Renderer::PresentFlag::SkipPreparation))
 		cmdList = runFramePreparation();
-	if (!(flags & Renderer::RenderFlag::SkipRendering)) {
+	if (!(flags & Renderer::PresentFlag::SkipRendering)) {
 		runGeometryPass(cmdList);
 		if (doSSAO)
 			runSSAO(cmdList);
 		runShadingPass(cmdList);
 	}
-	if (!(flags & Renderer::RenderFlag::SkipExecution))
+	if (!(flags & Renderer::PresentFlag::SkipExecution))
 		runFrameExecution(cmdList);
 
 	return cmdList;

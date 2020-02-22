@@ -38,22 +38,22 @@ void DX12ForwardRenderer::begin(Camera* camera, Environment* environment) {
 	Renderer::begin(camera, environment);
 }
 
-void* DX12ForwardRenderer::present(Renderer::RenderFlag flags, void* skippedPrepCmdList) {
+void* DX12ForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrepCmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	ID3D12GraphicsCommandList4* cmdList = nullptr;
-	if (flags & Renderer::RenderFlag::SkipPreparation) {
+	if (flags & Renderer::PresentFlag::SkipPreparation) {
 		if (skippedPrepCmdList)
 			cmdList = static_cast<ID3D12GraphicsCommandList4*>(skippedPrepCmdList);
 		else
 			Logger::Error("DX12ForwardRenderer present was called with skipPreparation flag but no cmdList was passed");
 	}
 
-	if (!(flags & Renderer::RenderFlag::SkipPreparation))
+	if (!(flags & Renderer::PresentFlag::SkipPreparation))
 		cmdList = runFramePreparation();
-	if (!(flags & Renderer::RenderFlag::SkipRendering))
+	if (!(flags & Renderer::PresentFlag::SkipRendering))
 		runRenderingPass(cmdList);
-	if (!(flags & Renderer::RenderFlag::SkipExecution))
+	if (!(flags & Renderer::PresentFlag::SkipExecution))
 		runFrameExecution(cmdList);
 
 	return cmdList;

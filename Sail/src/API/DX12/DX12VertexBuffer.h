@@ -11,6 +11,7 @@ public:
 	bool init(ID3D12GraphicsCommandList4* cmdList);
 	void update(Mesh::Data& data);
 	
+	ID3D12Resource* getResource() const;
 	// TODO: make these less methods into better ones that doesn't require renderers to call reset
 	void setAsUpdated();
 	bool hasBeenUpdated() const;

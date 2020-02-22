@@ -36,9 +36,9 @@ float PSMain(PSIn input) : SV_Target0 {
     float3 vsNormal     = mul(sys_mView, float4(normalize(worldNormal), 0.f)).xyz; // should be changed to inverse transpose to support non-uniformly scaled objects
     float3 randomVec    = noise[(input.texCoord.x * windowSize.x) % 4][(input.texCoord.y * windowSize.y) % 4].xyz; // Tile noise texture over screen based on screen dimensions modulus noise size
 
-    // return float4(fragPos, 1.0f);
-    // return float4(vsNormal * 0.5f + 0.5f, 1.0f);
-    // return float4(randomVec * 0.5f + 0.5f, 1.0f);
+    // return fragPos.x;
+    // return vsNormal.y;
+    // return randomVec.x * 0.5f + 0.5f;
 
     float3 tangent   = normalize(randomVec - vsNormal * dot(randomVec, vsNormal));
     float3 bitangent = cross(vsNormal, tangent);
