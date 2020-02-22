@@ -10,9 +10,8 @@
 #include "Sail/../../Demo/res/shaders/dxr/dxr.shared"
 
 
-DXRBase::DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs)
+DXRBase::DXRBase(const std::string& shaderFilename)
 	: m_shaderFilename(shaderFilename)
-	, m_gbufferInputTextures(inputs)
 {
 
 	m_context = Application::getInstance()->getAPI<DX12API>();
@@ -55,10 +54,6 @@ DXRBase::~DXRBase() {
 	for (auto& st : m_hitGroupShaderTable) {
 		st.release();
 	}
-}
-
-void DXRBase::setGBufferInputs(DX12RenderableTexture** inputs) {
-	m_gbufferInputTextures = inputs;
 }
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
@@ -156,30 +151,22 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	updateShaderTables();
 }
 
-//void DXRBase::updateSceneData(Camera* cam, LightSetup* lights) {
-//
-//	DXRShaderCommon::SceneCBuffer newData = {};
-//	if (cam) {
-//		newData.viewToWorld = glm::inverse(cam->getViewMatrix());
-//		newData.clipToView = glm::inverse(cam->getProjMatrix());
-//		newData.nearZ = cam->getNearZ();
-//		newData.farZ = cam->getFarZ();
-//		newData.cameraPosition = cam->getPosition();
-//		newData.cameraDirection = cam->getDirection();
-//		newData.projectionToWorld = glm::inverse(cam->getViewProjection());
-//	}
-//
-//	if (lights) {
-//		auto& plData = lights->getPointLightsData();
-//		memcpy(newData.pointLights, plData.pLights, sizeof(plData));
-//	}
-//
-//	m_sceneCB->updateData(&newData, sizeof(newData));
-//}
+void DXRBase::updateSceneData(Camera* cam, LightSetup* lights) {
+	DXRShaderCommon::SceneCBuffer newData = {};
+	if (cam) {
+		newData.cameraPosition = cam->getPosition();
+		newData.projectionToWorld = glm::inverse(cam->getViewProjection());
+	}
 
-void DXRBase::dispatch(ID3D12GraphicsCommandList4* cmdList) {
-	assert(m_gbufferInputTextures && "Input textures not set!");
-	
+	/*if (lights) {
+		auto& plData = lights->getPointLightsData();
+		memcpy(newData.pointLights, plData.pLights, sizeof(plData));
+	}*/
+
+	m_sceneCB->updateData(&newData, sizeof(newData), 0U);
+}
+
+void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
 	unsigned int frameIndex = m_context->getSwapIndex();
 
 	auto copyDescriptor = [&](DX12RenderableTexture* texture, D3D12_CPU_DESCRIPTOR_HANDLE* cdh) {
@@ -187,7 +174,7 @@ void DXRBase::dispatch(ID3D12GraphicsCommandList4* cmdList) {
 		//texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE); // This transition is done in RaytracingRenderer::runShading()
 		m_context->getDevice()->CopyDescriptorsSimple(1, cdh[frameIndex], texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	};
-	//copyDescriptor(output.positionsOne.get(), m_rtOutputPositionsOneUavCPUHandles);
+	copyDescriptor(outputTexture, m_outputResource.cpuHandle);
 	
 	// Set constant buffer descriptor heap
 	m_descriptorHeap->bind(cmdList);
@@ -324,11 +311,13 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	}
 
 	D3D12_RAYTRACING_GEOMETRY_DESC geomDesc = {};
-	auto& vb = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer());
-	auto& ib = static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer());
+	auto& vb = static_cast<DX12VertexBuffer&>(mesh->getVertexBuffer());
+	auto& ib = static_cast<DX12IndexBuffer&>(mesh->getIndexBuffer());
 
-	// Make sure vbuffer is initialized
-	//vb.init(cmdList); // TODO: fix
+	// Make sure buffer is initialized
+	vb.init(cmdList);
+	// Transition to correct state for as building
+	DX12Utils::SetResourceTransitionBarrier(cmdList, vb.getResource(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
 	geomDesc.Flags = (renderCommand.dxrFlags & Renderer::MESH_TRANSPARENT) ? D3D12_RAYTRACING_GEOMETRY_FLAG_NONE : D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 	geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
@@ -338,6 +327,11 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	geomDesc.Triangles.VertexCount = mesh->getNumVertices();
 
 	if (mesh->getNumIndices() > 0) {
+		// Make sure buffer is initialized
+		ib.init(cmdList);
+		// Transition to correct state for as building
+		DX12Utils::SetResourceTransitionBarrier(cmdList, ib.getResource(), D3D12_RESOURCE_STATE_INDEX_BUFFER, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
 		geomDesc.Triangles.IndexBuffer = ib.getResource()->GetGPUVirtualAddress();
 		geomDesc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
 		geomDesc.Triangles.IndexCount = UINT(mesh->getNumIndices());
@@ -378,6 +372,11 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 
 	cmdList->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
 
+	// Transition index and vertex buffers back to be used in non-raytracing operations
+	DX12Utils::SetResourceTransitionBarrier(cmdList, vb.getResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+	if (mesh->getNumIndices() > 0)
+		DX12Utils::SetResourceTransitionBarrier(cmdList, ib.getResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_INDEX_BUFFER);
+
 	// We need to insert a UAV barrier before using the acceleration structures in a raytracing operation
 	D3D12_RESOURCE_BARRIER uavBarrier = {};
 	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
@@ -404,16 +403,15 @@ void DXRBase::createInitialShaderResources(bool remake) {
 				res.gpuHandle[i] = m_descriptorHeap->getGPUDescriptorHandleForIndex(index);
 			}
 		};
-		// Albedo UAV output
+		// UAV output
 		storeHandle(m_outputResource);
 
-		//// Scene CB
-		//{
-		//	unsigned int size = sizeof(DXRShaderCommon::SceneCBuffer);
-		//	DXRShaderCommon::SceneCBuffer initData = {};
-		//	initData.mapSize = glm::vec3(1000.f); // Needs to be set at start to prevent crash or slowdowns
-		//	m_sceneCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(&initData, size, ShaderComponent::BIND_SHADER::CS, 0);
-		//}
+		// Scene CB
+		{
+			unsigned int size = sizeof(DXRShaderCommon::SceneCBuffer);
+			DXRShaderCommon::SceneCBuffer initData = {};
+			m_sceneCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(&initData, size, ShaderComponent::BIND_SHADER::CS, 0);
+		}
 		//// Mesh CB
 		//{
 		//	unsigned int size = sizeof(DXRShaderCommon::MeshCBuffer);
@@ -495,7 +493,7 @@ void DXRBase::createRaytracingPSO() {
 
 	DXRUtils::PSOBuilder psoBuilder;
 
-	psoBuilder.addLibrary(Shader::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName, m_closestProceduralPrimitive });
+	psoBuilder.addLibrary(Shader::DEFAULT_SHADER_LOCATION + "dxr/" + m_shaderFilename + ".hlsl", { m_rayGenName, m_closestHitName, m_missName});
 	psoBuilder.addHitGroup(m_hitGroupTriangleName, m_closestHitName);
 
 	psoBuilder.addSignatureToShaders({ m_rayGenName }, m_localSignatureRayGen->get());
@@ -505,7 +503,7 @@ void DXRBase::createRaytracingPSO() {
 	psoBuilder.addLibrary(Shader::DEFAULT_SHADER_LOCATION + "dxr/ShadowRay.hlsl", { m_shadowMissName });
 	psoBuilder.addSignatureToShaders({ m_shadowMissName }, m_localSignatureEmpty->get());
 
-	psoBuilder.setMaxPayloadSize(sizeof(DXRShaderCommon::ShadowRayPayload));
+	psoBuilder.setMaxPayloadSize(sizeof(DXRShaderCommon::RayPayload));
 	psoBuilder.setMaxAttributeSize(sizeof(float) * 4);
 	psoBuilder.setMaxRecursionDepth(DXRShaderCommon::MAX_RAY_RECURSION_DEPTH);
 	psoBuilder.setGlobalSignature(m_dxrGlobalRootSignature->get());

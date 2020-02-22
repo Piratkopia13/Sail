@@ -100,5 +100,5 @@ bool DX12IndexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 
 	m_hasBeenInitialized = true;
 
-	return true;
+	return false;
 }

@@ -143,6 +143,7 @@ bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 
 	// This method is called at least once every frame that this vertex buffer is used
 
+	auto frameIndex = (m_allowUpdates) ? m_context->getSwapIndex() : 0;
 	auto numSwapBuffers = (m_allowUpdates) ? m_context->getNumGPUBuffers() : 1;
 	for (unsigned int i = 0; i < numSwapBuffers; i++) {
 		if (m_hasBeenInitialized[i]) {
@@ -174,6 +175,6 @@ bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 		m_hasBeenInitialized[i] = true;
 	}
 
-	return true;
+	return m_hasBeenInitialized[frameIndex];
 }
 

@@ -56,10 +56,10 @@ unsigned int Mesh::getNumIndices() const {
 unsigned int Mesh::getNumInstances() const {
 	return meshData.numInstances;
 }
-const VertexBuffer& Mesh::getVertexBuffer() const {
+VertexBuffer& Mesh::getVertexBuffer() const {
 	return *vertexBuffer;
 }
-const IndexBuffer& Mesh::getIndexBuffer() const {
+IndexBuffer& Mesh::getIndexBuffer() const {
 	return *indexBuffer;
 }
 

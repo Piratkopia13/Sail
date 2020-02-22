@@ -9,16 +9,14 @@
 
 class DXRBase final{
 public:
-	DXRBase(const std::string& shaderFilename, DX12RenderableTexture** inputs);
+	DXRBase(const std::string& shaderFilename);
 	~DXRBase();
-
-	void setGBufferInputs(DX12RenderableTexture** inputs);
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 
 	void updateSceneData(Camera* cam, LightSetup* lights);
 
-	void dispatch(ID3D12GraphicsCommandList4* cmdList);
+	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	//void reloadShaders();
 
@@ -71,13 +69,11 @@ private:
 private:
 	DX12API* m_context;
 
-	DX12RenderableTexture** m_gbufferInputTextures;
-
 	std::string m_shaderFilename;
 	bool m_enableSoftShadowsInShader;
 
 	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_sceneCB;
-	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_meshCB;
+	//std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_meshCB;
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
 
@@ -110,7 +106,6 @@ private:
 
 	const WCHAR* m_rayGenName = L"rayGen";
 	const WCHAR* m_closestHitName = L"closestHitTriangle";
-	const WCHAR* m_closestProceduralPrimitive = L"closestHitProcedural";
 	const WCHAR* m_missName = L"miss";
 	const WCHAR* m_hitGroupTriangleName = L"hitGroupTriangle";
 	const WCHAR* m_shadowMissName = L"shadowMiss";

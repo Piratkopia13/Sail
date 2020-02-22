@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include "../shader/DX12Shader.h"
 #include "DX12DeferredRenderer.h"
+#include "DX12RaytracingRenderer.h"
 
 Renderer* Renderer::Create(Renderer::Type type) {
 	switch (type) {
@@ -18,6 +19,9 @@ Renderer* Renderer::Create(Renderer::Type type) {
 		break;
 	case DEFERRED:
 		return new DX12DeferredRenderer();
+		break;
+	case RAYTRACED:
+		return new DX12RaytracingRenderer();
 		break;
 	default:
 		Logger::Error("Tried to create a renderer of unknown or unimplemented type: " + std::to_string(type));

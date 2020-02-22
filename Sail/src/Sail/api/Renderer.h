@@ -16,7 +16,7 @@ public:
 	enum Type {
 		FORWARD,
 		DEFERRED,
-		//RAYTRACED
+		RAYTRACED,
 		//TILED
 	};
 	enum PresentFlag {

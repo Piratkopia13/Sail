@@ -25,6 +25,7 @@ private:
 	std::vector<Entity::SPtr> m_entities;
 	std::unique_ptr<Renderer> m_deferredRenderer;
 	std::unique_ptr<Renderer> m_forwardRenderer;
+	std::unique_ptr<Renderer> m_raytracingRenderer;
 
 	OutlineMaterial m_outlineMaterial;
 };

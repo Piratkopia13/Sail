@@ -8,11 +8,13 @@
 #include "Sail/api/Renderer.h"
 #include "Environment.h"
 #include "material/OutlineMaterial.h"
+#include "../KeyCodes.h"
 
 
 Scene::Scene()  {
 	m_deferredRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::DEFERRED));
 	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+	m_raytracingRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
 
 	// Set up the environment
 	m_environment = std::make_unique<Environment>();
@@ -30,8 +32,10 @@ void Scene::draw(Camera& camera) {
 	LightSetup lightSetup;
 	m_forwardRenderer->setLightSetup(&lightSetup);
 	m_deferredRenderer->setLightSetup(&lightSetup);
+	m_raytracingRenderer->setLightSetup(&lightSetup);
 	
 	// Begin default pass
+	m_raytracingRenderer->begin(&camera, m_environment.get());
 	m_forwardRenderer->begin(&camera, m_environment.get());
 	m_deferredRenderer->begin(&camera, m_environment.get());
 	auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
@@ -58,6 +62,10 @@ void Scene::draw(Camera& camera) {
 				material = materialComp->get();
 
 			if (model && transform && material) {
+				// Submit all to the raytracer
+				m_raytracingRenderer->submit(model->getModel().get(), nullptr, material, transform->getMatrix());
+
+				// Submit to deferred or forward depending on the material
 				Shader* shader = nullptr;
 				if (shader = material->getShader(Renderer::DEFERRED))
 					m_deferredRenderer->submit(model->getModel().get(), shader, material, transform->getMatrix());
@@ -82,12 +90,19 @@ void Scene::draw(Camera& camera) {
 
 	m_deferredRenderer->end();
 	m_forwardRenderer->end();
+	m_raytracingRenderer->end();
+
+	// Raytracing test
+	if (Input::IsKeyPressed(SAIL_KEY_L))
+		m_raytracingRenderer->present(Renderer::Default);
+
 	void* cmdList = m_deferredRenderer->present(Renderer::SkipExecution);
 	m_forwardRenderer->useDepthBuffer(m_deferredRenderer->getDepthBuffer(), cmdList);
 	m_forwardRenderer->present(Renderer::SkipPreparation, cmdList); // Execute deferred and forward default pass
 
 	m_deferredRenderer->setLightSetup(nullptr);
 	m_forwardRenderer->setLightSetup(nullptr);
+	m_raytracingRenderer->setLightSetup(nullptr);
 }
 
 std::vector<Entity::SPtr>& Scene::getEntites() {

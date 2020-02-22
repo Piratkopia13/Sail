@@ -71,8 +71,8 @@ public:
 	unsigned int getNumVertices() const;
 	unsigned int getNumIndices() const;
 	unsigned int getNumInstances() const;
-	const VertexBuffer& getVertexBuffer() const;
-	const IndexBuffer& getIndexBuffer() const;
+	VertexBuffer& getVertexBuffer() const;
+	IndexBuffer& getIndexBuffer() const;
 
 protected:
 	std::unique_ptr<VertexBuffer> vertexBuffer;

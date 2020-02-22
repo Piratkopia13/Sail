@@ -26,6 +26,8 @@ void ResourceManagerGui::render() {
 		});
 
 		disableColumns();
+
+		ImGui::Text("VRAM usage: %u / %u MB", Application::getInstance()->getAPI()->getMemoryUsage(), Application::getInstance()->getAPI()->getMemoryBudget());
 	}
 	ImGui::End();
 }
