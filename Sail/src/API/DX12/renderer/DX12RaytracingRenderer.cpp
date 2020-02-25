@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include "../shader/DX12Shader.h"
 #include "DX12DeferredRenderer.h"
+#include "Sail/KeyCodes.h"
 
 DX12RaytracingRenderer::DX12RaytracingRenderer() {
 	m_context = Application::getInstance()->getAPI<DX12API>();
@@ -51,8 +52,10 @@ void* DX12RaytracingRenderer::present(Renderer::PresentFlag flags, void* skipped
 	
 	// dispatch n stuff
 	m_dxrBase->updateSceneData(camera, lightSetup);
-	m_dxrBase->updateAccelerationStructures(commandQueue, cmdList);
-	m_dxrBase->dispatch(m_rtOutputTexture.get(), cmdList);
+	//if (Input::IsKeyPressed(SAIL_KEY_L))
+		m_dxrBase->updateAccelerationStructures(commandQueue, cmdList);
+	//if (Input::IsKeyPressed(SAIL_KEY_K))
+		m_dxrBase->dispatch(m_rtOutputTexture.get(), cmdList);
 
 	// Copy output to backbuffer
 

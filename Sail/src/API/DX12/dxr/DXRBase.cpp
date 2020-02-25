@@ -57,6 +57,7 @@ DXRBase::~DXRBase() {
 }
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	unsigned int frameIndex = m_context->getSwapIndex();
 	unsigned int totalNumInstances = 0;
@@ -218,6 +219,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 //}
 
 void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	// Always rebuilds TLAS instead of updating it according to nvidia recommendations
 
@@ -230,62 +232,82 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 	inputs.NumDescs = numInstanceDescriptors;
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
-	m_topBuffer[frameIndex].release();
-
-	// Re-create the buffer
-	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info;
-	m_context->getDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
-
-	// Create the buffers
-	if (m_topBuffer[frameIndex].scratch == nullptr) {
-		m_topBuffer[frameIndex].scratch = DX12Utils::CreateBuffer(m_context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
-		m_topBuffer[frameIndex].scratch->SetName(L"TLAS_SCRATCH");
+	{
+		// Releasing old default buffers (scratch and result) does not seem to be necessary and will only cause significant slowdowns
+		// This may need to be double checked to confirm no gpu memory leaks are being created
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Release old TLAS");
+		m_topBuffer[frameIndex].release();
 	}
 
-	if (m_topBuffer[frameIndex].result == nullptr) {
-		m_topBuffer[frameIndex].result = DX12Utils::CreateBuffer(m_context->getDevice(), info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, DX12Utils::sDefaultHeapProps);
-		m_topBuffer[frameIndex].result->SetName(L"TLAS_RESULT");
-	}
+	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Buffers re-creation");
 
-	m_topBuffer[frameIndex].instanceDesc = DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * glm::max(numInstanceDescriptors, 1U), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
-	m_topBuffer[frameIndex].instanceDesc->SetName(L"TLAS_INSTANCE_DESC");
+		// Re-create the buffer
+		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info;
+		m_context->getDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
-	D3D12_RAYTRACING_INSTANCE_DESC* pInstanceDesc;
-	m_topBuffer[frameIndex].instanceDesc->Map(0, nullptr, (void**)& pInstanceDesc);
-
-	unsigned int blasIndex = 0;
-	unsigned int instanceID = 0;
-
-	for (auto& it : m_bottomBuffers[frameIndex]) {
-		auto& instanceList = it.second;
-		for (auto& transform : instanceList.instanceList) {
-			pInstanceDesc->InstanceID = blasIndex;
-			pInstanceDesc->InstanceMask = 0xFF;
-			
-			pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
-																				// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
-			pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-
-			memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
-
-			pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
-
-			pInstanceDesc++;
+		// Create the buffers
+		if (m_topBuffer[frameIndex].scratch == nullptr) {
+			m_topBuffer[frameIndex].scratch = DX12Utils::CreateBuffer(m_context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
+			m_topBuffer[frameIndex].scratch->SetName(L"TLAS_SCRATCH");
 		}
-		blasIndex++;
+
+		if (m_topBuffer[frameIndex].result == nullptr) {
+			m_topBuffer[frameIndex].result = DX12Utils::CreateBuffer(m_context->getDevice(), info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, DX12Utils::sDefaultHeapProps);
+			m_topBuffer[frameIndex].result->SetName(L"TLAS_RESULT");
+		}
+
+		if (m_topBuffer[frameIndex].instanceDesc)
+			m_topBuffer[frameIndex].instanceDesc->Release(); // Release the old
+
+		m_topBuffer[frameIndex].instanceDesc = DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * glm::max(numInstanceDescriptors, 1U), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
+		m_topBuffer[frameIndex].instanceDesc->SetName(L"TLAS_INSTANCE_DESC");
 	}
 
-	// Unmap
-	m_topBuffer[frameIndex].instanceDesc->Unmap(0, nullptr);
+	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Write blas instances");
+
+		D3D12_RAYTRACING_INSTANCE_DESC* pInstanceDesc;
+		m_topBuffer[frameIndex].instanceDesc->Map(0, nullptr, (void**)&pInstanceDesc);
+
+		unsigned int blasIndex = 0;
+		unsigned int instanceID = 0;
+
+		for (auto& it : m_bottomBuffers[frameIndex]) {
+			auto& instanceList = it.second;
+			for (auto& transform : instanceList.instanceList) {
+				pInstanceDesc->InstanceID = blasIndex;
+				pInstanceDesc->InstanceMask = 0xFF;
+
+				pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
+																					// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
+				pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+
+				memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
+
+				pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
+
+				pInstanceDesc++;
+			}
+			blasIndex++;
+		}
+
+		// Unmap
+		m_topBuffer[frameIndex].instanceDesc->Unmap(0, nullptr);
+	}
 
 	// Create the TLAS
-	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
-	asDesc.Inputs = inputs;
-	asDesc.Inputs.InstanceDescs = m_topBuffer[frameIndex].instanceDesc->GetGPUVirtualAddress();
-	asDesc.DestAccelerationStructureData = m_topBuffer[frameIndex].result->GetGPUVirtualAddress();
-	asDesc.ScratchAccelerationStructureData = m_topBuffer[frameIndex].scratch->GetGPUVirtualAddress();
+	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Build TLAS");
 
-	cmdList->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
+		asDesc.Inputs = inputs;
+		asDesc.Inputs.InstanceDescs = m_topBuffer[frameIndex].instanceDesc->GetGPUVirtualAddress();
+		asDesc.DestAccelerationStructureData = m_topBuffer[frameIndex].result->GetGPUVirtualAddress();
+		asDesc.ScratchAccelerationStructureData = m_topBuffer[frameIndex].scratch->GetGPUVirtualAddress();
+
+		cmdList->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
+	}
 
 	// UAV barrier needed before using the acceleration structures in a raytracing operation
 	D3D12_RESOURCE_BARRIER uavBarrier = {};
@@ -322,7 +344,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	geomDesc.Flags = (renderCommand.dxrFlags & Renderer::MESH_TRANSPARENT) ? D3D12_RAYTRACING_GEOMETRY_FLAG_NONE : D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 	geomDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 	geomDesc.Triangles.VertexBuffer.StartAddress = vb.getResource()->GetGPUVirtualAddress();
-	geomDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Mesh::vec3); // TODO: fix, as this is only for the positions
+	geomDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Mesh::vec3);
 	geomDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
 	geomDesc.Triangles.VertexCount = mesh->getNumVertices();
 
@@ -420,6 +442,10 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		//	m_meshCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0);
 		//	free(initData);
 		//}
+
+		/*unsigned int uploadHeapByteSize = ? ;
+		m_uploadHeap = DX12Utils::CreateBuffer(m_context->getDevice(), uploadHeapByteSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
+		m_uploadHeap->SetName(L"DXRBase Upload heap");*/
 	}
 }
 
@@ -429,6 +455,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 }
 
 void DXRBase::updateShaderTables() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	// 	 "Shader tables can be modified freely by the application (with appropriate state barriers)"
 
@@ -436,34 +463,53 @@ void DXRBase::updateShaderTables() {
 
 	// Ray gen
 	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Ray gen");
+
 		if (m_rayGenShaderTable[frameIndex].Resource) {
-			m_rayGenShaderTable[frameIndex].Resource->Release();
-			m_rayGenShaderTable[frameIndex].Resource.Reset();
+			SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
+			m_rayGenShaderTable[frameIndex].release();
+			//m_rayGenShaderTable[frameIndex].Resource->Release();
+			//m_rayGenShaderTable[frameIndex].Resource.Reset();
 		}
 		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_pipelineState.Get(), 96U);
 		tableBuilder.addShader(m_rayGenName);
 		tableBuilder.addDescriptor(m_outputResource.gpuHandle[frameIndex].ptr);
-		m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+		
+		{
+			SAIL_PROFILE_API_SPECIFIC_SCOPE("Build");
+			m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+		}
 	}
 
 	// Miss
 	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Miss");
+
 		if (m_missShaderTable[frameIndex].Resource) {
-			m_missShaderTable[frameIndex].Resource->Release();
-			m_missShaderTable[frameIndex].Resource.Reset();
+			SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
+			m_missShaderTable[frameIndex].release();
+			//m_missShaderTable[frameIndex].Resource->Release();
+			//m_missShaderTable[frameIndex].Resource.Reset();
 		}
 
 		DXRUtils::ShaderTableBuilder tableBuilder(2U, m_pipelineState.Get());
 		tableBuilder.addShader(m_missName);
 		tableBuilder.addShader(m_shadowMissName);
-		m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+		{
+			SAIL_PROFILE_API_SPECIFIC_SCOPE("Build");
+			m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+		}
 	}
 
 	// Hit group
 	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Hit group");
+
 		if (m_hitGroupShaderTable[frameIndex].Resource) {
-			m_hitGroupShaderTable[frameIndex].Resource->Release();
-			m_hitGroupShaderTable[frameIndex].Resource.Reset();
+			SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
+			m_hitGroupShaderTable[frameIndex].release();
+			//m_hitGroupShaderTable[frameIndex].Resource->Release();
+			//m_hitGroupShaderTable[frameIndex].Resource.Reset();
 		}
 
 		UINT numInstances = (UINT)m_bottomBuffers[frameIndex].size() * 2U; // * 2 for shadow rays (all NULL)
@@ -483,8 +529,10 @@ void DXRBase::updateShaderTables() {
 			tableBuilder.addShader(L"NULL");
 			blasIndex++;
 		}
-
-		m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+		{
+			SAIL_PROFILE_API_SPECIFIC_SCOPE("Build");
+			m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+		}
 	}
 }
 

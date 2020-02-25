@@ -37,7 +37,7 @@ void rayGen() {
 	ShadowRayPayload payload;
     payload.isHit = true; // Assume hit, a missed ray will change this to false
     uint missShaderIndex = 1; // Shadow miss group
-	TraceRay(gRtScene, 0, 0xFF, 0, 0, missShaderIndex, ray, payload);
+	TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 0, 0, missShaderIndex, ray, payload);
 
     // Output black on hit pixels
     output[launchIndex] = (float)payload.isHit;

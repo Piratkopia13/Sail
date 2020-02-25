@@ -26,19 +26,10 @@ private:
 		wComPtr<ID3D12Resource> result = nullptr;
 		wComPtr<ID3D12Resource> instanceDesc = nullptr;    // Used only for top-level AS
 		bool allowUpdate = false;
-		void release() {
-			if (scratch) {
-				scratch->Release();
-				scratch = nullptr;
-			}
-			if (result) {
-				result->Release();
-				result = nullptr;
-			}
-			if (instanceDesc) {
-				instanceDesc->Release();
-				instanceDesc = nullptr;
-			}
+		inline void release() {
+			Memory::SafeRelease(scratch);
+			Memory::SafeRelease(result);
+			Memory::SafeRelease(instanceDesc);
 		}
 	};
 	
@@ -68,6 +59,8 @@ private:
 
 private:
 	DX12API* m_context;
+
+	//ID3D12Resource* m_uploadHeap;
 
 	std::string m_shaderFilename;
 	bool m_enableSoftShadowsInShader;

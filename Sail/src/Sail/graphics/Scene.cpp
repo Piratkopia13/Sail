@@ -93,7 +93,7 @@ void Scene::draw(Camera& camera) {
 	m_raytracingRenderer->end();
 
 	// Raytracing test
-	if (Input::IsKeyPressed(SAIL_KEY_L))
+	//if (Input::IsKeyPressed(SAIL_KEY_J))
 		m_raytracingRenderer->present(Renderer::Default);
 
 	void* cmdList = m_deferredRenderer->present(Renderer::SkipExecution);
