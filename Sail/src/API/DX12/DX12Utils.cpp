@@ -59,7 +59,7 @@ void DX12Utils::UpdateDefaultBufferData(ID3D12Device* device, ID3D12GraphicsComm
 	SetResourceTransitionBarrier(cmdList, defaultBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
-ID3D12Resource* DX12Utils::CreateBuffer(ID3D12Device5* device, UINT64 size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps, D3D12_RESOURCE_DESC* bufDesc) {
+ID3D12Resource* DX12Utils::CreateBuffer(ID3D12Device* device, UINT64 size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps, D3D12_RESOURCE_DESC* bufDesc) {
 
 	D3D12_RESOURCE_DESC newBufDesc = {};
 	if (!bufDesc) {
@@ -112,8 +112,59 @@ void DX12Utils::SetResourceUAVBarrier(ID3D12GraphicsCommandList* commandList, ID
 	commandList->ResourceBarrier(1, &barrierDesc);
 }
 
+unsigned int DX12Utils::Align(unsigned int location, unsigned int alignment) {
+	if ((0 == alignment) || (alignment & (alignment - 1))) {
+		Logger::Error("Non-pow2 alignment");
+	}
+	return ((location + (alignment - 1)) & ~(alignment - 1));
+}
+
+
+DX12Utils::LargeBuffer::LargeBuffer(ID3D12Device* device, unsigned int byteSize, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, D3D12_HEAP_PROPERTIES heapProps) 
+	: m_bufferBegin(nullptr)
+	, m_bufferCurrent(nullptr)
+	, m_bufferEnd(nullptr)
+{
+	m_buffer = CreateBuffer(device, byteSize, flags, initState, heapProps);
+	m_buffer->SetName(L"LARGE BUFFER");
+
+	// Keep the buffer mapped at all times
+	void* pData;
+	D3D12_RANGE readRange{ 0, 0 };
+	m_buffer->Map(0, &readRange, &pData);
+	m_bufferCurrent = m_bufferBegin = reinterpret_cast<UINT8*>(pData);
+	m_bufferEnd = m_bufferBegin + byteSize;
+}
+
+DX12Utils::LargeBuffer::~LargeBuffer() {
+	m_buffer->Unmap(0, nullptr);
+	m_buffer->Release();
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS DX12Utils::LargeBuffer::suballocate(unsigned int byteSize, unsigned int byteAlignment, void** outMappedBuffer) {
+	//m_bufferCurrent = reinterpret_cast<UINT8*>(Align(reinterpret_cast<SIZE_T>(m_bufferCurrent), byteAlignment));
+	unsigned int padding = (byteAlignment - (byteSize % byteAlignment)) % byteAlignment;
+	m_bufferCurrent += padding;
+	*outMappedBuffer = m_bufferCurrent;
+	unsigned int offset = m_bufferCurrent - m_bufferBegin;
+	m_bufferCurrent += byteSize;
+	assert(m_bufferCurrent <= m_bufferEnd && "Tried to suballocate more memory than what is available");
+	return m_buffer->GetGPUVirtualAddress() + offset;
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS DX12Utils::LargeBuffer::setData(void* data, unsigned int dataByteSize, unsigned int alignment) {
+	void* mappedBuffer = nullptr;
+	auto addr = suballocate(dataByteSize, alignment, &mappedBuffer);
+	memcpy(mappedBuffer, data, dataByteSize);
+	return addr;
+}
+
 
 // RootSignatureBuilder
+
+void DX12Utils::LargeBuffer::setCurrentPointerOffset(unsigned int offset) {
+	m_bufferCurrent = m_bufferBegin;
+}
 
 D3D12_STATIC_SAMPLER_DESC DX12Utils::RootSignature::sDefaultSampler = { D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0.f, 1, D3D12_COMPARISON_FUNC_ALWAYS, D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE, 0.f, FLT_MAX, 0, 0, D3D12_SHADER_VISIBILITY_ALL };
 

@@ -184,7 +184,7 @@ DXRUtils::ShaderTableBuilder::~ShaderTableBuilder() {
 	delete[] m_dataOffsets;
 }
 
-DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* device) {
+DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* device, DX12Utils::LargeBuffer& buffer) {
 	ShaderTableData shaderTable;
 
 	UINT sizeOfLargestInstance = 0;
@@ -202,13 +202,14 @@ DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* dev
 
 	shaderTable.StrideInBytes = alignedSize;
 	shaderTable.SizeInBytes = shaderTable.StrideInBytes * m_numInstances;
-	shaderTable.Resource = DX12Utils::CreateBuffer(device, std::max((UINT64)1, shaderTable.SizeInBytes), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
-	shaderTable.Resource->SetName(L"SHADER_TABLE");
+	void* mappedBuffer = nullptr;
+	shaderTable.gpuAddress = buffer.suballocate(shaderTable.SizeInBytes, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT, &mappedBuffer);
+	/*shaderTable.Resource = DX12Utils::CreateBuffer(device, std::max((UINT64)1, shaderTable.SizeInBytes), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
+	shaderTable.Resource->SetName(L"SHADER_TABLE");*/
 
 	// Map the buffer
 	// Use a char* to to pointer arithmetic per byte
-	char* pData;
-	shaderTable.Resource->Map(0, nullptr, (void**)&pData);
+	char* pData = (char*)mappedBuffer;
 	{
 		assert(m_shaderNames.size() == m_numInstances && "All instances do not have a shader name associated with it!");
 		for (unsigned int i = 0; i < m_numInstances; i++) {
@@ -230,7 +231,6 @@ DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* dev
 			}
 		}
 	}
-	shaderTable.Resource->Unmap(0, nullptr);
 
 	return shaderTable;
 }

@@ -60,7 +60,7 @@ private:
 private:
 	DX12API* m_context;
 
-	//ID3D12Resource* m_uploadHeap;
+	std::vector<std::unique_ptr<DX12Utils::LargeBuffer>> m_uploadBuffer;
 
 	std::string m_shaderFilename;
 	bool m_enableSoftShadowsInShader;

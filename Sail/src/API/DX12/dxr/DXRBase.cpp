@@ -45,15 +45,6 @@ DXRBase::~DXRBase() {
 	for (auto& tlas : m_topBuffer) {
 		tlas.release();
 	}
-	for (auto& st : m_rayGenShaderTable) {
-		st.release();
-	}
-	for (auto& st : m_missShaderTable) {
-		st.release();
-	}
-	for (auto& st : m_hitGroupShaderTable) {
-		st.release();
-	}
 }
 
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
@@ -172,7 +163,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 
 	auto copyDescriptor = [&](DX12RenderableTexture* texture, D3D12_CPU_DESCRIPTOR_HANDLE* cdh) {
 		// Copy output texture uav to heap
-		//texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE); // This transition is done in RaytracingRenderer::runShading()
+		//texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
 		m_context->getDevice()->CopyDescriptorsSimple(1, cdh[frameIndex], texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	};
 	copyDescriptor(outputTexture, m_outputResource.cpuHandle);
@@ -188,14 +179,14 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	raytraceDesc.Depth = 1;
 
 	//set shader tables
-	raytraceDesc.RayGenerationShaderRecord.StartAddress = m_rayGenShaderTable[frameIndex].Resource->GetGPUVirtualAddress();
+	raytraceDesc.RayGenerationShaderRecord.StartAddress = m_rayGenShaderTable[frameIndex].gpuAddress;
 	raytraceDesc.RayGenerationShaderRecord.SizeInBytes = m_rayGenShaderTable[frameIndex].SizeInBytes;
 
-	raytraceDesc.MissShaderTable.StartAddress = m_missShaderTable[frameIndex].Resource->GetGPUVirtualAddress();
+	raytraceDesc.MissShaderTable.StartAddress = m_missShaderTable[frameIndex].gpuAddress;
 	raytraceDesc.MissShaderTable.StrideInBytes = m_missShaderTable[frameIndex].StrideInBytes;
 	raytraceDesc.MissShaderTable.SizeInBytes = m_missShaderTable[frameIndex].SizeInBytes;
 
-	raytraceDesc.HitGroupTable.StartAddress = m_hitGroupShaderTable[frameIndex].Resource->GetGPUVirtualAddress();
+	raytraceDesc.HitGroupTable.StartAddress = m_hitGroupShaderTable[frameIndex].gpuAddress;
 	raytraceDesc.HitGroupTable.StrideInBytes = m_hitGroupShaderTable[frameIndex].StrideInBytes;
 	raytraceDesc.HitGroupTable.SizeInBytes = m_hitGroupShaderTable[frameIndex].SizeInBytes;
 
@@ -443,9 +434,9 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		//	free(initData);
 		//}
 
-		/*unsigned int uploadHeapByteSize = ? ;
-		m_uploadHeap = DX12Utils::CreateBuffer(m_context->getDevice(), uploadHeapByteSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
-		m_uploadHeap->SetName(L"DXRBase Upload heap");*/
+		unsigned int uploadHeapByteSize = 1024*1; // TODO: tweak this
+		for (unsigned int i = 0; i < m_context->getNumGPUBuffers(); i++)
+			m_uploadBuffer.emplace_back(new DX12Utils::LargeBuffer(m_context->getDevice(), uploadHeapByteSize));
 	}
 }
 
@@ -461,23 +452,25 @@ void DXRBase::updateShaderTables() {
 
 	auto frameIndex = m_context->getSwapIndex();
 
+	m_uploadBuffer[frameIndex]->setCurrentPointerOffset(0); // Any following allocations should start from the beginning of the uploadBuffer and overwrite existing shader tables
+
 	// Ray gen
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Ray gen");
 
-		if (m_rayGenShaderTable[frameIndex].Resource) {
-			SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
-			m_rayGenShaderTable[frameIndex].release();
-			//m_rayGenShaderTable[frameIndex].Resource->Release();
-			//m_rayGenShaderTable[frameIndex].Resource.Reset();
-		}
+		//if (m_rayGenShaderTable[frameIndex].Resource) {
+		//	SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
+		//	m_rayGenShaderTable[frameIndex].release();
+		//	//m_rayGenShaderTable[frameIndex].Resource->Release();
+		//	//m_rayGenShaderTable[frameIndex].Resource.Reset();
+		//}
 		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_pipelineState.Get(), 96U);
 		tableBuilder.addShader(m_rayGenName);
 		tableBuilder.addDescriptor(m_outputResource.gpuHandle[frameIndex].ptr);
 		
 		{
 			SAIL_PROFILE_API_SPECIFIC_SCOPE("Build");
-			m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+			m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice(), *m_uploadBuffer[frameIndex]);
 		}
 	}
 
@@ -485,19 +478,19 @@ void DXRBase::updateShaderTables() {
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Miss");
 
-		if (m_missShaderTable[frameIndex].Resource) {
-			SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
-			m_missShaderTable[frameIndex].release();
-			//m_missShaderTable[frameIndex].Resource->Release();
-			//m_missShaderTable[frameIndex].Resource.Reset();
-		}
+		//if (m_missShaderTable[frameIndex].Resource) {
+		//	SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
+		//	m_missShaderTable[frameIndex].release();
+		//	//m_missShaderTable[frameIndex].Resource->Release();
+		//	//m_missShaderTable[frameIndex].Resource.Reset();
+		//}
 
 		DXRUtils::ShaderTableBuilder tableBuilder(2U, m_pipelineState.Get());
 		tableBuilder.addShader(m_missName);
 		tableBuilder.addShader(m_shadowMissName);
 		{
 			SAIL_PROFILE_API_SPECIFIC_SCOPE("Build");
-			m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+			m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice(), *m_uploadBuffer[frameIndex]);
 		}
 	}
 
@@ -505,12 +498,12 @@ void DXRBase::updateShaderTables() {
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Hit group");
 
-		if (m_hitGroupShaderTable[frameIndex].Resource) {
-			SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
-			m_hitGroupShaderTable[frameIndex].release();
-			//m_hitGroupShaderTable[frameIndex].Resource->Release();
-			//m_hitGroupShaderTable[frameIndex].Resource.Reset();
-		}
+		//if (m_hitGroupShaderTable[frameIndex].Resource) {
+		//	SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
+		//	m_hitGroupShaderTable[frameIndex].release();
+		//	//m_hitGroupShaderTable[frameIndex].Resource->Release();
+		//	//m_hitGroupShaderTable[frameIndex].Resource.Reset();
+		//}
 
 		UINT numInstances = (UINT)m_bottomBuffers[frameIndex].size() * 2U; // * 2 for shadow rays (all NULL)
 		DXRUtils::ShaderTableBuilder tableBuilder(numInstances, m_pipelineState.Get(), 64U);
@@ -531,7 +524,7 @@ void DXRBase::updateShaderTables() {
 		}
 		{
 			SAIL_PROFILE_API_SPECIFIC_SCOPE("Build");
-			m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice());
+			m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice(), *m_uploadBuffer[frameIndex]);
 		}
 	}
 }

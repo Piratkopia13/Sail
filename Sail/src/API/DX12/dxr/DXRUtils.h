@@ -1,6 +1,7 @@
 #pragma once
 #include "../DX12API.h"
 #include "../shader/DXILShaderCompiler.h"
+#include "../DX12Utils.h"
 
 namespace DXRUtils {
 	class PSOBuilder {
@@ -42,15 +43,16 @@ namespace DXRUtils {
 
 
 	struct ShaderTableData {
+		D3D12_GPU_VIRTUAL_ADDRESS gpuAddress;
 		UINT64 SizeInBytes;
 		UINT32 StrideInBytes;
-		ID3D12Resource* Resource = nullptr;
+		/*ID3D12Resource* Resource = nullptr;
 		void release() {
 			if (Resource) {
 				Resource->Release();
 				Resource = nullptr;
 			}
-		}
+		}*/
 	};
 
 	class ShaderTableBuilder {
@@ -63,7 +65,7 @@ namespace DXRUtils {
 		void addDescriptor(UINT64& descriptor, UINT instance = 0);
 		void addConstants(UINT numConstants, float* constants, UINT instance = 0);
 
-		ShaderTableData build(ID3D12Device5* device);
+		ShaderTableData build(ID3D12Device5* device, DX12Utils::LargeBuffer& buffer);
 
 	private:
 		wComPtr<ID3D12StateObjectProperties> m_soProps;

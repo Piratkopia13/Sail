@@ -27,11 +27,28 @@ namespace DX12Utils {
 	};
 
 	void UpdateDefaultBufferData(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const void* data, UINT64 byteSize, UINT64 offset, ID3D12Resource* defaultBuffer, ID3D12Resource** uploadBuffer);
-	ID3D12Resource* CreateBuffer(ID3D12Device5* device, UINT64 size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps, D3D12_RESOURCE_DESC* bufDesc = nullptr);
+	ID3D12Resource* CreateBuffer(ID3D12Device* device, UINT64 size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps, D3D12_RESOURCE_DESC* bufDesc = nullptr);
 	void SetResourceTransitionBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES StateBefore, D3D12_RESOURCE_STATES StateAfter, UINT subResource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 	void SetResourceUAVBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource);
 
+	// Align location to the next multiple of alignment
+	unsigned int Align(unsigned int location, unsigned int alignment);
 
+	class LargeBuffer {
+	public:
+		LargeBuffer(ID3D12Device* device, unsigned int byteSize, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_PROPERTIES heapProps = sUploadHeapProperties);
+		~LargeBuffer();
+
+		D3D12_GPU_VIRTUAL_ADDRESS suballocate(unsigned int byteSize, unsigned int byteAlignment, void** outMappedBuffer);
+		D3D12_GPU_VIRTUAL_ADDRESS setData(void* data, unsigned int dataByteSize, unsigned int alignment);
+		void setCurrentPointerOffset(unsigned int offset);
+
+	private:
+		ID3D12Resource* m_buffer;
+		UINT8* m_bufferBegin;
+		UINT8* m_bufferCurrent;
+		UINT8* m_bufferEnd;
+	};
 
 
 	// Following inline methods are taken from d3dx12.h authored by microsoft
