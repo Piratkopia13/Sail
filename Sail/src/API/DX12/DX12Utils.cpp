@@ -116,17 +116,20 @@ unsigned int DX12Utils::Align(unsigned int location, unsigned int alignment) {
 	if ((0 == alignment) || (alignment & (alignment - 1))) {
 		Logger::Error("Non-pow2 alignment");
 	}
+
 	return ((location + (alignment - 1)) & ~(alignment - 1));
 }
 
 
-DX12Utils::LargeBuffer::LargeBuffer(ID3D12Device* device, unsigned int byteSize, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, D3D12_HEAP_PROPERTIES heapProps) 
+DX12Utils::CPUSharedBuffer::CPUSharedBuffer(ID3D12Device* device, unsigned int byteSize, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, D3D12_HEAP_PROPERTIES heapProps) 
 	: m_bufferBegin(nullptr)
 	, m_bufferCurrent(nullptr)
 	, m_bufferEnd(nullptr)
 {
 	m_buffer = CreateBuffer(device, byteSize, flags, initState, heapProps);
-	m_buffer->SetName(L"LARGE BUFFER");
+	m_buffer->SetName(L"CPUSharedBuffer");
+
+	assert(heapProps.Type != D3D12_HEAP_TYPE_DEFAULT && "Default heap type not supported as CPUSharedBuffer (for obvious reasons)");
 
 	// Keep the buffer mapped at all times
 	void* pData;
@@ -136,43 +139,81 @@ DX12Utils::LargeBuffer::LargeBuffer(ID3D12Device* device, unsigned int byteSize,
 	m_bufferEnd = m_bufferBegin + byteSize;
 }
 
-DX12Utils::LargeBuffer::~LargeBuffer() {
+DX12Utils::CPUSharedBuffer::~CPUSharedBuffer() {
 	m_buffer->Unmap(0, nullptr);
 	m_buffer->Release();
 }
 
-D3D12_GPU_VIRTUAL_ADDRESS DX12Utils::LargeBuffer::suballocate(unsigned int byteSize, unsigned int byteAlignment, void** outMappedBuffer) {
-	//m_bufferCurrent = reinterpret_cast<UINT8*>(Align(reinterpret_cast<SIZE_T>(m_bufferCurrent), byteAlignment));
+D3D12_GPU_VIRTUAL_ADDRESS DX12Utils::CPUSharedBuffer::suballocate(unsigned int byteSize, unsigned int byteAlignment, void** outMappedBuffer) {
 	unsigned int padding = (byteAlignment - (byteSize % byteAlignment)) % byteAlignment;
 	m_bufferCurrent += padding;
+
 	*outMappedBuffer = m_bufferCurrent;
+
 	unsigned int offset = m_bufferCurrent - m_bufferBegin;
 	m_bufferCurrent += byteSize;
+
 	assert(m_bufferCurrent <= m_bufferEnd && "Tried to suballocate more memory than what is available");
+
 	return m_buffer->GetGPUVirtualAddress() + offset;
 }
 
-D3D12_GPU_VIRTUAL_ADDRESS DX12Utils::LargeBuffer::setData(void* data, unsigned int dataByteSize, unsigned int alignment) {
+D3D12_GPU_VIRTUAL_ADDRESS DX12Utils::CPUSharedBuffer::setData(void* data, unsigned int dataByteSize, unsigned int alignment) {
 	void* mappedBuffer = nullptr;
 	auto addr = suballocate(dataByteSize, alignment, &mappedBuffer);
 	memcpy(mappedBuffer, data, dataByteSize);
 	return addr;
 }
 
-
-// RootSignatureBuilder
-
-void DX12Utils::LargeBuffer::setCurrentPointerOffset(unsigned int offset) {
-	m_bufferCurrent = m_bufferBegin;
+void DX12Utils::CPUSharedBuffer::setCurrentPointerOffset(unsigned int offset) {
+	m_bufferCurrent = m_bufferBegin + offset;
 }
 
+ID3D12Resource* DX12Utils::CPUSharedBuffer::getResource() {
+	return m_buffer;
+}
+
+
+DX12Utils::GPUOnlyBuffer::GPUOnlyBuffer(ID3D12Device* device, unsigned int byteSize, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, D3D12_HEAP_PROPERTIES heapProps)
+	: m_currentOffset(0)
+	, m_bufferSize(byteSize)
+{
+	m_buffer = CreateBuffer(device, byteSize, flags, initState, heapProps);
+	m_buffer->SetName(L"GPUOnlyBuffer");
+
+	assert(heapProps.Type == D3D12_HEAP_TYPE_DEFAULT && "Only default heap type is supported as GPUOnlyBuffer");
+}
+
+DX12Utils::GPUOnlyBuffer::~GPUOnlyBuffer() {
+	m_buffer->Release();
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS DX12Utils::GPUOnlyBuffer::suballocate(unsigned int byteSize, unsigned int byteAlignment) {
+	m_currentOffset = Align(m_currentOffset, byteAlignment);
+
+	unsigned int offset = m_currentOffset;
+	m_currentOffset += byteSize;
+
+	assert(m_currentOffset <= m_bufferSize && "Tried to suballocate more memory than what is available");
+
+	return m_buffer->GetGPUVirtualAddress() + offset;
+}
+
+void DX12Utils::GPUOnlyBuffer::setCurrentPointerOffset(unsigned int offset) {
+	m_currentOffset = offset;
+}
+
+ID3D12Resource* DX12Utils::GPUOnlyBuffer::getResource() {
+	return m_buffer;
+}
+
+
+// RootSignatureBuilder
 D3D12_STATIC_SAMPLER_DESC DX12Utils::RootSignature::sDefaultSampler = { D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_TEXTURE_ADDRESS_MODE_WRAP, 0.f, 1, D3D12_COMPARISON_FUNC_ALWAYS, D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE, 0.f, FLT_MAX, 0, 0, D3D12_SHADER_VISIBILITY_ALL };
 
 DX12Utils::RootSignature::RootSignature(const std::string& name)
 	: m_name(name)
-{
-
-}
+{ }
 
 void DX12Utils::RootSignature::add32BitConstants() {
 

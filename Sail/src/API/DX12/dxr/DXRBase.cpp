@@ -18,7 +18,7 @@ DXRBase::DXRBase(const std::string& shaderFilename)
 
 	// Create frame resources (one per swap buffer)
 	// Only one TLAS is used for the whole scene
-	m_topBuffer = m_context->createFrameResource<AccelerationStructureBuffers>();
+	m_topBuffer = m_context->createFrameResource<AccelerationStructureAddresses>();
 	m_bottomBuffers = m_context->createFrameResource<std::unordered_map<Mesh*, InstanceList>>();
 	m_rayGenShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
 	m_missShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
@@ -41,9 +41,6 @@ DXRBase::~DXRBase() {
 		for (auto& blas : blasList) {
 			blas.second.blas.release();
 		}
-	}
-	for (auto& tlas : m_topBuffer) {
-		tlas.release();
 	}
 }
 
@@ -138,6 +135,11 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 		}
 	}
 
+	// Any following allocations should start from the beginning of the uploadBuffer and overwrite existing tlas instances and shader tables
+	m_uploadBuffer[frameIndex]->setCurrentPointerOffset(0);
+	m_defaultBufferUA[frameIndex]->setCurrentPointerOffset(0);
+	m_defaultBufferRTAS[frameIndex]->setCurrentPointerOffset(0);
+
 	createTLAS(totalNumInstances, cmdList);
 	updateDescriptorHeap(cmdList);
 	updateShaderTables();
@@ -194,7 +196,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	cmdList->SetComputeRootSignature(*m_dxrGlobalRootSignature->get());
 
 	// Set acceleration structure
-	cmdList->SetComputeRootShaderResourceView(m_dxrGlobalRootSignature->getIndex("AccelerationStructure"), m_topBuffer[frameIndex].result->GetGPUVirtualAddress());
+	cmdList->SetComputeRootShaderResourceView(m_dxrGlobalRootSignature->getIndex("AccelerationStructure"), m_topBuffer[frameIndex].resultGpuAddress);
 	// Set scene constant buffer
 	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_sceneCB->getBuffer()->GetGPUVirtualAddress());
 
@@ -223,13 +225,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 	inputs.NumDescs = numInstanceDescriptors;
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
-	{
-		// Releasing old default buffers (scratch and result) does not seem to be necessary and will only cause significant slowdowns
-		// This may need to be double checked to confirm no gpu memory leaks are being created
-		SAIL_PROFILE_API_SPECIFIC_SCOPE("Release old TLAS");
-		m_topBuffer[frameIndex].release();
-	}
-
+	void* mappedInstanceBuffer;
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Buffers re-creation");
 
@@ -237,29 +233,18 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info;
 		m_context->getDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
-		// Create the buffers
-		if (m_topBuffer[frameIndex].scratch == nullptr) {
-			m_topBuffer[frameIndex].scratch = DX12Utils::CreateBuffer(m_context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
-			m_topBuffer[frameIndex].scratch->SetName(L"TLAS_SCRATCH");
-		}
-
-		if (m_topBuffer[frameIndex].result == nullptr) {
-			m_topBuffer[frameIndex].result = DX12Utils::CreateBuffer(m_context->getDevice(), info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, DX12Utils::sDefaultHeapProps);
-			m_topBuffer[frameIndex].result->SetName(L"TLAS_RESULT");
-		}
-
-		if (m_topBuffer[frameIndex].instanceDesc)
-			m_topBuffer[frameIndex].instanceDesc->Release(); // Release the old
-
-		m_topBuffer[frameIndex].instanceDesc = DX12Utils::CreateBuffer(m_context->getDevice(), sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * glm::max(numInstanceDescriptors, 1U), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
-		m_topBuffer[frameIndex].instanceDesc->SetName(L"TLAS_INSTANCE_DESC");
+		// Allocate new memory regions for buffers
+		// Program will crash if a buffer is too small for a suballocation
+		// TODO: Somehow allow resizing buffers when needed without breaking GPU_VIRTUAL_ADDRESS references to the current buffer
+		m_topBuffer[frameIndex].scratchGpuAddress = m_defaultBufferUA[frameIndex]->suballocate(info.ScratchDataSizeInBytes, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT);
+		m_topBuffer[frameIndex].resultGpuAddress = m_defaultBufferRTAS[frameIndex]->suballocate(info.ResultDataMaxSizeInBytes, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT);
+		m_topBuffer[frameIndex].instanceDescGpuAddress = m_uploadBuffer[frameIndex]->suballocate(numInstanceDescriptors * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), D3D12_RAYTRACING_INSTANCE_DESCS_BYTE_ALIGNMENT, &mappedInstanceBuffer);
 	}
 
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Write blas instances");
 
-		D3D12_RAYTRACING_INSTANCE_DESC* pInstanceDesc;
-		m_topBuffer[frameIndex].instanceDesc->Map(0, nullptr, (void**)&pInstanceDesc);
+		D3D12_RAYTRACING_INSTANCE_DESC* pInstanceDesc = (D3D12_RAYTRACING_INSTANCE_DESC*)mappedInstanceBuffer;
 
 		unsigned int blasIndex = 0;
 		unsigned int instanceID = 0;
@@ -269,22 +254,15 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 			for (auto& transform : instanceList.instanceList) {
 				pInstanceDesc->InstanceID = blasIndex;
 				pInstanceDesc->InstanceMask = 0xFF;
-
 				pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																					// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
 				pInstanceDesc->Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-
 				memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
-
 				pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
-
 				pInstanceDesc++;
 			}
 			blasIndex++;
 		}
-
-		// Unmap
-		m_topBuffer[frameIndex].instanceDesc->Unmap(0, nullptr);
 	}
 
 	// Create the TLAS
@@ -293,9 +271,9 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
 		asDesc.Inputs = inputs;
-		asDesc.Inputs.InstanceDescs = m_topBuffer[frameIndex].instanceDesc->GetGPUVirtualAddress();
-		asDesc.DestAccelerationStructureData = m_topBuffer[frameIndex].result->GetGPUVirtualAddress();
-		asDesc.ScratchAccelerationStructureData = m_topBuffer[frameIndex].scratch->GetGPUVirtualAddress();
+		asDesc.Inputs.InstanceDescs = m_topBuffer[frameIndex].instanceDescGpuAddress;
+		asDesc.DestAccelerationStructureData = m_topBuffer[frameIndex].resultGpuAddress;
+		asDesc.ScratchAccelerationStructureData = m_topBuffer[frameIndex].scratchGpuAddress;
 
 		cmdList->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
 	}
@@ -303,7 +281,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 	// UAV barrier needed before using the acceleration structures in a raytracing operation
 	D3D12_RESOURCE_BARRIER uavBarrier = {};
 	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-	uavBarrier.UAV.pResource = m_topBuffer[frameIndex].result.Get();
+	uavBarrier.UAV.pResource = m_defaultBufferRTAS[frameIndex]->getResource();
 	cmdList->ResourceBarrier(1, &uavBarrier);
 }
 
@@ -434,9 +412,15 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		//	free(initData);
 		//}
 
-		unsigned int uploadHeapByteSize = 1024*1; // TODO: tweak this
-		for (unsigned int i = 0; i < m_context->getNumGPUBuffers(); i++)
-			m_uploadBuffer.emplace_back(new DX12Utils::LargeBuffer(m_context->getDevice(), uploadHeapByteSize));
+		// TODO: tweak these
+		unsigned int uploadBufferByteSize = 1024 * 10;
+		unsigned int defaultBufferUAByteSize = 1024 * 20;
+		unsigned int defaultBufferRTASByteSize = 1024 * 20;
+		for (unsigned int i = 0; i < m_context->getNumGPUBuffers(); i++) {
+			m_defaultBufferUA.emplace_back(new DX12Utils::GPUOnlyBuffer(m_context->getDevice(), defaultBufferUAByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+			m_defaultBufferRTAS.emplace_back(new DX12Utils::GPUOnlyBuffer(m_context->getDevice(), defaultBufferRTASByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE));
+			m_uploadBuffer.emplace_back(new DX12Utils::CPUSharedBuffer(m_context->getDevice(), uploadBufferByteSize));
+		}
 	}
 }
 
@@ -451,8 +435,6 @@ void DXRBase::updateShaderTables() {
 	// 	 "Shader tables can be modified freely by the application (with appropriate state barriers)"
 
 	auto frameIndex = m_context->getSwapIndex();
-
-	m_uploadBuffer[frameIndex]->setCurrentPointerOffset(0); // Any following allocations should start from the beginning of the uploadBuffer and overwrite existing shader tables
 
 	// Ray gen
 	{

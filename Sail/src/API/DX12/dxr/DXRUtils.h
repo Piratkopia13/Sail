@@ -65,7 +65,7 @@ namespace DXRUtils {
 		void addDescriptor(UINT64& descriptor, UINT instance = 0);
 		void addConstants(UINT numConstants, float* constants, UINT instance = 0);
 
-		ShaderTableData build(ID3D12Device5* device, DX12Utils::LargeBuffer& buffer);
+		ShaderTableData build(ID3D12Device5* device, DX12Utils::CPUSharedBuffer& buffer);
 
 	private:
 		wComPtr<ID3D12StateObjectProperties> m_soProps;

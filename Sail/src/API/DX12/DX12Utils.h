@@ -34,20 +34,36 @@ namespace DX12Utils {
 	// Align location to the next multiple of alignment
 	unsigned int Align(unsigned int location, unsigned int alignment);
 
-	class LargeBuffer {
+	class CPUSharedBuffer {
 	public:
-		LargeBuffer(ID3D12Device* device, unsigned int byteSize, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_PROPERTIES heapProps = sUploadHeapProperties);
-		~LargeBuffer();
+		CPUSharedBuffer(ID3D12Device* device, unsigned int byteSize, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_PROPERTIES heapProps = sUploadHeapProperties);
+		~CPUSharedBuffer();
 
 		D3D12_GPU_VIRTUAL_ADDRESS suballocate(unsigned int byteSize, unsigned int byteAlignment, void** outMappedBuffer);
 		D3D12_GPU_VIRTUAL_ADDRESS setData(void* data, unsigned int dataByteSize, unsigned int alignment);
 		void setCurrentPointerOffset(unsigned int offset);
+		ID3D12Resource* getResource();
 
 	private:
 		ID3D12Resource* m_buffer;
 		UINT8* m_bufferBegin;
 		UINT8* m_bufferCurrent;
 		UINT8* m_bufferEnd;
+	};
+
+	class GPUOnlyBuffer {
+	public:
+		GPUOnlyBuffer(ID3D12Device* device, unsigned int byteSize, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_PROPERTIES heapProps = sDefaultHeapProps);
+		~GPUOnlyBuffer();
+
+		D3D12_GPU_VIRTUAL_ADDRESS suballocate(unsigned int byteSize, unsigned int byteAlignment);
+		void setCurrentPointerOffset(unsigned int offset);
+		ID3D12Resource* getResource();
+
+	private:
+		ID3D12Resource* m_buffer;
+		unsigned int m_currentOffset;
+		unsigned int m_bufferSize;
 	};
 
 

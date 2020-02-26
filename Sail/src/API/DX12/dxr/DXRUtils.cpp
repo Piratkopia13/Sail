@@ -184,7 +184,7 @@ DXRUtils::ShaderTableBuilder::~ShaderTableBuilder() {
 	delete[] m_dataOffsets;
 }
 
-DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* device, DX12Utils::LargeBuffer& buffer) {
+DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* device, DX12Utils::CPUSharedBuffer& buffer) {
 	ShaderTableData shaderTable;
 
 	UINT sizeOfLargestInstance = 0;

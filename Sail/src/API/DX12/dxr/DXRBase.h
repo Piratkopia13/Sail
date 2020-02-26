@@ -21,16 +21,21 @@ public:
 	//void reloadShaders();
 
 private:
+	// TODO: replace this struct with AccelerationStructureAddresses
 	struct AccelerationStructureBuffers {
 		wComPtr<ID3D12Resource> scratch = nullptr;
 		wComPtr<ID3D12Resource> result = nullptr;
-		wComPtr<ID3D12Resource> instanceDesc = nullptr;    // Used only for top-level AS
 		bool allowUpdate = false;
-		inline void release() {
+		void release() {
 			Memory::SafeRelease(scratch);
 			Memory::SafeRelease(result);
-			Memory::SafeRelease(instanceDesc);
 		}
+	};
+
+	struct AccelerationStructureAddresses {
+		D3D12_GPU_VIRTUAL_ADDRESS scratchGpuAddress;
+		D3D12_GPU_VIRTUAL_ADDRESS resultGpuAddress;
+		D3D12_GPU_VIRTUAL_ADDRESS instanceDescGpuAddress; // Used only for top-level AS
 	};
 	
 	struct InstanceList {
@@ -60,7 +65,9 @@ private:
 private:
 	DX12API* m_context;
 
-	std::vector<std::unique_ptr<DX12Utils::LargeBuffer>> m_uploadBuffer;
+	std::vector<std::unique_ptr<DX12Utils::CPUSharedBuffer>> m_uploadBuffer;
+	std::vector<std::unique_ptr<DX12Utils::GPUOnlyBuffer>> m_defaultBufferUA; // Used in unordered access
+	std::vector<std::unique_ptr<DX12Utils::GPUOnlyBuffer>> m_defaultBufferRTAS; // Used in raytracing acceleration structures
 
 	std::string m_shaderFilename;
 	bool m_enableSoftShadowsInShader;
@@ -70,7 +77,7 @@ private:
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
 
-	std::vector<AccelerationStructureBuffers> m_topBuffer;
+	std::vector<AccelerationStructureAddresses> m_topBuffer;
 
 	wComPtr<ID3D12StateObject> m_pipelineState;
 
