@@ -91,6 +91,7 @@ struct PBRPixel {
     float metalness;
     float roughness;
     float ao;
+    bool inShadow;
 };
 
 float3 pbrShade(PBRScene scene, PBRPixel pixel) {
@@ -107,8 +108,8 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel) {
     {
         // Directional lights
         DirectionalLight dl = scene.dirLight;
-        // Ignore light if color is black
-        if (!all(dl.color == 0.0f)) {
+        // Ignore light if color is black or pixel is in shadow
+        if (!(all(dl.color == 0.0f) || pixel.inShadow)) {
             // Set up a point light that emulate a directional light
             PointLightInput pl;
             pl.color = dl.color;

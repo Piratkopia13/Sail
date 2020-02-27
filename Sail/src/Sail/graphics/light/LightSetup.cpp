@@ -25,6 +25,10 @@ void LightSetup::setDirectionalLight(DirectionalLightComponent* dl) {
 	m_dlData.intensity = dl->getIntensity();
 }
 
+const LightSetup::DirLightBuffer& LightSetup::getDirLight() const {
+	return m_dlData;
+}
+
 std::tuple<void*, unsigned int> LightSetup::getDirLightData() const {
 	return { (void*)&m_dlData, sizeof(DirLightBuffer) };
 }

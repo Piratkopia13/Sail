@@ -13,12 +13,11 @@ public:
 	~DXRBase();
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-
 	void updateSceneData(Camera* cam, LightSetup* lights);
-
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
-	//void reloadShaders();
+	void recreateResources();
+	void reloadShaders();
 
 private:
 	// TODO: replace this struct with AccelerationStructureAddresses
@@ -64,7 +63,7 @@ private:
 
 private:
 	DX12API* m_context;
-
+	
 	std::vector<std::unique_ptr<DX12Utils::CPUSharedBuffer>> m_uploadBuffer;
 	std::vector<std::unique_ptr<DX12Utils::GPUOnlyBuffer>> m_defaultBufferUA; // Used in unordered access
 	std::vector<std::unique_ptr<DX12Utils::GPUOnlyBuffer>> m_defaultBufferRTAS; // Used in raytracing acceleration structures
@@ -101,7 +100,11 @@ private:
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle[2];
 	};
 
-	// DXR shader outputs
+	// DXR shader inputs and outputs
+	Resource m_gbufferPositionsResource; // TODO: abstract this out somehow
+	Resource m_gbufferNormalsResource; // TODO: abstract this out somehow
+	const std::unique_ptr<DX12RenderableTexture>* m_gbuffers; // TODO: abstract this out somehow
+
 	Resource m_outputResource;
 
 	const WCHAR* m_rayGenName = L"rayGen";

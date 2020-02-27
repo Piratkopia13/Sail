@@ -8,13 +8,18 @@
 
 // Include defines shared with dxr shaders
 #include "Sail/../../Demo/res/shaders/dxr/dxr.shared"
+#include "../renderer/DX12DeferredRenderer.h"
+#include "Sail/KeyCodes.h"
 
 
 DXRBase::DXRBase(const std::string& shaderFilename)
-	: m_shaderFilename(shaderFilename)
+	: m_shaderFilename(shaderFilename)	
 {
-
 	m_context = Application::getInstance()->getAPI<DX12API>();
+
+	// Temporary, this static getter should probably be removed
+	m_gbuffers = DX12DeferredRenderer::GetGBuffers();
+	assert(m_gbuffers);
 
 	// Create frame resources (one per swap buffer)
 	// Only one TLAS is used for the whole scene
@@ -146,16 +151,19 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 }
 
 void DXRBase::updateSceneData(Camera* cam, LightSetup* lights) {
+	if (Input::IsKeyPressed(SAIL_KEY_R))
+		reloadShaders();
+
 	DXRShaderCommon::SceneCBuffer newData = {};
 	if (cam) {
 		newData.cameraPosition = cam->getPosition();
 		newData.projectionToWorld = glm::inverse(cam->getViewProjection());
+		newData.viewToWorld = glm::inverse(cam->getViewMatrix());
 	}
 
-	/*if (lights) {
-		auto& plData = lights->getPointLightsData();
-		memcpy(newData.pointLights, plData.pLights, sizeof(plData));
-	}*/
+	if (lights) {
+		newData.dirLightDirection = lights->getDirLight().direction;
+	}
 
 	m_sceneCB->updateData(&newData, sizeof(newData), 0U);
 }
@@ -205,11 +213,11 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	cmdList->DispatchRays(&raytraceDesc);
 }
 
-//void DXRBase::reloadShaders() {
-//	m_context->waitForGPU();
-//	// Recompile hlsl
-//	createRaytracingPSO();
-//}
+void DXRBase::reloadShaders() {
+	m_context->waitForGPU();
+	// Recompile hlsl
+	createRaytracingPSO();
+}
 
 void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
@@ -346,6 +354,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	// TODO: make sure buffer size is >= info.UpdateScratchDataSize in bytes
 	if (!performInplaceUpdate) {
 		// Create the buffers. They need to support UAV, and since we are going to immediately use them, we create them with an unordered-access state
+		// TODO: replace following CreateBuffer with suballocations from a larger buffer
 		bottomBuffer.scratch = DX12Utils::CreateBuffer(m_context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
 		bottomBuffer.scratch->SetName(L"BLAS_SCRATCH");
 		bottomBuffer.result = DX12Utils::CreateBuffer(m_context->getDevice(), info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, DX12Utils::sDefaultHeapProps);
@@ -383,10 +392,10 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 void DXRBase::createInitialShaderResources(bool remake) {
 	// Create some resources only once on init
 	if (!m_descriptorHeap || remake) {
-		UINT numDescriptors = 5000;
+		UINT numDescriptors = 500;
 		m_descriptorHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, numDescriptors, true, true);
 
-		// The first 10 slots in the heap will be used for the output UAVs and history input SRV
+		// The first slots in the heap will be used for resources that never changes
 		auto storeHandle = [&](Resource& res) {
 			for (unsigned int i = 0; i < 2; i++) {
 				auto index = m_descriptorHeap->getAndStepIndex();
@@ -396,6 +405,19 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		};
 		// UAV output
 		storeHandle(m_outputResource);
+
+		// Gbuffer inputs
+		for (unsigned int i = 0; i < 2; i++) {
+			auto index = m_descriptorHeap->getAndStepIndex();
+			m_gbufferPositionsResource.cpuHandle[i] = m_descriptorHeap->getCPUDescriptorHandleForIndex(index);
+			m_gbufferPositionsResource.gpuHandle[i] = m_descriptorHeap->getGPUDescriptorHandleForIndex(index);
+			m_context->getDevice()->CopyDescriptorsSimple(1, m_gbufferPositionsResource.cpuHandle[i], m_gbuffers[0]->getSrvCDH(i), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+			index = m_descriptorHeap->getAndStepIndex();
+			m_gbufferNormalsResource.cpuHandle[i] = m_descriptorHeap->getCPUDescriptorHandleForIndex(index);
+			m_gbufferNormalsResource.gpuHandle[i] = m_descriptorHeap->getGPUDescriptorHandleForIndex(index);
+			m_context->getDevice()->CopyDescriptorsSimple(1, m_gbufferNormalsResource.cpuHandle[i], m_gbuffers[1]->getSrvCDH(i), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		}
 
 		// Scene CB
 		{
@@ -440,15 +462,19 @@ void DXRBase::updateShaderTables() {
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Ray gen");
 
-		//if (m_rayGenShaderTable[frameIndex].Resource) {
-		//	SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
-		//	m_rayGenShaderTable[frameIndex].release();
-		//	//m_rayGenShaderTable[frameIndex].Resource->Release();
-		//	//m_rayGenShaderTable[frameIndex].Resource.Reset();
-		//}
 		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_pipelineState.Get(), 96U);
 		tableBuilder.addShader(m_rayGenName);
-		tableBuilder.addDescriptor(m_outputResource.gpuHandle[frameIndex].ptr);
+		m_localSignatureRayGen->doInOrder([&](const std::string& parameterName) {
+			if (parameterName == "gbufferPositionsInputSRV") {
+				tableBuilder.addDescriptor(m_gbufferPositionsResource.gpuHandle[frameIndex].ptr);
+			} else if (parameterName == "gbufferNormalsInputSRV") {
+				tableBuilder.addDescriptor(m_gbufferNormalsResource.gpuHandle[frameIndex].ptr);
+			} else if(parameterName == "OutputUAV") {
+				tableBuilder.addDescriptor(m_outputResource.gpuHandle[frameIndex].ptr);
+			} else {
+				Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
+			}
+		});
 		
 		{
 			SAIL_PROFILE_API_SPECIFIC_SCOPE("Build");
@@ -459,13 +485,6 @@ void DXRBase::updateShaderTables() {
 	// Miss
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Miss");
-
-		//if (m_missShaderTable[frameIndex].Resource) {
-		//	SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
-		//	m_missShaderTable[frameIndex].release();
-		//	//m_missShaderTable[frameIndex].Resource->Release();
-		//	//m_missShaderTable[frameIndex].Resource.Reset();
-		//}
 
 		DXRUtils::ShaderTableBuilder tableBuilder(2U, m_pipelineState.Get());
 		tableBuilder.addShader(m_missName);
@@ -479,13 +498,6 @@ void DXRBase::updateShaderTables() {
 	// Hit group
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Hit group");
-
-		//if (m_hitGroupShaderTable[frameIndex].Resource) {
-		//	SAIL_PROFILE_API_SPECIFIC_SCOPE("Release");
-		//	m_hitGroupShaderTable[frameIndex].release();
-		//	//m_hitGroupShaderTable[frameIndex].Resource->Release();
-		//	//m_hitGroupShaderTable[frameIndex].Resource.Reset();
-		//}
 
 		UINT numInstances = (UINT)m_bottomBuffers[frameIndex].size() * 2U; // * 2 for shadow rays (all NULL)
 		DXRUtils::ShaderTableBuilder tableBuilder(numInstances, m_pipelineState.Get(), 64U);
@@ -544,6 +556,8 @@ void DXRBase::createDXRGlobalRootSignature() {
 
 void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
+	m_localSignatureRayGen->addDescriptorTable("gbufferPositionsInputSRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1);
+	m_localSignatureRayGen->addDescriptorTable("gbufferNormalsInputSRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2);
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
 	m_localSignatureRayGen->addStaticSampler();
 
@@ -580,4 +594,8 @@ void DXRBase::createMissLocalRootSignature() {
 void DXRBase::createEmptyLocalRootSignature() {
 	m_localSignatureEmpty = std::make_unique<DX12Utils::RootSignature>("EmptyLocal");
 	m_localSignatureEmpty->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+}
+
+void DXRBase::recreateResources() {
+	createInitialShaderResources(true);
 }

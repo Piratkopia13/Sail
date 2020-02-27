@@ -90,12 +90,12 @@ void DXRUtils::PSOBuilder::addSignatureToShaders(const std::vector<LPCWSTR>& sha
 
 	// Bind local root signature shaders
 	m_exportAssociations.emplace_back();
-	D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION& rayGenLocalRootAssociation = m_exportAssociations.back();
-	rayGenLocalRootAssociation.pExports = &m_associationNames.back()[0];
-	rayGenLocalRootAssociation.NumExports = UINT(shaderNames.size());
-	rayGenLocalRootAssociation.pSubobjectToAssociate = signatureSO; //<-- address to local root subobject
+	D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION& association = m_exportAssociations.back();
+	association.pExports = &m_associationNames.back()[0];
+	association.NumExports = UINT(shaderNames.size());
+	association.pSubobjectToAssociate = signatureSO; //<-- address to local root subobject
 
-	append(D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, &rayGenLocalRootAssociation);
+	append(D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, &association);
 }
 
 void DXRUtils::PSOBuilder::setGlobalSignature(ID3D12RootSignature** rootSignature) {

@@ -1,9 +1,14 @@
 #define HLSL
 #include "dxr.shared"
 
+// Inputs
 RaytracingAccelerationStructure gRtScene : register(t0);
-RWTexture2D<float4> output : register(u0);
 ConstantBuffer<SceneCBuffer> SystemSceneBuffer : register(b0, space0);
+Texture2D<float4> gbuffer_positions : register(t1);
+Texture2D<float4> gbuffer_normals : register(t2);
+
+// Outputs
+RWTexture2D<float4> output : register(u0);
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid
 inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
@@ -25,9 +30,18 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-    RayDesc ray;
 	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
-	generateCameraRay(launchIndex, ray.Origin, ray.Direction);
+	// generateCameraRay(launchIndex, ray.Origin, ray.Direction);
+
+	float3 pixelWorldPos = mul(SystemSceneBuffer.viewToWorld, gbuffer_positions[launchIndex]).xyz;
+	float3 pixelWorldNormal = gbuffer_normals[launchIndex].xyz;
+    
+	// Cast a shadow ray from the directional light
+	RayDesc ray;
+	ray.Direction = -SystemSceneBuffer.dirLightDirection;
+	ray.Origin = pixelWorldPos;
+	ray.Origin += pixelWorldNormal * 0.1f; // Offset slightly to avoid self-shadowing
+										   // This should preferably be done with the vertex normal and not a normal-mapped normal
 
 	// Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
 	// TMin should be kept small to prevent missing geometry at close contact areas
@@ -36,11 +50,14 @@ void rayGen() {
 
 	ShadowRayPayload payload;
     payload.isHit = true; // Assume hit, a missed ray will change this to false
-    uint missShaderIndex = 1; // Shadow miss group
-	TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 0, 0, missShaderIndex, ray, payload);
+    
+	uint missShaderIndex = 1; // Shadow miss group
+	uint hitGroup = 1; // Null hit group
+	TraceRay(gRtScene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, hitGroup, 0, missShaderIndex, ray, payload);
 
     // Output black on hit pixels
-    output[launchIndex] = (float)payload.isHit;
+    output[launchIndex].rgb = 1.f - (float)payload.isHit;
+	output[launchIndex].a = 1.0f;
 }
 
 [shader("miss")]

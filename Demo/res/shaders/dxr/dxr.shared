@@ -39,8 +39,11 @@ struct RayPayload {
 
 struct SceneCBuffer {
     matrix projectionToWorld;
+    matrix viewToWorld;
     float3 cameraPosition;
-    float padding;
+    float padding1;
+    float3 dirLightDirection;
+    float padding2;
 };
 
 #ifndef HLSL

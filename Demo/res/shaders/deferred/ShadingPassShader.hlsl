@@ -49,6 +49,7 @@ Texture2D def_worldNormals  : register(t4);
 Texture2D def_albedo        : register(t5);
 Texture2D def_mrao          : register(t6);
 Texture2D tex_ssao          : register(t7);
+Texture2D tex_shadows       : register(t8);
 SamplerState PSss            : SAIL_SAMPLER_ANIS_WRAP; // s0
 SamplerState PSLinearSampler : SAIL_SAMPLER_LINEAR_CLAMP; // s2
 
@@ -58,6 +59,9 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// float3 viewDir = input.worldPos - sys_cameraPos;
 	// return irradianceMap.SampleLevel(PSss, viewDir, 0);
 	// return radianceMap.SampleLevel(PSss, viewDir, 0);
+
+	float4 shadows = tex_shadows.Sample(PSss, input.texCoord);
+	// return shadows;
 
     float3 worldPos = mul(sys_mViewInv, def_positions.Sample(PSss, input.texCoord)).xyz;
     // return float4(worldPos / 50.f, 1.0f);
@@ -78,8 +82,8 @@ float4 PSMain(PSIn input) : SV_Target0 {
     pixel.worldPos = worldPos;
 	pixel.camPos = sys_cameraPos;
 
+	pixel.inShadow = 1.f - shadows.r;
 	pixel.albedo = def_albedo.Sample(PSss, input.texCoord).rgb;
-
 	pixel.worldNormal = def_worldNormals.Sample(PSss, input.texCoord).rgb;
     // return float4(pixel.worldNormal / 2.f, 1.0f);
     

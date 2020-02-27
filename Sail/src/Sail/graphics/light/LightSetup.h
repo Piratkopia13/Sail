@@ -31,6 +31,7 @@ public:
 	void addPointLight(PointLightComponent* plComp);
 	void setDirectionalLight(DirectionalLightComponent* dl);
 
+	const DirLightBuffer& getDirLight() const;
 	std::tuple<void*, unsigned int> getDirLightData() const;
 	std::tuple<void*, unsigned int> getPointLightsData() const;
 	unsigned int getNumPLs() const;

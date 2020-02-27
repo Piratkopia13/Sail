@@ -14,6 +14,8 @@
 Scene::Scene()  {
 	m_deferredRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::DEFERRED));
 	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+
+	// Raytracing renderer has to be created after the deferred renderer since it uses resources created by the deferred renderers constructor
 	m_raytracingRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
 
 	// Set up the environment
@@ -92,11 +94,14 @@ void Scene::draw(Camera& camera) {
 	m_forwardRenderer->end();
 	m_raytracingRenderer->end();
 
-	// Raytracing test
-	//if (Input::IsKeyPressed(SAIL_KEY_J))
-		m_raytracingRenderer->present(Renderer::Default);
-
-	void* cmdList = m_deferredRenderer->present(Renderer::SkipExecution);
+	// Execution order is important
+	// Run geometry pass and ssao
+	void* cmdList = m_deferredRenderer->present(Renderer::SkipDeferredShading | Renderer::SkipExecution);
+	// Run raytracing (which uses the geometry pass output)
+	m_raytracingRenderer->present(Renderer::SkipPreparation | Renderer::SkipExecution, cmdList);
+	// Run deferred shading
+	m_deferredRenderer->present(Renderer::SkipPreparation | Renderer::SkipRendering | Renderer::SkipExecution, cmdList);
+	// Run forward pass and execute everything
 	m_forwardRenderer->useDepthBuffer(m_deferredRenderer->getDepthBuffer(), cmdList);
 	m_forwardRenderer->present(Renderer::SkipPreparation, cmdList); // Execute deferred and forward default pass
 

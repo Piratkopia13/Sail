@@ -23,7 +23,8 @@ public:
 		Default = 1 << 0,
 		SkipPreparation = 1 << 1,
 		SkipRendering = 1 << 2,
-		SkipExecution = 1 << 3
+		SkipExecution = 1 << 3,
+		SkipDeferredShading = 1 << 4
 	};
 	enum DXRRenderFlag {
 		MESH_DYNAMIC			= 1 << 0,	// Vertices may change

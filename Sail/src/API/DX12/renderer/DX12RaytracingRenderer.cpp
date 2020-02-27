@@ -12,7 +12,11 @@
 #include "DX12DeferredRenderer.h"
 #include "Sail/KeyCodes.h"
 
+std::unique_ptr<DX12RenderableTexture> DX12RaytracingRenderer::sRTOutputTexture;
+
 DX12RaytracingRenderer::DX12RaytracingRenderer() {
+	EventSystem::getInstance()->subscribeToEvent(Event::WINDOW_RESIZE, this);
+
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	m_context->initCommand(m_command);
 	m_command.list->SetName(L"Raytracing Renderer main command list");
@@ -21,10 +25,13 @@ DX12RaytracingRenderer::DX12RaytracingRenderer() {
 
 	auto width = Application::getInstance()->getWindow()->getWindowWidth();
 	auto height = Application::getInstance()->getWindow()->getWindowHeight();
-	m_rtOutputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(width, height)));
+	sRTOutputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(width, height, "Raytracing output texture", ResourceFormat::R16G16B16A16_FLOAT)));
 }
 
-DX12RaytracingRenderer::~DX12RaytracingRenderer() { }
+DX12RaytracingRenderer::~DX12RaytracingRenderer() {
+	EventSystem::getInstance()->unsubscribeFromEvent(Event::WINDOW_RESIZE, this);
+	sRTOutputTexture.reset();
+}
 
 void DX12RaytracingRenderer::begin(Camera* camera, Environment* environment) {
 	Renderer::begin(camera, environment);
@@ -41,26 +48,58 @@ void* DX12RaytracingRenderer::present(Renderer::PresentFlag flags, void* skipped
 			Logger::Error("DX12RaytracingRenderer present was called with skipPreparation flag but no cmdList was passed");
 	}
 
-	auto frameIndex = m_context->getFrameIndex();
+	if (!(flags & Renderer::PresentFlag::SkipPreparation)) {
+		auto frameIndex = m_context->getFrameIndex();
 
-	auto& allocator = m_command.allocators[frameIndex];
-	cmdList = m_command.list.Get();
+		auto& allocator = m_command.allocators[frameIndex];
+		cmdList = m_command.list.Get();
 
-	// Reset allocators and lists for this frame
-	allocator->Reset();
-	cmdList->Reset(allocator.Get(), nullptr);
+		// Reset allocators and lists for this frame
+		allocator->Reset();
+		cmdList->Reset(allocator.Get(), nullptr);
+	}
 	
-	// dispatch n stuff
-	m_dxrBase->updateSceneData(camera, lightSetup);
-	//if (Input::IsKeyPressed(SAIL_KEY_L))
+	if (!(flags & Renderer::PresentFlag::SkipRendering)) {
+		// dispatch n stuff
+		m_dxrBase->updateSceneData(camera, lightSetup);
+		//if (Input::IsKeyPressed(SAIL_KEY_L))
 		m_dxrBase->updateAccelerationStructures(commandQueue, cmdList);
-	//if (Input::IsKeyPressed(SAIL_KEY_K))
-		m_dxrBase->dispatch(m_rtOutputTexture.get(), cmdList);
+		//if (Input::IsKeyPressed(SAIL_KEY_K))
+		m_dxrBase->dispatch(sRTOutputTexture.get(), cmdList);
+	}
 
-	// Copy output to backbuffer
-
-	cmdList->Close();
-	m_context->getDirectQueue()->executeCommandLists({ cmdList });
+	if (!(flags & Renderer::PresentFlag::SkipExecution)) {
+		cmdList->Close();
+		m_context->getDirectQueue()->executeCommandLists({ cmdList });
+	}
 
 	return cmdList;
+}
+
+std::unique_ptr<DX12RenderableTexture>* DX12RaytracingRenderer::GetOutputTexture() {
+	return &sRTOutputTexture;
+}
+
+bool DX12RaytracingRenderer::onEvent(Event& event) {
+	auto resizeEvent = [&](WindowResizeEvent& event) {
+		sRTOutputTexture->resize(event.getWidth(), event.getHeight());
+
+		// Gbuffers will be resized inside DX12DeferredRenderer::onEvent, 
+		// but since we have no control over if that method executes before 
+		// this one we have to make sure that is has been done before calling 
+		// dxrBase->recreateResources().
+		// Calling resize on a texture which already has the given dimensions
+		// will return without doing anything, making this safe.
+		const auto& gbuffers = DX12DeferredRenderer::GetGBuffers();
+		for (unsigned i = 0; i < DX12DeferredRenderer::NUM_GBUFFERS; i++) {
+			gbuffers[i]->resize(event.getWidth(), event.getHeight());
+		}
+
+		// Tell dxrBase to update any references held to textures that how have resized (gbuffer inputs and rt output etc)
+		m_dxrBase->recreateResources();
+
+		return true;
+	};
+	EventHandler::HandleType<WindowResizeEvent>(event, resizeEvent);
+	return true;
 }
