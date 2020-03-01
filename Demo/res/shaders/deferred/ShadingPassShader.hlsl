@@ -20,7 +20,8 @@ cbuffer PSSystemCBuffer : register(b0) {
     matrix sys_mViewInv;
     float3 sys_cameraPos;
     uint sys_numPLights;
-    bool useSSAO;
+    int useSSAO;
+    int useShadowTexture;
 }
 
 cbuffer PSLights : register(b1) {
@@ -98,7 +99,9 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// 	// miss
 	// }
 
-	float4 shadows = tex_shadows.Sample(PSss, input.texCoord);
+	float shadows = 0.f;
+	if (useShadowTexture)
+		shadows = 1.f - tex_shadows.Sample(PSss, input.texCoord).r;
 	// return shadows;
 
 	PBRScene scene;
@@ -117,7 +120,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
     pixel.worldPos = worldPos;
 	pixel.camPos = sys_cameraPos;
 
-	pixel.inShadow = 1.f - shadows.r;
+	pixel.inShadow = shadows;
 	pixel.albedo = def_albedo.Sample(PSss, input.texCoord).rgb;
 	pixel.worldNormal = worldNormal;
     // return float4(pixel.worldNormal / 2.f, 1.0f);

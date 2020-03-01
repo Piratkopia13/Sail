@@ -14,6 +14,7 @@ Game::Game(HINSTANCE hInstance)
 
 	// Set default settings
 	getSettings().set(Settings::Graphics_SSAO, true);
+	getSettings().set(Settings::Graphics_DXR, true); // DXR will still be disabled if hardware does not support it
 }
 
 Game::~Game() {	}

@@ -15,8 +15,10 @@ Scene::Scene()  {
 	m_deferredRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::DEFERRED));
 	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 
-	// Raytracing renderer has to be created after the deferred renderer since it uses resources created by the deferred renderers constructor
-	m_raytracingRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
+	if (Application::getInstance()->getSettings().getBool(Settings::Graphics_DXR)) {
+		// Raytracing renderer has to be created after the deferred renderer since it uses resources created by the deferred renderers constructor
+		m_raytracingRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
+	}
 
 	// Set up the environment
 	m_environment = std::make_unique<Environment>();
@@ -31,13 +33,26 @@ void Scene::addEntity(Entity::SPtr entity) {
 void Scene::draw(Camera& camera) {
 	SAIL_PROFILE_FUNCTION();
 
+	bool doDXR = Application::getInstance()->getSettings().getBool(Settings::Graphics_DXR);
+	if (!m_raytracingRenderer && doDXR) {
+		// Handle enabling of DXR in runtime
+		m_raytracingRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
+	} else if (m_raytracingRenderer && !doDXR) {
+		// Handle disabling of DXR in runtime
+		Application::getInstance()->getAPI()->waitForGPU();
+		m_raytracingRenderer.reset();
+	}
+
+
 	LightSetup lightSetup;
 	m_forwardRenderer->setLightSetup(&lightSetup);
 	m_deferredRenderer->setLightSetup(&lightSetup);
-	m_raytracingRenderer->setLightSetup(&lightSetup);
+	if (doDXR)
+		m_raytracingRenderer->setLightSetup(&lightSetup);
 	
 	// Begin default pass
-	m_raytracingRenderer->begin(&camera, m_environment.get());
+	if (doDXR)
+		m_raytracingRenderer->begin(&camera, m_environment.get());
 	m_forwardRenderer->begin(&camera, m_environment.get());
 	m_deferredRenderer->begin(&camera, m_environment.get());
 	auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
@@ -64,8 +79,10 @@ void Scene::draw(Camera& camera) {
 				material = materialComp->get();
 
 			if (model && transform && material) {
-				// Submit all to the raytracer
-				m_raytracingRenderer->submit(model->getModel().get(), nullptr, material, transform->getMatrix());
+				if (doDXR) {
+					// Submit all to the raytracer
+					m_raytracingRenderer->submit(model->getModel().get(), nullptr, material, transform->getMatrix());
+				}
 
 				// Submit to deferred or forward depending on the material
 				Shader* shader = nullptr;
@@ -92,13 +109,16 @@ void Scene::draw(Camera& camera) {
 
 	m_deferredRenderer->end();
 	m_forwardRenderer->end();
-	m_raytracingRenderer->end();
+	if (doDXR)
+		m_raytracingRenderer->end();
 
 	// Execution order is important
 	// Run geometry pass and ssao
 	void* cmdList = m_deferredRenderer->present(Renderer::SkipDeferredShading | Renderer::SkipExecution);
-	// Run raytracing (which uses the geometry pass output)
-	m_raytracingRenderer->present(Renderer::SkipPreparation | Renderer::SkipExecution, cmdList);
+	if (doDXR) {
+		// Run raytracing (which uses the geometry pass output)
+		m_raytracingRenderer->present(Renderer::SkipPreparation | Renderer::SkipExecution, cmdList);
+	}
 	// Run deferred shading
 	m_deferredRenderer->present(Renderer::SkipPreparation | Renderer::SkipRendering | Renderer::SkipExecution, cmdList);
 	// Run forward pass and execute everything
@@ -107,7 +127,8 @@ void Scene::draw(Camera& camera) {
 
 	m_deferredRenderer->setLightSetup(nullptr);
 	m_forwardRenderer->setLightSetup(nullptr);
-	m_raytracingRenderer->setLightSetup(nullptr);
+	if (doDXR)
+		m_raytracingRenderer->setLightSetup(nullptr);
 }
 
 std::vector<Entity::SPtr>& Scene::getEntites() {

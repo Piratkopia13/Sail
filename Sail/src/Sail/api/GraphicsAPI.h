@@ -22,6 +22,10 @@ public:
 		ALPHA,
 		ADDITIVE
 	};
+	enum Feature {
+		NONE = 0,
+		RAYTRACING = 1 << 0
+	};
 
 public:
 	static GraphicsAPI* Create();
@@ -41,4 +45,18 @@ public:
 
 	virtual bool onResize(WindowResizeEvent& event) = 0;
 	virtual bool onEvent(Event& event) override;
+
+	bool supportsFeature(Feature feature) const;
+
+protected:
+	Feature supportedFeatures = NONE;
 };
+
+// Operators to use enum as bit flags
+inline GraphicsAPI::Feature operator|(GraphicsAPI::Feature a, GraphicsAPI::Feature b) {
+	return static_cast<GraphicsAPI::Feature>(static_cast<int>(a) | static_cast<int>(b));
+}
+inline GraphicsAPI::Feature& operator|=(GraphicsAPI::Feature& a, GraphicsAPI::Feature b) {
+	a = a | b;
+	return a;
+}

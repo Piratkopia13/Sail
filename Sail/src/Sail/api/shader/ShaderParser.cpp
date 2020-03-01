@@ -323,8 +323,9 @@ ShaderComponent::BIND_SHADER ShaderParser::getBindShaderFromName(const std::stri
 
 // TODO: registerTypeSize(typeName, size)
 UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
-	if (typeName == "uint")								return 4;
-	if (typeName == "bool")								return 4;
+	if (typeName == "uint" ||
+		typeName == "int"  ||
+		typeName == "bool")								return 4;
 	if (typeName == "float")							return 4;
 	if (typeName == "float2" ||
 		typeName == "int2" ||

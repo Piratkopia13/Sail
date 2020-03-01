@@ -1,17 +1,25 @@
 #include "pch.h"
 #include "Settings.h"
 #include <assert.h>
+#include "Application.h"
+
+Settings::Settings() {
+	m_requirementsMap[Graphics_DXR] = [] { return Application::getInstance()->getAPI()->supportsFeature(GraphicsAPI::RAYTRACING); };
+}
 
 void Settings::set(Settings::Type type, bool value) {
-	m_settingsMap[type] = std::to_string(value);
+	if (m_requirementsMap.find(type) == m_requirementsMap.end() || m_requirementsMap[type]())
+		m_settingsMap[type] = std::to_string(value);
 }
 
 void Settings::set(Type type, int value) {
-	m_settingsMap[type] = std::to_string(value);
+	if (m_requirementsMap.find(type) == m_requirementsMap.end() || m_requirementsMap[type]())
+		m_settingsMap[type] = std::to_string(value);
 }
 
 void Settings::set(Type type, float value) {
-	m_settingsMap[type] = std::to_string(value);
+	if (m_requirementsMap.find(type) == m_requirementsMap.end() || m_requirementsMap[type]())
+		m_settingsMap[type] = std::to_string(value);
 }
 
 void Settings::set(Type type, const std::string& value) {

@@ -13,3 +13,7 @@ bool GraphicsAPI::onEvent(Event& event) {
 	EventHandler::HandleType<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GraphicsAPI::onResize));
 	return true;
 }
+
+bool GraphicsAPI::supportsFeature(Feature feature) const {
+	return supportedFeatures & feature;
+}

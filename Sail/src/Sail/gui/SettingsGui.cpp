@@ -18,6 +18,17 @@ void SettingsGui::render() {
 			}
 		});
 
+		addProperty("DXR", [&]() {
+			bool enableDXR = Application::getInstance()->getSettings().getBool(Settings::Graphics_DXR);
+			if (Application::getInstance()->getAPI()->supportsFeature(GraphicsAPI::RAYTRACING)) {
+				if (ImGui::Checkbox("##hideLabel", &enableDXR)) {
+					Application::getInstance()->getSettings().set(Settings::Graphics_DXR, enableDXR);
+				}
+			} else {
+				ImGui::Text("Unsupported");
+			}
+		});
+
 		disableColumns();
 	}
 	ImGui::End();

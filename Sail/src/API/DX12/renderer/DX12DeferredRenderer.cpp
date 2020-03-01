@@ -280,6 +280,7 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Shading pass");
 	auto& resman = Application::getInstance()->getResourceManager();
 	bool useSSAO = Application::getInstance()->getSettings().getBool(Settings::Graphics_SSAO);
+	bool useDXRHardShadows = Application::getInstance()->getSettings().getBool(Settings::Graphics_DXR);
 
 	// Transition back buffer to render target
 	m_context->prepareToRender(cmdList);
@@ -307,6 +308,8 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 	int useSSAOInt = (int)useSSAO;
 	shader->trySetCBufferVar("useSSAO", &useSSAOInt, sizeof(int));
+	int useShadowTextureInt = (int)useDXRHardShadows;
+	shader->trySetCBufferVar("useShadowTexture", &useShadowTextureInt, sizeof(int));
 
 	if (lightSetup) {
 		auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
@@ -331,7 +334,12 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 		shader->setRenderableTexture("def_mrao", sGBufferTextures[3].get(), cmdList);
 		if (useSSAO)
 			shader->setRenderableTexture("tex_ssao", m_ssaoShadingTexture, cmdList);
-		shader->setRenderableTexture("tex_shadows", DX12RaytracingRenderer::GetOutputTexture()->get(), cmdList);
+		else 
+			shader->setRenderableTexture("tex_ssao", nullptr, cmdList);
+		if (useDXRHardShadows)
+			shader->setRenderableTexture("tex_shadows", DX12RaytracingRenderer::GetOutputTexture()->get(), cmdList);
+		else 
+			shader->setRenderableTexture("tex_shadows", nullptr, cmdList);
 		
 		//// Inline raytracing test - bind AS
 		//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};

@@ -2,13 +2,17 @@
 
 #include <map>
 #include <string>
+#include <functional>
 class Settings {
 public:
 	enum Type {
-		Graphics_SSAO
+		Graphics_SSAO,
+		Graphics_DXR,
 	};
-	
+
 public:
+	Settings();
+
 	void set(Settings::Type type, bool value);
 	void set(Settings::Type type, int value);
 	void set(Settings::Type type, float value);
@@ -21,4 +25,5 @@ public:
 
 private:
 	std::map<Type, std::string> m_settingsMap;
+	std::map<Type, std::function<bool()>> m_requirementsMap;
 };
