@@ -48,8 +48,9 @@ void* DX11DeferredRenderer::present(Renderer::PresentFlag flags, void* skippedPr
 		runGeometryPass();
 		if (doSSAO)
 			runSSAO();
-		runShadingPass();
 	}
+	if (!(flags & Renderer::PresentFlag::SkipDeferredShading))
+		runShadingPass();
 
 	return nullptr;
 }
@@ -210,6 +211,8 @@ void DX11DeferredRenderer::runShadingPass() {
 	shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 	int useSSAOInt = (int)useSSAO;
 	shader->trySetCBufferVar("useSSAO", &useSSAOInt, sizeof(int));
+	int useShadowTextureInt = 0;
+	shader->trySetCBufferVar("useShadowTexture", &useShadowTextureInt, sizeof(int));
 
 	if (lightSetup) {
 		auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
