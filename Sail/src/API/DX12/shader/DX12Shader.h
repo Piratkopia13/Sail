@@ -1,8 +1,17 @@
 #pragma once
 
+// Define to compile ALL shaders using the DXIL compiler
+// This is necessary for inline raytracing support but somewhat untested otherwise
+//#define USE_DXIL_COMPILER
+
+
 #include "Sail/api/shader/Shader.h"
 #include <atomic>
 #include "Sail/events/Events.h"
+
+#ifdef USE_DXIL_COMPILER
+#include "DXILShaderCompiler.h"
+#endif
 
 class DX12API;
 
@@ -31,6 +40,8 @@ private:
 	unsigned int getMeshIndex() const;
 private:
 	DX12API* m_context;
-
 	std::atomic_uint m_meshIndex[2];
+#ifdef USE_DXIL_COMPILER
+	DXILShaderCompiler m_dxilCompiler;
+#endif
 };

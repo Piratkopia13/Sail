@@ -31,7 +31,6 @@ D3D12_STATE_SUBOBJECT* DXRUtils::PSOBuilder::append(D3D12_STATE_SUBOBJECT_TYPE t
 }
 
 void DXRUtils::PSOBuilder::addLibrary(const std::string& shaderPath, const std::vector<LPCWSTR>& names, const std::vector<DxcDefine>& defines) {
-
 	// Add names to the list of names/export to be configured in generate()
 	m_shaderNames.insert(m_shaderNames.end(), names.begin(), names.end());
 
@@ -161,6 +160,8 @@ ID3D12StateObject* DXRUtils::PSOBuilder::build(ID3D12Device5* device) {
 	return pso;
 }
 
+
+
 DXRUtils::ShaderTableBuilder::ShaderTableBuilder(UINT numInstances, ID3D12StateObject* pso, UINT maxBytesPerInstance)
 	: m_soProps(nullptr)
 	, m_numInstances(numInstances)
@@ -204,8 +205,6 @@ DXRUtils::ShaderTableData DXRUtils::ShaderTableBuilder::build(ID3D12Device5* dev
 	shaderTable.SizeInBytes = shaderTable.StrideInBytes * m_numInstances;
 	void* mappedBuffer = nullptr;
 	shaderTable.gpuAddress = buffer.suballocate(shaderTable.SizeInBytes, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT, &mappedBuffer);
-	/*shaderTable.Resource = DX12Utils::CreateBuffer(device, std::max((UINT64)1, shaderTable.SizeInBytes), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, DX12Utils::sUploadHeapProperties);
-	shaderTable.Resource->SetName(L"SHADER_TABLE");*/
 
 	// Map the buffer
 	// Use a char* to to pointer arithmetic per byte

@@ -50,21 +50,56 @@ Texture2D def_albedo        : register(t5);
 Texture2D def_mrao          : register(t6);
 Texture2D tex_ssao          : register(t7);
 Texture2D tex_shadows       : register(t8);
+// RaytracingAccelerationStructure rtScene : register(t8);
 SamplerState PSss            : SAIL_SAMPLER_ANIS_WRAP; // s0
 SamplerState PSLinearSampler : SAIL_SAMPLER_LINEAR_CLAMP; // s2
 
 float4 PSMain(PSIn input) : SV_Target0 {
-
 	// return sys_texBrdfLUT.Sample(PSss, input.texCoord);
 	// float3 viewDir = input.worldPos - sys_cameraPos;
 	// return irradianceMap.SampleLevel(PSss, viewDir, 0);
 	// return radianceMap.SampleLevel(PSss, viewDir, 0);
 
+    float3 worldPos = mul(sys_mViewInv, def_positions.Sample(PSss, input.texCoord)).xyz;
+	float3 worldNormal = def_worldNormals.Sample(PSss, input.texCoord).rgb;
+    // return float4(worldPos / 50.f, 1.0f);
+
+
+	// Inline raytracing
+	// RayQuery<RAY_FLAG_CULL_NON_OPAQUE |
+    //          RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES |
+    //          RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH> q;
+	
+	// // Cast a shadow ray from the directional light
+	// RayDesc ray;
+	// ray.Direction = -dirLight.direction;
+	// ray.Origin = worldPos;
+	// ray.Origin += worldNormal * 0.1f; // Offset slightly to avoid self-shadowing
+	// 									   // This should preferably be done with the vertex normal and not a normal-mapped normal
+
+	// // Set TMin to a non-zero small value to avoid aliasing issues due to floating point errors
+	// // TMin should be kept small to prevent missing geometry at close contact areas
+	// ray.TMin = 0.00001;
+	// ray.TMax = 10000.0;
+
+	// float4 shadows = 0.f;
+	// Set up a trace - No work is done yet
+    // q.TraceRayInline(
+    //     rtScene,
+    //     0, // OR'd with flags above
+    //     0xFF,
+    //     ray);
+	// // Do the work
+	// q.Proceed();
+	// if(q.CommittedStatus() == COMMITTED_TRIANGLE_HIT) {
+	// 	// hit
+	// 	shadows = 1.f;
+	// } else {
+	// 	// miss
+	// }
+
 	float4 shadows = tex_shadows.Sample(PSss, input.texCoord);
 	// return shadows;
-
-    float3 worldPos = mul(sys_mViewInv, def_positions.Sample(PSss, input.texCoord)).xyz;
-    // return float4(worldPos / 50.f, 1.0f);
 
 	PBRScene scene;
 	
@@ -84,7 +119,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
 	pixel.inShadow = 1.f - shadows.r;
 	pixel.albedo = def_albedo.Sample(PSss, input.texCoord).rgb;
-	pixel.worldNormal = def_worldNormals.Sample(PSss, input.texCoord).rgb;
+	pixel.worldNormal = worldNormal;
     // return float4(pixel.worldNormal / 2.f, 1.0f);
     
     float3 mrao = def_mrao.Sample(PSss, input.texCoord).rgb;

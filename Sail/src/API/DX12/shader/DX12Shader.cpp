@@ -25,6 +25,10 @@ DX12Shader::DX12Shader(Shaders::ShaderSettings settings)
 	m_meshIndex[0].store(0);
 	m_meshIndex[1].store(0);
 
+#ifdef USE_DXIL_COMPILER
+	m_dxilCompiler.init();
+#endif
+
 	compile();
 }
 
@@ -33,36 +37,38 @@ DX12Shader::~DX12Shader() {
 }
 
 void* DX12Shader::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
-	//#define USE_DXIL_COMPILER
 #ifdef USE_DXIL_COMPILER
 	DXILShaderCompiler::Desc shaderDesc;
+
+	std::wstring targetProfile;
+	std::wstring version = (m_context->getSupportedFeatures().dxr1_1) ? L"6_5" : L"6_2";
 
 	switch (shaderType) {
 	case ShaderComponent::VS:
 		shaderDesc.entryPoint = L"VSMain";
-		shaderDesc.targetProfile = L"vs_6_0";
+		targetProfile = L"vs_" + version;
 		break;
 	case ShaderComponent::PS:
 		shaderDesc.entryPoint = L"PSMain";
-		shaderDesc.targetProfile = L"ps_6_0";
+		targetProfile = L"ps_" + version;
 		break;
 	case ShaderComponent::GS:
 		shaderDesc.entryPoint = L"GSMain";
-		shaderDesc.targetProfile = L"gs_6_0";
+		targetProfile = L"gs_" + version;
 		break;
 	case ShaderComponent::CS:
 		shaderDesc.entryPoint = L"CSMain";
-		shaderDesc.targetProfile = L"cs_6_0";
+		targetProfile = L"cs_" + version;
 		break;
 	case ShaderComponent::DS:
 		shaderDesc.entryPoint = L"DSMain";
-		shaderDesc.targetProfile = L"ds_6_0";
+		targetProfile = L"ds_" + version;
 		break;
 	case ShaderComponent::HS:
 		shaderDesc.entryPoint = L"HSMain";
-		shaderDesc.targetProfile = L"hs_6_0";
 		break;
 	}
+	shaderDesc.targetProfile = targetProfile.c_str();
 
 #ifdef _DEBUG
 	shaderDesc.compileArguments.push_back(L"/Zi"); // Debug info
@@ -74,7 +80,7 @@ void* DX12Shader::compileShader(const std::string& source, const std::string& fi
 	shaderDesc.filePath = wfilepath.c_str();
 
 	IDxcBlob* pShaders = nullptr;
-	ThrowIfFailed(m_dxilCompiler->compile(&shaderDesc, &pShaders));
+	ThrowIfFailed(m_dxilCompiler.compile(&shaderDesc, &pShaders));
 
 #else
 	// "Old" compilation

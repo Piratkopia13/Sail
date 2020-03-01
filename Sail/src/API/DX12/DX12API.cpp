@@ -23,6 +23,7 @@ DX12API::DX12API()
 	, m_windowedMode(true)
 	, m_directQueueFenceValues()
 	, m_frameCount(0)
+	, m_supportedFeatures({0})
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
 }
@@ -81,6 +82,19 @@ bool DX12API::init(Window* window) {
 void DX12API::createDevice() {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
+	// Enable experimental shader models
+	// This requires the windows 10 creator update sdk and developer mode
+	//{
+	//	static const UUID D3D12ExperimentalShaderModels = { /* 76f5573e-f13a-40f5-b297-81ce9e18933f */
+	//		0x76f5573e,
+	//		0xf13a,
+	//		0x40f5,
+	//		{ 0xb2, 0x97, 0x81, 0xce, 0x9e, 0x18, 0x93, 0x3f }
+	//	};
+
+	//	D3D12EnableExperimentalFeatures(1, &D3D12ExperimentalShaderModels, nullptr, nullptr);
+	//}
+
 	DWORD dxgiFactoryFlags = 0;
 #ifdef _DEBUG
 	//Enable the D3D12 debug layer.
@@ -137,14 +151,22 @@ void DX12API::createDevice() {
 		float dedicatedSystemMemory = adapterDesc.DedicatedSystemMemory / 1073741824.0f;
 		float sharedSystemMemory = adapterDesc.SharedSystemMemory / 1073741824.0f;
 
-		std::cout << "GPU info:" << std::endl;
-		std::cout << "\tDesc: " << description << std::endl;
-		std::cout << "\tDedicatedVideoMem: " << dedicatedVideoMemory << std::endl;
-		std::cout << "\tDedicatedSystemMem: " << dedicatedSystemMemory << std::endl;
-		std::cout << "\tSharedSystemMem: " << sharedSystemMemory << std::endl;
-		std::cout << "\tRevision: " << adapterDesc.Revision << std::endl;
+		std::cout << "GPU info:" << '\n';
+		std::cout << "\tDesc: " << description << '\n';
+		std::cout << "\tDedicatedVideoMem: " << dedicatedVideoMemory << '\n';
+		std::cout << "\tDedicatedSystemMem: " << dedicatedSystemMemory << '\n';
+		std::cout << "\tSharedSystemMem: " << sharedSystemMemory << '\n';
+		std::cout << "\tRevision: " << adapterDesc.Revision << '\n';
 
 		m_adapter3 = (IDXGIAdapter3*)adapter;
+
+		D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureSuppport;
+		m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSuppport, sizeof(featureSuppport));
+		m_supportedFeatures.dxr1_0 = (featureSuppport.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED);
+		m_supportedFeatures.dxr1_1 = (featureSuppport.RaytracingTier == D3D12_RAYTRACING_TIER_1_1);
+		std::string tierStr = (!m_supportedFeatures.dxr1_0) ? "Not supported" : (featureSuppport.RaytracingTier == D3D12_RAYTRACING_TIER_1_0) ? "1.0" : (m_supportedFeatures.dxr1_1) ? "1.1" : ">1.1";
+		std::cout << "Feature support:" << '\n';
+		std::cout << "\tRaytracingTier: " << tierStr << '\n';
 
 		//SafeRelease(&adapter);
 	} else {
@@ -673,6 +695,10 @@ UINT DX12API::getFrameIndex() const {
 
 UINT DX12API::getNumGPUBuffers() const {
 	return NUM_GPU_BUFFERS;
+}
+
+const DX12API::SupportedFeatures& DX12API::getSupportedFeatures() const {
+	return m_supportedFeatures;
 }
 
 DescriptorHeap* const DX12API::getMainGPUDescriptorHeap() const {

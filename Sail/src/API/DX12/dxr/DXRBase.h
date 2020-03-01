@@ -1,23 +1,67 @@
 #pragma once
 
-#include "../DX12API.h"
 #include "DXRUtils.h"
 #include "../DX12Utils.h"
 #include "Sail/api/Renderer.h"
-#include "../shader/DX12ConstantBuffer.h"
-#include "API/DX12/resources/DX12RenderableTexture.h"
 
-class DXRBase final{
+namespace ShaderComponent {
+	class DX12ConstantBuffer;
+}
+class DX12RenderableTexture;
+class DX12API;
+
+class DXRBase {
 public:
-	DXRBase(const std::string& shaderFilename);
-	~DXRBase();
+	struct Settings {
+		UINT maxPayloadSize = 0;
+		UINT maxAttributeSize = sizeof(float) * 2;
+		UINT maxRecursionDepth = 1;
+	};
+public:
+	DXRBase(const std::string& shaderFilename, Settings settings);
+	virtual ~DXRBase();
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void updateSceneData(Camera* cam, LightSetup* lights);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void recreateResources();
 	void reloadShaders();
+
+	static D3D12_GPU_VIRTUAL_ADDRESS GetTLASAddress();
+
+protected:
+	struct Resource {
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle[2];
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle[2];
+	};
+	struct DescriptorTableData {
+		Resource* resource;
+		D3D12_DESCRIPTOR_RANGE_TYPE type;
+		unsigned int shaderRegister;
+		unsigned int space;
+		unsigned int numDescriptors;
+	};
+	struct ConstantData {
+		ShaderComponent::DX12ConstantBuffer* cbuffer;
+		unsigned int shaderRegister;
+		unsigned int space;
+	};
+
+protected:
+	// Initializes root signatures and shader resources
+	// Should be called once in the constructor of the derived class
+	void init();
+
+	// Allows the derived class to add custom input and/or output resources
+	// This is called once during init() and when the window resizes
+	virtual void addInitialShaderResources(DescriptorHeap* heap) = 0;
+
+protected:
+	DX12API* context;
+	// Shader resources for ray gen shader
+	// TODO: add allow resources from other shaders to be set as well
+	std::unordered_map<std::string, DescriptorTableData> rayGenDescriptorTables;
+	std::unordered_map<std::string, ConstantData> globalConstants;
 
 private:
 	// TODO: replace this struct with AccelerationStructureAddresses
@@ -62,49 +106,26 @@ private:
 
 
 private:
-	DX12API* m_context;
-	
+	Settings m_settings;
+
 	std::vector<std::unique_ptr<DX12Utils::CPUSharedBuffer>> m_uploadBuffer;
 	std::vector<std::unique_ptr<DX12Utils::GPUOnlyBuffer>> m_defaultBufferUA; // Used in unordered access
 	std::vector<std::unique_ptr<DX12Utils::GPUOnlyBuffer>> m_defaultBufferRTAS; // Used in raytracing acceleration structures
 
 	std::string m_shaderFilename;
-	bool m_enableSoftShadowsInShader;
-
-	std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_sceneCB;
-	//std::unique_ptr<ShaderComponent::DX12ConstantBuffer> m_meshCB;
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
 
-	std::vector<AccelerationStructureAddresses> m_topBuffer;
+	static std::vector<AccelerationStructureAddresses> m_topBuffer;
 
 	wComPtr<ID3D12StateObject> m_pipelineState;
 
 	std::vector<DXRUtils::ShaderTableData> m_rayGenShaderTable;
 	std::vector<DXRUtils::ShaderTableData> m_missShaderTable;
 	std::vector<DXRUtils::ShaderTableData> m_hitGroupShaderTable;
-
-	struct MeshHandles {
-		D3D12_GPU_VIRTUAL_ADDRESS vertexBufferHandle;
-		D3D12_GPU_VIRTUAL_ADDRESS indexBufferHandle;
-		//D3D12_GPU_DESCRIPTOR_HANDLE textureHandles[3];
-	};
-	std::vector<MeshHandles> m_meshHandles[2];
-
+	
 	std::unique_ptr<DescriptorHeap> m_descriptorHeap;
-	//D3D12_CPU_DESCRIPTOR_HANDLE m_rtHeapCPUHandle[2];
-	//D3D12_GPU_DESCRIPTOR_HANDLE m_rtHeapGPUHandle[2];
-
-	struct Resource {
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle[2];
-		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle[2];
-	};
-
-	// DXR shader inputs and outputs
-	Resource m_gbufferPositionsResource; // TODO: abstract this out somehow
-	Resource m_gbufferNormalsResource; // TODO: abstract this out somehow
-	const std::unique_ptr<DX12RenderableTexture>* m_gbuffers; // TODO: abstract this out somehow
-
+	
 	Resource m_outputResource;
 
 	const WCHAR* m_rayGenName = L"rayGen";

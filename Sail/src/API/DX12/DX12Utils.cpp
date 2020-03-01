@@ -216,7 +216,7 @@ DX12Utils::RootSignature::RootSignature(const std::string& name)
 { }
 
 void DX12Utils::RootSignature::add32BitConstants() {
-
+	assert(false && "Not implemented");
 }
 
 void DX12Utils::RootSignature::addDescriptorTable(const std::string& name, D3D12_DESCRIPTOR_RANGE_TYPE type, unsigned int shaderRegister, unsigned int space, unsigned int numDescriptors) {

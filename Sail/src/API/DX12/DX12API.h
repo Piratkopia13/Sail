@@ -49,6 +49,17 @@ public:
 		wComPtr<ID3D12GraphicsCommandList4> list;
 	};
 
+	struct RootSignEntry {
+		UINT rootSigIndex;
+		UINT dtOffset;
+	};
+
+	// Feature support
+	struct SupportedFeatures {
+		bool dxr1_0;
+		bool dxr1_1; // Required for inline raytracing and more
+	};
+
 	class CommandQueue {
 	public:
 		CommandQueue(DX12API* context, D3D12_COMMAND_LIST_TYPE type, LPCWSTR name = L"Unnamed Command Queue");
@@ -99,17 +110,14 @@ public:
 	virtual bool onResize(WindowResizeEvent& event) override;
 	virtual void waitForGPU() override;
 
-	struct RootSignEntry {
-		UINT rootSigIndex;
-		UINT dtOffset;
-	};
-	RootSignEntry getRootSignEntryFromRegister(const std::string& reg) const;
 
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;
+	RootSignEntry getRootSignEntryFromRegister(const std::string& reg) const;
 	UINT getSwapIndex() const; // Returns 0 or 1
 	UINT getFrameIndex() const; // Returns 0, 1, ... NUM_SWAP_BUFFERS
 	UINT getNumGPUBuffers() const; // Always returns 2 - as no more than two buffers are needed for any gpu based resource
+	const SupportedFeatures& getSupportedFeatures() const;
 
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
 	const D3D12_CPU_DESCRIPTOR_HANDLE& getCurrentRenderTargetCDH() const;
@@ -153,6 +161,8 @@ private:
 	void resizeBuffers(UINT width, UINT height);
 
 private:
+	SupportedFeatures m_supportedFeatures;
+
 	// Whether or not tearing is available for fullscreen borderless windowed mode.
 	bool m_tearingSupport;
 	bool m_windowedMode;

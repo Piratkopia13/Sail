@@ -332,6 +332,14 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 		if (useSSAO)
 			shader->setRenderableTexture("tex_ssao", m_ssaoShadingTexture, cmdList);
 		shader->setRenderableTexture("tex_shadows", DX12RaytracingRenderer::GetOutputTexture()->get(), cmdList);
+		
+		//// Inline raytracing test - bind AS
+		//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		//srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		//srvDesc.RaytracingAccelerationStructure.Location = DXRBase::GetTLASAddress();
+		//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+		//m_context->getDevice()->CreateShaderResourceView(nullptr, &srvDesc, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle());
+
 	};
 	m_shadingPassMaterial.setBindFunc(materialFunc);
 

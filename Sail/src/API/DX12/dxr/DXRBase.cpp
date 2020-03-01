@@ -3,32 +3,27 @@
 #include "Sail/Application.h"
 #include "API/DX12/DX12VertexBuffer.h"
 #include "API/DX12/DX12IndexBuffer.h"
-#include "API/DX12/resources/DX12Texture.h"
-#include "Sail/graphics/light/LightSetup.h"
+#include "../resources/DX12RenderableTexture.h"
+#include "../shader/DX12ConstantBuffer.h"
 
-// Include defines shared with dxr shaders
-#include "Sail/../../Demo/res/shaders/dxr/dxr.shared"
-#include "../renderer/DX12DeferredRenderer.h"
-#include "Sail/KeyCodes.h"
+std::vector<DXRBase::AccelerationStructureAddresses> DXRBase::m_topBuffer;
 
-
-DXRBase::DXRBase(const std::string& shaderFilename)
-	: m_shaderFilename(shaderFilename)	
+DXRBase::DXRBase(const std::string& shaderFilename, Settings settings)
+	: m_shaderFilename(shaderFilename)
+	, m_settings(settings)
 {
-	m_context = Application::getInstance()->getAPI<DX12API>();
-
-	// Temporary, this static getter should probably be removed
-	m_gbuffers = DX12DeferredRenderer::GetGBuffers();
-	assert(m_gbuffers);
+	context = Application::getInstance()->getAPI<DX12API>();
 
 	// Create frame resources (one per swap buffer)
 	// Only one TLAS is used for the whole scene
-	m_topBuffer = m_context->createFrameResource<AccelerationStructureAddresses>();
-	m_bottomBuffers = m_context->createFrameResource<std::unordered_map<Mesh*, InstanceList>>();
-	m_rayGenShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
-	m_missShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
-	m_hitGroupShaderTable = m_context->createFrameResource<DXRUtils::ShaderTableData>();
+	m_topBuffer = context->createFrameResource<AccelerationStructureAddresses>();
+	m_bottomBuffers = context->createFrameResource<std::unordered_map<Mesh*, InstanceList>>();
+	m_rayGenShaderTable = context->createFrameResource<DXRUtils::ShaderTableData>();
+	m_missShaderTable = context->createFrameResource<DXRUtils::ShaderTableData>();
+	m_hitGroupShaderTable = context->createFrameResource<DXRUtils::ShaderTableData>();
+}
 
+void DXRBase::init() {
 	// Create root signatures
 	createDXRGlobalRootSignature();
 	createRayGenLocalRootSignature();
@@ -52,7 +47,7 @@ DXRBase::~DXRBase() {
 void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-	unsigned int frameIndex = m_context->getSwapIndex();
+	unsigned int frameIndex = context->getSwapIndex();
 	unsigned int totalNumInstances = 0;
 
 	auto flagNone = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
@@ -150,31 +145,13 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	updateShaderTables();
 }
 
-void DXRBase::updateSceneData(Camera* cam, LightSetup* lights) {
-	if (Input::IsKeyPressed(SAIL_KEY_R))
-		reloadShaders();
-
-	DXRShaderCommon::SceneCBuffer newData = {};
-	if (cam) {
-		newData.cameraPosition = cam->getPosition();
-		newData.projectionToWorld = glm::inverse(cam->getViewProjection());
-		newData.viewToWorld = glm::inverse(cam->getViewMatrix());
-	}
-
-	if (lights) {
-		newData.dirLightDirection = lights->getDirLight().direction;
-	}
-
-	m_sceneCB->updateData(&newData, sizeof(newData), 0U);
-}
-
 void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
-	unsigned int frameIndex = m_context->getSwapIndex();
+	unsigned int frameIndex = context->getSwapIndex();
 
 	auto copyDescriptor = [&](DX12RenderableTexture* texture, D3D12_CPU_DESCRIPTOR_HANDLE* cdh) {
 		// Copy output texture uav to heap
 		//texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
-		m_context->getDevice()->CopyDescriptorsSimple(1, cdh[frameIndex], texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		context->getDevice()->CopyDescriptorsSimple(1, cdh[frameIndex], texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	};
 	copyDescriptor(outputTexture, m_outputResource.cpuHandle);
 	
@@ -203,10 +180,13 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 	// Bind the global root signature
 	cmdList->SetComputeRootSignature(*m_dxrGlobalRootSignature->get());
 
-	// Set acceleration structure
+	// Bind acceleration structure
 	cmdList->SetComputeRootShaderResourceView(m_dxrGlobalRootSignature->getIndex("AccelerationStructure"), m_topBuffer[frameIndex].resultGpuAddress);
-	// Set scene constant buffer
-	cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex("SceneCBuffer"), m_sceneCB->getBuffer()->GetGPUVirtualAddress());
+
+	// Bind constants specified in derived class
+	for (auto& it : globalConstants) {
+		cmdList->SetComputeRootConstantBufferView(m_dxrGlobalRootSignature->getIndex(it.first), it.second.cbuffer->getBuffer()->GetGPUVirtualAddress());
+	}
 
 	// Dispatch
 	cmdList->SetPipelineState1(m_pipelineState.Get());
@@ -214,7 +194,7 @@ void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsComma
 }
 
 void DXRBase::reloadShaders() {
-	m_context->waitForGPU();
+	context->waitForGPU();
 	// Recompile hlsl
 	createRaytracingPSO();
 }
@@ -224,7 +204,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 	// Always rebuilds TLAS instead of updating it according to nvidia recommendations
 
-	unsigned int frameIndex = m_context->getSwapIndex();
+	unsigned int frameIndex = context->getSwapIndex();
 
 	// First, get the size of the TLAS buffers and create them
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
@@ -239,7 +219,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 		// Re-create the buffer
 		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info;
-		m_context->getDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+		context->getDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
 		// Allocate new memory regions for buffers
 		// Program will crash if a buffer is too small for a suballocation
@@ -294,7 +274,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 }
 
 void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags, ID3D12GraphicsCommandList4* cmdList, AccelerationStructureBuffers* sourceBufferForUpdate) {
-	unsigned int frameIndex = m_context->getSwapIndex();
+	unsigned int frameIndex = context->getSwapIndex();
 	Mesh* mesh = renderCommand.mesh;
 
 	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
@@ -349,15 +329,15 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
-	m_context->getDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
+	context->getDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &info);
 
 	// TODO: make sure buffer size is >= info.UpdateScratchDataSize in bytes
 	if (!performInplaceUpdate) {
 		// Create the buffers. They need to support UAV, and since we are going to immediately use them, we create them with an unordered-access state
 		// TODO: replace following CreateBuffer with suballocations from a larger buffer
-		bottomBuffer.scratch = DX12Utils::CreateBuffer(m_context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
+		bottomBuffer.scratch = DX12Utils::CreateBuffer(context->getDevice(), info.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12Utils::sDefaultHeapProps);
 		bottomBuffer.scratch->SetName(L"BLAS_SCRATCH");
-		bottomBuffer.result = DX12Utils::CreateBuffer(m_context->getDevice(), info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, DX12Utils::sDefaultHeapProps);
+		bottomBuffer.result = DX12Utils::CreateBuffer(context->getDevice(), info.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, DX12Utils::sDefaultHeapProps);
 		bottomBuffer.result->SetName(L"BLAS_RESULT");
 	}
 
@@ -406,48 +386,23 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		// UAV output
 		storeHandle(m_outputResource);
 
-		// Gbuffer inputs
-		for (unsigned int i = 0; i < 2; i++) {
-			auto index = m_descriptorHeap->getAndStepIndex();
-			m_gbufferPositionsResource.cpuHandle[i] = m_descriptorHeap->getCPUDescriptorHandleForIndex(index);
-			m_gbufferPositionsResource.gpuHandle[i] = m_descriptorHeap->getGPUDescriptorHandleForIndex(index);
-			m_context->getDevice()->CopyDescriptorsSimple(1, m_gbufferPositionsResource.cpuHandle[i], m_gbuffers[0]->getSrvCDH(i), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-			index = m_descriptorHeap->getAndStepIndex();
-			m_gbufferNormalsResource.cpuHandle[i] = m_descriptorHeap->getCPUDescriptorHandleForIndex(index);
-			m_gbufferNormalsResource.gpuHandle[i] = m_descriptorHeap->getGPUDescriptorHandleForIndex(index);
-			m_context->getDevice()->CopyDescriptorsSimple(1, m_gbufferNormalsResource.cpuHandle[i], m_gbuffers[1]->getSrvCDH(i), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		}
-
-		// Scene CB
-		{
-			unsigned int size = sizeof(DXRShaderCommon::SceneCBuffer);
-			DXRShaderCommon::SceneCBuffer initData = {};
-			m_sceneCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(&initData, size, ShaderComponent::BIND_SHADER::CS, 0);
-		}
-		//// Mesh CB
-		//{
-		//	unsigned int size = sizeof(DXRShaderCommon::MeshCBuffer);
-		//	void* initData = malloc(size);
-		//	memset(initData, 0, size);
-		//	m_meshCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(initData, size, ShaderComponent::BIND_SHADER::CS, 0);
-		//	free(initData);
-		//}
+		// Add resources from derived class
+		addInitialShaderResources(m_descriptorHeap.get());
 
 		// TODO: tweak these
 		unsigned int uploadBufferByteSize = 1024 * 10;
 		unsigned int defaultBufferUAByteSize = 1024 * 20;
 		unsigned int defaultBufferRTASByteSize = 1024 * 20;
-		for (unsigned int i = 0; i < m_context->getNumGPUBuffers(); i++) {
-			m_defaultBufferUA.emplace_back(new DX12Utils::GPUOnlyBuffer(m_context->getDevice(), defaultBufferUAByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-			m_defaultBufferRTAS.emplace_back(new DX12Utils::GPUOnlyBuffer(m_context->getDevice(), defaultBufferRTASByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE));
-			m_uploadBuffer.emplace_back(new DX12Utils::CPUSharedBuffer(m_context->getDevice(), uploadBufferByteSize));
+		for (unsigned int i = 0; i < context->getNumGPUBuffers(); i++) {
+			m_defaultBufferUA.emplace_back(new DX12Utils::GPUOnlyBuffer(context->getDevice(), defaultBufferUAByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+			m_defaultBufferRTAS.emplace_back(new DX12Utils::GPUOnlyBuffer(context->getDevice(), defaultBufferRTASByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE));
+			m_uploadBuffer.emplace_back(new DX12Utils::CPUSharedBuffer(context->getDevice(), uploadBufferByteSize));
 		}
 	}
 }
 
 void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
-	unsigned int frameIndex = m_context->getSwapIndex();
+	unsigned int frameIndex = context->getSwapIndex();
 		
 }
 
@@ -456,7 +411,7 @@ void DXRBase::updateShaderTables() {
 
 	// 	 "Shader tables can be modified freely by the application (with appropriate state barriers)"
 
-	auto frameIndex = m_context->getSwapIndex();
+	auto frameIndex = context->getSwapIndex();
 
 	// Ray gen
 	{
@@ -465,10 +420,9 @@ void DXRBase::updateShaderTables() {
 		DXRUtils::ShaderTableBuilder tableBuilder(1U, m_pipelineState.Get(), 96U);
 		tableBuilder.addShader(m_rayGenName);
 		m_localSignatureRayGen->doInOrder([&](const std::string& parameterName) {
-			if (parameterName == "gbufferPositionsInputSRV") {
-				tableBuilder.addDescriptor(m_gbufferPositionsResource.gpuHandle[frameIndex].ptr);
-			} else if (parameterName == "gbufferNormalsInputSRV") {
-				tableBuilder.addDescriptor(m_gbufferNormalsResource.gpuHandle[frameIndex].ptr);
+			if (rayGenDescriptorTables.find(parameterName) != rayGenDescriptorTables.end()) {
+				auto& dt = rayGenDescriptorTables[parameterName];
+				tableBuilder.addDescriptor(dt.resource->gpuHandle[frameIndex].ptr);
 			} else if(parameterName == "OutputUAV") {
 				tableBuilder.addDescriptor(m_outputResource.gpuHandle[frameIndex].ptr);
 			} else {
@@ -478,7 +432,7 @@ void DXRBase::updateShaderTables() {
 		
 		{
 			SAIL_PROFILE_API_SPECIFIC_SCOPE("Build");
-			m_rayGenShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice(), *m_uploadBuffer[frameIndex]);
+			m_rayGenShaderTable[frameIndex] = tableBuilder.build(context->getDevice(), *m_uploadBuffer[frameIndex]);
 		}
 	}
 
@@ -491,7 +445,7 @@ void DXRBase::updateShaderTables() {
 		tableBuilder.addShader(m_shadowMissName);
 		{
 			SAIL_PROFILE_API_SPECIFIC_SCOPE("Build");
-			m_missShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice(), *m_uploadBuffer[frameIndex]);
+			m_missShaderTable[frameIndex] = tableBuilder.build(context->getDevice(), *m_uploadBuffer[frameIndex]);
 		}
 	}
 
@@ -518,7 +472,7 @@ void DXRBase::updateShaderTables() {
 		}
 		{
 			SAIL_PROFILE_API_SPECIFIC_SCOPE("Build");
-			m_hitGroupShaderTable[frameIndex] = tableBuilder.build(m_context->getDevice(), *m_uploadBuffer[frameIndex]);
+			m_hitGroupShaderTable[frameIndex] = tableBuilder.build(context->getDevice(), *m_uploadBuffer[frameIndex]);
 		}
 	}
 }
@@ -538,26 +492,34 @@ void DXRBase::createRaytracingPSO() {
 	psoBuilder.addLibrary(Shader::DEFAULT_SHADER_LOCATION + "dxr/ShadowRay.hlsl", { m_shadowMissName });
 	psoBuilder.addSignatureToShaders({ m_shadowMissName }, m_localSignatureEmpty->get());
 
-	psoBuilder.setMaxPayloadSize(sizeof(DXRShaderCommon::RayPayload));
-	psoBuilder.setMaxAttributeSize(sizeof(float) * 4);
-	psoBuilder.setMaxRecursionDepth(DXRShaderCommon::MAX_RAY_RECURSION_DEPTH);
+	psoBuilder.setMaxPayloadSize(m_settings.maxPayloadSize);
+	//psoBuilder.setMaxPayloadSize(sizeof(DXRShaderCommon::RayPayload));
+	psoBuilder.setMaxAttributeSize(m_settings.maxAttributeSize);
+	//psoBuilder.setMaxAttributeSize(sizeof(float) * 2);
+	psoBuilder.setMaxRecursionDepth(m_settings.maxRecursionDepth);
+	//psoBuilder.setMaxRecursionDepth(DXRShaderCommon::MAX_RAY_RECURSION_DEPTH);
 	psoBuilder.setGlobalSignature(m_dxrGlobalRootSignature->get());
 
-	m_pipelineState = psoBuilder.build(m_context->getDevice());
+	m_pipelineState = psoBuilder.build(context->getDevice());
 }
 
 void DXRBase::createDXRGlobalRootSignature() {
 	m_dxrGlobalRootSignature = std::make_unique<DX12Utils::RootSignature>("dxrGlobal");
 	m_dxrGlobalRootSignature->addSRV("AccelerationStructure", 0);
-	m_dxrGlobalRootSignature->addCBV("SceneCBuffer", 0);
+	// Add constants defined in derived class
+	for (auto& it : globalConstants) {
+		m_dxrGlobalRootSignature->addCBV(it.first, it.second.shaderRegister, it.second.space);
+	}
 
-	m_dxrGlobalRootSignature->build(m_context->getDevice());
+	m_dxrGlobalRootSignature->build(context->getDevice());
 }
 
 void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen = std::make_unique<DX12Utils::RootSignature>("RayGenLocal");
-	m_localSignatureRayGen->addDescriptorTable("gbufferPositionsInputSRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1);
-	m_localSignatureRayGen->addDescriptorTable("gbufferNormalsInputSRV", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2);
+	// Add descriptor tables defined in derived class
+	for (auto& it : rayGenDescriptorTables) {
+		m_localSignatureRayGen->addDescriptorTable(it.first, it.second.type, it.second.shaderRegister, it.second.space, it.second.numDescriptors);
+	}
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
 	m_localSignatureRayGen->addStaticSampler();
 
@@ -578,24 +540,29 @@ void DXRBase::createRayGenLocalRootSignature() {
 	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	m_localSignatureRayGen->addStaticSampler(samplerDesc);
 
-	m_localSignatureRayGen->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+	m_localSignatureRayGen->build(context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 
 void DXRBase::createHitGroupLocalRootSignature() {
 	m_localSignatureHitGroup = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal");
-	m_localSignatureHitGroup->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+	m_localSignatureHitGroup->build(context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 
 void DXRBase::createMissLocalRootSignature() {
 	m_localSignatureMiss = std::make_unique<DX12Utils::RootSignature>("MissLocal");
-	m_localSignatureMiss->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+	m_localSignatureMiss->build(context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 
 void DXRBase::createEmptyLocalRootSignature() {
 	m_localSignatureEmpty = std::make_unique<DX12Utils::RootSignature>("EmptyLocal");
-	m_localSignatureEmpty->build(m_context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+	m_localSignatureEmpty->build(context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 
 void DXRBase::recreateResources() {
 	createInitialShaderResources(true);
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS DXRBase::GetTLASAddress() {
+	auto frameIndex = Application::getInstance()->getAPI<DX12API>()->getSwapIndex();
+	return m_topBuffer[frameIndex].resultGpuAddress;
 }

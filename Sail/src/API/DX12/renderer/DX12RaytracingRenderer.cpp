@@ -21,7 +21,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer() {
 	m_context->initCommand(m_command);
 	m_command.list->SetName(L"Raytracing Renderer main command list");
 
-	m_dxrBase = std::make_unique<DXRBase>("Basic");
+	m_dxrBase = std::make_unique<DXRHardShadows>();
 
 	auto width = Application::getInstance()->getWindow()->getWindowWidth();
 	auto height = Application::getInstance()->getWindow()->getWindowHeight();

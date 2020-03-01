@@ -20,13 +20,8 @@ DXILShaderCompiler::~DXILShaderCompiler() {
 }
 
 HRESULT DXILShaderCompiler::init() {
-#ifdef _WIN64
-	HMODULE dll = LoadLibraryA("dxcompiler_x64.dll");
-	if (!dll) MessageBox(0, L"dxcompiler_x64.dll is missing", L"Error", 0);
-#else
-	HMODULE dll = LoadLibraryA("dxcompiler_x86.dll");
-	if (!dll) MessageBox(0, L"dxcompiler_x86.dll is missing", L"Error", 0);
-#endif
+	HMODULE dll = LoadLibraryA("dxcompiler.dll");
+	if (!dll) MessageBox(0, L"dxcompiler.dll is missing", L"Error", 0);
 
 	DxcCreateInstanceProc pfnDxcCreateInstance = DxcCreateInstanceProc(GetProcAddress(dll, "DxcCreateInstance"));
 
