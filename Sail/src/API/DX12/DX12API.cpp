@@ -95,8 +95,8 @@ void DX12API::createDevice() {
 	//	D3D12EnableExperimentalFeatures(1, &D3D12ExperimentalShaderModels, nullptr, nullptr);
 	//}
 
-	DWORD dxgiFactoryFlags = 0;
 #ifdef _DEBUG
+	DWORD dxgiFactoryFlags = 0;
 	//Enable the D3D12 debug layer.
 	wComPtr<ID3D12Debug1> debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
