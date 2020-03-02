@@ -90,6 +90,12 @@ int Application::startGameLoop() {
 				// Send resize event
 				EventSystem::getInstance()->dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
+
+			// Execute any scheduled functions
+			for (const auto& func : m_scheduledFuncsForNextFrame) {
+				func();
+			}
+			m_scheduledFuncsForNextFrame.clear();
 			
 			// Get delta time from last frame
 			float delta = static_cast<float>(m_timer.getFrameTime());
@@ -119,18 +125,15 @@ int Application::startGameLoop() {
 
 			// Update
 #ifdef _DEBUG
-			/*if (m_input.getKeyboardState().Escape)
-				PostQuitMessage(0);*/
+			if (Input::IsKeyPressed(SAIL_KEY_ESCAPE))
+				PostQuitMessage(0);
 
 
 			//if(delta > 0.0166)
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
 #endif
 			updateTimer += delta;
-
 			int maxCounter = 0;
-		
-
 			while (updateTimer >= timeBetweenUpdates) {
 				if (maxCounter >= 4)
 					break;
@@ -168,6 +171,11 @@ GraphicsAPI* const Application::getAPI() {
 Window* const Application::getWindow() {
 	return m_window.get();
 }
+
+void Application::scheduleForNextFrame(std::function<void()> func) {
+	m_scheduledFuncsForNextFrame.emplace_back(func);
+}
+
 ImGuiHandler* const Application::getImGuiHandler() {
 	return m_imguiHandler.get();
 }

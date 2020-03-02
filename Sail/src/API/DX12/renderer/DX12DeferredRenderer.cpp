@@ -147,7 +147,6 @@ void DX12DeferredRenderer::runGeometryPass(ID3D12GraphicsCommandList4* cmdList) 
 			Logger::Warning("Tried to render a model with no shader set");
 			continue;
 		}
-		//uniqueShaderPipelines.insert(shaderPipeline);
 
 		// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
 		shader->reserve(totalInstances);

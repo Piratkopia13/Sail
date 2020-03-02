@@ -71,14 +71,14 @@ void Scene::draw(Camera& camera) {
 			auto transform = entity->getComponent<TransformComponent>();
 
 			// Submit a copy for rendering as outline if selected in gui
-			if (entity->isSelectedInGui() && model && transform)
+			if (entity->isSelectedInGui() && model && model->getModel() && transform)
 				m_forwardRenderer->submit(model->getModel().get(), outlineShader, &m_outlineMaterial, transform->getMatrix());
 
 			Material* material = nullptr;
 			if (auto materialComp = entity->getComponent<MaterialComponent<>>())
 				material = materialComp->get();
 
-			if (model && transform && material) {
+			if (model && model->getModel() && transform && material) {
 				if (doDXR) {
 					// Submit all to the raytracer
 					m_raytracingRenderer->submit(model->getModel().get(), nullptr, material, transform->getMatrix());

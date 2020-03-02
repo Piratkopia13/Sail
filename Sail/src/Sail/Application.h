@@ -32,6 +32,10 @@ public:
 	T* const getWindow() { return static_cast<T*>(m_window.get()); }
 	Window* const getWindow();
 
+	// Schedule a function to execute at the beginning of the next frame
+	// Should be used when modifying resources that may be in flight
+	void scheduleForNextFrame(std::function<void()> func);
+
 	static std::string getPlatformName();
 	static Application* getInstance();
 	ImGuiHandler* const getImGuiHandler();
@@ -50,4 +54,5 @@ private:
 	Timer m_timer;
 	UINT m_fps;
 
+	std::vector<std::function<void()>> m_scheduledFuncsForNextFrame;
 };

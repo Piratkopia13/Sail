@@ -20,6 +20,8 @@ DX12VertexBuffer::DX12VertexBuffer(const Mesh::Data& modelData, bool allowUpdate
 	m_context = Application::getInstance()->getAPI<DX12API>();
 	auto numSwapBuffers = (m_allowUpdates) ? m_context->getNumGPUBuffers() : 1;
 
+	//Logger::Warning("Created upload vbuffer " + std::to_string(modelData.numVertices));
+
 	m_initFrameCount = 0;
 	m_hasBeenUpdated.resize(numSwapBuffers, false);
 	m_hasBeenInitialized.resize(numSwapBuffers, false);
@@ -43,7 +45,7 @@ DX12VertexBuffer::DX12VertexBuffer(const Mesh::Data& modelData, bool allowUpdate
 
 		// Create the default buffers that the data will be copied to during init(cmdList)
 		m_defaultVertexBuffers[i].Attach(DX12Utils::CreateBuffer(m_context->getDevice(), m_byteSize,
-			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, // TODO: only allow UAV on animated vertex buffers
+			D3D12_RESOURCE_FLAG_NONE, // TODO: only allow UAV on animated vertex buffers
 			D3D12_RESOURCE_STATE_COPY_DEST, DX12Utils::sDefaultHeapProps));
 		m_defaultVertexBuffers[i]->SetName(L"Vertex buffer default");
 	}
@@ -150,6 +152,7 @@ bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 			// Release the upload heap as soon as the texture has been uploaded to the GPU, but make sure it doesn't happen on the same frame as the upload
 			if (!m_allowUpdates && m_uploadVertexBuffers[i] && m_initFrameCount != m_context->getFrameCount() && m_queueUsedForUpload->getCompletedFenceValue() > m_initFenceVal) {
 				m_uploadVertexBuffers[i].ReleaseAndGetAddressOf();
+				//Logger::Warning("Released upload vbuffer " + std::to_string(getPositionsDataSize() / sizeof(Mesh::vec3)));
 			}
 			continue;
 		}
@@ -158,10 +161,10 @@ bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 		cmdList->CopyBufferRegion(m_defaultVertexBuffers[i].Get(), 0, m_uploadVertexBuffers[i].Get(), 0, m_byteSize);
 		// Transition to usage state
 		DX12Utils::SetResourceTransitionBarrier(cmdList, m_defaultVertexBuffers[i].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-		DX12Utils::SetResourceUAVBarrier(cmdList, m_defaultVertexBuffers[i].Get());
+		//DX12Utils::SetResourceUAVBarrier(cmdList, m_defaultVertexBuffers[i].Get()); // TODO: do this on animated vertex buffers(?)
 
 		// Signal is only required for the last buffer, since both will be uploaded when the last one is
-		if (!m_allowUpdates && i == 1) {
+		if (!m_allowUpdates && i == numSwapBuffers - 1) {
 			auto type = cmdList->GetType();
 			m_queueUsedForUpload = (type == D3D12_COMMAND_LIST_TYPE_DIRECT) ? m_context->getDirectQueue() : nullptr; // TODO: add support for other command list types
 			// Schedule a signal to be called directly after this command list has executed
