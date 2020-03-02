@@ -23,7 +23,8 @@ TextureData::~TextureData() {
 void TextureData::load(const std::string& filename, bool useAbsolutePath) {
 	std::string path = (useAbsolutePath) ? filename : DEFAULT_TEXTURE_LOCATION + filename;
 
-	if (path.substr(path.length() - 3) == "hdr") {
+	auto ext = path.substr(path.length() - 3);
+	if (ext == "hdr" || ext == "jpg" || ext == "png") {
 		FileLoader::STBImageLoader(path, m_data);
 	} else {
 		FileLoader::TGALoader TGALoader(path, m_data);

@@ -13,7 +13,7 @@ class MaterialComponent : public Component {
 public:
 	SAIL_COMPONENT
 	MaterialComponent()
-		: m_textureFilter(L"All supported textures (*.tga;*.hdr;*.dds)\0*.tga;*.hdr;*.dds")
+		: m_textureFilter(L"All supported textures (*.tga;*.hdr;*.dds;*.jpg;*.png)\0*.tga;*.hdr;*.dds;*.jpg;*.png")
 	{
 		static_assert(std::is_base_of<Material, T>::value, "T must inherit from Material");
 		m_material.reset(new T());
