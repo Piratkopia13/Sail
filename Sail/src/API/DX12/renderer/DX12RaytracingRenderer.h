@@ -3,7 +3,7 @@
 #include "Sail/api/Renderer.h"
 #include "../DX12API.h"
 #include "Sail/events/Event.h"
-#include "../dxr/impl/DXRHardShadows.h"
+#include "../dxr/DXRBase.h"
 
 class DX12RaytracingRenderer : public Renderer, public IEventListener {
 public:
@@ -20,7 +20,7 @@ public:
 private:
 	DX12API* m_context;
 	DX12API::Command m_command;
-	std::unique_ptr<DXRHardShadows> m_dxrBase;
+	std::unique_ptr<DXRBase> m_dxrBase;
 	static std::unique_ptr<DX12RenderableTexture> sRTOutputTexture;
 
 };

@@ -6,6 +6,11 @@
 #include "../resources/DX12RenderableTexture.h"
 #include "../shader/DX12ConstantBuffer.h"
 
+// Include defines shared with dxr shaders
+#include "Sail/../../Demo/res/shaders/dxr/dxr.shared"
+#include <bitset>
+#include "Sail/graphics/material/PBRMaterial.h"
+
 std::vector<DXRBase::AccelerationStructureAddresses> DXRBase::m_topBuffer;
 
 DXRBase::DXRBase(const std::string& shaderFilename, Settings settings)
@@ -80,8 +85,8 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 				//	createBLAS(renderCommand, flagFastTrace, cmdList);
 				//} else 
 				{
-					// Mesh already has a BLAS - add transform to instance list
-					searchResult->second.instanceList.emplace_back((glm::mat3x4)renderCommand.transform);
+					// Mesh already has a BLAS - add instance to list
+					searchResult->second.instanceList.push_back({ renderCommand.material, (glm::mat3x4)renderCommand.transform });
 				}
 			}
 			totalNumInstances++;
@@ -110,7 +115,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
 				}*/
 				// Add transform to instance list
-				searchResult->second.instanceList.emplace_back((glm::mat3x4)renderCommand.transform);
+				searchResult->second.instanceList.push_back({ renderCommand.material, (glm::mat3x4)renderCommand.transform });
 			}
 
 			totalNumInstances++;
@@ -135,7 +140,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 		}
 	}
 
-	// Any following allocations should start from the beginning of the uploadBuffer and overwrite existing tlas instances and shader tables
+	// Any following allocations should start from the beginning of the uploadBuffer and overwrite existing tlas instances, shader tables and mesh data
 	m_uploadBuffer[frameIndex]->setCurrentPointerOffset(0);
 	m_defaultBufferUA[frameIndex]->setCurrentPointerOffset(0);
 	m_defaultBufferRTAS[frameIndex]->setCurrentPointerOffset(0);
@@ -235,12 +240,18 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 		D3D12_RAYTRACING_INSTANCE_DESC* pInstanceDesc = (D3D12_RAYTRACING_INSTANCE_DESC*)mappedInstanceBuffer;
 
 		unsigned int blasIndex = 0;
-		unsigned int instanceID = 0;
+		unsigned int instanceIndex = 0;
 
 		for (auto& it : m_bottomBuffers[frameIndex]) {
 			auto& instanceList = it.second;
-			for (auto& transform : instanceList.instanceList) {
-				pInstanceDesc->InstanceID = blasIndex;
+			for (auto& instance : instanceList.instanceList) {
+				auto& transform = instance.transform;
+				// InstanceID will store both the blasIndex and the instanceIndex, both with 16 bits
+				std::bitset<sizeof(unsigned int)*8> blasIdBitsetTest(blasIndex >> 16);
+				assert(blasIdBitsetTest.none() && "blasIndex is too big! Reduce the number of unique meshes in the scene or change the bit logic below");
+				std::bitset<sizeof(unsigned int) * 8> instanceIdBitsetTest(instanceIndex >> 16);
+				assert(instanceIdBitsetTest.none() && "instanceIndex is too big! Reduce the number of instances of this mesh in the scene or change the bit logic below");
+				pInstanceDesc->InstanceID = blasIndex | (instanceIndex << 16);
 				pInstanceDesc->InstanceMask = 0xFF;
 				pInstanceDesc->InstanceContributionToHitGroupIndex = blasIndex * 2;	// offset inside the shader-table. Unique for every instance since each geometry has different vertexbuffer/indexbuffer/textures
 																					// * 2 since every other entry in the SBT is for shadow rays (NULL hit group)
@@ -248,6 +259,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 				memcpy(pInstanceDesc->Transform, &transform, sizeof(pInstanceDesc->Transform));
 				pInstanceDesc->AccelerationStructure = instanceList.blas.result->GetGPUVirtualAddress();
 				pInstanceDesc++;
+				instanceIndex++;
 			}
 			blasIndex++;
 		}
@@ -280,7 +292,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
 
 	InstanceList instance;
-	instance.instanceList.emplace_back(renderCommand.transform);
+	instance.instanceList.push_back({ renderCommand.material, renderCommand.transform });
 	AccelerationStructureBuffers& bottomBuffer = instance.blas;
 	if (performInplaceUpdate) {
 		bottomBuffer = *sourceBufferForUpdate;
@@ -364,7 +376,7 @@ void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAY
 	cmdList->ResourceBarrier(1, &uavBarrier);
 
 	if (!performInplaceUpdate) {
-		// Insert BLAS into buttom buffer map
+		// Insert BLAS into bottom buffer map
 		m_bottomBuffers[frameIndex].insert({ mesh, instance });
 	}
 }
@@ -389,8 +401,11 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		// Add resources from derived class
 		addInitialShaderResources(m_descriptorHeap.get());
 
+		// Store the index to the descriptor heap position where data can be changed in runtime
+		m_heapDynamicStartIndex = m_descriptorHeap->getCurrentIndex();
+
 		// TODO: tweak these
-		unsigned int uploadBufferByteSize = 1024 * 10;
+		unsigned int uploadBufferByteSize = 1024 * 100;
 		unsigned int defaultBufferUAByteSize = 1024 * 20;
 		unsigned int defaultBufferRTASByteSize = 1024 * 20;
 		for (unsigned int i = 0; i < context->getNumGPUBuffers(); i++) {
@@ -402,8 +417,96 @@ void DXRBase::createInitialShaderResources(bool remake) {
 }
 
 void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
+	// Return instantly if the everything the method does is turned off in settings
+	if (!(m_settings.bindVertexBuffers || m_settings.bindTextures)) return;
+
+
+	// TODO: profile performance of this method and optimize where possible
+
 	unsigned int frameIndex = context->getSwapIndex();
+
+	// Update descriptors for vertices, indices, textures etc
+	//D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_descriptorHeap->getCPUDescriptorHandleForIndex(m_heapDynamicStartIndex);
+	//D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_descriptorHeap->getGPUDescriptorHandleForIndex(m_heapDynamicStartIndex);
+	m_descriptorHeap->setIndex(m_heapDynamicStartIndex);
+
+	m_positionsBufferHandles[frameIndex].clear();
+	m_texCoordsBufferHandles[frameIndex].clear();
+	m_normalsBufferHandles[frameIndex].clear();
+	m_tangentsBufferHandles[frameIndex].clear();
+	m_bitangentsBufferHandles[frameIndex].clear();
+	m_indexBufferHandles[frameIndex].clear();
+	m_textureHandles[frameIndex].clear();
+	m_meshDataBuffers[frameIndex].clear();
+
+	bool hasSetTexture = false;
+	
+	unsigned int blasIndex = 0;
+	for (auto& it : m_bottomBuffers[frameIndex]) {
+		Mesh* mesh = it.first;
+		auto& instanceList = it.second.instanceList;
+
+		auto vertexBufferStart = static_cast<const DX12VertexBuffer&>(mesh->getVertexBuffer()).getResource()->GetGPUVirtualAddress();
+		m_positionsBufferHandles[frameIndex].emplace_back(vertexBufferStart + mesh->getVertexBuffer().getPositionsOffset());
+		m_texCoordsBufferHandles[frameIndex].emplace_back(vertexBufferStart + mesh->getVertexBuffer().getTexCoordsOffset());
+		m_normalsBufferHandles[frameIndex].emplace_back(vertexBufferStart + mesh->getVertexBuffer().getNormalsOffset());
+		m_tangentsBufferHandles[frameIndex].emplace_back(vertexBufferStart + mesh->getVertexBuffer().getTangentsOffset());
+		m_bitangentsBufferHandles[frameIndex].emplace_back(vertexBufferStart + mesh->getVertexBuffer().getBitangentsOffset());
+		if (mesh->getNumIndices() > 0) {
+			m_indexBufferHandles[frameIndex].emplace_back(static_cast<const DX12IndexBuffer&>(mesh->getIndexBuffer()).getResource()->GetGPUVirtualAddress());
+		} else {
+			// Emplace empty handle to keep order intact
+			m_indexBufferHandles[frameIndex].emplace_back();
+		}
+		m_textureHandles[frameIndex].emplace_back();
+
+		unsigned int meshDataSize = sizeof(DXRShaderCommon::InstanceData) * instanceList.size();
+		std::vector<DXRShaderCommon::InstanceData> meshData(instanceList.size());
+		unsigned int i = 0;
+		for (const auto& instance : instanceList) {
+			PBRMaterial* mat = dynamic_cast<PBRMaterial*>(instance.material);
+			assert(mat && "All materials for raytraced meshes must be PBRMaterial!");
+			
+			auto& materialSettings = mat->getPBRSettings();
+
+			// Three textures
+			//for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
+			{
+				unsigned int textureNum = 0;
+				DX12Texture* texture = static_cast<DX12Texture*>(mat->getTexture(textureNum));
+				bool hasTexture = (textureNum == 0) ? materialSettings.hasAlbedoTexture : materialSettings.hasNormalTexture;
+				hasTexture = (textureNum == 2) ? materialSettings.hasMetalnessRoughnessAOTexture : hasTexture;
+				
+				// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
+				auto descIndex = m_descriptorHeap->getAndStepIndex();
+				if (hasTexture) {
+					// Copy SRV to DXR heap
+					context->getDevice()->CopyDescriptorsSimple(1, m_descriptorHeap->getCPUDescriptorHandleForIndex(descIndex), texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					if (!hasSetTexture) {
+						m_textureHandles[frameIndex][blasIndex][textureNum] = m_descriptorHeap->getGPUDescriptorHandleForIndex(descIndex);
+						hasSetTexture = true;
+					}
+				}
+			}
+
+			// Update per mesh data
+			// Such as flags telling the shader to use indices, textures or not
+			
+			meshData[i].flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
+			meshData[i].flags |= (materialSettings.hasAlbedoTexture) ? DXRShaderCommon::MESH_HAS_ALBEDO_TEX : meshData[i].flags;
+			meshData[i].flags |= (materialSettings.hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData[i].flags;
+			meshData[i].flags |= (materialSettings.hasMetalnessRoughnessAOTexture) ? DXRShaderCommon::MESH_HAS_METALNESS_ROUGHNESS_AO_TEX : meshData[i].flags;
+			meshData[i].color = materialSettings.modelColor;
+			meshData[i].metalnessScale = materialSettings.metalnessScale;
+			meshData[i].roughnessScale = materialSettings.roughnessScale;
+			meshData[i].aoIntensity = materialSettings.aoIntensity;
+			i++;
+		}
+		m_meshDataBuffers[frameIndex].emplace_back(m_uploadBuffer[frameIndex]->setData(meshData.data(), meshDataSize, 0U));
 		
+		blasIndex++;
+	}
+
 }
 
 void DXRBase::updateShaderTables() {
@@ -459,12 +562,34 @@ void DXRBase::updateShaderTables() {
 		unsigned int blasIndex = 0;
 
 		for (auto& it : m_bottomBuffers[frameIndex]) {
-			auto& instanceList = it.second;
 			Mesh* mesh = it.first;
 
-			tableBuilder.addShader(m_hitGroupTriangleName); //Set the shadergroup to use
+			tableBuilder.addShader(m_hitGroupTriangleName); // Set the shader-group to use
 			m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
-				Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
+				if (parameterName == "PositionsBuffer") {
+					tableBuilder.addDescriptor(m_positionsBufferHandles[frameIndex][blasIndex], blasIndex * 2);
+				} else if (parameterName == "TexCoordsBuffer") {
+					tableBuilder.addDescriptor(m_texCoordsBufferHandles[frameIndex][blasIndex], blasIndex * 2);
+				} else if (parameterName == "NormalsBuffer") {
+					tableBuilder.addDescriptor(m_normalsBufferHandles[frameIndex][blasIndex], blasIndex * 2);
+				} else if (parameterName == "TangentsBuffer") {
+					tableBuilder.addDescriptor(m_tangentsBufferHandles[frameIndex][blasIndex], blasIndex * 2);
+				} else if (parameterName == "BitangentsBuffer") {
+					tableBuilder.addDescriptor(m_bitangentsBufferHandles[frameIndex][blasIndex], blasIndex * 2);
+				} else if (parameterName == "IndexBuffer") {
+					D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
+					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_indexBufferHandles[frameIndex][blasIndex] : nullAddr, blasIndex * 2);
+				} else if (parameterName == "MeshData") {
+					D3D12_GPU_VIRTUAL_ADDRESS meshDataHandle = m_meshDataBuffers[frameIndex][blasIndex];
+					tableBuilder.addDescriptor(meshDataHandle, blasIndex * 2);
+				} else if (parameterName == "TexturesAlbedo") {
+					tableBuilder.addDescriptor(m_textureHandles[frameIndex][blasIndex][0].ptr, blasIndex * 2);
+					/*for (unsigned int textureNum = 0; textureNum < sizeof(m_textureHandles[0][0]) / sizeof(m_textureHandles[0][0][0]); textureNum++) {
+						tableBuilder.addDescriptor(m_textureHandles[frameIndex][blasIndex][textureNum].ptr, blasIndex * 2);
+					}*/
+				} else {
+					Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
+				}
 			});
 			
 			tableBuilder.addShader(L"NULL");
@@ -493,11 +618,8 @@ void DXRBase::createRaytracingPSO() {
 	psoBuilder.addSignatureToShaders({ m_shadowMissName }, m_localSignatureEmpty->get());
 
 	psoBuilder.setMaxPayloadSize(m_settings.maxPayloadSize);
-	//psoBuilder.setMaxPayloadSize(sizeof(DXRShaderCommon::RayPayload));
 	psoBuilder.setMaxAttributeSize(m_settings.maxAttributeSize);
-	//psoBuilder.setMaxAttributeSize(sizeof(float) * 2);
 	psoBuilder.setMaxRecursionDepth(m_settings.maxRecursionDepth);
-	//psoBuilder.setMaxRecursionDepth(DXRShaderCommon::MAX_RAY_RECURSION_DEPTH);
 	psoBuilder.setGlobalSignature(m_dxrGlobalRootSignature->get());
 
 	m_pipelineState = psoBuilder.build(context->getDevice());
@@ -523,28 +645,28 @@ void DXRBase::createRayGenLocalRootSignature() {
 	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
 	m_localSignatureRayGen->addStaticSampler();
 
-	// Border sampler used to sample InputShadowsLastFrame
-	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.Filter = D3D12_FILTER_ANISOTROPIC;
-	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	samplerDesc.MipLODBias = 0.f;
-	samplerDesc.MaxAnisotropy = 16;
-	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
-	samplerDesc.MinLOD = 0.f;
-	samplerDesc.MaxLOD = FLT_MAX;
-	samplerDesc.ShaderRegister = 1;
-	samplerDesc.RegisterSpace = 0;
-	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	m_localSignatureRayGen->addStaticSampler(samplerDesc);
-
 	m_localSignatureRayGen->build(context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 
 void DXRBase::createHitGroupLocalRootSignature() {
 	m_localSignatureHitGroup = std::make_unique<DX12Utils::RootSignature>("HitGroupLocal");
+	
+	if (m_settings.bindVertexBuffers) {
+		m_localSignatureHitGroup->addSRV("IndexBuffer", 3, 0);
+		m_localSignatureHitGroup->addSRV("PositionsBuffer", 3, 1);
+		m_localSignatureHitGroup->addSRV("TexCoordsBuffer", 3, 2);
+		m_localSignatureHitGroup->addSRV("NormalsBuffer", 3, 3);
+		m_localSignatureHitGroup->addSRV("TangentsBuffer", 3, 4);
+		m_localSignatureHitGroup->addSRV("BitangentsBuffer", 3, 5);
+	}
+	if (m_settings.bindTextures) {
+		m_localSignatureHitGroup->addDescriptorTable("TexturesAlbedo", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0, 3); // Textures (t4, t5, t6) space0
+		// TODO add normal and mrao textures
+	}
+	if (m_settings.bindVertexBuffers || m_settings.bindTextures)
+		m_localSignatureHitGroup->addSRV("MeshData", 0, 1);
+	m_localSignatureHitGroup->addStaticSampler();
+
 	m_localSignatureHitGroup->build(context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 }
 

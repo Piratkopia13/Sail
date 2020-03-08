@@ -3,12 +3,15 @@
 #include "DXRUtils.h"
 #include "../DX12Utils.h"
 #include "Sail/api/Renderer.h"
+#include <array>
 
 namespace ShaderComponent {
 	class DX12ConstantBuffer;
 }
 class DX12RenderableTexture;
 class DX12API;
+class Camera;
+class LightSetup;
 
 class DXRBase {
 public:
@@ -16,10 +19,14 @@ public:
 		UINT maxPayloadSize = 0;
 		UINT maxAttributeSize = sizeof(float) * 2;
 		UINT maxRecursionDepth = 1;
+		bool bindVertexBuffers = false; // This binds positions,normals,texcoords,tangents,bitangents and indices
+		bool bindTextures = false;
 	};
 public:
 	DXRBase(const std::string& shaderFilename, Settings settings);
 	virtual ~DXRBase();
+
+	virtual void updateSceneData(Camera* cam, LightSetup* lights) { };
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
@@ -81,9 +88,13 @@ private:
 		D3D12_GPU_VIRTUAL_ADDRESS instanceDescGpuAddress; // Used only for top-level AS
 	};
 	
+	struct Instance {
+		Material* material;
+		glm::mat3x4 transform;
+	};
 	struct InstanceList {
 		AccelerationStructureBuffers blas;
-		std::vector<glm::mat3x4> instanceList;
+		std::vector<Instance> instanceList;
 	};
 
 private:
@@ -115,16 +126,24 @@ private:
 	std::string m_shaderFilename;
 
 	std::vector<std::unordered_map<Mesh*, InstanceList>> m_bottomBuffers;
-
 	static std::vector<AccelerationStructureAddresses> m_topBuffer;
 
+	std::vector<D3D12_GPU_VIRTUAL_ADDRESS> m_positionsBufferHandles[2];
+	std::vector<D3D12_GPU_VIRTUAL_ADDRESS> m_texCoordsBufferHandles[2];
+	std::vector<D3D12_GPU_VIRTUAL_ADDRESS> m_normalsBufferHandles[2];
+	std::vector<D3D12_GPU_VIRTUAL_ADDRESS> m_tangentsBufferHandles[2];
+	std::vector<D3D12_GPU_VIRTUAL_ADDRESS> m_bitangentsBufferHandles[2];
+	std::vector<D3D12_GPU_VIRTUAL_ADDRESS> m_indexBufferHandles[2];
+	std::vector<std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 3>> m_textureHandles[2];
+	std::vector<D3D12_GPU_VIRTUAL_ADDRESS> m_meshDataBuffers[2];
+
+	std::unique_ptr<DescriptorHeap> m_descriptorHeap;
+	unsigned int m_heapDynamicStartIndex;
 	wComPtr<ID3D12StateObject> m_pipelineState;
 
 	std::vector<DXRUtils::ShaderTableData> m_rayGenShaderTable;
 	std::vector<DXRUtils::ShaderTableData> m_missShaderTable;
 	std::vector<DXRUtils::ShaderTableData> m_hitGroupShaderTable;
-	
-	std::unique_ptr<DescriptorHeap> m_descriptorHeap;
 	
 	Resource m_outputResource;
 

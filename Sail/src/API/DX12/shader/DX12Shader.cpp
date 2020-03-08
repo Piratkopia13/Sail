@@ -178,7 +178,7 @@ bool DX12Shader::setTexture(const std::string& name, Texture* texture, void* cmd
 
 	dxTexture->transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	// Copy texture SRVs to the gpu heap
-	// The SRV will point to a null descriptor before the texture is fully initialized, and therefor show up as black
+	// The SRV will point to a null descriptor before the texture is fully initialized, and therefore show up as black
 	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	return true;
 }

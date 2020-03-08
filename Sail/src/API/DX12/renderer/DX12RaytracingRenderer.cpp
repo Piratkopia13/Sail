@@ -11,6 +11,8 @@
 #include "../shader/DX12Shader.h"
 #include "DX12DeferredRenderer.h"
 #include "Sail/KeyCodes.h"
+#include "../dxr/impl/DXRHardShadows.h"
+#include "../dxr/impl/DXRReflections.h"
 
 std::unique_ptr<DX12RenderableTexture> DX12RaytracingRenderer::sRTOutputTexture;
 
@@ -21,7 +23,8 @@ DX12RaytracingRenderer::DX12RaytracingRenderer() {
 	m_context->initCommand(m_command);
 	m_command.list->SetName(L"Raytracing Renderer main command list");
 
-	m_dxrBase = std::make_unique<DXRHardShadows>();
+	//m_dxrBase = std::make_unique<DXRHardShadows>();
+	m_dxrBase = std::make_unique<DXRReflections>();
 
 	auto width = Application::getInstance()->getWindow()->getWindowWidth();
 	auto height = Application::getInstance()->getWindow()->getWindowHeight();

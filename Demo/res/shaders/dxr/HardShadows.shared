@@ -1,0 +1,31 @@
+#include "dxr.shared"
+
+#ifndef __HARDSHADOWS_SHRD_HLSL__
+#define __HARDSHADOWS_SHRD_HLSL__
+
+#ifndef HLSL
+// C++ only
+namespace DXRShaderHardShadows {
+#endif
+
+static const uint MAX_RAY_RECURSION_DEPTH = 1;
+
+struct RayPayload {
+    uint recursionDepth;
+};
+
+struct SceneCBuffer {
+    matrix projectionToWorld;
+    matrix viewToWorld;
+    float3 cameraPosition;
+    float padding1;
+    float3 dirLightDirection;
+    float padding2;
+};
+
+#ifndef HLSL
+// C++ only
+} // End namespace
+#endif
+
+#endif // __HARDSHADOWS_SHRD_HLSL__

@@ -1,0 +1,29 @@
+#include "dxr.shared"
+
+#ifndef __REFLECTIONS_SHRD_HLSL__
+#define __REFLECTIONS_SHRD_HLSL__
+
+#ifndef HLSL
+// C++ only
+namespace DXRShaderReflections {
+#endif
+
+static const uint MAX_RAY_RECURSION_DEPTH = 2;
+
+struct RayPayload {
+    uint recursionDepth;
+    float3 color;
+};
+
+struct SceneCBuffer {
+    matrix viewToWorld;
+    float3 cameraPosition;
+    float padding1;
+};
+
+#ifndef HLSL
+// C++ only
+} // End namespace
+#endif
+
+#endif // __REFLECTIONS_SHRD_HLSL__

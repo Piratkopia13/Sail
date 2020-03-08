@@ -13,6 +13,12 @@ public:
 	virtual void bind(void* cmdList = nullptr) = 0;
 	virtual void update(Mesh::Data& data) = 0;
 
+	unsigned int getPositionsOffset() const;
+	unsigned int getTexCoordsOffset() const;
+	unsigned int getNormalsOffset() const;
+	unsigned int getTangentsOffset() const;
+	unsigned int getBitangentsOffset() const;
+
 protected:
 	void* mallocVertexData(const Mesh::Data& modelData);
 	unsigned int getPositionsDataSize() const;

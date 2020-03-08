@@ -13,6 +13,26 @@ VertexBuffer::VertexBuffer(const Mesh::Data& modelData)
 	m_byteSize = m_positionsByteSize + m_texCoordsByteSize + m_normalsByteSize + m_tangentsByteSize + m_bitangentsByteSize + sizeof(float) * 3;
 }
 
+unsigned int VertexBuffer::getPositionsOffset() const {
+	return 0U;
+}
+
+unsigned int VertexBuffer::getTexCoordsOffset() const {
+	return getPositionsDataSize();
+}
+
+unsigned int VertexBuffer::getNormalsOffset() const {
+	return getPositionsDataSize() + getTexCoordsDataSize();
+}
+
+unsigned int VertexBuffer::getTangentsOffset() const {
+	return getPositionsDataSize() + getTexCoordsDataSize() + getNormalsDataSize();
+}
+
+unsigned int VertexBuffer::getBitangentsOffset() const {
+	return getPositionsDataSize() + getTexCoordsDataSize() + getNormalsDataSize() + getTangentsDataSize();
+}
+
 void* VertexBuffer::mallocVertexData(const Mesh::Data& modelData) {
 	void* vertices = malloc(m_byteSize);
 	char* addr = (char*)vertices;

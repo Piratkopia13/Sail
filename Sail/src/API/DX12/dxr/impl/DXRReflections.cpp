@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "DXRHardShadows.h"
+#include "DXRReflections.h"
 #include "../../renderer/DX12DeferredRenderer.h"
 #include "../../shader/DX12ConstantBuffer.h"
 #include "Sail/KeyCodes.h"
@@ -8,13 +8,14 @@
 #include "Sail/graphics/light/LightSetup.h"
 
 // Include defines shared with dxr shaders
-#include "Sail/../../Demo/res/shaders/dxr/HardShadows.shared"
+#include "Sail/../../Demo/res/shaders/dxr/Reflections.shared"
 
-DXRHardShadows::DXRHardShadows() 
-	: DXRBase("HardShadows", {
-		sizeof(DXRShaderHardShadows::RayPayload),		// Max payload size
+DXRReflections::DXRReflections()
+	: DXRBase("Reflections", {
+		sizeof(DXRShaderReflections::RayPayload),		// Max payload size
 		sizeof(float) * 2,								// Max attribute size
-		DXRShaderHardShadows::MAX_RAY_RECURSION_DEPTH	// Max recusion depth
+		DXRShaderReflections::MAX_RAY_RECURSION_DEPTH,	// Max recusion depth
+		true, true										// Bind vbuffers, textures to hit group
 		})
 {
 	// Temporary, this static getter should probably be removed
@@ -36,11 +37,21 @@ DXRHardShadows::DXRHardShadows()
 		dtData.shaderRegister = 2;
 		rayGenDescriptorTables.insert({ "gbufferNormalsInputSRV", dtData });
 	}
+	//// Add Vertex buffer inputs
+	//{
+	//	DXRBase::DescriptorTableData dtData;
+	//	dtData.numDescriptors = 1;
+	//	dtData.space = 0;
+	//	dtData.type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	//	dtData.resource = ??;
+	//	dtData.shaderRegister = 3;
+	//	rayGenDescriptorTables.insert({ "vertices", dtData });
+	//}
 
 	// Create cbuffer holding required scene information
 	{
-		unsigned int size = sizeof(DXRShaderHardShadows::SceneCBuffer);
-		DXRShaderHardShadows::SceneCBuffer initData = {};
+		unsigned int size = sizeof(DXRShaderReflections::SceneCBuffer);
+		DXRShaderReflections::SceneCBuffer initData = {};
 		m_sceneCB = std::make_unique<ShaderComponent::DX12ConstantBuffer>(&initData, size, ShaderComponent::BIND_SHADER::CS, 0);
 	}
 
@@ -56,25 +67,20 @@ DXRHardShadows::DXRHardShadows()
 	init();
 }
 
-void DXRHardShadows::updateSceneData(Camera* cam, LightSetup* lights) {
+void DXRReflections::updateSceneData(Camera* cam, LightSetup* lights) {
 	if (Input::IsKeyPressed(SAIL_KEY_R))
 		reloadShaders();
 
-	DXRShaderHardShadows::SceneCBuffer newData = {};
+	DXRShaderReflections::SceneCBuffer newData = {};
 	if (cam) {
 		newData.cameraPosition = cam->getPosition();
-		newData.projectionToWorld = glm::inverse(cam->getViewProjection());
 		newData.viewToWorld = glm::inverse(cam->getViewMatrix());
-	}
-
-	if (lights) {
-		newData.dirLightDirection = lights->getDirLight().direction;
 	}
 
 	m_sceneCB->updateData(&newData, sizeof(newData), 0U);
 }
 
-void DXRHardShadows::addInitialShaderResources(DescriptorHeap* heap) {
+void DXRReflections::addInitialShaderResources(DescriptorHeap* heap) {
 	// Gbuffer inputs
 	for (unsigned int i = 0; i < 2; i++) {
 		auto index = heap->getAndStepIndex();

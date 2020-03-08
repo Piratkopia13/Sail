@@ -1,5 +1,5 @@
 #define HLSL
-#include "dxr.shared"
+#include "HardShadows.shared"
 
 // Inputs
 RaytracingAccelerationStructure rtScene : register(t0);
@@ -10,28 +10,9 @@ Texture2D<float4> gbuffer_normals : register(t2);
 // Outputs
 RWTexture2D<float4> output : register(u0);
 
-// Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid
-inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
-	float2 xy = index + 0.5f; // center in the middle of the pixel.
-	float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
-
-	// Invert Y for DirectX-style coordinates.
-	screenPos.y = -screenPos.y;
-
-	// Unproject the pixel coordinate into a ray.
-	float4 world = mul(systemSceneBuffer.projectionToWorld, float4(screenPos, 0, 1));
-
-	world.xyz /= world.w;
-	origin = systemSceneBuffer.cameraPosition;
-	direction = normalize(world.xyz - origin);
-}
-
 [shader("raygeneration")]
 void rayGen() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
-
-	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
-	// generateCameraRay(launchIndex, ray.Origin, ray.Direction);
 
 	float3 pixelWorldPos = mul(systemSceneBuffer.viewToWorld, gbuffer_positions[launchIndex]).xyz;
 	float3 pixelWorldNormal = gbuffer_normals[launchIndex].xyz;
@@ -68,6 +49,5 @@ void miss(inout RayPayload payload) {
 [shader("closesthit")]
 void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
 	payload.recursionDepth++;
-	
 
 }

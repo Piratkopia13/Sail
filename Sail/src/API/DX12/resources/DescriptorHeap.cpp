@@ -83,6 +83,10 @@ void DescriptorHeap::setIndex(unsigned int index) {
 	m_index = index;
 }
 
+unsigned int DescriptorHeap::getCurrentIndex() const {
+	return m_index;
+}
+
 void DescriptorHeap::addAndBind(DescriptorTableInstanceBuilder& instance, ID3D12GraphicsCommandList4* cmdList, bool onCompute) {
 	for (auto const& [rootSigSlot, entry] : instance.m_entries) {
 		unsigned int lastDtOffset = 0;

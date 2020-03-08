@@ -39,6 +39,7 @@ public:
 	unsigned int getDescriptorIncrementSize() const;
 
 	void setIndex(unsigned int index);
+	unsigned int getCurrentIndex() const;
 
 	// Binds resource views in the right places in the heap according to the root signature
 	void addAndBind(DescriptorTableInstanceBuilder& instance, ID3D12GraphicsCommandList4* cmdList, bool onCompute = false);

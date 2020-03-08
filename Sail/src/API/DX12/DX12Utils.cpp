@@ -145,7 +145,7 @@ DX12Utils::CPUSharedBuffer::~CPUSharedBuffer() {
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS DX12Utils::CPUSharedBuffer::suballocate(unsigned int byteSize, unsigned int byteAlignment, void** outMappedBuffer) {
-	unsigned int padding = (byteAlignment - (byteSize % byteAlignment)) % byteAlignment;
+	unsigned int padding = (byteAlignment == 0U) ? 0U : ((m_bufferCurrent - m_bufferBegin) - (byteSize % byteAlignment)) % byteAlignment;
 	m_bufferCurrent += padding;
 
 	*outMappedBuffer = m_bufferCurrent;
@@ -270,7 +270,7 @@ void DX12Utils::RootSignature::addUAV(const std::string& name, unsigned int shad
 	m_rootParams.push_back(rootParam);
 }
 
-void DX12Utils::RootSignature::addStaticSampler(const D3D12_STATIC_SAMPLER_DESC& desc /*= sDefaultSampler*/) {
+void DX12Utils::RootSignature::addStaticSampler(const D3D12_STATIC_SAMPLER_DESC& desc) {
 	m_staticSamplerDescs.push_back(desc);
 }
 

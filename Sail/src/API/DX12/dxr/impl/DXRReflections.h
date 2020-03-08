@@ -1,11 +1,11 @@
 #pragma once
 #include "../DXRBase.h"
 
-class DXRHardShadows : public DXRBase {
+class DXRReflections : public DXRBase {
 public:
-	DXRHardShadows();
+	DXRReflections();
 
-	virtual void updateSceneData(Camera* cam, LightSetup* lights) override;
+	void updateSceneData(Camera* cam, LightSetup* lights);
 
 private:
 	virtual void addInitialShaderResources(DescriptorHeap* heap) override;
