@@ -19,13 +19,15 @@ StructuredBuffer<float3> tangents       : register(t3, space4);
 StructuredBuffer<float3> bitangents     : register(t3, space5);
 
 Texture2D<float4> sys_texAlbedo[] : register(t4, space0);
-// Texture2D<float4> sys_texNormal[] : register(t4, space1);
-// Texture2D<float4> sys_texMetalnessRoughnessAO[] : register(t4, space2);
+Texture2D<float4> sys_texNormal[] : register(t4, space1);
+Texture2D<float4> sys_texMetalnessRoughnessAO[] : register(t4, space2);
 
 SamplerState ss : register(s0);
 
 // Outputs
-RWTexture2D<float4> output : register(u0);
+RWTexture2D<float4> outputAlbedo : register(u0);
+// RWTexture2D<float4> outputNormal : register(u1);
+// RWTexture2D<float4> outputMRAO 	 : register(u2);
 
 [shader("raygeneration")]
 void rayGen() {
@@ -53,8 +55,8 @@ void rayGen() {
 	TraceRay(rtScene, 0, 0xFF, 0, 0, 0, ray, payload);
 
     // Output returned color
-    output[launchIndex].rgb = payload.color;
-	output[launchIndex].a = 1.0f;
+    outputAlbedo[launchIndex].rgb = payload.color;
+	outputAlbedo[launchIndex].a = 1.0f;
 }
 
 [shader("miss")]
@@ -72,7 +74,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
     uint instanceIndex = InstanceID() >> 16;
 	uint primitiveID = PrimitiveIndex();
     InstanceData data = instanceData[instanceIndex];
-	
+
     int verticesPerPrimitive = 3;
 	uint i1 = primitiveID * verticesPerPrimitive;
 	uint i2 = primitiveID * verticesPerPrimitive + 1;
@@ -102,6 +104,10 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
     float4 color = float4(data.color.rgb, 0.f);
 	if (data.flags & MESH_HAS_ALBEDO_TEX)
 		color = sys_texAlbedo[instanceIndex].SampleLevel(ss, texCoords, 0);
+	if (data.flags & MESH_HAS_NORMAL_TEX)
+		color = sys_texNormal[instanceIndex].SampleLevel(ss, texCoords, 0);
+	if (data.flags & MESH_HAS_MRAO_TEX)
+		color = sys_texMetalnessRoughnessAO[instanceIndex].SampleLevel(ss, texCoords, 0);
 
     payload.color = color.rgb;
     // if (meshData[blasIndex].flags & MESH_USE_INDICES)

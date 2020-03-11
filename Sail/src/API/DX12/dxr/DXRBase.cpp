@@ -246,7 +246,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 			for (auto& instance : instanceList.instanceList) {
 				auto& transform = instance.transform;
 				// InstanceID will store both the blasIndex and the instanceIndex, both with 16 bits
-				std::bitset<sizeof(unsigned int)*8> blasIdBitsetTest(blasIndex >> 16);
+				std::bitset<sizeof(unsigned int) * 8> blasIdBitsetTest(blasIndex >> 16);
 				assert(blasIdBitsetTest.none() && "blasIndex is too big! Reduce the number of unique meshes in the scene or change the bit logic below");
 				std::bitset<sizeof(unsigned int) * 8> instanceIdBitsetTest(instanceIndex >> 16);
 				assert(instanceIdBitsetTest.none() && "instanceIndex is too big! Reduce the number of instances of this mesh in the scene or change the bit logic below");
@@ -438,7 +438,6 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 	m_textureHandles[frameIndex].clear();
 	m_meshDataBuffers[frameIndex].clear();
 
-	bool hasSetTexture = false;
 	
 	unsigned int blasIndex = 0;
 	for (auto& it : m_bottomBuffers[frameIndex]) {
@@ -459,34 +458,52 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 		}
 		m_textureHandles[frameIndex].emplace_back();
 
+		// Material textures are bound to unbounded arrays, order is important which is why we first iterate through the instances three times
+		// Textures needs to be stored in the heap like 
+		// instance_1_albedo, instance_.._albedo, instance_n_albedo, instance_1_normal, instance_.._normal, instance_n_normal, instance_1_mrao, instance_.._mrao, instance_n_mrao, 
+
+		bool hasSetTexture = false;
+		auto bindTextures = [&](unsigned int textureNum, PBRMaterial* material) {
+			auto& materialSettings = material->getPBRSettings();
+			bool hasTexture = (textureNum == 0) ? materialSettings.hasAlbedoTexture : materialSettings.hasNormalTexture;
+			hasTexture = (textureNum == 2) ? materialSettings.hasMetalnessRoughnessAOTexture : hasTexture;
+
+			// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
+			auto descIndex = m_descriptorHeap->getAndStepIndex();
+			if (hasTexture) {
+				DX12Texture* texture = static_cast<DX12Texture*>(material->getTexture(textureNum));
+				// Copy SRV to DXR heap
+				context->getDevice()->CopyDescriptorsSimple(1, m_descriptorHeap->getCPUDescriptorHandleForIndex(descIndex), texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			}
+			if (!hasSetTexture) {
+				// Only store the handle to the texture of the first instance, this is because textures are read through a bindless array in the shader
+				m_textureHandles[frameIndex][blasIndex][textureNum] = m_descriptorHeap->getGPUDescriptorHandleForIndex(descIndex);
+				hasSetTexture = true;
+			}
+		};
+
+		for (const auto& instance : instanceList) {
+			PBRMaterial* mat = dynamic_cast<PBRMaterial*>(instance.material);
+			assert(mat && "All materials for raytraced meshes must be PBRMaterial!");
+			bindTextures(0, mat); // Albedo
+		}
+		hasSetTexture = false;
+		for (const auto& instance : instanceList) {
+			PBRMaterial* mat = dynamic_cast<PBRMaterial*>(instance.material);
+			bindTextures(1, mat); // Normal map
+		}
+		hasSetTexture = false;
+		for (const auto& instance : instanceList) {
+			PBRMaterial* mat = dynamic_cast<PBRMaterial*>(instance.material);
+			bindTextures(2, mat); // MRAO
+		}
+
 		unsigned int meshDataSize = sizeof(DXRShaderCommon::InstanceData) * instanceList.size();
 		std::vector<DXRShaderCommon::InstanceData> meshData(instanceList.size());
 		unsigned int i = 0;
 		for (const auto& instance : instanceList) {
 			PBRMaterial* mat = dynamic_cast<PBRMaterial*>(instance.material);
-			assert(mat && "All materials for raytraced meshes must be PBRMaterial!");
-			
 			auto& materialSettings = mat->getPBRSettings();
-
-			// Three textures
-			//for (unsigned int textureNum = 0; textureNum < 3; textureNum++) {
-			{
-				unsigned int textureNum = 0;
-				DX12Texture* texture = static_cast<DX12Texture*>(mat->getTexture(textureNum));
-				bool hasTexture = (textureNum == 0) ? materialSettings.hasAlbedoTexture : materialSettings.hasNormalTexture;
-				hasTexture = (textureNum == 2) ? materialSettings.hasMetalnessRoughnessAOTexture : hasTexture;
-				
-				// Increase pointer regardless of if the texture existed or not to keep to order in the SBT
-				auto descIndex = m_descriptorHeap->getAndStepIndex();
-				if (hasTexture) {
-					// Copy SRV to DXR heap
-					context->getDevice()->CopyDescriptorsSimple(1, m_descriptorHeap->getCPUDescriptorHandleForIndex(descIndex), texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-					if (!hasSetTexture) {
-						m_textureHandles[frameIndex][blasIndex][textureNum] = m_descriptorHeap->getGPUDescriptorHandleForIndex(descIndex);
-						hasSetTexture = true;
-					}
-				}
-			}
 
 			// Update per mesh data
 			// Such as flags telling the shader to use indices, textures or not
@@ -494,7 +511,7 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 			meshData[i].flags = (mesh->getNumIndices() == 0) ? DXRShaderCommon::MESH_NO_FLAGS : DXRShaderCommon::MESH_USE_INDICES;
 			meshData[i].flags |= (materialSettings.hasAlbedoTexture) ? DXRShaderCommon::MESH_HAS_ALBEDO_TEX : meshData[i].flags;
 			meshData[i].flags |= (materialSettings.hasNormalTexture) ? DXRShaderCommon::MESH_HAS_NORMAL_TEX : meshData[i].flags;
-			meshData[i].flags |= (materialSettings.hasMetalnessRoughnessAOTexture) ? DXRShaderCommon::MESH_HAS_METALNESS_ROUGHNESS_AO_TEX : meshData[i].flags;
+			meshData[i].flags |= (materialSettings.hasMetalnessRoughnessAOTexture) ? DXRShaderCommon::MESH_HAS_MRAO_TEX: meshData[i].flags;
 			meshData[i].color = materialSettings.modelColor;
 			meshData[i].metalnessScale = materialSettings.metalnessScale;
 			meshData[i].roughnessScale = materialSettings.roughnessScale;
@@ -556,36 +573,38 @@ void DXRBase::updateShaderTables() {
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Hit group");
 
 		UINT numInstances = (UINT)m_bottomBuffers[frameIndex].size() * 2U; // * 2 for shadow rays (all NULL)
-		DXRUtils::ShaderTableBuilder tableBuilder(numInstances, m_pipelineState.Get(), 64U);
+		DXRUtils::ShaderTableBuilder tableBuilder(numInstances, m_pipelineState.Get(), 96U);
 
 		unsigned int blasIndex = 0;
 
 		for (auto& it : m_bottomBuffers[frameIndex]) {
 			Mesh* mesh = it.first;
+			unsigned int inst = blasIndex * 2;
 
 			tableBuilder.addShader(m_hitGroupTriangleName); // Set the shader-group to use
 			m_localSignatureHitGroup->doInOrder([&](const std::string& parameterName) {
 				if (parameterName == "PositionsBuffer") {
-					tableBuilder.addDescriptor(m_positionsBufferHandles[frameIndex][blasIndex], blasIndex * 2);
+					tableBuilder.addDescriptor(m_positionsBufferHandles[frameIndex][blasIndex], inst);
 				} else if (parameterName == "TexCoordsBuffer") {
-					tableBuilder.addDescriptor(m_texCoordsBufferHandles[frameIndex][blasIndex], blasIndex * 2);
+					tableBuilder.addDescriptor(m_texCoordsBufferHandles[frameIndex][blasIndex], inst);
 				} else if (parameterName == "NormalsBuffer") {
-					tableBuilder.addDescriptor(m_normalsBufferHandles[frameIndex][blasIndex], blasIndex * 2);
+					tableBuilder.addDescriptor(m_normalsBufferHandles[frameIndex][blasIndex], inst);
 				} else if (parameterName == "TangentsBuffer") {
-					tableBuilder.addDescriptor(m_tangentsBufferHandles[frameIndex][blasIndex], blasIndex * 2);
+					tableBuilder.addDescriptor(m_tangentsBufferHandles[frameIndex][blasIndex], inst);
 				} else if (parameterName == "BitangentsBuffer") {
-					tableBuilder.addDescriptor(m_bitangentsBufferHandles[frameIndex][blasIndex], blasIndex * 2);
+					tableBuilder.addDescriptor(m_bitangentsBufferHandles[frameIndex][blasIndex], inst);
 				} else if (parameterName == "IndexBuffer") {
 					D3D12_GPU_VIRTUAL_ADDRESS nullAddr = 0;
-					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_indexBufferHandles[frameIndex][blasIndex] : nullAddr, blasIndex * 2);
+					tableBuilder.addDescriptor((mesh->getNumIndices() > 0) ? m_indexBufferHandles[frameIndex][blasIndex] : nullAddr, inst);
 				} else if (parameterName == "MeshData") {
 					D3D12_GPU_VIRTUAL_ADDRESS meshDataHandle = m_meshDataBuffers[frameIndex][blasIndex];
-					tableBuilder.addDescriptor(meshDataHandle, blasIndex * 2);
+					tableBuilder.addDescriptor(meshDataHandle, inst);
 				} else if (parameterName == "TexturesAlbedo") {
-					tableBuilder.addDescriptor(m_textureHandles[frameIndex][blasIndex][0].ptr, blasIndex * 2);
-					/*for (unsigned int textureNum = 0; textureNum < sizeof(m_textureHandles[0][0]) / sizeof(m_textureHandles[0][0][0]); textureNum++) {
-						tableBuilder.addDescriptor(m_textureHandles[frameIndex][blasIndex][textureNum].ptr, blasIndex * 2);
-					}*/
+					tableBuilder.addDescriptor(m_textureHandles[frameIndex][blasIndex][0].ptr, inst);
+				} else if (parameterName == "TexturesNormal") {
+					tableBuilder.addDescriptor(m_textureHandles[frameIndex][blasIndex][1].ptr, inst);
+				} else if (parameterName == "TexturesMRAO") {
+					tableBuilder.addDescriptor(m_textureHandles[frameIndex][blasIndex][2].ptr, inst);
 				} else {
 					Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
 				}
@@ -660,7 +679,8 @@ void DXRBase::createHitGroupLocalRootSignature() {
 	}
 	if (m_settings.bindTextures) {
 		m_localSignatureHitGroup->addDescriptorTable("TexturesAlbedo", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0, 3); // Textures (t4, t5, t6) space0
-		// TODO add normal and mrao textures
+		m_localSignatureHitGroup->addDescriptorTable("TexturesNormal", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 1, 3); // Textures (t4, t5, t6) space1
+		m_localSignatureHitGroup->addDescriptorTable("TexturesMRAO", D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 2, 3); // Textures (t4, t5, t6) space2
 	}
 	if (m_settings.bindVertexBuffers || m_settings.bindTextures)
 		m_localSignatureHitGroup->addSRV("MeshData", 0, 1);
