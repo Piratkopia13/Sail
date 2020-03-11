@@ -12,7 +12,9 @@ static const uint MAX_RAY_RECURSION_DEPTH = 2;
 
 struct RayPayload {
     uint recursionDepth;
-    float3 color;
+    float3 albedo;
+    float3 normal;
+    float3 mrao;
 };
 
 struct SceneCBuffer {

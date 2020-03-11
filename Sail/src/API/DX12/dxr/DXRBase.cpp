@@ -150,15 +150,21 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	updateShaderTables();
 }
 
-void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::dispatch(const DX12RenderableTexture* const* outputTextures, unsigned int numOutputTextures, ID3D12GraphicsCommandList4* cmdList) {
 	unsigned int frameIndex = context->getSwapIndex();
+	assert(m_settings.numOutputTextures >= numOutputTextures && "Too many output textures passed");
 
-	auto copyDescriptor = [&](DX12RenderableTexture* texture, D3D12_CPU_DESCRIPTOR_HANDLE* cdh) {
+	auto copyDescriptor = [&](const DX12RenderableTexture* texture, D3D12_CPU_DESCRIPTOR_HANDLE cdh) {
 		// Copy output texture uav to heap
 		//texture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_COPY_SOURCE);
-		context->getDevice()->CopyDescriptorsSimple(1, cdh[frameIndex], texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		context->getDevice()->CopyDescriptorsSimple(1, cdh, texture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	};
-	copyDescriptor(outputTexture, m_outputResource.cpuHandle);
+	auto handle = m_outputFirstResource.cpuHandle[frameIndex];
+	copyDescriptor(outputTextures[0], handle);
+	for (unsigned int i = 1; i < numOutputTextures; i++) {
+		handle.ptr += m_descriptorHeap->getDescriptorIncrementSize();
+		copyDescriptor(outputTextures[i], handle);
+	}
 	
 	// Set constant buffer descriptor heap
 	m_descriptorHeap->bind(cmdList);
@@ -387,15 +393,17 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		m_descriptorHeap = std::make_unique<DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, numDescriptors, true, true);
 
 		// The first slots in the heap will be used for resources that never changes
-		auto storeHandle = [&](Resource& res) {
+		auto storeOutputHandle = [&](Resource& res) {
 			for (unsigned int i = 0; i < 2; i++) {
 				auto index = m_descriptorHeap->getAndStepIndex();
 				res.cpuHandle[i] = m_descriptorHeap->getCPUDescriptorHandleForIndex(index);
 				res.gpuHandle[i] = m_descriptorHeap->getGPUDescriptorHandleForIndex(index);
+				// Leave heap slots for the rest of the output textures
+				m_descriptorHeap->getAndStepIndex(m_settings.numOutputTextures-1);
 			}
 		};
-		// UAV output
-		storeHandle(m_outputResource);
+		// UAV output start
+		storeOutputHandle(m_outputFirstResource);
 
 		// Add resources from derived class
 		addInitialShaderResources(m_descriptorHeap.get());
@@ -456,12 +464,11 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 			// Emplace empty handle to keep order intact
 			m_indexBufferHandles[frameIndex].emplace_back();
 		}
-		m_textureHandles[frameIndex].emplace_back();
 
 		// Material textures are bound to unbounded arrays, order is important which is why we first iterate through the instances three times
 		// Textures needs to be stored in the heap like 
 		// instance_1_albedo, instance_.._albedo, instance_n_albedo, instance_1_normal, instance_.._normal, instance_n_normal, instance_1_mrao, instance_.._mrao, instance_n_mrao, 
-
+		m_textureHandles[frameIndex].emplace_back();
 		bool hasSetTexture = false;
 		auto bindTextures = [&](unsigned int textureNum, PBRMaterial* material) {
 			auto& materialSettings = material->getPBRSettings();
@@ -476,12 +483,11 @@ void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
 				context->getDevice()->CopyDescriptorsSimple(1, m_descriptorHeap->getCPUDescriptorHandleForIndex(descIndex), texture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 			if (!hasSetTexture) {
-				// Only store the handle to the texture of the first instance, this is because textures are read through a bindless array in the shader
+				// Only store the handle to the texture of the first instance since textures are read through an array in the shader
 				m_textureHandles[frameIndex][blasIndex][textureNum] = m_descriptorHeap->getGPUDescriptorHandleForIndex(descIndex);
 				hasSetTexture = true;
 			}
 		};
-
 		for (const auto& instance : instanceList) {
 			PBRMaterial* mat = dynamic_cast<PBRMaterial*>(instance.material);
 			assert(mat && "All materials for raytraced meshes must be PBRMaterial!");
@@ -542,8 +548,8 @@ void DXRBase::updateShaderTables() {
 			if (rayGenDescriptorTables.find(parameterName) != rayGenDescriptorTables.end()) {
 				auto& dt = rayGenDescriptorTables[parameterName];
 				tableBuilder.addDescriptor(dt.resource->gpuHandle[frameIndex].ptr);
-			} else if(parameterName == "OutputUAV") {
-				tableBuilder.addDescriptor(m_outputResource.gpuHandle[frameIndex].ptr);
+			} else if(parameterName == "OutputUAVs") {
+				tableBuilder.addDescriptor(m_outputFirstResource.gpuHandle[frameIndex].ptr);
 			} else {
 				Logger::Error("Unhandled root signature parameter! (" + parameterName + ")");
 			}
@@ -660,7 +666,7 @@ void DXRBase::createRayGenLocalRootSignature() {
 	for (auto& it : rayGenDescriptorTables) {
 		m_localSignatureRayGen->addDescriptorTable(it.first, it.second.type, it.second.shaderRegister, it.second.space, it.second.numDescriptors);
 	}
-	m_localSignatureRayGen->addDescriptorTable("OutputUAV", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0);
+	m_localSignatureRayGen->addDescriptorTable("OutputUAVs", D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 0, m_settings.numOutputTextures); // Uav (u0, .., un) space 0 where n = numOutputTextures
 	m_localSignatureRayGen->addStaticSampler();
 
 	m_localSignatureRayGen->build(context->getDevice(), D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);

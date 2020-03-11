@@ -16,6 +16,7 @@ class LightSetup;
 class DXRBase {
 public:
 	struct Settings {
+		UINT numOutputTextures = 1;
 		UINT maxPayloadSize = 0;
 		UINT maxAttributeSize = sizeof(float) * 2;
 		UINT maxRecursionDepth = 1;
@@ -29,7 +30,7 @@ public:
 	virtual void updateSceneData(Camera* cam, LightSetup* lights) { };
 
 	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
-	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
+	void dispatch(const DX12RenderableTexture* const* outputTextures, unsigned int numOutputTextures, ID3D12GraphicsCommandList4* cmdList);
 
 	void recreateResources();
 	void reloadShaders();
@@ -145,7 +146,7 @@ private:
 	std::vector<DXRUtils::ShaderTableData> m_missShaderTable;
 	std::vector<DXRUtils::ShaderTableData> m_hitGroupShaderTable;
 	
-	Resource m_outputResource;
+	Resource m_outputFirstResource;
 
 	const WCHAR* m_rayGenName = L"rayGen";
 	const WCHAR* m_closestHitName = L"closestHitTriangle";

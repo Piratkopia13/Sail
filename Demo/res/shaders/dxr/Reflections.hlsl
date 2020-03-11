@@ -25,9 +25,9 @@ Texture2D<float4> sys_texMetalnessRoughnessAO[] : register(t4, space2);
 SamplerState ss : register(s0);
 
 // Outputs
-RWTexture2D<float4> outputAlbedo : register(u0);
-// RWTexture2D<float4> outputNormal : register(u1);
-// RWTexture2D<float4> outputMRAO 	 : register(u2);
+RWTexture2D<float4> outputAlbedo : register(u0, space0);
+RWTexture2D<float4> outputNormal : register(u1, space0);
+RWTexture2D<float4> outputMRAO 	 : register(u2, space0);
 
 [shader("raygeneration")]
 void rayGen() {
@@ -51,17 +51,21 @@ void rayGen() {
 
 	RayPayload payload;
     payload.recursionDepth = 0;
+	payload.albedo = float3(1.f, 0.f, 0.f);
+	payload.normal = 0.f;
+	payload.mrao = 0.f;
     
 	TraceRay(rtScene, 0, 0xFF, 0, 0, 0, ray, payload);
 
-    // Output returned color
-    outputAlbedo[launchIndex].rgb = payload.color;
-	outputAlbedo[launchIndex].a = 1.0f;
+    // Output returned colors
+    outputAlbedo[launchIndex] = float4(payload.albedo, 1.0f);
+    outputNormal[launchIndex] = float4(payload.normal, 1.0f);
+    outputMRAO[launchIndex] = float4(payload.mrao, 1.0f);
 }
 
 [shader("miss")]
 void miss(inout RayPayload payload) {
-    payload.color = 0.f;
+    payload.albedo = 0.f;
 }
 
 [shader("closesthit")]
@@ -85,32 +89,46 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 		i2 = indices[i2];
 		i3 = indices[i3];
 	}
-	float3 positions1 = positions[i1]; float2 texCoord1 = texCoords[i1]; float3 normals1 = normals[i1];
-	float3 positions2 = positions[i2]; float2 texCoord2 = texCoords[i2]; float3 normals2 = normals[i2];
-	float3 positions3 = positions[i3]; float2 texCoord3 = texCoords[i3]; float3 normals3 = normals[i3];
+	float3 positions1 = positions[i1]; float2 texCoord1 = texCoords[i1]; float3 normals1 = normals[i1]; float3 tangents1 = tangents[i1]; float3 bitangents1 = bitangents[i1];
+	float3 positions2 = positions[i2]; float2 texCoord2 = texCoords[i2]; float3 normals2 = normals[i2]; float3 tangents2 = tangents[i2]; float3 bitangents2 = bitangents[i2];
+	float3 positions3 = positions[i3]; float2 texCoord3 = texCoords[i3]; float3 normals3 = normals[i3]; float3 tangents3 = tangents[i3]; float3 bitangents3 = bitangents[i3];
 
     float2 texCoords = Utils::barrypolation(barycentrics, texCoord1, texCoord2, texCoord3);
     float3 position = Utils::barrypolation(barycentrics, positions1, positions2, positions3);
     
     // float3 normalInLocalSpace = cross(positions2 - positions1, vertex3.position - vertex1.position);
     float3 normalInLocalSpace = Utils::barrypolation(barycentrics, normals1, normals2, normals3);
-    normalInLocalSpace = normalize(normalInLocalSpace);
     float3 normalInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(normalInLocalSpace, 0.f)));
 
-    // payload.color = position;
-    // payload.color *= normalInWorldSpace;
-    // payload.color *= float3(texCoords, 0.f);
+	float3 tangentInLocalSpace = Utils::barrypolation(barycentrics, tangents1, tangents2, tangents3);
+	float3 tangentInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(tangentInLocalSpace, 0.f)));
 
-    float4 color = float4(data.color.rgb, 0.f);
+	float3 bitangentInLocalSpace = Utils::barrypolation(barycentrics, bitangents1, bitangents2, bitangents3);
+	float3 bitangentInWorldSpace = normalize(mul(ObjectToWorld3x4(), float4(bitangentInLocalSpace, 0.f)));
+
+	// Create TBN matrix to go from tangent space to world space
+	float3x3 tbn = float3x3(
+	  tangentInWorldSpace,
+	  bitangentInWorldSpace,
+	  normalInWorldSpace
+	);
+	if (data.flags & MESH_HAS_NORMAL_TEX) {
+		float3 normalSample = sys_texNormal[instanceIndex].SampleLevel(ss, texCoords, 0).rgb;
+        normalSample.y = 1.f - normalSample.y;
+        normalSample.x = 1.f - normalSample.x;
+
+        payload.normal = mul(normalize(normalSample * 2.f - 1.f), tbn);
+	}
+
+    payload.albedo = data.color.rgb;
 	if (data.flags & MESH_HAS_ALBEDO_TEX)
-		color = sys_texAlbedo[instanceIndex].SampleLevel(ss, texCoords, 0);
-	if (data.flags & MESH_HAS_NORMAL_TEX)
-		color = sys_texNormal[instanceIndex].SampleLevel(ss, texCoords, 0);
-	if (data.flags & MESH_HAS_MRAO_TEX)
-		color = sys_texMetalnessRoughnessAO[instanceIndex].SampleLevel(ss, texCoords, 0);
-
-    payload.color = color.rgb;
-    // if (meshData[blasIndex].flags & MESH_USE_INDICES)
-        // payload.color = 1.f;
-    // payload.color = float3(attribs.barycentrics, 0.f);
+		payload.albedo = sys_texAlbedo[instanceIndex].SampleLevel(ss, texCoords, 0).rgb;
+	
+	payload.mrao = float3(data.metalnessScale, data.roughnessScale, data.aoIntensity);
+	if (data.flags & MESH_HAS_MRAO_TEX) {
+		float3 mraoSample = sys_texMetalnessRoughnessAO[instanceIndex].SampleLevel(ss, texCoords, 0).rgb;
+		payload.mrao.r *= mraoSample.r;
+		payload.mrao.g *= 1.f - mraoSample.g; // Invert roughness from texture to make it correct
+		payload.mrao.b += mraoSample.b;
+	}
 }

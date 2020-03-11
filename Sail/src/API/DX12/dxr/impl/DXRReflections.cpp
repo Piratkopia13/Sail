@@ -12,6 +12,7 @@
 
 DXRReflections::DXRReflections()
 	: DXRBase("Reflections", {
+		3,												// Num output textures
 		sizeof(DXRShaderReflections::RayPayload),		// Max payload size
 		sizeof(float) * 2,								// Max attribute size
 		DXRShaderReflections::MAX_RAY_RECURSION_DEPTH,	// Max recusion depth

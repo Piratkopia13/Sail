@@ -336,7 +336,7 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 		else 
 			shader->setRenderableTexture("tex_ssao", nullptr, cmdList);
 		if (useDXRHardShadows)
-			shader->setRenderableTexture("tex_shadows", DX12RaytracingRenderer::GetOutputTexture()->get(), cmdList);
+			shader->setRenderableTexture("tex_shadows", DX12RaytracingRenderer::GetOutputTextures()[0], cmdList);
 		else 
 			shader->setRenderableTexture("tex_shadows", nullptr, cmdList);
 		

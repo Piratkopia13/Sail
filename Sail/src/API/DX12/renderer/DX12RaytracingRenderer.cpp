@@ -14,7 +14,7 @@
 #include "../dxr/impl/DXRHardShadows.h"
 #include "../dxr/impl/DXRReflections.h"
 
-std::unique_ptr<DX12RenderableTexture> DX12RaytracingRenderer::sRTOutputTexture;
+std::vector<DX12RenderableTexture*> DX12RaytracingRenderer::sRTOutputTextures;
 
 DX12RaytracingRenderer::DX12RaytracingRenderer() {
 	EventSystem::getInstance()->subscribeToEvent(Event::WINDOW_RESIZE, this);
@@ -28,12 +28,19 @@ DX12RaytracingRenderer::DX12RaytracingRenderer() {
 
 	auto width = Application::getInstance()->getWindow()->getWindowWidth();
 	auto height = Application::getInstance()->getWindow()->getWindowHeight();
-	sRTOutputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(width, height, "Raytracing output texture", ResourceFormat::R16G16B16A16_FLOAT)));
+
+	unsigned int numOutputTextures = 3;
+	sRTOutputTextures.resize(numOutputTextures);
+	for (unsigned int i = 0; i < numOutputTextures; i++)
+		sRTOutputTextures[i] = SAIL_NEW DX12RenderableTexture(1, width, height, ResourceFormat::R16G16B16A16_FLOAT, 
+			false, false, { 0.f, 0.f, 0.f, 0.f }, true, 0U, 0U, "Raytracing output texture " + std::to_string(i), 1);
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
 	EventSystem::getInstance()->unsubscribeFromEvent(Event::WINDOW_RESIZE, this);
-	sRTOutputTexture.reset();
+	for (auto& tex : sRTOutputTextures)
+		delete tex;
+	sRTOutputTextures.clear();
 }
 
 void DX12RaytracingRenderer::begin(Camera* camera, Environment* environment) {
@@ -68,7 +75,8 @@ void* DX12RaytracingRenderer::present(Renderer::PresentFlag flags, void* skipped
 		//if (Input::IsKeyPressed(SAIL_KEY_L))
 		m_dxrBase->updateAccelerationStructures(commandQueue, cmdList);
 		//if (Input::IsKeyPressed(SAIL_KEY_K))
-		m_dxrBase->dispatch(sRTOutputTexture.get(), cmdList);
+		const auto& outputs = sRTOutputTextures.data();
+		m_dxrBase->dispatch(outputs, sRTOutputTextures.size(), cmdList);
 	}
 
 	if (!(flags & Renderer::PresentFlag::SkipExecution)) {
@@ -79,13 +87,14 @@ void* DX12RaytracingRenderer::present(Renderer::PresentFlag flags, void* skipped
 	return cmdList;
 }
 
-std::unique_ptr<DX12RenderableTexture>* DX12RaytracingRenderer::GetOutputTexture() {
-	return &sRTOutputTexture;
+const std::vector<DX12RenderableTexture*>& DX12RaytracingRenderer::GetOutputTextures() {
+	return sRTOutputTextures;
 }
 
 bool DX12RaytracingRenderer::onEvent(Event& event) {
 	auto resizeEvent = [&](WindowResizeEvent& event) {
-		sRTOutputTexture->resize(event.getWidth(), event.getHeight());
+		for (auto& tex : sRTOutputTextures)
+			tex->resize(event.getWidth(), event.getHeight());
 
 		// Gbuffers will be resized inside DX12DeferredRenderer::onEvent, 
 		// but since we have no control over if that method executes before 
