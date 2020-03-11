@@ -56,7 +56,7 @@ PSIn VSMain(VSIn input) {
 
 	// float4 worldNormal = mul(sys_mWorld, float4(normalize(input.normal), 0.f));
 	// output.normal = mul(sys_mView, worldNormal).xyz;
-    output.normal = mul(sys_mWorld, float4(normalize(input.normal), 0.f)).xyz;
+    output.normal = normalize(mul(sys_mWorld, float4(input.normal, 0.f)).xyz);
 	output.texCoords = input.texCoords;
 
 	return output;

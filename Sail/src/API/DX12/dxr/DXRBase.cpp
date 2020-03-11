@@ -240,9 +240,8 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 		D3D12_RAYTRACING_INSTANCE_DESC* pInstanceDesc = (D3D12_RAYTRACING_INSTANCE_DESC*)mappedInstanceBuffer;
 
 		unsigned int blasIndex = 0;
-		unsigned int instanceIndex = 0;
-
 		for (auto& it : m_bottomBuffers[frameIndex]) {
+			unsigned int instanceIndex = 0;
 			auto& instanceList = it.second;
 			for (auto& instance : instanceList.instanceList) {
 				auto& transform = instance.transform;

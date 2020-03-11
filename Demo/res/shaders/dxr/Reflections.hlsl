@@ -72,7 +72,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
     uint instanceIndex = InstanceID() >> 16;
 	uint primitiveID = PrimitiveIndex();
     InstanceData data = instanceData[instanceIndex];
-
+	
     int verticesPerPrimitive = 3;
 	uint i1 = primitiveID * verticesPerPrimitive;
 	uint i2 = primitiveID * verticesPerPrimitive + 1;
