@@ -29,7 +29,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer() {
 	auto width = Application::getInstance()->getWindow()->getWindowWidth();
 	auto height = Application::getInstance()->getWindow()->getWindowHeight();
 
-	unsigned int numOutputTextures = 3;
+	unsigned int numOutputTextures = 4;
 	sRTOutputTextures.resize(numOutputTextures);
 	for (unsigned int i = 0; i < numOutputTextures; i++)
 		sRTOutputTextures[i] = SAIL_NEW DX12RenderableTexture(1, width, height, ResourceFormat::R16G16B16A16_FLOAT, 

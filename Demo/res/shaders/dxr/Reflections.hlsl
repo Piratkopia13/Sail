@@ -25,9 +25,10 @@ Texture2D<float4> sys_texMetalnessRoughnessAO[] : register(t4, space2);
 SamplerState ss : register(s0);
 
 // Outputs
-RWTexture2D<float4> outputAlbedo : register(u0, space0);
-RWTexture2D<float4> outputNormal : register(u1, space0);
-RWTexture2D<float4> outputMRAO 	 : register(u2, space0);
+RWTexture2D<float4> outputPositions : register(u0, space0);
+RWTexture2D<float4> outputNormals 	: register(u1, space0);
+RWTexture2D<float4> outputAlbedo 	: register(u2, space0);
+RWTexture2D<float4> outputMRAO 	 	: register(u3, space0);
 
 [shader("raygeneration")]
 void rayGen() {
@@ -54,12 +55,14 @@ void rayGen() {
 	payload.albedo = float3(1.f, 0.f, 0.f);
 	payload.normal = 0.f;
 	payload.mrao = 0.f;
+	payload.worldPos = 0.f;
     
 	TraceRay(rtScene, 0, 0xFF, 0, 0, 0, ray, payload);
 
     // Output returned colors
+    outputPositions[launchIndex] = float4(payload.worldPos, 1.0f);
     outputAlbedo[launchIndex] = float4(payload.albedo, 1.0f);
-    outputNormal[launchIndex] = float4(payload.normal, 1.0f);
+    outputNormals[launchIndex] = float4(payload.normal, 1.0f);
     outputMRAO[launchIndex] = float4(payload.mrao, 1.0f);
 }
 
@@ -112,6 +115,7 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 	  bitangentInWorldSpace,
 	  normalInWorldSpace
 	);
+	payload.normal = normalInWorldSpace;
 	if (data.flags & MESH_HAS_NORMAL_TEX) {
 		float3 normalSample = sys_texNormal[instanceIndex].SampleLevel(ss, texCoords, 0).rgb;
         normalSample.y = 1.f - normalSample.y;
@@ -131,4 +135,5 @@ void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersection
 		payload.mrao.g *= 1.f - mraoSample.g; // Invert roughness from texture to make it correct
 		payload.mrao.b += mraoSample.b;
 	}
+	payload.worldPos = Utils::HitWorldPosition();
 }

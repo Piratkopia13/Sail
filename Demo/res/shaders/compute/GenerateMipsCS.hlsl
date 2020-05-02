@@ -43,10 +43,10 @@ Texture2D<float4> SrcMip : register( t0 );
 
 // Write up to 4 mip map levels.
 // SAIL_IGNORE makes sure that no RenderableTextures are created automatically
-RWTexture2D<float4> OutMip1 : register( u10 ) : SAIL_IGNORE; 
-RWTexture2D<float4> OutMip2 : register( u11 ) : SAIL_IGNORE;
-RWTexture2D<float4> OutMip3 : register( u12 ) : SAIL_IGNORE;
-RWTexture2D<float4> OutMip4 : register( u13 ) : SAIL_IGNORE;
+RWTexture2D<float4> OutMip1 : register( u0 ) : SAIL_IGNORE; 
+RWTexture2D<float4> OutMip2 : register( u1 ) : SAIL_IGNORE;
+RWTexture2D<float4> OutMip3 : register( u2 ) : SAIL_IGNORE;
+RWTexture2D<float4> OutMip4 : register( u3 ) : SAIL_IGNORE;
 
 // Samplers
 SamplerState CSLinearClampSampler : register( s2 );

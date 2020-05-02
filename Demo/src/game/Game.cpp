@@ -3,7 +3,7 @@
 #include "states/ModelViewerState.h"
 
 Game::Game(HINSTANCE hInstance)
-	: Application(1600, 900, "Sail | Game Engine Demo", hInstance)
+	: Application(1920, 1080, "Sail | Game Engine Demo", hInstance)
 	, m_stateStack()
 	
 {

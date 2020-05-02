@@ -12,7 +12,7 @@
 
 DXRReflections::DXRReflections()
 	: DXRBase("Reflections", {
-		3,												// Num output textures
+		4,												// Num output textures
 		sizeof(DXRShaderReflections::RayPayload),		// Max payload size
 		sizeof(float) * 2,								// Max attribute size
 		DXRShaderReflections::MAX_RAY_RECURSION_DEPTH,	// Max recusion depth
@@ -38,16 +38,6 @@ DXRReflections::DXRReflections()
 		dtData.shaderRegister = 2;
 		rayGenDescriptorTables.insert({ "gbufferNormalsInputSRV", dtData });
 	}
-	//// Add Vertex buffer inputs
-	//{
-	//	DXRBase::DescriptorTableData dtData;
-	//	dtData.numDescriptors = 1;
-	//	dtData.space = 0;
-	//	dtData.type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	//	dtData.resource = ??;
-	//	dtData.shaderRegister = 3;
-	//	rayGenDescriptorTables.insert({ "vertices", dtData });
-	//}
 
 	// Create cbuffer holding required scene information
 	{

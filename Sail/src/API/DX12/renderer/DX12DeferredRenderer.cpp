@@ -232,8 +232,8 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 
 		DescriptorHeap::DescriptorTableInstanceBuilder instance;
 
-		instance.add("t0", [&](auto cpuHandle) { }); // TODO: figure out why this line is needed for u10 to bind (something is probably wrong in addAndBind)
-		instance.add("u10", [&](auto cpuHandle) {
+		instance.add("t0", [&](auto cpuHandle) { }); // TODO: figure out why this line is needed for u0 to bind (something is probably wrong in addAndBind)
+		instance.add("u0", [&](auto cpuHandle) {
 			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, ssaoRenderTarget->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			ssaoRenderTarget->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		});
@@ -260,7 +260,7 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, ssaoRenderTarget->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			ssaoRenderTarget->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		});
-		instance.add("u10", [&](auto cpuHandle) {
+		instance.add("u0", [&](auto cpuHandle) {
 			m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, m_ssaoShadingTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			m_ssaoShadingTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		});
@@ -335,10 +335,15 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 			shader->setRenderableTexture("tex_ssao", m_ssaoShadingTexture, cmdList);
 		else 
 			shader->setRenderableTexture("tex_ssao", nullptr, cmdList);
-		if (useDXRHardShadows)
+		if (false && useDXRHardShadows) // TODO: fix
 			shader->setRenderableTexture("tex_shadows", DX12RaytracingRenderer::GetOutputTextures()[0], cmdList);
 		else 
 			shader->setRenderableTexture("tex_shadows", nullptr, cmdList);
+
+		shader->setRenderableTexture("def_reflectionPositions", DX12RaytracingRenderer::GetOutputTextures()[0], cmdList);
+		shader->setRenderableTexture("def_reflectionNormals", DX12RaytracingRenderer::GetOutputTextures()[1], cmdList);
+		shader->setRenderableTexture("def_reflectionAlbedo", DX12RaytracingRenderer::GetOutputTextures()[2], cmdList);
+		shader->setRenderableTexture("def_reflectionMrao", DX12RaytracingRenderer::GetOutputTextures()[3], cmdList);
 		
 		//// Inline raytracing test - bind AS
 		//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};

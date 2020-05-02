@@ -291,7 +291,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 
 		// Bind output mips to u10+
 		for (uint32_t mip = 0; mip < mipCount; mip++) {
-			instance.add("u1" + std::to_string(mip), [&, mip](auto cpuHandle) {
+			instance.add("u" + std::to_string(mip), [&, mip](auto cpuHandle) {
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 				uavDesc.Format = m_textureDesc.Format;
 				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;

@@ -92,6 +92,7 @@ struct PBRPixel {
     float roughness;
     float ao;
     bool inShadow;
+    float3 reflectionColor;
 };
 
 float3 pbrShade(PBRScene scene, PBRPixel pixel) {
@@ -150,7 +151,10 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel) {
 
     // Reflection
     const float MAX_REFLECTION_LOD = 4.0;
-    float3 prefilteredColor = scene.prefilterMap.SampleLevel(scene.linearSampler, R, pixel.roughness * MAX_REFLECTION_LOD).rgb;
+    float3 prefilteredColor = pixel.reflectionColor;
+    if (prefilteredColor.x == -1.f)
+        prefilteredColor = scene.prefilterMap.SampleLevel(scene.linearSampler, R, pixel.roughness * MAX_REFLECTION_LOD).rgb;
+
     float2 envBRDF  = scene.brdfLUT.SampleLevel(scene.linearSampler, float2(max(dot(N, V), 0.0f), pixel.roughness), 0).rg;
     float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 

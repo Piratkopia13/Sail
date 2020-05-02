@@ -51,10 +51,31 @@ Texture2D def_albedo        : register(t5);
 Texture2D def_mrao          : register(t6);
 Texture2D tex_ssao          : register(t7);
 // Texture2D tex_shadows       : register(t8);
-Texture2D tex_reflections       : register(t8);
+Texture2D def_reflectionPositions  	: register(t9);
+Texture2D def_reflectionNormals 	: register(t10);
+Texture2D def_reflectionAlbedo		: register(t11);
+Texture2D def_reflectionMrao    	: register(t12);
 // RaytracingAccelerationStructure rtScene : register(t8);
 SamplerState PSss            : SAIL_SAMPLER_ANIS_WRAP; // s0
 SamplerState PSLinearSampler : SAIL_SAMPLER_LINEAR_CLAMP; // s2
+
+float3 shadeReflection(PBRScene scene, float3 worldPos, float3 albedo, float3 normal, float3 mrao) {
+	PBRPixel pixel;
+    pixel.worldPos = worldPos;
+	pixel.camPos = sys_cameraPos;
+
+	pixel.inShadow = 0.f;
+	pixel.albedo = albedo;
+	pixel.worldNormal = normal;
+    
+	pixel.metalness = mrao.r;
+	pixel.roughness = mrao.g;
+	pixel.ao = mrao.b;
+
+	pixel.reflectionColor = -1.f;
+
+	return pbrShade(scene, pixel);
+}
 
 float4 PSMain(PSIn input) : SV_Target0 {
 	// return sys_texBrdfLUT.Sample(PSss, input.texCoord);
@@ -62,7 +83,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// return irradianceMap.SampleLevel(PSss, viewDir, 0);
 	// return radianceMap.SampleLevel(PSss, viewDir, 0);
 
-	return tex_reflections.Sample(PSss, input.texCoord);
+	// return def_reflectionAlbedo.Sample(PSss, input.texCoord);
 
     float3 worldPos = mul(sys_mViewInv, def_positions.Sample(PSss, input.texCoord)).xyz;
 	float3 worldNormal = def_worldNormals.Sample(PSss, input.texCoord).rgb;
@@ -136,6 +157,17 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	    pixel.ao *= pow(tex_ssao.Sample(PSLinearSampler, input.texCoord).r, 3.f);
 
     // return float4(pixel.ao, pixel.ao, pixel.ao, 1.0f);
+
+	// pixel.reflectionColor = -1.f;
+	{
+		float3 reflectionPosition = def_reflectionPositions.Sample(PSss, input.texCoord).rgb;
+		float3 reflectionAlbedo = def_reflectionAlbedo.Sample(PSss, input.texCoord).rgb;
+		float3 reflectionNormal = def_reflectionNormals.Sample(PSss, input.texCoord).xyz;
+		float3 reflectionMrao = def_reflectionMrao.Sample(PSss, input.texCoord).rgb;
+		pixel.reflectionColor = shadeReflection(scene, reflectionPosition, reflectionAlbedo, reflectionNormal, reflectionMrao);
+
+		// return float4(pixel.reflectionColor, 1.0f);
+	}
 
     // Shade
 	float3 shadedColor = pbrShade(scene, pixel);

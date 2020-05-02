@@ -30,11 +30,11 @@ namespace GlobalRootParam {
 		CBV_0 = 0,
 		CBV_1,
 		CBV_2,
-		DT_SRV_0TO9_UAV_10TO20,
-		SRV_10,
-		SRV_11,
-		UAV_0,
-		UAV_1,
+		DT_SRV_0TO19_UAV_0TO9,
+		SRV_20,
+		SRV_21,
+		UAV_20,
+		UAV_21,
 		SIZE
 	};
 }

@@ -15,6 +15,7 @@ struct RayPayload {
     float3 albedo;
     float3 normal;
     float3 mrao;
+    float3 worldPos;
 };
 
 struct SceneCBuffer {
