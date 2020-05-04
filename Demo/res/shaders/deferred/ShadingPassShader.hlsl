@@ -59,10 +59,10 @@ Texture2D def_reflectionMrao    	: register(t12);
 SamplerState PSss            : SAIL_SAMPLER_ANIS_WRAP; // s0
 SamplerState PSLinearSampler : SAIL_SAMPLER_LINEAR_CLAMP; // s2
 
-float3 shadeReflection(PBRScene scene, float3 worldPos, float3 albedo, float3 normal, float3 mrao) {
+float3 shadeReflection(PBRScene scene, float3 hitWorldPos, float3 worldPos, float3 albedo, float3 normal, float3 mrao) {
 	PBRPixel pixel;
     pixel.worldPos = worldPos;
-	pixel.camPos = sys_cameraPos;
+	pixel.camPos = hitWorldPos;
 
 	pixel.inShadow = 0.f;
 	pixel.albedo = albedo;
@@ -164,9 +164,10 @@ float4 PSMain(PSIn input) : SV_Target0 {
 		float3 reflectionAlbedo = def_reflectionAlbedo.Sample(PSss, input.texCoord).rgb;
 		float3 reflectionNormal = def_reflectionNormals.Sample(PSss, input.texCoord).xyz;
 		float3 reflectionMrao = def_reflectionMrao.Sample(PSss, input.texCoord).rgb;
-		pixel.reflectionColor = shadeReflection(scene, reflectionPosition, reflectionAlbedo, reflectionNormal, reflectionMrao);
+		pixel.reflectionColor = shadeReflection(scene, worldPos, reflectionPosition, reflectionAlbedo, reflectionNormal, reflectionMrao);
 
-		// return float4(pixel.reflectionColor, 1.0f);
+		// return float4(reflectionNormal, 1.0f);
+		// return float4(reflectionPosition, 1.0f);
 	}
 
     // Shade
