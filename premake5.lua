@@ -2,8 +2,8 @@
 workspace "Sail"
 	configurations { "Debug", "Release" }
 	platforms { "DX11 x64", "DX11 x86",
-				"DX12 x64", "DX12 x86"
-				-- "Vulkan x64", "Vulkan x86",
+				"DX12 x64", "DX12 x86",
+				"pVulkan x64", "pVulkan x86", -- starting a platform name with 'V' changes the platform toolset in VS. Bug in premake?
 			  }
 
 	filter "platforms:*86"
@@ -19,6 +19,7 @@ IncludeDir = {}
 IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
 IncludeDir["ImGui"] = "libraries/imgui"
+IncludeDir["vulkan"] = os.getenv("VULKAN_SDK").."/Include"
 
 group "Libraries"
 include "libraries/glfw"
@@ -57,7 +58,8 @@ project "Demo"
 		"libraries",
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.vulkan}"
 	}
 
 	links {
@@ -72,9 +74,13 @@ project "Demo"
 		defines {
 			"_SAIL_DX11"
 		}
-	filter { "platforms:DX12*" }
+	filter { "platforms:DX12* or Vulkan*" }
 		defines {
 			"_SAIL_DX12"
+		}
+	filter { "platforms:*Vulkan*" }
+		defines {
+			"_SAIL_VK"
 		}
 
 	filter "system:windows"
@@ -138,13 +144,15 @@ project "Sail"
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.vulkan}"
 	}
 
 	links {
 		"libfbxsdk",
 		"GLFW",
-		"ImGui"
+		"ImGui",
+		"vulkan-1"
 	}
 
 	flags { "MultiProcessorCompile" }
@@ -171,14 +179,24 @@ project "Sail"
 			"%{prj.name}/src/API/DX12/**",
 			"%{prj.name}/src/API/Windows/**"
 		}
+	filter { "platforms:*Vulkan*" }
+		defines {
+			"_SAIL_VK"
+		}
+		files {
+			"%{prj.name}/src/API/VULKAN/**",
+			"%{prj.name}/src/API/Windows/**"
+		}
 
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
+			os.getenv("VULKAN_SDK").."/Lib"
 		}
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
+			os.getenv("VULKAN_SDK").."/Lib32"
 		}
 
 	filter "system:windows"

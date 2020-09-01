@@ -26,7 +26,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Set up api
 	m_api = std::unique_ptr<GraphicsAPI>(GraphicsAPI::Create());
 	// Set up imgui handler
-	m_imguiHandler = std::unique_ptr<ImGuiHandler>(ImGuiHandler::Create());
+	//m_imguiHandler = std::unique_ptr<ImGuiHandler>(ImGuiHandler::Create());
 
 	// Initalize the window
 	if (!m_window->initialize()) {
@@ -43,7 +43,7 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	}
 
 	// Initialize imgui
-	m_imguiHandler->init();
+	//m_imguiHandler->init();
 
 	// Register devices to use raw input from hardware
 	//m_input.registerRawDevices(*m_window.getHwnd());
@@ -177,6 +177,7 @@ void Application::scheduleForNextFrame(std::function<void()> func) {
 }
 
 ImGuiHandler* const Application::getImGuiHandler() {
+	assert(false && "ImGui not implemented for Vulkan");
 	return m_imguiHandler.get();
 }
 ResourceManager& Application::getResourceManager() {
