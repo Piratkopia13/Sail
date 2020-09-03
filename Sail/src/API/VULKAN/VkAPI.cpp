@@ -230,6 +230,13 @@ bool VkAPI::init(Window* window) {
 			Logger::Error("Failed to create swap chain!");
 			return false;
 		}
+
+		// Store handles to the swapchain images
+		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
+		m_swapChainImages.resize(imageCount);
+		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data());
+		m_swapChainImageFormat = createInfo.imageFormat;
+		m_swapChainExtent = createInfo.imageExtent;
 	}
 
 	return true;
