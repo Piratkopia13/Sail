@@ -3,6 +3,8 @@
 #include <vulkan/vulkan.h>
 #include <optional>
 
+class Win32Window;
+
 class VkAPI : public GraphicsAPI {
 public:
 	VkAPI();
@@ -21,10 +23,16 @@ public:
 private:
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
 
 		bool isComplete() {
-			return graphicsFamily.has_value();
+			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
+	};
+	struct SwapChainSupportDetails {
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentModes;
 	};
 
 	bool checkValidationLayerSupport() const;
@@ -35,17 +43,28 @@ private:
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 	void setupDebugMessenger();
 
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
+	QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device) const;
+	bool checkDeviceExtensionSupport(const VkPhysicalDevice& device) const;
+	SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice& device) const;
+
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
+	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Win32Window* window) const;
 
 private:
 	VkInstance m_instance;
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 	VkPhysicalDevice m_physicalDevice;
+	VkDevice m_device;
+	VkSurfaceKHR m_surface;
+	VkSwapchainKHR m_swapChain;
 
-	const uint32_t m_WIDTH = 800;
-	const uint32_t m_HEIGHT = 600;
+	// Queues
+	VkQueue m_graphicsQueue;
+	VkQueue m_presentQueue;
 
 	const std::vector<const char*> m_validationLayers;
+	const std::vector<const char*> m_deviceExtensions;
 
 #ifdef NDEBUG
 	const bool m_enableValidationLayers = false;
