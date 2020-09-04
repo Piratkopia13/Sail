@@ -51,6 +51,9 @@ private:
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Win32Window* window) const;
 
+	// The following methods should be moved
+	VkShaderModule createShaderModule(const std::vector<std::byte>& code);
+
 private:
 	VkInstance m_instance;
 	VkDebugUtilsMessengerEXT m_debugMessenger;
@@ -61,12 +64,24 @@ private:
 	VkSwapchainKHR m_swapChain;
 	std::vector<VkImage> m_swapChainImages;
 	std::vector<VkImageView> m_swapChainImageViews;
+	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 	VkFormat m_swapChainImageFormat;
 	VkExtent2D m_swapChainExtent;
+
+	// The following variables should be moved
+	VkRenderPass m_renderPass;
+	VkPipelineLayout m_pipelineLayout;
+	VkPipeline m_graphicsPipeline;
 
 	// Queues
 	VkQueue m_graphicsQueue;
 	VkQueue m_presentQueue;
+
+	VkCommandPool m_commandPool;
+	std::vector<VkCommandBuffer> m_commandBuffers;
+
+	VkSemaphore m_imageAvailableSemaphore;
+	VkSemaphore m_renderFinishedSemaphore;
 
 	const std::vector<const char*> m_validationLayers;
 	const std::vector<const char*> m_deviceExtensions;

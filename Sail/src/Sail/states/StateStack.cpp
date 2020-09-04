@@ -4,7 +4,7 @@
 #include "Sail/KeyCodes.h"
 
 StateStack::StateStack()
-	: m_renderImgui(true)
+	: m_renderImgui(false)
 {
 }
 
@@ -25,17 +25,20 @@ void StateStack::processInput(float dt) {
 	// Toggle imgui rendering on key
 	if (Input::WasKeyJustPressed(SAIL_KEY_F10))
 		m_renderImgui = !m_renderImgui;
-	// Ignore game mouse input when imgui uses the mouse
-	Input::SetMouseInput(!ImGui::GetIO().WantCaptureMouse || Input::IsCursorHidden());
-	// Ignore game key input when imgui uses the key input
-	Input::SetKeyInput(!ImGui::GetIO().WantCaptureKeyboard);
-	// Ignore imgui input when mouse is hidden / used by game
-	if (Input::IsCursorHidden()) {
-		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
-		ImGui::SetWindowFocus();
-	} else {
-		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
-	}
+
+	// Uncomment the following when vulkan is working
+
+	//// Ignore game mouse input when imgui uses the mouse
+	//Input::SetMouseInput(!ImGui::GetIO().WantCaptureMouse || Input::IsCursorHidden());
+	//// Ignore game key input when imgui uses the key input
+	//Input::SetKeyInput(!ImGui::GetIO().WantCaptureKeyboard);
+	//// Ignore imgui input when mouse is hidden / used by game
+	//if (Input::IsCursorHidden()) {
+	//	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+	//	ImGui::SetWindowFocus();
+	//} else {
+	//	ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+	//}
 
 	// Loop through the stack reversed
 	for (auto itr = m_stack.rbegin(); itr != m_stack.rend(); ++itr) {

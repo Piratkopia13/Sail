@@ -89,6 +89,7 @@ public:
 
 namespace Utils {
 	std::string readFile(const std::string& filepath);
+	std::vector<std::byte> readFileBinary(const std::string& filepath);
 	std::wstring toWStr(const glm::vec3& vec);
 	std::string toStr(const glm::vec4& vec);
 	std::string toStr(const glm::vec3& vec);
