@@ -7,6 +7,9 @@ class Win32Window;
 
 class VkAPI : public GraphicsAPI {
 public:
+	static const int MAX_FRAMES_IN_FLIGHT;
+
+public:
 	VkAPI();
 	~VkAPI();
 
@@ -80,8 +83,11 @@ private:
 	VkCommandPool m_commandPool;
 	std::vector<VkCommandBuffer> m_commandBuffers;
 
-	VkSemaphore m_imageAvailableSemaphore;
-	VkSemaphore m_renderFinishedSemaphore;
+	std::vector<VkSemaphore> m_imageAvailableSemaphores;
+	std::vector<VkSemaphore> m_renderFinishedSemaphores;
+	std::vector<VkFence> m_inFlightFences;
+	std::vector<VkFence> m_imagesInFlight;
+	size_t m_currentFrame;
 
 	const std::vector<const char*> m_validationLayers;
 	const std::vector<const char*> m_deviceExtensions;
