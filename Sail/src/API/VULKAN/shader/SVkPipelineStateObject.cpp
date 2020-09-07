@@ -5,6 +5,7 @@
 #include "../SVkAPI.h"
 #include "Sail/api/shader/Shader.h"
 #include "../resources/VkTexture.h"
+#include "SVkShader.h"
 
 PipelineStateObject* PipelineStateObject::Create(Shader* shader, unsigned int attributesHash) {
 	return SAIL_NEW SVkPipelineStateObject(shader, attributesHash);
@@ -52,7 +53,7 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	auto createShaderStageInfo = [](VkShaderStageFlagBits stage, VkShaderModule* shaderModule, const char* entrypoint) {
 		VkPipelineShaderStageCreateInfo shaderStageInfo{};
 		shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		shaderStageInfo.stage = stage;
 		shaderStageInfo.module = *shaderModule;
 		shaderStageInfo.pName = entrypoint;
 		
@@ -172,18 +173,6 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	colorBlending.blendConstants[2] = 0.0f; // Optional
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0; // Optional
-	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-
-	VkPipelineLayout pipelineLayout; // TODO: move this somewhere else AND DESTROY IT ON CLEAN UP
-	if (vkCreatePipelineLayout(m_context->getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-		Logger::Error("Failed to create pipeline layout!");
-	}
-
 	// Finally, create the graphics pipeline
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -197,7 +186,7 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	pipelineInfo.pDepthStencilState = nullptr; // Optional
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
-	pipelineInfo.layout = pipelineLayout;
+	pipelineInfo.layout = static_cast<SVkShader*>(shader)->getPipelineLayout();
 	pipelineInfo.renderPass = m_context->getRenderPass();
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional

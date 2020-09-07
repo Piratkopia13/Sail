@@ -21,7 +21,7 @@ protected:
 	virtual int convertInputClassification(InputClassification inputSlotClass) override;
 
 private:
-	void push(VkFormat format, unsigned int typeSize, unsigned int location, int offset);
+	void push(VkFormat format, unsigned int typeSize, unsigned int location);
 
 private:
 	VkVertexInputBindingDescription m_bindingDescription;

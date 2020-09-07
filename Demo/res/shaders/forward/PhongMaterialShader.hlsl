@@ -93,9 +93,9 @@ PSIn VSMain(VSIn input) {
 }
 
 
-Texture2D sys_texDiffuse : register(t0);
-Texture2D sys_texNormal : register(t1);
-Texture2D sys_texSpecular : register(t2);
+Texture2D sys_texDiffuse : register(t2);
+Texture2D sys_texNormal : register(t3);
+Texture2D sys_texSpecular : register(t4);
 SamplerState PSss : register(s0);
 
 float4 PSMain(PSIn input) : SV_Target0 {

@@ -143,7 +143,8 @@ bool SVkAPI::init(Window* window) {
 			return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
 				indices.isComplete() && 
 				extensionsSupported &&
-				swapChainAdequate;
+				swapChainAdequate &&
+				deviceFeatures.shaderClipDistance && deviceFeatures.samplerAnisotropy;
 		};
 
 		for (const auto& device : devices) {
@@ -176,7 +177,9 @@ bool SVkAPI::init(Window* window) {
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
-		VkPhysicalDeviceFeatures deviceFeatures{};
+		VkPhysicalDeviceFeatures deviceFeatures{ };
+		deviceFeatures.shaderClipDistance = VK_TRUE;
+		deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -941,6 +944,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL SVkAPI::DebugCallback(
 	void* pUserData) {
 
 	OutputDebugStringA(pCallbackData->pMessage);
+	OutputDebugStringA("\n");
 
 	std::string errMsg = "Validation layer:\n\t";
 	errMsg += pCallbackData->pMessage;

@@ -21,10 +21,45 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
 
 	compile();
+
+	// Create the pipeline layout from parsed data
+	// Uniform buffer objects in vulkan are used the same way as constant buffers in dx12
+	std::vector<VkDescriptorSetLayoutBinding> uboLayoutBindings;
+	for (auto& cbuffer : parser.getParsedData().cBuffers) {
+		VkDescriptorSetLayoutBinding b;
+		b.binding = static_cast<uint32_t>(cbuffer.cBuffer->getSlot());
+		b.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		b.descriptorCount = 1;
+		b.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS; // TODO: make this more specific(?)
+		b.pImmutableSamplers = nullptr; // Optional
+		uboLayoutBindings.emplace_back(b);
+	}
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = static_cast<uint32_t>(uboLayoutBindings.size());
+	layoutInfo.pBindings = uboLayoutBindings.data();
+
+	if (vkCreateDescriptorSetLayout(m_context->getDevice(), &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS) {
+		Logger::Error("Failed to create descriptor set layout!");
+	}
+
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
+	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+	if (vkCreatePipelineLayout(m_context->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
+		Logger::Error("Failed to create pipeline layout!");
+	}
 }
 
 SVkShader::~SVkShader() {
 	EventSystem::getInstance()->unsubscribeFromEvent(Event::NEW_FRAME, this);
+	vkDestroyPipelineLayout(m_context->getDevice(), m_pipelineLayout, nullptr);
+	vkDestroyDescriptorSetLayout(m_context->getDevice(), m_descriptorSetLayout, nullptr);
 }
 
 void* SVkShader::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
@@ -57,7 +92,6 @@ void* SVkShader::compileShader(const std::string& source, const std::string& fil
 		// The outputed spir-v file is the one we want to read
 		path = outputPath;
 	}
-
 #else
 #endif
 
@@ -82,6 +116,10 @@ void* SVkShader::compileShader(const std::string& source, const std::string& fil
 bool SVkShader::onEvent(Event& event) {
 	assert(false);
 	return true;
+}
+
+const VkPipelineLayout& SVkShader::getPipelineLayout() const {
+	return m_pipelineLayout;
 }
 
 void SVkShader::bind(void* cmdList) const {

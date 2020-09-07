@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Sail/api/shader/Shader.h"
-#include <atomic>
 #include "Sail/events/Events.h"
+#include "vulkan/vulkan_core.h"
+
 class SVkAPI;
 
 class SVkShader : public Shader, public IEventListener {
@@ -21,6 +22,11 @@ public:
 
 	bool onEvent(Event& event) override;
 
+	const VkPipelineLayout& getPipelineLayout() const;
+
 private:
 	SVkAPI* m_context;
+
+	VkDescriptorSetLayout m_descriptorSetLayout;
+	VkPipelineLayout m_pipelineLayout;
 };

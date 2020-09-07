@@ -10,7 +10,7 @@ namespace ShaderComponent {
 	}
 
 	DX12ConstantBuffer::DX12ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot, bool inComputeShader)
-		: m_register(slot)
+		: ConstantBuffer(slot)
 		, m_inComputeShader(inComputeShader)
 	{
 		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
@@ -52,7 +52,7 @@ namespace ShaderComponent {
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 		auto frameIndex = m_context->getSwapIndex();
 		
-		UINT rootIndex = m_context->getRootSignEntryFromRegister("b" + std::to_string(m_register)).rootSigIndex;
+		UINT rootIndex = m_context->getRootSignEntryFromRegister("b" + std::to_string(slot)).rootSigIndex;
 
 		if (m_inComputeShader) {
 			dxCmdList->SetComputeRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);

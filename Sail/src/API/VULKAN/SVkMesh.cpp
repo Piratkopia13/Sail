@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "VkMesh.h"
+#include "SVkMesh.h"
 #include "Sail/api/VertexBuffer.h"
 #include "Sail/api/IndexBuffer.h"
 #include "Sail/Application.h"

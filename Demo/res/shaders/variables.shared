@@ -1,7 +1,7 @@
 #define PI 3.14159265359
 #define M_1_PI 0.318309886183790671538
 
-#define NUM_POINT_LIGHTS 128
+#define NUM_POINT_LIGHTS 2
 
 struct PointLight {
 	float3 color;

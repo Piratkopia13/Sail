@@ -9,7 +9,9 @@ namespace ShaderComponent {
 		return SAIL_NEW SVkConstantBuffer(initData, size, bindShader, slot, inComputeShader);
 	}
 
-	SVkConstantBuffer::SVkConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot, bool inComputeShader) {
+	SVkConstantBuffer::SVkConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot, bool inComputeShader)
+		: ConstantBuffer(slot)
+	{
 		Logger::Warning("Tried to create a VK ConstantBuffer");
 	}
 
