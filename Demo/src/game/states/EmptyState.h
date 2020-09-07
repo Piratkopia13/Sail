@@ -23,4 +23,6 @@ public:
 
 private:
 	Application* m_app;
+	std::unique_ptr<Renderer> m_forwardRenderer;
+	std::shared_ptr<Model> m_model;
 };

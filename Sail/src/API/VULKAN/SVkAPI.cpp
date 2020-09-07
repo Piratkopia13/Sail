@@ -1,24 +1,26 @@
 #include "pch.h"
-#include "VkAPI.h"
+#include "SVkAPI.h"
 #include "vulkan/vulkan_win32.h"
 #include "../Windows/Win32Window.h"
 
-const int VkAPI::MAX_FRAMES_IN_FLIGHT = 2;
+const int SVkAPI::MAX_FRAMES_IN_FLIGHT = 2;
 
 GraphicsAPI* GraphicsAPI::Create() {
-	return SAIL_NEW VkAPI();
+	return SAIL_NEW SVkAPI();
 }
 
-VkAPI::VkAPI() 
+SVkAPI::SVkAPI() 
 	: m_validationLayers({	"VK_LAYER_KHRONOS_validation"	})
 	, m_deviceExtensions({	VK_KHR_SWAPCHAIN_EXTENSION_NAME	})
 	, m_physicalDevice(VK_NULL_HANDLE)
 	, m_currentFrame(0)
+	, m_viewport()
+	, m_scissorRect()
 {
 	Logger::Log("Initializing Vulkan..");
 }
 
-VkAPI::~VkAPI() {
+SVkAPI::~SVkAPI() {
 	vkDeviceWaitIdle(m_device);
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -43,7 +45,7 @@ VkAPI::~VkAPI() {
 	vkDestroyInstance(m_instance, nullptr);
 }
 
-bool VkAPI::init(Window* window) {
+bool SVkAPI::init(Window* window) {
 
 	auto winWindow = static_cast<Win32Window*>(window);
 	
@@ -289,7 +291,7 @@ bool VkAPI::init(Window* window) {
 
 	// Anything below this should be separated from this file asap
 
-	// Create render pass
+	// Create render pass - maybe keep this here?
 	{
 		VkAttachmentDescription colorAttachment{};
 		colorAttachment.format = m_swapChainImageFormat;
@@ -337,6 +339,20 @@ bool VkAPI::init(Window* window) {
 			return false;
 		}
 	}
+
+	// Create viewport and scissor rect
+	{		
+		m_viewport.x = 0.0f;
+		m_viewport.y = 0.0f;
+		m_viewport.width = (float)m_swapChainExtent.width;
+		m_viewport.height = (float)m_swapChainExtent.height;
+		m_viewport.minDepth = 0.0f;
+		m_viewport.maxDepth = 1.0f;
+
+		m_scissorRect.offset = { 0, 0 };
+		m_scissorRect.extent = m_swapChainExtent;
+	}
+
 	// Create graphics pipeline
 	{
 		auto vertShaderCode = Utils::readFileBinary("res/shaders/vulkan/vert.spv");
@@ -374,25 +390,12 @@ bool VkAPI::init(Window* window) {
 		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-		// Viewport
-		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = (float)m_swapChainExtent.width;
-		viewport.height = (float)m_swapChainExtent.height;
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-
-		VkRect2D scissor{};
-		scissor.offset = { 0, 0 };
-		scissor.extent = m_swapChainExtent;
-
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewportState.viewportCount = 1;
-		viewportState.pViewports = &viewport;
+		viewportState.pViewports = &m_viewport;
 		viewportState.scissorCount = 1;
-		viewportState.pScissors = &scissor;
+		viewportState.pScissors = &m_scissorRect;
 
 		// Rasterizer
 		VkPipelineRasterizationStateCreateInfo rasterizer{};
@@ -601,23 +604,15 @@ bool VkAPI::init(Window* window) {
 	return true;
 }
 
-void VkAPI::clear(const glm::vec4& color) {
+void SVkAPI::clear(const glm::vec4& color) {
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
-void VkAPI::setDepthMask(DepthMask setting) {
-	throw std::logic_error("The method or operation is not implemented.");
-}
+void SVkAPI::setDepthMask(DepthMask setting) { /* Defined the the PSO */ }
+void SVkAPI::setFaceCulling(Culling setting) { /* Defined the the PSO */ }
+void SVkAPI::setBlending(Blending setting) { /* Defined the the PSO */ }
 
-void VkAPI::setFaceCulling(Culling setting) {
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void VkAPI::setBlending(Blending setting) {
-	throw std::logic_error("The method or operation is not implemented.");
-}
-
-void VkAPI::present(bool vsync) {
+void SVkAPI::present(bool vsync) {
 
 	// Make sure the CPU waits to submit if all frames are in flight
 	vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
@@ -670,15 +665,15 @@ void VkAPI::present(bool vsync) {
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-unsigned int VkAPI::getMemoryUsage() const {
+unsigned int SVkAPI::getMemoryUsage() const {
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
-unsigned int VkAPI::getMemoryBudget() const {
+unsigned int SVkAPI::getMemoryBudget() const {
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
-bool VkAPI::onResize(WindowResizeEvent& event) {
+bool SVkAPI::onResize(WindowResizeEvent& event) {
 	// Recreate some stuff that is now invalidated
 
 	vkDeviceWaitIdle(m_device);
@@ -693,7 +688,67 @@ bool VkAPI::onResize(WindowResizeEvent& event) {
 	throw std::logic_error("The method or operation is not implemented.");
 }
 
-bool VkAPI::checkValidationLayerSupport() const {
+const VkDevice& SVkAPI::getDevice() const {
+	return m_device;
+}
+
+const VkViewport& SVkAPI::getViewport() const {
+	return m_viewport;
+}
+
+const VkRect2D& SVkAPI::getScissorRect() const {
+	return m_scissorRect;
+}
+
+const VkRenderPass& SVkAPI::getRenderPass() const {
+	return m_renderPass;
+}
+
+size_t SVkAPI::getFrameIndex() const {
+	return m_currentFrame;
+}
+
+VkRenderPassBeginInfo SVkAPI::getRenderPassInfo() const {
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = m_renderPass;
+	renderPassInfo.framebuffer = m_swapChainFramebuffers[getFrameIndex()];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = m_swapChainExtent;
+	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+
+	return renderPassInfo;
+}
+
+uint32_t SVkAPI::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const {
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+
+	Logger::Error("Failed to find suitable memory type!");
+}
+
+void SVkAPI::initCommand(Command& command) const {
+	command.buffers.resize(m_swapChainFramebuffers.size());
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = m_commandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint32_t)command.buffers.size();
+
+	if (vkAllocateCommandBuffers(m_device, &allocInfo, command.buffers.data()) != VK_SUCCESS) {
+		Logger::Error("Failed to allocate command buffers!");
+	}
+}
+
+bool SVkAPI::checkValidationLayerSupport() const {
 	uint32_t layerCount;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -718,7 +773,7 @@ bool VkAPI::checkValidationLayerSupport() const {
 	return true;
 }
 
-std::vector<const char*> VkAPI::getRequiredExtensions() const {
+std::vector<const char*> SVkAPI::getRequiredExtensions() const {
 	// TODO: support glfw / cross platform windows
 	const char* extensionNames[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
 
@@ -732,7 +787,7 @@ std::vector<const char*> VkAPI::getRequiredExtensions() const {
 	return extensions;
 }
 
-void VkAPI::setupDebugMessenger() {
+void SVkAPI::setupDebugMessenger() {
 	if (!m_enableValidationLayers) return;
 
 	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
@@ -747,7 +802,7 @@ void VkAPI::setupDebugMessenger() {
 	}
 }
 
-VkAPI::QueueFamilyIndices VkAPI::findQueueFamilies(const VkPhysicalDevice& device) const {
+SVkAPI::QueueFamilyIndices SVkAPI::findQueueFamilies(const VkPhysicalDevice& device) const {
 	QueueFamilyIndices indices;
 	// Assign index to queue families that could be found
 	uint32_t queueFamilyCount = 0;
@@ -776,7 +831,7 @@ VkAPI::QueueFamilyIndices VkAPI::findQueueFamilies(const VkPhysicalDevice& devic
 	return indices;
 }
 
-bool VkAPI::checkDeviceExtensionSupport(const VkPhysicalDevice& device) const {
+bool SVkAPI::checkDeviceExtensionSupport(const VkPhysicalDevice& device) const {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -792,7 +847,7 @@ bool VkAPI::checkDeviceExtensionSupport(const VkPhysicalDevice& device) const {
 	return requiredExtensions.empty();
 }
 
-VkAPI::SwapChainSupportDetails VkAPI::querySwapChainSupport(const VkPhysicalDevice& device) const {
+SVkAPI::SwapChainSupportDetails SVkAPI::querySwapChainSupport(const VkPhysicalDevice& device) const {
 	SwapChainSupportDetails details;
 
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &details.capabilities);
@@ -816,7 +871,7 @@ VkAPI::SwapChainSupportDetails VkAPI::querySwapChainSupport(const VkPhysicalDevi
 	return details;
 }
 
-VkSurfaceFormatKHR VkAPI::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const {
+VkSurfaceFormatKHR SVkAPI::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const {
 	for (const auto& availableFormat : availableFormats) {
 		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
 			return availableFormat;
@@ -826,7 +881,7 @@ VkSurfaceFormatKHR VkAPI::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFor
 	return availableFormats[0];
 }
 
-VkPresentModeKHR VkAPI::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const {
+VkPresentModeKHR SVkAPI::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const {
 	for (const auto& availablePresentMode : availablePresentModes) {
 		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
 			return availablePresentMode;
@@ -836,7 +891,7 @@ VkPresentModeKHR VkAPI::chooseSwapPresentMode(const std::vector<VkPresentModeKHR
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D VkAPI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Win32Window* window) const {
+VkExtent2D SVkAPI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Win32Window* window) const {
 	if (capabilities.currentExtent.width != UINT32_MAX) {
 		return capabilities.currentExtent;
 	} else {
@@ -849,7 +904,7 @@ VkExtent2D VkAPI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities,
 	}
 }
 
-VkShaderModule VkAPI::createShaderModule(const std::vector<std::byte>& code) {
+VkShaderModule SVkAPI::createShaderModule(const std::vector<std::byte>& code) {
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.codeSize = code.size();
@@ -863,7 +918,7 @@ VkShaderModule VkAPI::createShaderModule(const std::vector<std::byte>& code) {
 	return shaderModule;
 }
 
-VkResult VkAPI::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+VkResult SVkAPI::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
 	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 	if (func != nullptr) {
 		return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
@@ -872,14 +927,14 @@ VkResult VkAPI::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugU
 	}
 }
 
-void VkAPI::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+void SVkAPI::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
 	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 	if (func != nullptr) {
 		func(instance, debugMessenger, pAllocator);
 	}
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL VkAPI::DebugCallback(
+VKAPI_ATTR VkBool32 VKAPI_CALL SVkAPI::DebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -889,7 +944,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VkAPI::DebugCallback(
 
 	std::string errMsg = "Validation layer:\n\t";
 	errMsg += pCallbackData->pMessage;
-	Logger::Warning(errMsg);
+	Logger::Warning(errMsg+"\n");
 	//std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
 	return VK_FALSE;

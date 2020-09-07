@@ -1,16 +1,16 @@
 #pragma once
 
 #include "Sail/api/Mesh.h"
-#include "VkAPI.h"
+#include "SVkAPI.h"
 
-class VkMesh : public Mesh {
+class SVkMesh : public Mesh {
 public:
-	VkMesh(Data& buildData);
-	~VkMesh();
+	SVkMesh(Data& buildData);
+	~SVkMesh();
 
 	virtual void draw(const Renderer& renderer, Material* material, Shader* shader, Environment* environment, void* cmdList) override;
 
 private:
-	VkAPI* m_context;
+	SVkAPI* m_context;
 
 };

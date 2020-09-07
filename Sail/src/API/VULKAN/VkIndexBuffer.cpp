@@ -10,7 +10,8 @@ IndexBuffer* IndexBuffer::Create(Mesh::Data& modelData) {
 VkIndexBuffer::VkIndexBuffer(Mesh::Data& modelData) 
 	: IndexBuffer(modelData)
 {
-	assert(false);
+	//assert(false);
+	Logger::Warning("Tried to create an index buffer");
 }
 
 VkIndexBuffer::~VkIndexBuffer() {

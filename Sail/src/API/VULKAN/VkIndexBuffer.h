@@ -1,6 +1,6 @@
 #pragma once
 #include "Sail/api/IndexBuffer.h"
-#include "VkAPI.h"
+#include "SVkAPI.h"
 
 class VkIndexBuffer : public IndexBuffer {
 public:
@@ -10,6 +10,6 @@ public:
 	virtual void bind(void* cmdList) override;
 
 private:
-	VkAPI* m_context;
+	SVkAPI* m_context;
 };
 

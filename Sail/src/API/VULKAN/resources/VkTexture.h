@@ -3,7 +3,7 @@
 #include "Sail/api/Texture.h"
 //#include "VkATexture.h"
 #include "Sail/resources/TextureData.h"
-#include "../VkAPI.h"
+#include "../SVkAPI.h"
 //#include "DescriptorHeap.h"
 #include <mutex>
 #include <dxgiformat.h>
@@ -27,6 +27,6 @@ private:
 private:
 	std::string m_filename;
 
-	VkAPI* m_context;
+	SVkAPI* m_context;
 	
 };

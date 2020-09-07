@@ -3,12 +3,12 @@
 #include "Sail/api/shader/Shader.h"
 #include <atomic>
 #include "Sail/events/Events.h"
-class VkAPI;
+class SVkAPI;
 
-class VkShader : public Shader, public IEventListener {
+class SVkShader : public Shader, public IEventListener {
 public:
-	VkShader(Shaders::ShaderSettings settings);
-	~VkShader();
+	SVkShader(Shaders::ShaderSettings settings);
+	~SVkShader();
 
 	virtual void bind(void* cmdList) const override;
 
@@ -19,15 +19,8 @@ public:
 	void setCBufferVar(const std::string& name, const void* data, unsigned int size) override;
 	bool trySetCBufferVar(const std::string& name, const void* data, unsigned int size) override;
 
-	// Call this after each mesh/instance
-	// Internally updates meshIndex used to place multiple instances in a single cbuffer
-	void instanceFinished();
-	void reserve(unsigned int meshIndexMax);
-
 	bool onEvent(Event& event) override;
 
 private:
-	unsigned int getMeshIndex() const;
-private:
-	VkAPI* m_context;
+	SVkAPI* m_context;
 };

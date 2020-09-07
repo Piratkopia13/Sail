@@ -5,13 +5,17 @@
 
 class Win32Window;
 
-class VkAPI : public GraphicsAPI {
+class SVkAPI : public GraphicsAPI {
 public:
 	static const int MAX_FRAMES_IN_FLIGHT;
 
+	struct Command {
+		std::vector<VkCommandBuffer> buffers;
+	};
+
 public:
-	VkAPI();
-	~VkAPI();
+	SVkAPI();
+	~SVkAPI();
 
 	bool init(Window* window) override;
 	void clear(const glm::vec4& color) override;
@@ -22,6 +26,16 @@ public:
 	unsigned int getMemoryUsage() const override;
 	unsigned int getMemoryBudget() const override;
 	bool onResize(WindowResizeEvent& event) override;
+
+	const VkDevice& getDevice() const;
+	const VkViewport& getViewport() const;
+	const VkRect2D& getScissorRect() const;
+	const VkRenderPass& getRenderPass() const;
+	size_t getFrameIndex() const;
+	VkRenderPassBeginInfo getRenderPassInfo() const; // TODO: maybe renderers should handle their own render passes?
+
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+	void initCommand(Command& command) const;
 
 private:
 	struct QueueFamilyIndices {
@@ -71,8 +85,12 @@ private:
 	VkFormat m_swapChainImageFormat;
 	VkExtent2D m_swapChainExtent;
 
+	// Viewport and scissor rect
+	VkViewport m_viewport;
+	VkRect2D m_scissorRect;
+
 	// The following variables should be moved
-	VkRenderPass m_renderPass;
+	VkRenderPass m_renderPass; // maybe not move this?
 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_graphicsPipeline;
 

@@ -13,7 +13,7 @@ std::vector<std::byte> Utils::readFileBinary(const std::string& filepath) {
 	std::ifstream ifs(filepath, std::ios::binary | std::ios::ate);
 
 	if (!ifs)
-		throw std::runtime_error(filepath + ": " + std::strerror(errno));
+		Logger::Error(filepath + ": " + std::strerror(errno));
 
 	auto end = ifs.tellg();
 	ifs.seekg(0, std::ios::beg);
@@ -26,7 +26,7 @@ std::vector<std::byte> Utils::readFileBinary(const std::string& filepath) {
 	std::vector<std::byte> buffer(size);
 
 	if (!ifs.read((char*)buffer.data(), buffer.size()))
-		throw std::runtime_error(filepath + ": " + std::strerror(errno));
+		Logger::Error(filepath + ": " + std::strerror(errno));
 
 	return buffer;
 }

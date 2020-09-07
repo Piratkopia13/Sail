@@ -9,6 +9,16 @@ EmptyState::EmptyState(StateStack& stack)
 
 	// Get the Application instance
 	m_app = Application::getInstance();
+
+
+	// Make sure the following can be removed
+
+	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+
+	// Disable culling for testing purposes
+	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
+
+	m_model = ModelFactory::PlaneModel::Create(glm::vec2(0.3f), glm::vec2(30.0f));
 	
 }
 
@@ -39,6 +49,14 @@ bool EmptyState::update(float dt) {
 // Renders the state
 bool EmptyState::render(float dt) {
 	SAIL_PROFILE_FUNCTION();
+
+	// Draw the scene
+	m_forwardRenderer->begin(nullptr, nullptr);
+
+	m_forwardRenderer->submit(m_model.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, glm::identity<glm::mat4>());
+
+	m_forwardRenderer->end();
+	m_forwardRenderer->present(Renderer::Default);
 
 	return true;
 }

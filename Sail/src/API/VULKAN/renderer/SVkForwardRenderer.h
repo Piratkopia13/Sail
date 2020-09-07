@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Sail/api/Renderer.h"
-#include "../VkAPI.h"
+#include "../SVkAPI.h"
 
-class VkForwardRenderer : public Renderer {
+class SVkForwardRenderer : public Renderer {
 public:
-	VkForwardRenderer();
-	~VkForwardRenderer();
+	SVkForwardRenderer();
+	~SVkForwardRenderer();
 
 	void begin(Camera* camera, Environment* environment) override;
 	void* present(Renderer::PresentFlag flags, void* skippedPrepCmdList = nullptr) override;
@@ -14,6 +14,6 @@ public:
 	void useDepthBuffer(void* buffer, void* cmdList) override;
 
 private:
-	VkAPI* m_context;
-
+	SVkAPI* m_context;
+	SVkAPI::Command m_command;
 };

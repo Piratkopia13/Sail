@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Sail/api/shader/ConstantBuffer.h"
-#include "../VkAPI.h"
+#include "../SVkAPI.h"
 
 namespace ShaderComponent {
 
-	class VkConstantBuffer : public ConstantBuffer {
+	class SVkConstantBuffer : public ConstantBuffer {
 	public:
-		VkConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot = 0, bool inComputeShader = false);
-		~VkConstantBuffer();
+		SVkConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot = 0, bool inComputeShader = false);
+		~SVkConstantBuffer();
 
 		// meshIndex specifies which offset to write/read from in the resource heap
 		// This is used since all meshes rendered this frame store data the same cbuffer
@@ -21,7 +21,7 @@ namespace ShaderComponent {
 		void reserve(unsigned int meshIndexMax);
 
 	private:
-		VkAPI* m_context;
+		SVkAPI* m_context;
 	};
 
 }

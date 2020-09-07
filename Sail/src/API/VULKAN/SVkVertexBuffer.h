@@ -1,11 +1,11 @@
 #pragma once
 #include "Sail/api/VertexBuffer.h"
-#include "VkAPI.h"
+#include "SVkAPI.h"
 
-class VkVertexBuffer : public VertexBuffer {
+class SVkVertexBuffer : public VertexBuffer {
 public:
-	VkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates = false);
-	~VkVertexBuffer();
+	SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates = false);
+	~SVkVertexBuffer();
 
 	virtual void bind(void* cmdList) override;
 	void update(Mesh::Data& data);
@@ -16,6 +16,9 @@ public:
 	void resetHasBeenUpdated();
 
 private:
-	VkAPI* m_context;
+	SVkAPI* m_context;
+
+	VkBuffer m_vertexBuffer;
+	VkDeviceMemory m_vertexBufferMemory;
 
 };
