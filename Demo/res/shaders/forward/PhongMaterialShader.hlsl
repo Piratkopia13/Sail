@@ -92,13 +92,18 @@ PSIn VSMain(VSIn input) {
 
 }
 
-
-Texture2D sys_texDiffuse : register(t2);
-Texture2D sys_texNormal : register(t3);
-Texture2D sys_texSpecular : register(t4);
+[[vk::binding(5)]] // Since 0 and 1 are used for cbuffers - start textures after that in vk
+Texture2D sys_texDiffuse : register(t0);
+[[vk::binding(6)]]
+Texture2D sys_texNormal : register(t1);
+[[vk::binding(7)]]
+Texture2D sys_texSpecular : register(t2);
 SamplerState PSss : register(s0);
 
 float4 PSMain(PSIn input) : SV_Target0 {
+
+	// REMOVE THIS LINE WHEN TEXTURE WORK IN VK
+	return float4(0.2f, 0.8f, 0.8f, 1.0f);
 
 	PhongInput phongInput;
 	phongInput.mat = sys_material;

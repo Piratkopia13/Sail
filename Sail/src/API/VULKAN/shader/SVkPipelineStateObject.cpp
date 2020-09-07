@@ -56,6 +56,9 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 		shaderStageInfo.stage = stage;
 		shaderStageInfo.module = *shaderModule;
 		shaderStageInfo.pName = entrypoint;
+
+		// new was used to pass the shader module through a void*, therefor we must delete it
+		delete shaderModule;
 		
 		return shaderStageInfo;
 	};
@@ -199,8 +202,6 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	// Clean up shader modules
 	for (auto& stage : shaderStages) {
 		vkDestroyShaderModule(m_context->getDevice(), stage.module, nullptr);
-		// new was used to pass the shader module through a void*, therefor we must delete it
-		delete &stage.module;
 	}
 
 }
