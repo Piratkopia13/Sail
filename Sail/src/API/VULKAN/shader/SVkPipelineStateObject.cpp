@@ -29,12 +29,12 @@ SVkPipelineStateObject::~SVkPipelineStateObject() {
 	vkDestroyPipeline(m_context->getDevice(), m_pipeline, nullptr);
 }
 
-bool SVkPipelineStateObject::bind(void* cmdList) {
+bool SVkPipelineStateObject::bind(void* cmdList, uint32_t frameIndex) {
 	if (!m_pipeline)
 		Logger::Error("Tried to bind pipeline state before it has been created!");
 
 	// TODO: This returns false if pipeline is already bound, maybe do something with that
-	bindInternal(cmdList, true);
+	bindInternal(cmdList, true, frameIndex);
 
 	vkCmdBindPipeline(*static_cast<VkCommandBuffer*>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
@@ -113,7 +113,7 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	}
 
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthBiasConstantFactor = 0.0f; // Optional
 	rasterizer.depthBiasClamp = 0.0f; // Optional

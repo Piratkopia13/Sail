@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "SVkVertexBuffer.h"
 #include "Sail/Application.h"
+#include "SVkUtils.h"
 //#include "VkUtils.h"
 
 VertexBuffer* VertexBuffer::Create(const Mesh::Data& modelData, bool allowUpdates) {
@@ -16,37 +17,14 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 
 	void* vertices = mallocVertexData(modelData);
 
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = static_cast<VkDeviceSize>(getVertexBufferSize());
-	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	// Create a buffer object with no allocated memory
-	if (vkCreateBuffer(m_context->getDevice(), &bufferInfo, nullptr, &m_vertexBuffer) != VK_SUCCESS) {
-		Logger::Error("Failed to create vertex buffer!");
-	}
-
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(m_context->getDevice(), m_vertexBuffer, &memRequirements);
-
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = m_context->findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	// Allocate device memory
-	if (vkAllocateMemory(m_context->getDevice(), &allocInfo, nullptr, &m_vertexBufferMemory) != VK_SUCCESS) {
-		Logger::Error("Failed to allocate vertex buffer memory!");
-	}
-
-	// Bind the allocated memory to the buffer object
-	vkBindBufferMemory(m_context->getDevice(), m_vertexBuffer, m_vertexBufferMemory, 0);
+	SVkUtils::CreateBuffer(m_context->getDevice(), m_context->getPhysicalDevice(), getVertexBufferSize(), 
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+		m_vertexBuffer, m_vertexBufferMemory);
 
 	// Copy vertex data from RAM into VRAM
 	void* data;
-	vkMapMemory(m_context->getDevice(), m_vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-	memcpy(data, vertices, (size_t)bufferInfo.size);
+	vkMapMemory(m_context->getDevice(), m_vertexBufferMemory, 0, getVertexBufferSize(), 0, &data);
+	memcpy(data, vertices, (size_t)getVertexBufferSize());
 	vkUnmapMemory(m_context->getDevice(), m_vertexBufferMemory);
 
 }

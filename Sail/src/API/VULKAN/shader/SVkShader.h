@@ -11,7 +11,7 @@ public:
 	SVkShader(Shaders::ShaderSettings settings);
 	~SVkShader();
 
-	virtual void bind(void* cmdList) const override;
+	virtual void bind(void* cmdList, uint32_t frameIndex) const override;
 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
 
@@ -28,5 +28,6 @@ private:
 	SVkAPI* m_context;
 
 	VkDescriptorSetLayout m_descriptorSetLayout;
+	std::vector<VkDescriptorSet> m_descriptorSets;
 	VkPipelineLayout m_pipelineLayout;
 };

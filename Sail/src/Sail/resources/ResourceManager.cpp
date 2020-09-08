@@ -18,7 +18,7 @@ ResourceManager::ResourceManager() {
 		Shaders::ShaderSettings settings;
 		settings.filename = "forward/PhongMaterialShader.hlsl";
 		settings.materialType = Material::PHONG;
-		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
+		settings.defaultPSOSettings.cullMode = GraphicsAPI::NO_CULLING; // TODO: set back to BACKFACE
 		settings.identifier = Shaders::PhongMaterialShader;
 		m_shaderSettings.insert({ settings.identifier, settings });
 	}

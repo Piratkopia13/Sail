@@ -25,7 +25,7 @@ public:
 	unsigned int getAttributesHash() const;
 	const Shaders::ShaderSettings& getSettings() const;
 
-	virtual void bind(void* cmdList) const;
+	virtual void bind(void* cmdList, uint32_t frameIndex) const;
 	
 	RenderableTexture* getRenderableTexture(const std::string& name) const;
 

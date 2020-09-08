@@ -36,14 +36,17 @@ void SVkForwardRenderer::begin(Camera* camera, Environment* environment) {
 }
 
 void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrepCmdList) {
+	// Fetch the swap image index to use this frame
+	// It may be out of order and has to be passed on to certain bind methods
+	auto imageIndex = m_context->beginPresent();
+	
 	auto& resman = Application::getInstance()->getResourceManager();
-	auto frameIndex = m_context->getFrameIndex();
 
-	auto& cmd = m_command.buffers[frameIndex];
+	auto& cmd = m_command.buffers[imageIndex];
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = 0; // Optional
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // Tell vk we will only submit this commmand buffer once
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
 	if (vkBeginCommandBuffer(cmd, &beginInfo) != VK_SUCCESS) {
@@ -65,14 +68,15 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 
 		// Find a matching pipelineStateObject and bind it
 		auto& pso = resman.getPSO(shader, command.mesh);
-		pso.bind(cmd);
+		pso.bind(&cmd, imageIndex);
 
 		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
-
+		if (camera) {
+			shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
+			shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
+			shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
+			shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+		}
 		if (lightSetup) {
 			auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
 			auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
@@ -80,7 +84,7 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 			shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
 		}
 
-		command.mesh->draw(*this, command.material, shader, environment, cmd);
+		command.mesh->draw(*this, command.material, shader, environment, &cmd);
 	}
 
 	
@@ -91,6 +95,9 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 		Logger::Error("failed to record command buffer!");
 		return false;
 	}
+
+	// Submit the command buffer to the graphics queue
+	m_context->submitCommandBuffers({ cmd });
 
 	return nullptr;
 }

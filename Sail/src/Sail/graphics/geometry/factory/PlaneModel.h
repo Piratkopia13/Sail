@@ -9,20 +9,34 @@ namespace ModelFactory {
 	public:
 		static std::shared_ptr<Model> Create(const glm::vec2& halfSizes, const glm::vec2& texCoordScale = glm::vec2(1.f)) {
 
+			// Remove when VK support indices
+			const int numVerts = 6;
+			Mesh::vec3* positions = SAIL_NEW Mesh::vec3[numVerts]{
+				Mesh::vec3(-halfSizes.x, -halfSizes.y, 0.f),
+				Mesh::vec3(-halfSizes.x, halfSizes.y, 0.f),
+				Mesh::vec3(halfSizes.x, -halfSizes.y, 0.f),
+				Mesh::vec3(halfSizes.x, -halfSizes.y, 0.f),
+				Mesh::vec3(-halfSizes.x, halfSizes.y, 0.f),
+				Mesh::vec3(halfSizes.x, halfSizes.y, 0.f),
+			};
+
+			// Uncomment when VK support indices
+			/*
 			const int numVerts = 4;
 			Mesh::vec3* positions = SAIL_NEW Mesh::vec3[numVerts]{
 				Mesh::vec3(-halfSizes.x, 0.f, -halfSizes.y),
 				Mesh::vec3(-halfSizes.x, 0.f, halfSizes.y),
 				Mesh::vec3(halfSizes.x, 0.f, -halfSizes.y),
-				//Mesh::vec3(halfSizes.x, 0.f, -halfSizes.y),
-				//Mesh::vec3(-halfSizes.x, 0.f, halfSizes.y),
+				// Mesh::vec3(halfSizes.x, 0.f, -halfSizes.y),
+				// Mesh::vec3(-halfSizes.x, 0.f, halfSizes.y),
 				Mesh::vec3(halfSizes.x, 0.f, halfSizes.y),
 			};
 
+			
 			const int numIndices = 6;
 			ULONG* indices = SAIL_NEW ULONG[numIndices]{
 				0, 1, 2, 2, 1, 3
-			};
+			};*/
 
 			Mesh::vec2* texCoords = SAIL_NEW Mesh::vec2[numVerts]{
 				Mesh::vec2(0.f, texCoordScale.y),
@@ -60,8 +74,8 @@ namespace ModelFactory {
 			buildData.normals = normals;
 			buildData.tangents = tangents;
 			buildData.bitangents = bitangents;
-			buildData.numIndices = numIndices;
-			buildData.indices = indices;
+			//buildData.numIndices = numIndices; // Uncomment when VK support indices
+			//buildData.indices = indices; // Uncomment when VK support indices
 
 			return std::make_shared<Model>(buildData, "PlaneModel from factory");
 

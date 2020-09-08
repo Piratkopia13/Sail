@@ -41,6 +41,10 @@ cbuffer VSLights : register(b1) {
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
+	// REMOVE THESE LINES WHEN TEXTURE WORK IN VK
+	output.position = float4(input.position.xyz, 1.0);
+	return output;
+
 	// Copy over the directional light
 	output.lights.dirLight = dirLight;
 	// Copy over point lights

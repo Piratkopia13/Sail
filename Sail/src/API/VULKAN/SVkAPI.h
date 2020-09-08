@@ -22,20 +22,26 @@ public:
 	void setDepthMask(DepthMask setting) override;
 	void setFaceCulling(Culling setting) override;
 	void setBlending(Blending setting) override;
+	
+	uint32_t beginPresent(); // Returns the swap image index to use this frame
 	void present(bool vsync = false) override;
+	
 	unsigned int getMemoryUsage() const override;
 	unsigned int getMemoryBudget() const override;
 	bool onResize(WindowResizeEvent& event) override;
 
 	const VkDevice& getDevice() const;
+	const VkPhysicalDevice& getPhysicalDevice() const;
 	const VkViewport& getViewport() const;
 	const VkRect2D& getScissorRect() const;
 	const VkRenderPass& getRenderPass() const;
-	size_t getFrameIndex() const;
+	uint32_t getSwapImageIndex() const; // It is only valid to call this between beginPresent() and present(), otherwise it will return -1
+	size_t getNumSwapChainImages() const;
 	VkRenderPassBeginInfo getRenderPassInfo() const; // TODO: maybe renderers should handle their own render passes?
-
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+	const VkDescriptorPool& getDescriptorPool() const;
+	
 	void initCommand(Command& command) const;
+	void submitCommandBuffers(std::vector<VkCommandBuffer> cmds);
 
 private:
 	struct QueueFamilyIndices {
@@ -89,10 +95,11 @@ private:
 	VkViewport m_viewport;
 	VkRect2D m_scissorRect;
 
-	// The following variables should be moved
+	// The following variables should maybe be moved
 	VkRenderPass m_renderPass; // maybe not move this?
-	VkPipelineLayout m_pipelineLayout;
-	VkPipeline m_graphicsPipeline;
+	VkDescriptorPool m_descriptorPool;
+	//VkPipelineLayout m_pipelineLayout;
+	//VkPipeline m_graphicsPipeline;
 
 	// Queues
 	VkQueue m_graphicsQueue;
@@ -106,6 +113,7 @@ private:
 	std::vector<VkFence> m_inFlightFences;
 	std::vector<VkFence> m_imagesInFlight;
 	size_t m_currentFrame;
+	uint32_t m_presentImageIndex;
 
 	const std::vector<const char*> m_validationLayers;
 	const std::vector<const char*> m_deviceExtensions;

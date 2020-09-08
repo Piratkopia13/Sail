@@ -8,7 +8,7 @@ public:
 	SVkPipelineStateObject(Shader* shader, unsigned int attributesHash);
 	~SVkPipelineStateObject();
 
-	virtual bool bind(void* cmdList) override;
+	virtual bool bind(void* cmdList, uint32_t frameIndex) override;
 	
 private:
 	void createGraphicsPipelineState();

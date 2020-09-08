@@ -56,9 +56,9 @@ public:
 
 protected:
 	std::vector<RenderCommand> commandQueue;
-	Camera* camera;
-	Environment* environment;
-	LightSetup* lightSetup;
+	Camera* camera = nullptr;
+	Environment* environment = nullptr;
+	LightSetup* lightSetup = nullptr;
 
 };
 
