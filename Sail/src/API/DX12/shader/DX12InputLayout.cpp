@@ -66,7 +66,7 @@ int DX12InputLayout::convertInputClassification(InputClassification inputSlotCla
 void DX12InputLayout::push(DXGI_FORMAT format, unsigned int typeSize, const char* semanticName, unsigned int semanticIndex, unsigned int inputSlot, int alignedByteOffset, InputClassification inputSlotClass, unsigned int instanceDataStepRate) {
 	alignedByteOffset = (alignedByteOffset == -1) ? (m_inputElementDescs.empty()) ? 0 : D3D12_APPEND_ALIGNED_ELEMENT : alignedByteOffset;
 	auto convertedInputClass = (D3D12_INPUT_CLASSIFICATION)convertInputClassification(inputSlotClass);
-	m_inputElementDescs.push_back({ semanticName, semanticIndex, format, inputSlot, (UINT)alignedByteOffset,	convertedInputClass, instanceDataStepRate });
+	m_inputElementDescs.push_back({ semanticName, semanticIndex, format, inputSlot, (UINT)alignedByteOffset, convertedInputClass, instanceDataStepRate });
 
 	if (convertedInputClass == D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA)
 		InstanceSize += typeSize;

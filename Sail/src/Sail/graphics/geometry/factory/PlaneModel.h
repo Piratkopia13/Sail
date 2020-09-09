@@ -42,29 +42,36 @@ namespace ModelFactory {
 				Mesh::vec2(0.f, texCoordScale.y),
 				Mesh::vec2(0.f, 0.f),
 				Mesh::vec2(texCoordScale.x, texCoordScale.y),
-				Mesh::vec2(texCoordScale.x, 0.f)
+				Mesh::vec2(texCoordScale.x, 0.f), 
+				Mesh::vec2(1.f, 2.f), // Remove when VK support indices 
+				Mesh::vec2(3.f, 4.f)  // Remove when VK support indices
 			};
 
 			Mesh::vec3* normals = SAIL_NEW Mesh::vec3[numVerts]{
 				Mesh::vec3(0.f, 1.f, 0.f),
 				Mesh::vec3(0.f, 1.f, 0.f),
 				Mesh::vec3(0.f, 1.f, 0.f),
-				Mesh::vec3(0.f, 1.f, 0.f)
+				Mesh::vec3(0.f, 1.f, 0.f),
+				Mesh::vec3(1.f, 2.f, 3.f),// Remove when VK support indices 
+				Mesh::vec3(4.f, 5.f, 6.f)// Remove when VK support indices 
 			};
 
 			Mesh::vec3* tangents = SAIL_NEW Mesh::vec3[numVerts]{
 				Mesh::vec3(0.f, 0.f, 1.f),
 				Mesh::vec3(0.f, 0.f, 1.f),
 				Mesh::vec3(0.f, 0.f, 1.f),
-				Mesh::vec3(0.f, 0.f, 1.f)
-
+				Mesh::vec3(0.f, 0.f, 1.f),
+				Mesh::vec3(1.f, 2.f, 3.f),// Remove when VK support indices 
+				Mesh::vec3(4.f, 5.f, 6.f)// Remove when VK support indices 
 			};
 
 			Mesh::vec3* bitangents = SAIL_NEW Mesh::vec3[numVerts]{
 				Mesh::vec3(1.f, 0.f, 0.f),
 				Mesh::vec3(1.f, 0.f, 0.f),
 				Mesh::vec3(1.f, 0.f, 0.f),
-				Mesh::vec3(1.f, 0.f, 0.f)
+				Mesh::vec3(1.f, 0.f, 0.f),
+				Mesh::vec3(1.f, 2.f, 3.f),// Remove when VK support indices 
+				Mesh::vec3(4.f, 5.f, 5.f)// Remove when VK support indices 
 			};
 
 			Mesh::Data buildData;

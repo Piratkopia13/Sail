@@ -35,9 +35,15 @@ SVkVertexBuffer::~SVkVertexBuffer() {
 }
 
 void SVkVertexBuffer::bind(void* cmdList) {
-	VkBuffer vertexBuffers[] = { m_vertexBuffer };
-	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(*static_cast<VkCommandBuffer*>(cmdList), 0, 1, vertexBuffers, offsets);
+	VkBuffer vertexBuffers[] = { m_vertexBuffer, m_vertexBuffer, m_vertexBuffer, m_vertexBuffer, m_vertexBuffer };
+	VkDeviceSize offsets[5];
+	offsets[0] = 0;
+	offsets[1] = getPositionsDataSize();
+	offsets[2] = offsets[1] + getTexCoordsDataSize();
+	offsets[3] = offsets[2] + getNormalsDataSize();
+	offsets[4] = offsets[3] + getTangentsDataSize();
+
+	vkCmdBindVertexBuffers(*static_cast<VkCommandBuffer*>(cmdList), 0, 5, vertexBuffers, offsets);
 }
 
 void SVkVertexBuffer::update(Mesh::Data& data) {

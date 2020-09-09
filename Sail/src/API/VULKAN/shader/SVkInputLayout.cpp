@@ -7,8 +7,7 @@ InputLayout* InputLayout::Create() {
 }
 
 SVkInputLayout::SVkInputLayout()
-: m_bindingDescription()
-, m_vertexInputInfo()
+	: m_vertexInputInfo()
 {
 
 }
@@ -42,13 +41,9 @@ void SVkInputLayout::pushVec4(InputType inputType, const char* semanticName, uns
 }
 
 void SVkInputLayout::create(void* vertexShaderBlob) {
-	m_bindingDescription.binding = 0;
-	m_bindingDescription.stride = VertexSize;
-	m_bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-	
 	m_vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	m_vertexInputInfo.vertexBindingDescriptionCount = 1;
-	m_vertexInputInfo.pVertexBindingDescriptions = &m_bindingDescription;
+	m_vertexInputInfo.vertexBindingDescriptionCount = m_bindingDescriptions.size();
+	m_vertexInputInfo.pVertexBindingDescriptions = m_bindingDescriptions.data();
 	m_vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_attributeDescriptions.size());
 	m_vertexInputInfo.pVertexAttributeDescriptions = m_attributeDescriptions.data();
 }
@@ -80,6 +75,9 @@ int SVkInputLayout::convertInputClassification(InputClassification inputSlotClas
 }
 
 void SVkInputLayout::push(VkFormat format, unsigned int typeSize, unsigned int location) {
-	m_attributeDescriptions.emplace_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(location), 0, format, static_cast<uint32_t>(VertexSize)});
+	static unsigned int binding = 0;
+	m_attributeDescriptions.emplace_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(location), binding, format, 0});
+	m_bindingDescriptions.emplace_back(VkVertexInputBindingDescription{ binding++, typeSize, VK_VERTEX_INPUT_RATE_VERTEX });
+
 	VertexSize += typeSize;
 }

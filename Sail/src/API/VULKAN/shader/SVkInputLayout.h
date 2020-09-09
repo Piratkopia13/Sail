@@ -24,7 +24,7 @@ private:
 	void push(VkFormat format, unsigned int typeSize, unsigned int location);
 
 private:
-	VkVertexInputBindingDescription m_bindingDescription;
+	std::vector<VkVertexInputBindingDescription> m_bindingDescriptions;
 	std::vector<VkVertexInputAttributeDescription> m_attributeDescriptions;
 
 	VkPipelineVertexInputStateCreateInfo m_vertexInputInfo;
