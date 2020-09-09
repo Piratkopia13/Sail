@@ -8,6 +8,7 @@ InputLayout* InputLayout::Create() {
 
 SVkInputLayout::SVkInputLayout()
 	: m_vertexInputInfo()
+	, m_lastBinding(0)
 {
 
 }
@@ -75,9 +76,9 @@ int SVkInputLayout::convertInputClassification(InputClassification inputSlotClas
 }
 
 void SVkInputLayout::push(VkFormat format, unsigned int typeSize, unsigned int location) {
-	static unsigned int binding = 0;
-	m_attributeDescriptions.emplace_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(location), binding, format, 0});
-	m_bindingDescriptions.emplace_back(VkVertexInputBindingDescription{ binding++, typeSize, VK_VERTEX_INPUT_RATE_VERTEX });
+	m_attributeDescriptions.emplace_back(VkVertexInputAttributeDescription{static_cast<uint32_t>(location), m_lastBinding, format, 0});
+	m_bindingDescriptions.emplace_back(VkVertexInputBindingDescription{ m_lastBinding, typeSize, VK_VERTEX_INPUT_RATE_VERTEX });
 
 	VertexSize += typeSize;
+	m_lastBinding++;
 }

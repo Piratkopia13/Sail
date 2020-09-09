@@ -41,15 +41,18 @@ public:
 	const VkDescriptorPool& getDescriptorPool() const;
 	
 	void initCommand(Command& command) const;
+	// Schedules a memory copy to run at the latest during the next call to present()
+	void scheduleMemoryCopy(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback);
 	void submitCommandBuffers(std::vector<VkCommandBuffer> cmds);
 
 private:
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
 		std::optional<uint32_t> presentFamily;
+		std::optional<uint32_t> copyFamily;
 
 		bool isComplete() {
-			return graphicsFamily.has_value() && presentFamily.has_value();
+			return graphicsFamily.has_value() && presentFamily.has_value() && copyFamily.has_value();
 		}
 	};
 	struct SwapChainSupportDetails {
@@ -102,11 +105,13 @@ private:
 	//VkPipeline m_graphicsPipeline;
 
 	// Queues
-	VkQueue m_graphicsQueue;
-	VkQueue m_presentQueue;
+	VkQueue m_queueGraphics;
+	VkQueue m_queuePresent;
+	VkQueue m_queueCopy;
 
-	VkCommandPool m_commandPool;
-	std::vector<VkCommandBuffer> m_commandBuffers;
+	VkCommandPool m_commandPoolGraphics;
+	VkCommandPool m_commandPoolCopy;
+	std::vector<VkCommandBuffer> m_commandBuffersCopy;
 
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
@@ -117,6 +122,12 @@ private:
 
 	const std::vector<const char*> m_validationLayers;
 	const std::vector<const char*> m_deviceExtensions;
+
+	std::vector<std::pair< std::function<void(const VkCommandBuffer&)>, std::function<void()> >> m_scheduledCopyCommandsAndCallbacks;
+	std::vector<VkFence> m_fencesInFlightCopy;
+	std::vector<VkFence> m_fencesJustInCaseCopyInFlight;
+
+	std::vector<std::vector<std::function<void()>>> m_executionCallbacks;
 
 #ifdef NDEBUG
 	const bool m_enableValidationLayers = false;

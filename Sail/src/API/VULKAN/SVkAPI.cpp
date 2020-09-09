@@ -29,10 +29,11 @@ SVkAPI::~SVkAPI() {
 		vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
 		vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
 		vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
+		vkDestroyFence(m_device, m_fencesInFlightCopy[i], nullptr);
 	}
-	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-	//vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
-	//vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+	vkDestroyCommandPool(m_device, m_commandPoolGraphics, nullptr);
+	vkDestroyCommandPool(m_device, m_commandPoolCopy, nullptr);
+	
 	for (auto& framebuffer : m_swapChainFramebuffers) {
 		vkDestroyFramebuffer(m_device, framebuffer, nullptr);
 	}
@@ -167,7 +168,7 @@ bool SVkAPI::init(Window* window) {
 		QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value(), indices.copyFamily.value() };
 
 		float queuePriority = 1.0f;
 		for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -207,8 +208,9 @@ bool SVkAPI::init(Window* window) {
 		}
 
 		// Store the queue handle
-		vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
-		vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentQueue);
+		vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_queueGraphics);
+		vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_queuePresent);
+		vkGetDeviceQueue(m_device, indices.copyFamily.value(), 0, &m_queueCopy);
 	}
 
 	// Create the swap chain
@@ -358,136 +360,6 @@ bool SVkAPI::init(Window* window) {
 		m_scissorRect.extent = m_swapChainExtent;
 	}
 
-	// Create graphics pipeline
-	{
-		//auto vertShaderCode = Utils::readFileBinary("res/shaders/vulkan/vert.spv");
-		//auto fragShaderCode = Utils::readFileBinary("res/shaders/vulkan/frag.spv");
-
-		//VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-		//VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
-
-
-		//VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-		//vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		//vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		//vertShaderStageInfo.module = vertShaderModule;
-		//vertShaderStageInfo.pName = "VSMain";
-
-		//VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-		//fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		//fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		//fragShaderStageInfo.module = fragShaderModule;
-		//fragShaderStageInfo.pName = "PSMain";
-
-		//VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
-
-		//// Vertex input
-		//VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-		//vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		//vertexInputInfo.vertexBindingDescriptionCount = 0;
-		//vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-		//vertexInputInfo.vertexAttributeDescriptionCount = 0;
-		//vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
-
-		//// Input assembly
-		//VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-		//inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		//inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		//inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-		//VkPipelineViewportStateCreateInfo viewportState{};
-		//viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		//viewportState.viewportCount = 1;
-		//viewportState.pViewports = &m_viewport;
-		//viewportState.scissorCount = 1;
-		//viewportState.pScissors = &m_scissorRect;
-
-		//// Rasterizer
-		//VkPipelineRasterizationStateCreateInfo rasterizer{};
-		//rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		//rasterizer.depthClampEnable = VK_FALSE;
-		//rasterizer.rasterizerDiscardEnable = VK_FALSE;
-		//rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-		//rasterizer.lineWidth = 1.0f;
-		//rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-		//rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-		//rasterizer.depthBiasEnable = VK_FALSE;
-		//rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-		//rasterizer.depthBiasClamp = 0.0f; // Optional
-		//rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
-
-		//// Multisampling
-		//VkPipelineMultisampleStateCreateInfo multisampling{};
-		//multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		//multisampling.sampleShadingEnable = VK_FALSE;
-		//multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-		//multisampling.minSampleShading = 1.0f; // Optional
-		//multisampling.pSampleMask = nullptr; // Optional
-		//multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-		//multisampling.alphaToOneEnable = VK_FALSE; // Optional
-
-		//// Color blending
-		//VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-		//colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		//colorBlendAttachment.blendEnable = VK_FALSE;
-		//colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-		//colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-		//colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
-		//colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-		//colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-		//colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
-		//
-		//VkPipelineColorBlendStateCreateInfo colorBlending{};
-		//colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		//colorBlending.logicOpEnable = VK_FALSE;
-		//colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
-		//colorBlending.attachmentCount = 1;
-		//colorBlending.pAttachments = &colorBlendAttachment;
-		//colorBlending.blendConstants[0] = 0.0f; // Optional
-		//colorBlending.blendConstants[1] = 0.0f; // Optional
-		//colorBlending.blendConstants[2] = 0.0f; // Optional
-		//colorBlending.blendConstants[3] = 0.0f; // Optional
-
-		//VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-		//pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		//pipelineLayoutInfo.setLayoutCount = 0; // Optional
-		//pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-		//pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-		//pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-
-		//if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
-		//	Logger::Error("Failed to create pipeline layout!");
-		//	return false;
-		//}
-
-		//// Finally, create the graphics pipeline
-		//VkGraphicsPipelineCreateInfo pipelineInfo{};
-		//pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		//pipelineInfo.stageCount = 2;
-		//pipelineInfo.pStages = shaderStages;
-		//pipelineInfo.pVertexInputState = &vertexInputInfo;
-		//pipelineInfo.pInputAssemblyState = &inputAssembly;
-		//pipelineInfo.pViewportState = &viewportState;
-		//pipelineInfo.pRasterizationState = &rasterizer;
-		//pipelineInfo.pMultisampleState = &multisampling;
-		//pipelineInfo.pDepthStencilState = nullptr; // Optional
-		//pipelineInfo.pColorBlendState = &colorBlending;
-		//pipelineInfo.pDynamicState = nullptr; // Optional
-		//pipelineInfo.layout = m_pipelineLayout;
-		//pipelineInfo.renderPass = m_renderPass;
-		//pipelineInfo.subpass = 0;
-		//pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-		//pipelineInfo.basePipelineIndex = -1; // Optional
-
-		//if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) {
-		//	Logger::Error("Failed to create graphics pipeline!");
-		//	return false;
-		//}
-
-		//vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
-		//vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
-	}
-
 	// Create framebuffers
 	// This may be able to stay in this class
 	{
@@ -517,27 +389,38 @@ bool SVkAPI::init(Window* window) {
 	{
 		QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_physicalDevice);
 
+		// Graphics command pool
 		VkCommandPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT; // TODO: check if transient bit is useful here
 
-		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS) {
-			Logger::Error("Failed to create command pool!");
+		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPoolGraphics) != VK_SUCCESS) {
+			Logger::Error("Failed to create graphics command pool!");
+			return false;
+		}
+
+		// Copy command pool
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.queueFamilyIndex = queueFamilyIndices.copyFamily.value();
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+
+		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPoolCopy) != VK_SUCCESS) {
+			Logger::Error("Failed to create copy command pool!");
 			return false;
 		}
 	}
 
 	// Create command buffers
 	{
-		m_commandBuffers.resize(m_swapChainFramebuffers.size());
+		m_commandBuffersCopy.resize(m_swapChainFramebuffers.size());
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = m_commandPool;
+		allocInfo.commandPool = m_commandPoolCopy;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
+		allocInfo.commandBufferCount = (uint32_t)m_commandBuffersCopy.size();
 
-		if (vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffers.data()) != VK_SUCCESS) {
+		if (vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffersCopy.data()) != VK_SUCCESS) {
 			Logger::Error("Failed to allocate command buffers!");
 			return false;
 		}
@@ -586,7 +469,10 @@ bool SVkAPI::init(Window* window) {
 		m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+		m_fencesInFlightCopy.resize(MAX_FRAMES_IN_FLIGHT);
+		m_executionCallbacks.resize(MAX_FRAMES_IN_FLIGHT);
 		m_imagesInFlight.resize(m_swapChainImages.size(), VK_NULL_HANDLE);
+		m_fencesJustInCaseCopyInFlight.resize(m_swapChainImages.size(), VK_NULL_HANDLE);
 
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -598,7 +484,8 @@ bool SVkAPI::init(Window* window) {
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
 				vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
-				vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS) {
+				vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS ||
+				vkCreateFence(m_device, &fenceInfo, nullptr, &m_fencesInFlightCopy[i]) != VK_SUCCESS) {
 
 				Logger::Error("Failed to create synchronization objects for a frame!");
 				return false;
@@ -636,7 +523,17 @@ void SVkAPI::setBlending(Blending setting) { /* Defined the the PSO */ }
 
 uint32_t SVkAPI::beginPresent() {
 	// Make sure the CPU waits to submit if all frames are in flight
-	vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+	VkFence waitFences[] = { m_inFlightFences[m_currentFrame], m_fencesInFlightCopy[m_currentFrame] };
+	vkWaitForFences(m_device, ARRAYSIZE(waitFences), waitFences, VK_TRUE, UINT64_MAX);
+
+	// At this point we know that execution has finished for m_currentFrame
+	// Call any waiting callbacks to let them know
+	if (!m_executionCallbacks[m_currentFrame].empty()) {
+		for (auto& callback : m_executionCallbacks[m_currentFrame]) {
+			callback();
+		}
+		m_executionCallbacks[m_currentFrame].clear();
+	}
 	
 	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_presentImageIndex);
 
@@ -644,8 +541,12 @@ uint32_t SVkAPI::beginPresent() {
 	if (m_imagesInFlight[m_presentImageIndex] != VK_NULL_HANDLE) {
 		vkWaitForFences(m_device, 1, &m_imagesInFlight[m_presentImageIndex], VK_TRUE, UINT64_MAX);
 	}
+	if (m_fencesJustInCaseCopyInFlight[m_presentImageIndex] != VK_NULL_HANDLE) {
+		vkWaitForFences(m_device, 1, &m_fencesJustInCaseCopyInFlight[m_presentImageIndex], VK_TRUE, UINT64_MAX);
+	}
 	// Mark the image as now being in use by this frame
 	m_imagesInFlight[m_presentImageIndex] = m_inFlightFences[m_currentFrame];
+	m_fencesJustInCaseCopyInFlight[m_presentImageIndex] = m_fencesInFlightCopy[m_currentFrame];
 
 	return m_presentImageIndex;
 }
@@ -655,26 +556,39 @@ void SVkAPI::present(bool vsync) {
 	// The image index is used to bind certain buffers which is why it's fetch has to be separated
 	assert(m_presentImageIndex != -1 && "beginPresent() has to be called before present() when using Vulkan");
 
-	//VkSubmitInfo submitInfo{};
-	//submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	// Execute any waiting copy commands
+	{
+		/*if (!m_scheduledCopyCommands.empty())*/ {
+			auto& cmdBufferCopy = m_commandBuffersCopy[m_presentImageIndex];
+			VkCommandBufferBeginInfo beginInfo{};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	//VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
-	//VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	//submitInfo.waitSemaphoreCount = 1;
-	//submitInfo.pWaitSemaphores = waitSemaphores;
-	//submitInfo.pWaitDstStageMask = waitStages;
-	//submitInfo.commandBufferCount = 1;
-	//submitInfo.pCommandBuffers = &m_commandBuffers[m_presentImageIndex];
-	
-	//submitInfo.signalSemaphoreCount = 1;
-	//submitInfo.pSignalSemaphores = signalSemaphores;
+			vkBeginCommandBuffer(cmdBufferCopy, &beginInfo);
 
-	//vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
+			for (auto& pair : m_scheduledCopyCommandsAndCallbacks) {
+				// Call the lambda to add commands to the commandBuffer
+				pair.first(cmdBufferCopy);
+				// Add callback to list
+				m_executionCallbacks[m_currentFrame].emplace_back(pair.second);
+			}
+			m_scheduledCopyCommandsAndCallbacks.clear();
 
-	//if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
-	//	Logger::Error("Failed to submit draw command buffer!");
-	//}
+			vkEndCommandBuffer(cmdBufferCopy);
 
+			VkSubmitInfo submitInfo{};
+			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			submitInfo.commandBufferCount = 1;
+			submitInfo.pCommandBuffers = &cmdBufferCopy;
+
+			// The fence used is the same fence given to the copy command submitters,
+			// this allows them to fetch when their command has been executed
+			vkResetFences(m_device, 1, &m_fencesInFlightCopy[m_currentFrame]);
+			vkQueueSubmit(m_queueCopy, 1, &submitInfo, m_fencesInFlightCopy[m_currentFrame]);
+		}
+	}
+
+	// Present
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -687,7 +601,7 @@ void SVkAPI::present(bool vsync) {
 	presentInfo.pImageIndices = &m_presentImageIndex;
 	presentInfo.pResults = nullptr; // Optional
 
-	vkQueuePresentKHR(m_presentQueue, &presentInfo);
+	vkQueuePresentKHR(m_queuePresent, &presentInfo);
 
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	m_presentImageIndex = -1; // Invalidate this image index
@@ -767,13 +681,18 @@ void SVkAPI::initCommand(Command& command) const {
 	command.buffers.resize(m_swapChainFramebuffers.size());
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = m_commandPool;
+	allocInfo.commandPool = m_commandPoolGraphics;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)command.buffers.size();
 
 	if (vkAllocateCommandBuffers(m_device, &allocInfo, command.buffers.data()) != VK_SUCCESS) {
 		Logger::Error("Failed to allocate command buffers!");
 	}
+}
+
+void SVkAPI::scheduleMemoryCopy(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback) {
+	m_scheduledCopyCommandsAndCallbacks.emplace_back(std::make_pair(func, callback));
+	//return m_fencesInFlightCopy[m_currentFrame];
 }
 
 void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
@@ -795,7 +714,7 @@ void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
 	vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
 
 	// NOTE: only graphics queue is currently used
-	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
+	if (vkQueueSubmit(m_queueGraphics, 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
 		Logger::Error("Failed to submit draw command buffer!");
 	}
 }
@@ -867,6 +786,8 @@ SVkAPI::QueueFamilyIndices SVkAPI::findQueueFamilies(const VkPhysicalDevice& dev
 	for (const auto& queueFamily : queueFamilies) {
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			indices.graphicsFamily = i;
+		} else if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+			indices.copyFamily = i;
 		}
 		VkBool32 presentSupport = false;
 		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
