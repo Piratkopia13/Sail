@@ -158,7 +158,7 @@ bool DX12Shader::onEvent(Event& event) {
 	return true;
 }
 
-void DX12Shader::bind(void* cmdList) const {
+void DX12Shader::bind(void* cmdList, uint32_t frameIndex) const {
 	bindInternal(getMeshIndex(), cmdList);
 }
 

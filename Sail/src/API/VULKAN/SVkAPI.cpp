@@ -66,7 +66,7 @@ bool SVkAPI::init(Window* window) {
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.pEngineName = "Sail";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_0;
+		appInfo.apiVersion = VK_API_VERSION_1_1;
 
 		VkInstanceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -350,9 +350,9 @@ bool SVkAPI::init(Window* window) {
 	// Create viewport and scissor rect
 	{		
 		m_viewport.x = 0.0f;
-		m_viewport.y = 0.0f;
+		m_viewport.y = (float)m_swapChainExtent.height; // Flipping viewport to work with hlsl shaders
 		m_viewport.width = (float)m_swapChainExtent.width;
-		m_viewport.height = (float)m_swapChainExtent.height;
+		m_viewport.height = -(float)m_swapChainExtent.height; // Flipping viewport to work with hlsl shaders
 		m_viewport.minDepth = 0.0f;
 		m_viewport.maxDepth = 1.0f;
 

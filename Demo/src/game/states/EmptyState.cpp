@@ -4,6 +4,8 @@
 
 EmptyState::EmptyState(StateStack& stack)
 	: State(stack)
+	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
+	, m_camController(&m_cam)
 {
 	SAIL_PROFILE_FUNCTION();
 
@@ -16,7 +18,7 @@ EmptyState::EmptyState(StateStack& stack)
 	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 
 	m_model = ModelFactory::PlaneModel::Create(glm::vec2(0.3f), glm::vec2(30.0f));
-	
+	//m_model = m_app->getResourceManager().getModel("nanosuit.fbx");
 }
 
 EmptyState::~EmptyState() { }
@@ -24,6 +26,8 @@ EmptyState::~EmptyState() { }
 // Process input for the state
 bool EmptyState::processInput(float dt) {
 	SAIL_PROFILE_FUNCTION();
+
+	m_camController.update(dt);
 
 	return true;
 }
@@ -48,9 +52,12 @@ bool EmptyState::render(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
 	// Draw the scene
-	m_forwardRenderer->begin(nullptr, nullptr);
+	m_forwardRenderer->begin(&m_cam, nullptr);
 
-	m_forwardRenderer->submit(m_model.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, glm::identity<glm::mat4>());
+	static glm::mat4 transform = glm::identity<glm::mat4>();
+	//transform = glm::rotate(transform, dt * 1.f, glm::vec3(1.f, 1.0f, 0.f));
+
+	m_forwardRenderer->submit(m_model.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, transform);
 
 	m_forwardRenderer->end();
 	m_forwardRenderer->present(Renderer::Default);

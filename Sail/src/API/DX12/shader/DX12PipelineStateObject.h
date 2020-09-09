@@ -8,7 +8,7 @@ class DX12PipelineStateObject : public PipelineStateObject {
 public:
 	DX12PipelineStateObject(Shader* shader, unsigned int attributesHash);
 
-	virtual bool bind(void* cmdList) override;
+	virtual bool bind(void* cmdList, uint32_t frameIndex) override;
 	
 private:
 	void createGraphicsPipelineState();

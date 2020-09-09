@@ -20,6 +20,7 @@ namespace ShaderComponent {
 
 		std::vector<VkBuffer> m_uniformBuffers;
 		std::vector<VkDeviceMemory> m_uniformBuffersMemory;
+		std::vector<void*> m_mappedData;
 	};
 
 }

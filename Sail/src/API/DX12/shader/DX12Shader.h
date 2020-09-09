@@ -20,7 +20,7 @@ public:
 	DX12Shader(Shaders::ShaderSettings settings);
 	~DX12Shader();
 
-	virtual void bind(void* cmdList) const override;
+	virtual void bind(void* cmdList, uint32_t frameIndex) const override;
 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
 
