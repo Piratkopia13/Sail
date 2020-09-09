@@ -24,7 +24,7 @@ void SVkUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& phys
 
 	// Create a buffer object with no allocated memory
 	if (vkCreateBuffer(device, &bufferInfo, nullptr, &outBuffer) != VK_SUCCESS) {
-		Logger::Error("Failed to create vertex buffer!");
+		Logger::Error("Failed to create buffer!");
 	}
 
 	VkMemoryRequirements memRequirements;
@@ -37,7 +37,7 @@ void SVkUtils::CreateBuffer(const VkDevice& device, const VkPhysicalDevice& phys
 
 	// Allocate device memory
 	if (vkAllocateMemory(device, &allocInfo, nullptr, &outBufferMemory) != VK_SUCCESS) {
-		Logger::Error("Failed to allocate vertex buffer memory!");
+		Logger::Error("Failed to allocate buffer memory!");
 	}
 
 	// Bind the allocated memory to the buffer object
