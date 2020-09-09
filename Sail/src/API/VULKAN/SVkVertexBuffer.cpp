@@ -27,9 +27,12 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 	memcpy(data, vertices, (size_t)getVertexBufferSize());
 	vkUnmapMemory(m_context->getDevice(), m_vertexBufferMemory);
 
+	// Delete vertices from cpu memory
+	free(vertices);
 }
 
 SVkVertexBuffer::~SVkVertexBuffer() {
+	vkDeviceWaitIdle(m_context->getDevice());
 	vkDestroyBuffer(m_context->getDevice(), m_vertexBuffer, nullptr);
 	vkFreeMemory(m_context->getDevice(), m_vertexBufferMemory, nullptr);
 }

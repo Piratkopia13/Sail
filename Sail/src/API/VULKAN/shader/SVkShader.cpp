@@ -104,6 +104,8 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 
 SVkShader::~SVkShader() {
 	EventSystem::getInstance()->unsubscribeFromEvent(Event::NEW_FRAME, this);
+
+	vkDeviceWaitIdle(m_context->getDevice());
 	vkDestroyPipelineLayout(m_context->getDevice(), m_pipelineLayout, nullptr);
 	vkDestroyDescriptorSetLayout(m_context->getDevice(), m_descriptorSetLayout, nullptr);
 }
@@ -151,7 +153,7 @@ void* SVkShader::compileShader(const std::string& source, const std::string& fil
 	createInfo.codeSize = shaderCode.size();
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
 
-	VkShaderModule* shaderModule = new VkShaderModule;
+	VkShaderModule* shaderModule = SAIL_NEW VkShaderModule;
 	if (vkCreateShaderModule(m_context->getDevice(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
 		Logger::Error("Failed to create shader module!");
 	}
