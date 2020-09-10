@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "SVkAPI.h"
 #include "vulkan/vulkan_win32.h"
 #include "../Windows/Win32Window.h"
@@ -17,8 +17,9 @@ SVkAPI::SVkAPI()
 	, m_viewport()
 	, m_scissorRect()
 	, m_presentImageIndex(-1)
+	, m_clearColor({ 0.f, 0.0f, 0.f, 1.f }) // Default clear color
 {
-	Logger::Log("Initializing Vulkan..");
+	Logger::Log("Initializing Vulkan...");
 }
 
 SVkAPI::~SVkAPI() {
@@ -514,7 +515,7 @@ bool SVkAPI::init(Window* window) {
 }
 
 void SVkAPI::clear(const glm::vec4& color) {
-	throw std::logic_error("The method or operation is not implemented.");
+	m_clearColor = { color.r, color.g, color.b, color.a };
 }
 
 void SVkAPI::setDepthMask(DepthMask setting) { /* Defined the the PSO */ }
@@ -666,9 +667,8 @@ VkRenderPassBeginInfo SVkAPI::getRenderPassInfo() const {
 	renderPassInfo.framebuffer = m_swapChainFramebuffers[getSwapImageIndex()];
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = m_swapChainExtent;
-	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &clearColor;
+	renderPassInfo.pClearValues = &m_clearColor;
 
 	return renderPassInfo;
 }

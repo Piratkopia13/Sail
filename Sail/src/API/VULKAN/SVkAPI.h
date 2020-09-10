@@ -100,6 +100,7 @@ private:
 
 	// The following variables should maybe be moved
 	VkRenderPass m_renderPass; // maybe not move this?
+	VkClearValue m_clearColor;
 	VkDescriptorPool m_descriptorPool;
 	//VkPipelineLayout m_pipelineLayout;
 	//VkPipeline m_graphicsPipeline;

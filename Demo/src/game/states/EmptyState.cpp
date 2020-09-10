@@ -12,13 +12,14 @@ EmptyState::EmptyState(StateStack& stack)
 	// Get the Application instance
 	m_app = Application::getInstance();
 
-
+	m_cam.setPosition({0.f, 0.f, -1.f});
 	// Make sure the following can be removed
 
 	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 
 	m_model = ModelFactory::PlaneModel::Create(glm::vec2(0.3f), glm::vec2(30.0f));
-	//m_model = m_app->getResourceManager().getModel("nanosuit.fbx");
+	//m_model2 = ModelFactory::PlaneModel::Create(glm::vec2(0.5f), glm::vec2(50.0f));
+	m_model2 = m_app->getResourceManager().getModel("box.fbx");
 }
 
 EmptyState::~EmptyState() { }
@@ -56,8 +57,14 @@ bool EmptyState::render(float dt) {
 
 	static glm::mat4 transform = glm::identity<glm::mat4>();
 	transform = glm::rotate(transform, dt * 1.f, glm::vec3(1.f, 1.0f, 0.f));
-
 	m_forwardRenderer->submit(m_model.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, transform);
+
+	//static float counter = 0.f;
+	//counter += dt * 0.0001f;
+	//static glm::mat4 transform2 = glm::identity<glm::mat4>();
+	//transform2 = glm::translate(transform2, glm::vec3(glm::sin(counter), 0.f, 0.f));
+
+	//m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, transform2);
 
 	m_forwardRenderer->end();
 	m_forwardRenderer->present(Renderer::Default);
