@@ -350,9 +350,9 @@ bool SVkAPI::init(Window* window) {
 	// Create viewport and scissor rect
 	{		
 		m_viewport.x = 0.0f;
-		m_viewport.y = (float)m_swapChainExtent.height; // Flipping viewport to work with hlsl shaders
+		m_viewport.y = (float)m_swapChainExtent.height; // Flipping viewport Y to work with hlsl shaders
 		m_viewport.width = (float)m_swapChainExtent.width;
-		m_viewport.height = -(float)m_swapChainExtent.height; // Flipping viewport to work with hlsl shaders
+		m_viewport.height = -(float)m_swapChainExtent.height; // Flipping viewport Y to work with hlsl shaders
 		m_viewport.minDepth = 0.0f;
 		m_viewport.maxDepth = 1.0f;
 
@@ -704,7 +704,7 @@ void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = cmds.size();
+	submitInfo.commandBufferCount = static_cast<uint32_t>(cmds.size());
 	submitInfo.pCommandBuffers = cmds.data();
 
 	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };

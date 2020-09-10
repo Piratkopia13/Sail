@@ -14,6 +14,8 @@ VertexBuffer* VertexBuffer::Create(const Mesh::Data& modelData, bool allowUpdate
 SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 	: VertexBuffer(modelData)
 	, m_allowUpdates(allowUpdates)
+	, m_stagingBuffer(VK_NULL_HANDLE)
+	, m_stagingBufferMemory(VK_NULL_HANDLE)
 {
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
 	auto numImages = m_context->getNumSwapChainImages();

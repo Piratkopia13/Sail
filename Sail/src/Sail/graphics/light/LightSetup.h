@@ -21,7 +21,7 @@ public:
 		glm::vec3 color = glm::vec3(0.f);
 		float intensity = 1.f;
 		glm::vec3 direction = glm::vec3(0.f);
-		float padding2;
+		float padding2 = 0.f;
 	};
 
 public:

@@ -55,7 +55,7 @@ bool EmptyState::render(float dt) {
 	m_forwardRenderer->begin(&m_cam, nullptr);
 
 	static glm::mat4 transform = glm::identity<glm::mat4>();
-	//transform = glm::rotate(transform, dt * 1.f, glm::vec3(1.f, 1.0f, 0.f));
+	transform = glm::rotate(transform, dt * 1.f, glm::vec3(1.f, 1.0f, 0.f));
 
 	m_forwardRenderer->submit(m_model.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, transform);
 

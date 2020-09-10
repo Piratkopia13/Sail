@@ -45,11 +45,6 @@ PSIn VSMain(VSIn input) {
 	// input.position.w = 1.f;
 	// output.position = mul(sys_mWorld, input.position);
     // output.position = mul(output.position, sys_mVP);
-	
-	
-	// output.position.y *= -1.f;
-	// output.position.y = -output.position.y;
-	// output.position.z = output.position.z * 2 - output.position.w;
 	// return output;
 
 	// Copy over the directional light
