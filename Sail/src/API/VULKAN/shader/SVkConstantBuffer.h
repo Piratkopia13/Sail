@@ -18,8 +18,7 @@ namespace ShaderComponent {
 	private:
 		SVkAPI* m_context;
 
-		std::vector<VkBuffer> m_uniformBuffers;
-		std::vector<VkDeviceMemory> m_uniformBuffersMemory;
+		std::vector<SVkAPI::BufferAllocation> m_uniformBuffers;
 		std::vector<void*> m_mappedData;
 	};
 

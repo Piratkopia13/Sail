@@ -14,10 +14,8 @@ private:
 
 	// Staging buffers are only used when allowUpdates == false
 	// They are destroyed as soon as the data is in the device local indexBuffer
-	VkBuffer m_stagingBuffer;
-	VkDeviceMemory m_stagingBufferMemory;
+	SVkAPI::BufferAllocation m_stagingBuffer;
 
-	VkBuffer m_indexBuffer;
-	VkDeviceMemory m_indexBufferMemory;
+	SVkAPI::BufferAllocation m_indexBuffer;
 };
 

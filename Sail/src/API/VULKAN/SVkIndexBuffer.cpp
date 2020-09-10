@@ -13,26 +13,41 @@ SVkIndexBuffer::SVkIndexBuffer(Mesh::Data& modelData)
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
 	unsigned long* indices = getIndexData(modelData);
 	auto bufferSize = getIndexDataSize();
+	auto allocator = m_context->getVmaAllocator();
 
 	// Create cpu visible staging buffer
-	SVkUtils::CreateBuffer(m_context->getDevice(), m_context->getPhysicalDevice(), bufferSize,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		m_stagingBuffer, m_stagingBufferMemory);
+	{
+		VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+		bufferInfo.size = bufferSize;
+		bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-	// Copy vertices to the stating buffer
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+		vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_stagingBuffer.buffer, &m_stagingBuffer.allocation, nullptr);
+	}
+
+	// Copy indices to the stating buffer
 	void* data;
-	vkMapMemory(m_context->getDevice(), m_stagingBufferMemory, 0, bufferSize, 0, &data);
+	vmaMapMemory(allocator, m_stagingBuffer.allocation, &data);
 	memcpy(data, indices, (size_t)bufferSize);
-	vkUnmapMemory(m_context->getDevice(), m_stagingBufferMemory);
+	vmaUnmapMemory(allocator, m_stagingBuffer.allocation);
 
 	// Create gpu local memory
-	SVkUtils::CreateBuffer(m_context->getDevice(), m_context->getPhysicalDevice(), bufferSize,
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexBuffer, m_indexBufferMemory);
+	{
+		VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+		bufferInfo.size = bufferSize;
+		bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_indexBuffer.buffer, &m_indexBuffer.allocation, nullptr);
+	}
 
 	auto uploadCompleteCallback = [&] {
 		// Clean up staging buffer after copy is completed
-		vkDestroyBuffer(m_context->getDevice(), m_stagingBuffer, nullptr);
-		vkFreeMemory(m_context->getDevice(), m_stagingBufferMemory, nullptr);
+		m_stagingBuffer.destroy();
 	};
 
 	// Copy from staging to gpu local memory
@@ -41,7 +56,7 @@ SVkIndexBuffer::SVkIndexBuffer(Mesh::Data& modelData)
 		copyRegion.srcOffset = 0; // Optional
 		copyRegion.dstOffset = 0; // Optional
 		copyRegion.size = bufferSize;
-		vkCmdCopyBuffer(cmd, m_stagingBuffer, m_indexBuffer, 1, &copyRegion);
+		vkCmdCopyBuffer(cmd, m_stagingBuffer.buffer, m_indexBuffer.buffer, 1, &copyRegion);
 	}, uploadCompleteCallback);
 
 	// Delete indices from cpu memory
@@ -50,10 +65,8 @@ SVkIndexBuffer::SVkIndexBuffer(Mesh::Data& modelData)
 
 SVkIndexBuffer::~SVkIndexBuffer() {
 	vkDeviceWaitIdle(m_context->getDevice());
-	vkDestroyBuffer(m_context->getDevice(), m_indexBuffer, nullptr);
-	vkFreeMemory(m_context->getDevice(), m_indexBufferMemory, nullptr);
 }
 
 void SVkIndexBuffer::bind(void* cmdList) {
-	vkCmdBindIndexBuffer(*static_cast<VkCommandBuffer*>(cmdList), m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(*static_cast<VkCommandBuffer*>(cmdList), m_indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 }

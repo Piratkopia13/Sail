@@ -15,27 +15,32 @@ namespace ShaderComponent {
 		m_context = Application::getInstance()->getAPI<SVkAPI>();
 		auto numBuffers = m_context->getNumSwapChainImages();	// Num swap chain images could change after swap chain recreate / window resize
 																// TODO: recreate buffers after swap chain recreation
+		auto allocator = m_context->getVmaAllocator();
 
 		VkDeviceSize bufferSize = size;
 
 		m_uniformBuffers.resize(numBuffers);
-		m_uniformBuffersMemory.resize(numBuffers);
 		m_mappedData.resize(numBuffers);
 
 		for (size_t i = 0; i < numBuffers; i++) {
-			SVkUtils::CreateBuffer(m_context->getDevice(), m_context->getPhysicalDevice(), bufferSize, 
-				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-				m_uniformBuffers[i], m_uniformBuffersMemory[i]);
+			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+			bufferInfo.size = bufferSize;
+			bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+
+			VmaAllocationCreateInfo allocInfo = {};
+			// CPU only since we very often update the buffer data
+			allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+			vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_uniformBuffers[i].buffer, &m_uniformBuffers[i].allocation, nullptr);
 
 			// Map buffer and leave it mapped for the lifetime of the instance
-			vkMapMemory(m_context->getDevice(), m_uniformBuffersMemory[i], 0, bufferSize, 0, &m_mappedData[i]);
+			vmaMapMemory(allocator, m_uniformBuffers[i].allocation, &m_mappedData[i]);
 		}
 	}
 
 	SVkConstantBuffer::~SVkConstantBuffer() {
-		for (size_t i = 0; i < m_uniformBuffers.size(); i++) {
-			vkDestroyBuffer(m_context->getDevice(), m_uniformBuffers[i], nullptr);
-			vkFreeMemory(m_context->getDevice(), m_uniformBuffersMemory[i], nullptr);
+		for (auto& buffer : m_uniformBuffers) {
+			vmaUnmapMemory(m_context->getVmaAllocator(), buffer.allocation);
 		}
 	}
 
@@ -50,7 +55,7 @@ namespace ShaderComponent {
 	}
 
 	const VkBuffer& SVkConstantBuffer::getBuffer(unsigned int swapImageIndex) const {
-		return m_uniformBuffers[swapImageIndex];
+		return m_uniformBuffers[swapImageIndex].buffer;
 	}
 
 }
