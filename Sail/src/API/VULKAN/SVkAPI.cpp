@@ -25,6 +25,8 @@ SVkAPI::SVkAPI()
 SVkAPI::~SVkAPI() {
 	vkDeviceWaitIdle(m_device);
 
+	vmaDestroyAllocator(m_vmaAllocator);
+
 	vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
@@ -508,6 +510,20 @@ bool SVkAPI::init(Window* window) {
 
 		if (vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
 			Logger::Error("Failed to create descriptor pool!");
+			return false;
+		}
+	}
+
+	// Set up Vulkan Memory Allocator
+	{
+		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.physicalDevice = m_physicalDevice;
+		allocatorInfo.device = m_device;
+		allocatorInfo.instance = m_instance;
+
+		if (vmaCreateAllocator(&allocatorInfo, &m_vmaAllocator) != VK_SUCCESS) {
+			Logger::Error("Failed to create vma allocator!");
+			return false;
 		}
 	}
 
@@ -675,6 +691,10 @@ VkRenderPassBeginInfo SVkAPI::getRenderPassInfo() const {
 
 const VkDescriptorPool& SVkAPI::getDescriptorPool() const {
 	return m_descriptorPool;
+}
+
+const VmaAllocator& SVkAPI::getVmaAllocator() const {
+	return m_vmaAllocator;
 }
 
 void SVkAPI::initCommand(Command& command) const {

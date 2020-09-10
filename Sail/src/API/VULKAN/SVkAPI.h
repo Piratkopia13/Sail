@@ -2,6 +2,8 @@
 #include "Sail/api/GraphicsAPI.h"
 #include <vulkan/vulkan.h>
 #include <optional>
+#include "vk_mem_alloc.h"
+#include "Sail/Application.h"
 
 class Win32Window;
 
@@ -11,6 +13,23 @@ public:
 
 	struct Command {
 		std::vector<VkCommandBuffer> buffers;
+	};
+
+	// Memory allocation variants
+	struct BufferAllocation {
+		VkBuffer buffer = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
+		
+		void destroy() {
+			if (buffer != VK_NULL_HANDLE) {
+				vmaDestroyBuffer(Application::getInstance()->getAPI<SVkAPI>()->getVmaAllocator(), buffer, allocation);
+			}
+			buffer = VK_NULL_HANDLE;
+			allocation = VK_NULL_HANDLE;
+		}
+		~BufferAllocation() {
+			destroy();
+		}
 	};
 
 public:
@@ -39,6 +58,7 @@ public:
 	size_t getNumSwapChainImages() const;
 	VkRenderPassBeginInfo getRenderPassInfo() const; // TODO: maybe renderers should handle their own render passes?
 	const VkDescriptorPool& getDescriptorPool() const;
+	const VmaAllocator& getVmaAllocator() const;
 	
 	void initCommand(Command& command) const;
 	// Schedules a memory copy to run at the latest during the next call to present()
@@ -135,5 +155,8 @@ private:
 #else
 	const bool m_enableValidationLayers = true;
 #endif
+
+	// VulkanMemoryAllocator lib
+	VmaAllocator m_vmaAllocator;
 
 };

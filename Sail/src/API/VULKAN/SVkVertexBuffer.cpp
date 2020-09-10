@@ -2,7 +2,6 @@
 #include "SVkVertexBuffer.h"
 #include "Sail/Application.h"
 #include "SVkUtils.h"
-//#include "VkUtils.h"
 
 VertexBuffer* VertexBuffer::Create(const Mesh::Data& modelData, bool allowUpdates) {
 	return SAIL_NEW SVkVertexBuffer(modelData, allowUpdates);
@@ -14,62 +13,78 @@ VertexBuffer* VertexBuffer::Create(const Mesh::Data& modelData, bool allowUpdate
 SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 	: VertexBuffer(modelData)
 	, m_allowUpdates(allowUpdates)
-	, m_stagingBuffer(VK_NULL_HANDLE)
-	, m_stagingBufferMemory(VK_NULL_HANDLE)
 {
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
 	auto numImages = m_context->getNumSwapChainImages();
 	auto bufferSize = getVertexBufferSize();
+	auto allocator = m_context->getVmaAllocator();
 
 	void* vertices = mallocVertexData(modelData);
 
 	if (allowUpdates) {
 		m_vertexBuffers.resize(numImages);
-		m_vertexBufferMemories.resize(numImages);
 		for (unsigned int i = 0; i < numImages; i++) {
-			SVkUtils::CreateBuffer(m_context->getDevice(), m_context->getPhysicalDevice(), bufferSize, 
-				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-				m_vertexBuffers[i], m_vertexBufferMemories[i]);
+			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+			bufferInfo.size = bufferSize;
+			bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+			VmaAllocationCreateInfo allocInfo = {};
+			allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+			vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_vertexBuffers[i].buffer, &m_vertexBuffers[i].allocation, nullptr);
 			
 			// Copy vertex data from RAM into VRAM
 			void* data;
-			vkMapMemory(m_context->getDevice(), m_vertexBufferMemories[i], 0, bufferSize, 0, &data);
+			vmaMapMemory(allocator, m_vertexBuffers[i].allocation, &data);
 			memcpy(data, vertices, (size_t)bufferSize);
-			vkUnmapMemory(m_context->getDevice(), m_vertexBufferMemories[i]);
+			vmaUnmapMemory(allocator, m_vertexBuffers[i].allocation);
 		}
 	} else {
 		// allowUpdates == false
 
 		// Create cpu visible staging buffer
-		SVkUtils::CreateBuffer(m_context->getDevice(), m_context->getPhysicalDevice(), bufferSize,
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			m_stagingBuffer, m_stagingBufferMemory);
+		{
+			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+			bufferInfo.size = bufferSize;
+			bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-		// Copy vertices to the stating buffer
+			VmaAllocationCreateInfo allocInfo = {};
+			allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+			vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_stagingBuffer.buffer, &m_stagingBuffer.allocation, nullptr);
+		}
+
+		// Copy vertices to the staging buffer
 		void* data;
-		vkMapMemory(m_context->getDevice(), m_stagingBufferMemory, 0, bufferSize, 0, &data);
+		vmaMapMemory(allocator, m_stagingBuffer.allocation, &data);
 		memcpy(data, vertices, (size_t)bufferSize);
-		vkUnmapMemory(m_context->getDevice(), m_stagingBufferMemory);
+		vmaUnmapMemory(allocator, m_stagingBuffer.allocation);
 
 		// Create gpu local memory
 		m_vertexBuffers.resize(1);
-		m_vertexBufferMemories.resize(1);
-		SVkUtils::CreateBuffer(m_context->getDevice(), m_context->getPhysicalDevice(), bufferSize,
-			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexBuffers[0], m_vertexBufferMemories[0]);
+		{
+			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+			bufferInfo.size = bufferSize;
+			bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+			VmaAllocationCreateInfo allocInfo = {};
+			allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+			vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_vertexBuffers[0].buffer, &m_vertexBuffers[0].allocation, nullptr);
+		}
 
 		auto uploadCompleteCallback = [&] {
 			// Clean up staging buffer after copy is completed
-			vkDestroyBuffer(m_context->getDevice(), m_stagingBuffer, nullptr);
-			vkFreeMemory(m_context->getDevice(), m_stagingBufferMemory, nullptr);
+			m_stagingBuffer.destroy();
 		};
 
-		// copy from staging to gpu local memory
+		// Copy from staging to gpu local memory
 		m_context->scheduleMemoryCopy([&, bufferSize](const VkCommandBuffer& cmd) {
 			VkBufferCopy copyRegion{};
 			copyRegion.srcOffset = 0; // Optional
 			copyRegion.dstOffset = 0; // Optional
 			copyRegion.size = bufferSize;
-			vkCmdCopyBuffer(cmd, m_stagingBuffer, m_vertexBuffers[0], 1, &copyRegion);
+			vkCmdCopyBuffer(cmd, m_stagingBuffer.buffer, m_vertexBuffers[0].buffer, 1, &copyRegion);
 		}, uploadCompleteCallback);
 	}
 
@@ -79,19 +94,13 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 
 SVkVertexBuffer::~SVkVertexBuffer() {
 	vkDeviceWaitIdle(m_context->getDevice());
-	for (auto& vb : m_vertexBuffers) {
-		vkDestroyBuffer(m_context->getDevice(), vb, nullptr);
-	}
-	for (auto& vbm : m_vertexBufferMemories) {
-		vkFreeMemory(m_context->getDevice(), vbm, nullptr);
-	}
 }
 
 void SVkVertexBuffer::bind(void* cmdList) {
 	// The first frame or so will bind the buffer before it has any valid data, this might still be fine(?)
 
 	auto imageIndex = (m_allowUpdates) ? m_context->getSwapImageIndex() : 0;
-	VkBuffer vertexBuffers[] = { m_vertexBuffers[imageIndex], m_vertexBuffers[imageIndex], m_vertexBuffers[imageIndex], m_vertexBuffers[imageIndex], m_vertexBuffers[imageIndex] };
+	VkBuffer vertexBuffers[] = { m_vertexBuffers[imageIndex].buffer, m_vertexBuffers[imageIndex].buffer, m_vertexBuffers[imageIndex].buffer, m_vertexBuffers[imageIndex].buffer, m_vertexBuffers[imageIndex].buffer };
 	VkDeviceSize offsets[5];
 	// Set offsets in the buffer
 	// The order of the different vertex attributes is defined in VertexBuffer::mallocVertexData

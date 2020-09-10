@@ -21,10 +21,10 @@ private:
 
 	// Staging buffers are only used when allowUpdates == false
 	// They are destroyed as soon as the data is in the device local vertexBuffer
-	VkBuffer m_stagingBuffer;
-	VkDeviceMemory m_stagingBufferMemory;
+	SVkAPI::BufferAllocation m_stagingBuffer;
+	//VkDeviceMemory m_stagingBufferMemory;
 
-	std::vector<VkBuffer> m_vertexBuffers;
-	std::vector<VkDeviceMemory> m_vertexBufferMemories;
+	std::vector<SVkAPI::BufferAllocation> m_vertexBuffers;
+	//std::vector<VkDeviceMemory> m_vertexBufferMemories;
 
 };

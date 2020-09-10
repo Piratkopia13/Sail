@@ -4,10 +4,11 @@
 // 218 of these in the fbx sdk
 #pragma warning(disable:26495)
 
-// Only define GLM_FORCE_DEPTH_ZERO_TO_ONE if directx or vulkan (not opengl)
-#if defined(_SAIL_DX11) || defined(_SAIL_DX12) || defined(_SAIL_VK)
-	#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#endif
+//// Only define GLM_FORCE_DEPTH_ZERO_TO_ONE if directx or vulkan (not opengl)
+//#if defined(_SAIL_DX11) || defined(_SAIL_DX12) || defined(_SAIL_VK)
+//	#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+//#endif
+
 #include <glm/glm.hpp>
 
 #include "Sail/debug/Instrumentor.h"
