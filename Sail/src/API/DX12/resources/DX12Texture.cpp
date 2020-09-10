@@ -234,7 +234,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 
 	//assert(m_textureDesc.MipLevels <= 5 && "No more than 5 mip levels can currently be generated, see commented line below to add that functionality");
 	for (uint32_t srcMip = 0; srcMip < m_textureDesc.MipLevels - 1u;) {
-		mipsShader.setCBufferVar("IsSRGB", &isSRGB, sizeof(bool));
+		mipsShader.setCBufferVar("IsSRGB", &isSRGB, sizeof(bool), cmdList);
 
 		uint64_t srcWidth = m_textureDesc.Width >> srcMip;
 		uint32_t srcHeight = m_textureDesc.Height >> srcMip;
@@ -246,7 +246,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 		// 0b10(2): Width is even, height is odd.
 		// 0b11(3): Both width and height are odd.
 		unsigned int srcDimension = (srcHeight & 1) << 1 | (srcWidth & 1);
-		mipsShader.setCBufferVar("SrcDimension", &srcDimension, sizeof(unsigned int));
+		mipsShader.setCBufferVar("SrcDimension", &srcDimension, sizeof(unsigned int), cmdList);
 
 		// How many mipmap levels to compute this pass (max 4 mips per pass)
 		DWORD mipCount;
@@ -269,9 +269,9 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 
 		glm::vec2 texelSize = glm::vec2(1.0f / (float)dstWidth, 1.0f / (float)dstHeight);
 
-		mipsShader.setCBufferVar("SrcMipLevel", &srcMip, sizeof(unsigned int));
-		mipsShader.setCBufferVar("NumMipLevels", &mipCount, sizeof(unsigned int));
-		mipsShader.setCBufferVar("TexelSize", &texelSize, sizeof(glm::vec2));
+		mipsShader.setCBufferVar("SrcMipLevel", &srcMip, sizeof(unsigned int), cmdList);
+		mipsShader.setCBufferVar("NumMipLevels", &mipCount, sizeof(unsigned int), cmdList);
+		mipsShader.setCBufferVar("TexelSize", &texelSize, sizeof(glm::vec2), cmdList);
 
 		const auto& heap = m_context->getMainGPUDescriptorHeap();
 		DescriptorHeap::DescriptorTableInstanceBuilder instance;

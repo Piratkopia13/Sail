@@ -155,10 +155,10 @@ void DX12DeferredRenderer::runGeometryPass(ID3D12GraphicsCommandList4* cmdList) 
 		auto& pso = resman.getPSO(shader, command.mesh);
 		pso.bind(cmdList);
 
-		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
+		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
+		shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), cmdList);
+		shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4), cmdList);
+		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), cmdList);
 
 		command.mesh->draw(*this, command.material, shader, environment, cmdList);
 	}
@@ -196,14 +196,14 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 	auto& pso = resman.getPSO(shader, mesh);
 	pso.bind(cmdList);
 
-	shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-	shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
+	shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), cmdList);
+	shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4), cmdList);
 	auto& [kernelData, kernelDataSize] = m_ssao->getKernel();
-	shader->trySetCBufferVar("kernel", kernelData, kernelDataSize);
+	shader->trySetCBufferVar("kernel", kernelData, kernelDataSize, cmdList);
 	auto& [noiseData, noiseDataSize] = m_ssao->getNoise();
-	shader->trySetCBufferVar("noise", noiseData, noiseDataSize);
+	shader->trySetCBufferVar("noise", noiseData, noiseDataSize, cmdList);
 	glm::vec2 ssaoSize(m_ssao->getRenderTargetWidth(), m_ssao->getRenderTargetHeight());
-	shader->trySetCBufferVar("windowSize", &ssaoSize, sizeof(glm::vec2));
+	shader->trySetCBufferVar("windowSize", &ssaoSize, sizeof(glm::vec2), cmdList);
 
 	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {
 		// Bind GBuffer textures
@@ -228,7 +228,7 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 
 	// Dispatch horizontal blur pass
 	{
-		blurHorizontalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float));
+		blurHorizontalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmdList);
 
 		DescriptorHeap::DescriptorTableInstanceBuilder instance;
 
@@ -250,7 +250,7 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 
 	// Dispatch vertical blur pass
 	{
-		blurVerticalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float));
+		blurVerticalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmdList);
 
 		DescriptorHeap::DescriptorTableInstanceBuilder instance;
 
@@ -303,20 +303,20 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	auto& pso = resman.getPSO(shader, mesh);
 	pso.bind(cmdList);
 
-	shader->trySetCBufferVar("sys_mViewInv", &glm::inverse(camera->getViewMatrix()), sizeof(glm::mat4));
-	shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+	shader->trySetCBufferVar("sys_mViewInv", &glm::inverse(camera->getViewMatrix()), sizeof(glm::mat4), cmdList);
+	shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), cmdList);
 	int useSSAOInt = (int)useSSAO;
-	shader->trySetCBufferVar("useSSAO", &useSSAOInt, sizeof(int));
+	shader->trySetCBufferVar("useSSAO", &useSSAOInt, sizeof(int), cmdList);
 	int useShadowTextureInt = (int)useDXRHardShadows;
-	shader->trySetCBufferVar("useShadowTexture", &useShadowTextureInt, sizeof(int));
+	shader->trySetCBufferVar("useShadowTexture", &useShadowTextureInt, sizeof(int), cmdList);
 
 	if (lightSetup) {
 		auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
 		auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
 		unsigned int numPLs = lightSetup->getNumPLs();
-		shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
-		shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
-		shader->trySetCBufferVar("sys_numPLights", &numPLs, sizeof(unsigned int));
+		shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize, cmdList);
+		shader->trySetCBufferVar("pointLights", plData, plDataByteSize, cmdList);
+		shader->trySetCBufferVar("sys_numPLights", &numPLs, sizeof(unsigned int), cmdList);
 	}
 
 	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {

@@ -116,17 +116,17 @@ void DX12ForwardRenderer::runRenderingPass(ID3D12GraphicsCommandList4* cmdList) 
 		auto& pso = resman.getPSO(shader, command.mesh);
 		pso.bind(cmdList);
 
-		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
+		shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), cmdList);
+		shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4), cmdList);
+		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), cmdList);
+		shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), cmdList);
 
 		if (lightSetup) {
 			auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
 			auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
-			shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
-			shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
+			shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize, cmdList);
+			shader->trySetCBufferVar("pointLights", plData, plDataByteSize, cmdList);
 		}
 
 		command.mesh->draw(*this, command.material, shader, environment, cmdList);

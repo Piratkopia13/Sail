@@ -68,5 +68,5 @@ SVkIndexBuffer::~SVkIndexBuffer() {
 }
 
 void SVkIndexBuffer::bind(void* cmdList) {
-	vkCmdBindIndexBuffer(*static_cast<VkCommandBuffer*>(cmdList), m_indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(static_cast<VkCommandBuffer>(cmdList), m_indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 }

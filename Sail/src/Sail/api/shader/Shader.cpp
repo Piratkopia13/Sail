@@ -60,11 +60,11 @@ RenderableTexture* Shader::getRenderableTexture(const std::string& name) const {
 }
 
 // TODO: size isn't really needed, can be read from the byteOffset of the next var
-void Shader::setCBufferVar(const std::string& name, const void* data, unsigned int size) {
+void Shader::setCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList) {
 	setCBufferVarInternal(name, data, size, 0U);
 }
 
-bool Shader::trySetCBufferVar(const std::string& name, const void* data, unsigned int size) {
+bool Shader::trySetCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList) {
 	return trySetCBufferVarInternal(name, data, size, 0U);
 }
 
@@ -155,7 +155,7 @@ bool Shader::trySetCBufferVarInternal(const std::string& name, const void* data,
 }
 
 void Shader::setCBufferVarInternal(const std::string& name, const void* data, unsigned int size, unsigned int meshIndex) {
-	bool success = trySetCBufferVarInternal(name, data, size, meshIndex);
+	bool success = Shader::trySetCBufferVarInternal(name, data, size, meshIndex);
 	if (!success)
 		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
 }

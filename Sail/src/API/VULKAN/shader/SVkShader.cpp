@@ -6,6 +6,7 @@
 //#include "../resources/DescriptorHeap.h"
 #include "../resources/VkTexture.h"
 #include "SVkConstantBuffer.h"
+#include "../SVkUtils.h"
 //#include "../resources/VkRenderableTexture.h"
 
 Shader* Shader::Create(Shaders::ShaderSettings settings, Shader* allocAddr) {
@@ -28,13 +29,13 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	auto& cBuffers = parser.getParsedData().cBuffers;
 	std::vector<VkDescriptorSetLayoutBinding> uboLayoutBindings;
 	for (auto& cbuffer : cBuffers) {
-		VkDescriptorSetLayoutBinding b;
+		auto& b = uboLayoutBindings.emplace_back();
 		b.binding = static_cast<uint32_t>(cbuffer.cBuffer->getSlot());
 		b.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		b.descriptorCount = 1;
-		b.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS; // TODO: make this more specific(?)
+		//b.stageFlags = SVkUtils::ConvertShaderBindingToStageFlags(cbuffer.bindShader); // TODO: find out why this sometimes breaks things
+		b.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
 		b.pImmutableSamplers = nullptr; // Optional
-		uboLayoutBindings.emplace_back(b);
 	}
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -46,12 +47,23 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 		Logger::Error("Failed to create descriptor set layout!");
 	}
 
+	std::vector<VkPushConstantRange> pcRanges;
+	for (auto& pc : parser.getParsedData().pushConstants) {
+		if (pc.size > 128) {
+			Logger::Warning("A push constant is larger than 128, make sure the current device supports this!");
+		}
+		auto& range = pcRanges.emplace_back();
+		range.offset = 0;
+		range.size = pc.size; // TODO: make this dynamic and read it from shader source, also note when size is larger than the limit
+		range.stageFlags = SVkUtils::ConvertShaderBindingToStageFlags(pc.bindShader);
+	}
+
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = 1;
 	pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pcRanges.size());
+	pipelineLayoutInfo.pPushConstantRanges = pcRanges.data();
 
 	if (vkCreatePipelineLayout(m_context->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
 		Logger::Error("Failed to create pipeline layout!");
@@ -73,6 +85,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	}
 
 	// Configure the descriptor sets
+	// TODO: add support for dynamic uniform buffers (shared between multiple instances)
 	for (size_t i = 0; i < numBuffers; i++) {
 		std::vector<VkDescriptorBufferInfo> bufferInfos;
 		for (auto& buffer : cBuffers) {
@@ -171,7 +184,7 @@ const VkPipelineLayout& SVkShader::getPipelineLayout() const {
 }
 
 void SVkShader::bind(void* cmdList, uint32_t frameIndex) const {
-	vkCmdBindDescriptorSets(*static_cast<VkCommandBuffer*>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[frameIndex], 0, nullptr);
+	vkCmdBindDescriptorSets(static_cast<VkCommandBuffer>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[frameIndex], 0, nullptr);
 	bindInternal(0U, cmdList);
 }
 
@@ -184,10 +197,32 @@ void SVkShader::setRenderableTexture(const std::string& name, RenderableTexture*
 	assert(false);
 }
 
-void SVkShader::setCBufferVar(const std::string& name, const void* data, unsigned int size) {
-	setCBufferVarInternal(name, data, size, 0U);
+void SVkShader::setCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList) {
+	if (!trySetPushConstant(name, data, size, cmdList)) {
+		setCBufferVarInternal(name, data, size, 0U);;
+	}
 }
 
-bool SVkShader::trySetCBufferVar(const std::string& name, const void* data, unsigned int size) {
-	return trySetCBufferVarInternal(name, data, size, 0U);
+bool SVkShader::trySetCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList) {
+	if (!trySetPushConstant(name, data, size, cmdList)) {
+		return trySetCBufferVarInternal(name, data, size, 0U);
+	}
+	return true;
+}
+
+bool SVkShader::trySetPushConstant(const std::string& name, const void* data, unsigned int size, void* cmdList) {
+	// Check if name matches a push constant
+	bool wasPushConstant = false;
+	for (auto& pc : parser.getParsedData().pushConstants) {
+		for (auto& var : pc.vars) {
+			if (var.name == name) {
+				// Set the push constant
+				vkCmdPushConstants(static_cast<VkCommandBuffer>(cmdList), m_pipelineLayout, SVkUtils::ConvertShaderBindingToStageFlags(pc.bindShader), var.byteOffset, size, data);
+
+				wasPushConstant = true;
+				break;
+			}
+		}
+	}
+	return wasPushConstant;
 }

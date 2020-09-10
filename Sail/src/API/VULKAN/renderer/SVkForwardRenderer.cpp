@@ -68,24 +68,24 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 
 		// Find a matching pipelineStateObject and bind it
 		auto& pso = resman.getPSO(shader, command.mesh);
-		pso.bind(&cmd, imageIndex);
+		pso.bind(cmd, imageIndex);
 
-		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
+		shader->trySetCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
 		if (camera) {
 			// Transpose all matrices to convert them to row-major which is required in order for the hlsl->spir-v multiplication order
-			shader->trySetCBufferVar("sys_mView", &glm::transpose(camera->getViewMatrix()), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_mProjection", &glm::transpose(camera->getProjMatrix()), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_mVP", &glm::transpose(camera->getViewProjection()), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+			shader->trySetCBufferVar("sys_mView", &glm::transpose(camera->getViewMatrix()), sizeof(glm::mat4), cmd);
+			shader->trySetCBufferVar("sys_mProjection", &glm::transpose(camera->getProjMatrix()), sizeof(glm::mat4), cmd);
+			shader->trySetCBufferVar("sys_mVP", &glm::transpose(camera->getViewProjection()), sizeof(glm::mat4), cmd);
+			shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), cmd);
 		}
 		if (lightSetup) {
 			auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
 			auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
-			shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
-			shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
+			shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize, cmd);
+			shader->trySetCBufferVar("pointLights", plData, plDataByteSize, cmd);
 		}
 
-		command.mesh->draw(*this, command.material, shader, environment, &cmd);
+		command.mesh->draw(*this, command.material, shader, environment, cmd);
 	}
 
 	

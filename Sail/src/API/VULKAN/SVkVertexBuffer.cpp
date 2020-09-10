@@ -110,7 +110,7 @@ void SVkVertexBuffer::bind(void* cmdList) {
 	offsets[3] = offsets[2] + getNormalsDataSize();
 	offsets[4] = offsets[3] + getTangentsDataSize();
 
-	vkCmdBindVertexBuffers(*static_cast<VkCommandBuffer*>(cmdList), 0, 5, vertexBuffers, offsets);
+	vkCmdBindVertexBuffers(static_cast<VkCommandBuffer>(cmdList), 0, 5, vertexBuffers, offsets);
 }
 
 void SVkVertexBuffer::update(Mesh::Data& data) {

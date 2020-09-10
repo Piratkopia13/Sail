@@ -107,7 +107,7 @@ const char* Utils::String::findToken(const std::string& token, const char* sourc
 
 			// Ignore match if line contains "SAIL_IGNORE"
 			const char* newLine = strchr(match, '\n');
-			size_t lineLength = newLine - match;
+			size_t lineLength = (newLine) ? newLine - match : strlen(match);
 			char* lineCopy = (char*)malloc(lineLength + 1);
 			memset(lineCopy, '\0', lineLength + 1);
 			strncpy_s(lineCopy, lineLength + 1, match, lineLength);
@@ -156,7 +156,7 @@ std::string Utils::String::nextToken(const char* source) {
 	const char* start = source;
 	while (isspace(*start)) start++;
 	int size = 0;
-	while (!isspace(start[size])) size++;
+	while (!isspace(start[size]) && start[size] != '\0') size++;
 	return std::string(start, strnlen(start, size));
 }
 

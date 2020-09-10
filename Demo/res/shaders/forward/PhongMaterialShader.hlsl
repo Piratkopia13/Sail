@@ -18,14 +18,22 @@ struct PSIn {
 	LightList lights : LIGHTS;
 };
 
+// This cbuffer is shared between all
 cbuffer VSPSSystemCBuffer : register(b0) {
-	matrix sys_mWorld;
+	// matrix sys_mWorld;
     matrix sys_mVP;
     PhongMaterial sys_material;
     //float padding;
     float4 sys_clippingPlane;
     float3 sys_cameraPos;
 }
+
+// Fast as frick data through the pipeline itself
+[[vk::push_constant]]
+struct {
+	matrix sys_mWorld;
+	uint materialIndex;
+} VSPCTest;
 
 struct PointLightInput {
 	float3 color;
@@ -42,22 +50,25 @@ PSIn VSMain(VSIn input) {
 	PSIn output;
 
 	// REMOVE THESE LINES WHEN TEXTURE WORK IN VK
+	matrix sys_mWorld = VSPCTest.sys_mWorld;
+
 	// input.position.w = 1.f;
 	// output.position = mul(sys_mWorld, input.position);
     // output.position = mul(output.position, sys_mVP);
 	// return output;
 
 	// Copy over the directional light
-	output.lights.dirLight = dirLight;
-	// Copy over point lights
-    for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-        output.lights.pointLights[i].attRadius = pointLights[i].attRadius;
-        output.lights.pointLights[i].color = pointLights[i].color;
-        output.lights.pointLights[i].intensity = pointLights[i].intensity;
-    }
+	// output.lights.dirLight = dirLight;
+	// // Copy over point lights
+    // for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+    //     output.lights.pointLights[i].attRadius = pointLights[i].attRadius;
+    //     output.lights.pointLights[i].color = pointLights[i].color;
+    //     output.lights.pointLights[i].intensity = pointLights[i].intensity;
+    // }
 
 	input.position.w = 1.f;
 	output.position = mul(sys_mWorld, input.position);
+	// output.position = mul(input.position, sys_mWorld);
 
 	// Calculate the distance from the vertex to the clipping plane
 	// This needs to be done with world coordinates
@@ -66,10 +77,10 @@ PSIn VSMain(VSIn input) {
 	// World space vector pointing from the vertex position to the camera
     output.toCam = sys_cameraPos - output.position.xyz;
 
-    for (uint j = 0; j < NUM_POINT_LIGHTS; j++) {
-		// World space vector poiting from the vertex position to the point light
-        output.lights.pointLights[j].fragToLight = pointLights[j].position - output.position.xyz;
-    }
+    // for (uint j = 0; j < NUM_POINT_LIGHTS; j++) {
+	// 	// World space vector poiting from the vertex position to the point light
+    //     output.lights.pointLights[j].fragToLight = pointLights[j].position - output.position.xyz;
+    // }
 
 
     output.position = mul(sys_mVP, output.position);
@@ -84,9 +95,9 @@ PSIn VSMain(VSIn input) {
 		TBN = transpose(TBN);
 
 		output.toCam = mul(output.toCam, TBN);
-		output.lights.dirLight.direction = mul(output.lights.dirLight.direction, TBN);
-        for (int i = 0; i < NUM_POINT_LIGHTS; i++)
-            output.lights.pointLights[i].fragToLight = mul(output.lights.pointLights[i].fragToLight, TBN);
+		// output.lights.dirLight.direction = mul(output.lights.dirLight.direction, TBN);
+        // for (int i = 0; i < NUM_POINT_LIGHTS; i++)
+        //     output.lights.pointLights[i].fragToLight = mul(output.lights.pointLights[i].fragToLight, TBN);
     }
 
 	output.normal = mul((float3x3) sys_mWorld, input.normal);

@@ -198,10 +198,10 @@ void DX12Shader::setRenderableTexture(const std::string& name, RenderableTexture
 	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), dxTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
-void DX12Shader::setCBufferVar(const std::string& name, const void* data, unsigned int size) {
+void DX12Shader::setCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList) {
 	setCBufferVarInternal(name, data, size, getMeshIndex());
 }
 
-bool DX12Shader::trySetCBufferVar(const std::string& name, const void* data, unsigned int size) {
+bool DX12Shader::trySetCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList) {
 	return trySetCBufferVarInternal(name, data, size, getMeshIndex());
 }

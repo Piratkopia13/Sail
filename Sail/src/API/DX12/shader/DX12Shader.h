@@ -26,8 +26,8 @@ public:
 
 	virtual bool setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) override;
 	virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) override;
-	void setCBufferVar(const std::string& name, const void* data, unsigned int size) override;
-	bool trySetCBufferVar(const std::string& name, const void* data, unsigned int size) override;
+	void setCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList) override;
+	bool trySetCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList) override;
 
 	// Call this after each mesh/instance
 	// Internally updates meshIndex used to place multiple instances in a single cbuffer

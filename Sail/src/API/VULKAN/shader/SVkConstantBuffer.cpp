@@ -49,7 +49,11 @@ namespace ShaderComponent {
 	}
 
 	void SVkConstantBuffer::bind(unsigned int meshIndex, void* cmdList) const {
-		//assert(false);
+		// Already bound through vkCmdBindDescriptorSets call done in SVkShader::bind()
+	}
+
+	void SVkConstantBuffer::reserve(unsigned int meshIndexMax) {
+
 	}
 
 	const VkBuffer& SVkConstantBuffer::getBuffer(unsigned int swapImageIndex) const {

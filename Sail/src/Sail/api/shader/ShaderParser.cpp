@@ -98,6 +98,16 @@ std::string ShaderParser::parse(const std::string& source) {
 		parseCBuffer(getBlockStartingFrom(src));
 	}
 
+	// Process all push constants
+	src = cleanSource.c_str();
+	while (src = findToken("vk::push_constant", src)) {
+		std::string pushTokenSource = getBlockStartingFrom(src);
+		src += pushTokenSource.size();
+		const char* end = Utils::String::findToken(";", src);
+		pushTokenSource += std::string(src, end-src);
+		parseCBuffer(pushTokenSource, true);
+	}
+
 	// Process all samplers
 	src = cleanSource.c_str();
 	while (src = findToken("SamplerState", src)) {
@@ -122,10 +132,20 @@ std::string ShaderParser::parse(const std::string& source) {
 	return cleanSource;
 }
 
-void ShaderParser::parseCBuffer(const std::string& source) {
+void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConstant) {
 	const char* src = source.c_str();
+	const char* end = (storeAsPushConstant) ? findToken("}", src) - 1 : source.c_str() + source.size();
 
-	std::string bufferName = nextToken(src);
+	std::string bufferName = "Unspecified";
+	if (storeAsPushConstant) {
+		// Name is stored right after the block
+		const char* start = findToken("}", src);
+		UINT size;
+		bufferName = nextTokenAsName(start, size);
+	} else {
+		// Name is stored in the next token
+		bufferName = nextToken(src);
+	}
 	auto bindShader = getBindShaderFromName(bufferName);
 
 
@@ -138,7 +158,7 @@ void ShaderParser::parseCBuffer(const std::string& source) {
 	UINT size = 0;
 	std::vector<ShaderCBuffer::CBufferVariable> vars;
 
-	while (src < source.c_str() + source.size()) {
+	while (src < end) {
 		std::string type = nextToken(src);
 		src += type.size();
 		UINT tokenSize;
@@ -158,10 +178,14 @@ void ShaderParser::parseCBuffer(const std::string& source) {
 	if (size % 16 != 0)
 		size = size - (size % 16) + 16;
 
-	void* initData = malloc(size);
-	memset(initData, 0, size);
-	m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, m_parsedData.hasCS);
-	free(initData);
+	if (storeAsPushConstant) {
+		m_parsedData.pushConstants.emplace_back(vars, size, bindShader);
+	} else {
+		void* initData = malloc(size);
+		memset(initData, 0, size);
+		m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, m_parsedData.hasCS);
+		free(initData);
+	}
 
 	//Logger::Log(src);
 }

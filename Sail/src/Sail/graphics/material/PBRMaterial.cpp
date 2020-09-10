@@ -32,7 +32,7 @@ PBRMaterial::PBRMaterial()
 PBRMaterial::~PBRMaterial() {}
 
 void PBRMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
-	shader->trySetCBufferVar("sys_material", (void*)&getPBRSettings(), sizeof(PBRSettings));
+	shader->trySetCBufferVar("sys_material", (void*)&getPBRSettings(), sizeof(PBRSettings), cmdList);
 
 	// TODO: check if this causes a problem in DX12
 	// when a normal or specular texture is bound but not a diffuse one, the order will probably be wrong in dx12 shaders

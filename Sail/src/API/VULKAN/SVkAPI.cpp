@@ -136,6 +136,8 @@ bool SVkAPI::init(Window* window) {
 			vkGetPhysicalDeviceProperties(device, &deviceProperties);
 			vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
+			Logger::Log("Push constant size: " + std::to_string(deviceProperties.limits.maxPushConstantsSize));
+
 			QueueFamilyIndices indices = findQueueFamilies(device);
 			bool extensionsSupported = checkDeviceExtensionSupport(device);
 
@@ -766,7 +768,7 @@ bool SVkAPI::checkValidationLayerSupport() const {
 
 std::vector<const char*> SVkAPI::getRequiredExtensions() const {
 	// TODO: support glfw / cross platform windows
-	const char* extensionNames[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
+	const char* extensionNames[] = { "VK_KHR_surface", "VK_KHR_win32_surface"/*, "VK_KHR_get_physical_device_properties2", "VK_EXT_memory_budget"*/ };
 
 	std::vector<const char*> extensions(extensionNames, extensionNames + ARRAYSIZE(extensionNames));
 

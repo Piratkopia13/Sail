@@ -36,7 +36,7 @@ bool SVkPipelineStateObject::bind(void* cmdList, uint32_t frameIndex) {
 	// TODO: This returns false if pipeline is already bound, maybe do something with that
 	bindInternal(cmdList, true, frameIndex);
 
-	vkCmdBindPipeline(*static_cast<VkCommandBuffer*>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+	vkCmdBindPipeline(static_cast<VkCommandBuffer>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
 	return true;
 }

@@ -43,7 +43,7 @@ void SVkMesh::draw(const Renderer& renderer, Material* material, Shader* shader,
 		return;
 	}
 
-	auto& vkCmd = *static_cast<VkCommandBuffer*>(cmdList);
+	auto vkCmd = static_cast<VkCommandBuffer>(cmdList);
 
 	if (material) {
 		material->bind(shader, environment, cmdList);

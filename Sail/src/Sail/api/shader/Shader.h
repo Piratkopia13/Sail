@@ -32,8 +32,8 @@ public:
 	virtual bool setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) = 0;
 	virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) = 0;
 
-	virtual void setCBufferVar(const std::string& name, const void* data, unsigned int size);
-	virtual bool trySetCBufferVar(const std::string& name, const void* data, unsigned int size);
+	virtual void setCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList);
+	virtual bool trySetCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList);
 
 	virtual void setClippingPlane(const glm::vec4& clippingPlane) {};
 

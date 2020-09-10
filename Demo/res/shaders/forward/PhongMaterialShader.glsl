@@ -57,6 +57,13 @@ layout(binding = 1, std140) uniform type_VSLights
     PointLightInput pointLights[2];
 } VSLights;
 
+struct type_PushConstant_
+{
+    vec3 test;
+};
+
+uniform type_PushConstant_ pc;
+
 layout(location = 0) in vec4 in_var_POSITION0;
 layout(location = 1) in vec2 in_var_TEXCOORD0;
 layout(location = 2) in vec3 in_var_NORMAL0;
@@ -73,55 +80,58 @@ layout(location = 7) out PointLight varying_LIGHTS4[2];
 
 void main()
 {
-    PointLight _71[2];
-    for (uint _84 = 0u; _84 < 2u; )
+    PointLight _75[2];
+    for (uint _88 = 0u; _88 < 2u; )
     {
-        _71[_84].attRadius = VSLights.pointLights[_84].attRadius;
-        _71[_84].color = VSLights.pointLights[_84].color;
-        _71[_84].intensity = VSLights.pointLights[_84].intensity;
-        _84++;
+        _75[_88].attRadius = VSLights.pointLights[_88].attRadius;
+        _75[_88].color = VSLights.pointLights[_88].color;
+        _75[_88].intensity = VSLights.pointLights[_88].intensity;
+        _88++;
         continue;
     }
-    vec4 _98 = in_var_POSITION0;
-    _98.w = 1.0;
-    vec4 _101 = _98 * VSPSSystemCBuffer.sys_mWorld;
-    vec3 _107 = _101.xyz;
-    vec3 _108 = VSPSSystemCBuffer.sys_cameraPos - _107;
-    for (uint _110 = 0u; _110 < 2u; )
+    vec4 _102 = in_var_POSITION0;
+    _102.w = 1.0;
+    vec4 _105 = _102 * VSPSSystemCBuffer.sys_mWorld;
+    vec3 _111 = _105.xyz;
+    vec3 _112 = VSPSSystemCBuffer.sys_cameraPos - _111;
+    for (uint _114 = 0u; _114 < 2u; )
     {
-        _71[_110].fragToLight = VSLights.pointLights[_110].position - _107;
-        _110++;
+        _75[_114].fragToLight = VSLights.pointLights[_114].position - _111;
+        _114++;
         continue;
     }
-    vec3 _153;
-    vec3 _154;
+    vec4 _125 = _105 * VSPSSystemCBuffer.sys_mVP;
+    vec3 _157;
+    vec3 _158;
     if (VSPSSystemCBuffer.sys_material.hasNormalTexture != 0u)
     {
-        mat3 _133 = mat3(VSPSSystemCBuffer.sys_mWorld[0].xyz, VSPSSystemCBuffer.sys_mWorld[1].xyz, VSPSSystemCBuffer.sys_mWorld[2].xyz);
-        mat3 _141 = transpose(mat3(normalize(in_var_TANGENT0) * _133, normalize(in_var_BINORMAL0) * _133, normalize(in_var_NORMAL0) * _133));
-        for (int _145 = 0; _145 < 2; )
+        mat3 _137 = mat3(VSPSSystemCBuffer.sys_mWorld[0].xyz, VSPSSystemCBuffer.sys_mWorld[1].xyz, VSPSSystemCBuffer.sys_mWorld[2].xyz);
+        mat3 _145 = transpose(mat3(normalize(in_var_TANGENT0) * _137, normalize(in_var_BINORMAL0) * _137, normalize(in_var_NORMAL0) * _137));
+        for (int _149 = 0; _149 < 2; )
         {
-            _71[_145].fragToLight = _141 * _71[_145].fragToLight;
-            _145++;
+            _75[_149].fragToLight = _145 * _75[_149].fragToLight;
+            _149++;
             continue;
         }
-        _153 = _141 * _108;
-        _154 = _141 * VSLights.dirLight.direction;
+        _157 = _145 * _112;
+        _158 = _145 * VSLights.dirLight.direction;
     }
     else
     {
-        _153 = _108;
-        _154 = VSLights.dirLight.direction;
+        _157 = _112;
+        _158 = VSLights.dirLight.direction;
     }
-    gl_Position = _101 * VSPSSystemCBuffer.sys_mVP;
+    vec4 _172 = _125;
+    _172.w = _125.w + pc.test.x;
+    gl_Position = _172;
     varying_NORMAL0 = normalize(in_var_NORMAL0 * mat3(VSPSSystemCBuffer.sys_mWorld[0].xyz, VSPSSystemCBuffer.sys_mWorld[1].xyz, VSPSSystemCBuffer.sys_mWorld[2].xyz));
     varying_TEXCOORD0 = in_var_TEXCOORD0;
-    gl_ClipDistance[0u] = dot(_101, VSPSSystemCBuffer.sys_clippingPlane);
-    varying_TOCAM = _153;
+    gl_ClipDistance[0u] = dot(_105, VSPSSystemCBuffer.sys_clippingPlane);
+    varying_TOCAM = _157;
     varying_LIGHTS = VSLights.dirLight.color;
     varying_LIGHTS1 = VSLights.dirLight.intensity;
-    varying_LIGHTS2 = _154;
+    varying_LIGHTS2 = _158;
     varying_LIGHTS3 = VSLights.dirLight.padding;
-    varying_LIGHTS4 = _71;
+    varying_LIGHTS4 = _75;
 }
 

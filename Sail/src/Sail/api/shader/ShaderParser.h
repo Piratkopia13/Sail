@@ -24,11 +24,14 @@ private:
 			unsigned int byteOffset;
 		};
 		ShaderCBuffer(std::vector<ShaderCBuffer::CBufferVariable>& vars, void* initData, unsigned int size, ShaderComponent::BIND_SHADER bindShader, unsigned int slot, bool inComputeShader)
-			: vars(vars) {
+			: vars(vars)
+			, bindShader(bindShader)
+		{
 			cBuffer = std::unique_ptr<ShaderComponent::ConstantBuffer>(ShaderComponent::ConstantBuffer::Create(initData, size, bindShader, slot, inComputeShader));
 		}
 		std::vector<CBufferVariable> vars;
 		std::unique_ptr<ShaderComponent::ConstantBuffer> cBuffer;
+		ShaderComponent::BIND_SHADER bindShader;
 	};
 	struct ShaderSampler {
 		ShaderSampler(ShaderResource res, Texture::ADDRESS_MODE adressMode, Texture::FILTER filter, ShaderComponent::BIND_SHADER bindShader, unsigned int slot)
@@ -47,6 +50,16 @@ private:
 		ShaderResource res;
 		std::unique_ptr<RenderableTexture> renderableTexture;
 	};
+	struct ShaderPushConstant {
+		ShaderPushConstant(std::vector<ShaderCBuffer::CBufferVariable>& vars, unsigned int size, ShaderComponent::BIND_SHADER bindShader) 
+			: vars(vars)
+			, size(size)
+			, bindShader(bindShader)
+		{ }
+		unsigned int size;
+		std::vector<ShaderCBuffer::CBufferVariable> vars;
+		ShaderComponent::BIND_SHADER bindShader;
+	};
 	struct ParsedData {
 		bool hasVS = false, hasPS = false, hasGS = false, hasDS = false, hasHS = false, hasCS = false;
 		unsigned int attributesHash = 0;
@@ -54,6 +67,7 @@ private:
 		std::vector<ShaderSampler> samplers;
 		std::vector<ShaderResource> textures;
 		std::vector<ShaderRenderableTexture> renderableTextures;
+		std::vector<ShaderPushConstant> pushConstants; // Called root constants in DX12
 		void clear() {
 			attributesHash = 0;
 			hasVS = false; hasPS = false; hasGS = false; hasDS = false; hasHS = false, hasCS = false;
@@ -72,7 +86,7 @@ public:
 	int findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const;
 
 private:
-	void parseCBuffer(const std::string& source);
+	void parseCBuffer(const std::string& source, bool storeAsPushConstant = false);
 	void parseSampler(const char* sourceChar, std::string& source); // source argument is not const since this method is allowed to change the it!
 	void parseTexture(const char* source);
 	void parseRWTexture(const char* source);
