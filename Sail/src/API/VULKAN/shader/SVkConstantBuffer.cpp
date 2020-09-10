@@ -30,19 +30,17 @@ namespace ShaderComponent {
 			VmaAllocationCreateInfo allocInfo = {};
 			// CPU only since we very often update the buffer data
 			allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+			allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT; // Map buffer as soon as it is created
 
-			vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_uniformBuffers[i].buffer, &m_uniformBuffers[i].allocation, nullptr);
+			VmaAllocationInfo info{};
+			vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_uniformBuffers[i].buffer, &m_uniformBuffers[i].allocation, &info);
 
-			// Map buffer and leave it mapped for the lifetime of the instance
-			vmaMapMemory(allocator, m_uniformBuffers[i].allocation, &m_mappedData[i]);
+			// Leave the buffer mapped for the lifetime of the instance
+			m_mappedData[i] = info.pMappedData;
 		}
 	}
 
-	SVkConstantBuffer::~SVkConstantBuffer() {
-		for (auto& buffer : m_uniformBuffers) {
-			vmaUnmapMemory(m_context->getVmaAllocator(), buffer.allocation);
-		}
-	}
+	SVkConstantBuffer::~SVkConstantBuffer() { }
 
 	void SVkConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int meshIndex, unsigned int offset) {
 		auto currentImage = m_context->getSwapImageIndex();
