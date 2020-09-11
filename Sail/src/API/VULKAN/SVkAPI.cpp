@@ -18,6 +18,8 @@ SVkAPI::SVkAPI()
 	, m_scissorRect()
 	, m_presentImageIndex(-1)
 	, m_clearColor({ 0.f, 0.0f, 0.f, 1.f }) // Default clear color
+	, m_framebufferResized(false)
+	, m_isWindowMinimized(false)
 {
 	Logger::Log("Initializing Vulkan...");
 }
@@ -34,17 +36,11 @@ SVkAPI::~SVkAPI() {
 		vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
 		vkDestroyFence(m_device, m_fencesInFlightCopy[i], nullptr);
 	}
+	cleanupSwapChain();
+
 	vkDestroyCommandPool(m_device, m_commandPoolGraphics, nullptr);
 	vkDestroyCommandPool(m_device, m_commandPoolCopy, nullptr);
-	
-	for (auto& framebuffer : m_swapChainFramebuffers) {
-		vkDestroyFramebuffer(m_device, framebuffer, nullptr);
-	}
-	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-	for (auto& imageView : m_swapChainImageViews) {
-		vkDestroyImageView(m_device, imageView, nullptr);
-	}
-	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+
 	vkDestroyDevice(m_device, nullptr);
 	if (m_enableValidationLayers) DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
@@ -52,8 +48,6 @@ SVkAPI::~SVkAPI() {
 }
 
 bool SVkAPI::init(Window* window) {
-
-	auto winWindow = static_cast<Win32Window*>(window);
 	
 	// Make sure validation layers are available if run in debug
 	if (m_enableValidationLayers && !checkValidationLayerSupport()) {
@@ -95,6 +89,8 @@ bool SVkAPI::init(Window* window) {
 
 	// Set up surface
 	{
+		auto winWindow = static_cast<Win32Window*>(window);
+		
 		VkWin32SurfaceCreateInfoKHR createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 		createInfo.hwnd = *winWindow->getHwnd();
@@ -218,177 +214,16 @@ bool SVkAPI::init(Window* window) {
 		vkGetDeviceQueue(m_device, indices.copyFamily.value(), 0, &m_queueCopy);
 	}
 
-	// Create the swap chain
-	{
-		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_physicalDevice);
+	createSwapChain();
 
-		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-		VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-		VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, winWindow);
+	createImageViews();
 
-		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-		if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
-			imageCount = swapChainSupport.capabilities.maxImageCount;
-		}
+	// keep this here? or remove it?
+	createRenderPass();
 
-		VkSwapchainCreateInfoKHR createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = m_surface;
-		createInfo.minImageCount = imageCount;
-		createInfo.imageFormat = surfaceFormat.format;
-		createInfo.imageColorSpace = surfaceFormat.colorSpace;
-		createInfo.imageExtent = extent;
-		createInfo.imageArrayLayers = 1;
-		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	createViewportAndScissorRect();
 
-		QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
-		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
-
-		if (indices.graphicsFamily != indices.presentFamily) {
-			createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-			createInfo.queueFamilyIndexCount = 2;
-			createInfo.pQueueFamilyIndices = queueFamilyIndices;
-		} else {
-			createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-			createInfo.queueFamilyIndexCount = 0; // Optional
-			createInfo.pQueueFamilyIndices = nullptr; // Optional
-		}
-		
-		createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		createInfo.presentMode = presentMode;
-		createInfo.clipped = VK_TRUE;
-		createInfo.oldSwapchain = VK_NULL_HANDLE; // Set this when recreating the swap chain during for example window resizing
-
-		if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
-			Logger::Error("Failed to create swap chain!");
-			return false;
-		}
-
-		// Store handles to the swapchain images
-		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
-		m_swapChainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data());
-		m_swapChainImageFormat = createInfo.imageFormat;
-		m_swapChainExtent = createInfo.imageExtent;
-	}
-
-	// Create image views for the swap chain back buffers
-	{
-		m_swapChainImageViews.resize(m_swapChainImages.size());
-		for (size_t i = 0; i < m_swapChainImages.size(); i++) {
-			VkImageViewCreateInfo createInfo{};
-			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			createInfo.image = m_swapChainImages[i];
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createInfo.format = m_swapChainImageFormat;
-			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			createInfo.subresourceRange.baseMipLevel = 0;
-			createInfo.subresourceRange.levelCount = 1;
-			createInfo.subresourceRange.baseArrayLayer = 0;
-			createInfo.subresourceRange.layerCount = 1;
-
-			if (vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS) {
-				Logger::Error("failed to create image views!");
-				return false;
-			}
-		}
-	}
-
-
-
-	// Anything below this should be separated from this file asap
-
-	// Create render pass - maybe keep this here?
-	{
-		VkAttachmentDescription colorAttachment{};
-		colorAttachment.format = m_swapChainImageFormat;
-		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-		// Subpasses
-		// TODO: use multiple of these for post processing
-		VkAttachmentReference colorAttachmentRef{};
-		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		
-		VkSubpassDescription subpass{};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &colorAttachmentRef;
-
-		// Render pass
-		VkRenderPassCreateInfo renderPassInfo{};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = 1;
-		renderPassInfo.pAttachments = &colorAttachment;
-		renderPassInfo.subpassCount = 1;
-		renderPassInfo.pSubpasses = &subpass;
-
-		// Add dependency to wait for image reading to complete before writing
-		VkSubpassDependency dependency{};
-		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.dstSubpass = 0;
-		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.srcAccessMask = 0;
-		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-		renderPassInfo.dependencyCount = 1;
-		renderPassInfo.pDependencies = &dependency;
-
-		if (vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
-			Logger::Error("failed to create render pass!");
-			return false;
-		}
-	}
-
-	// Create viewport and scissor rect
-	{		
-		m_viewport.x = 0.0f;
-		m_viewport.y = (float)m_swapChainExtent.height; // Flipping viewport Y to work with hlsl shaders
-		m_viewport.width = (float)m_swapChainExtent.width;
-		m_viewport.height = -(float)m_swapChainExtent.height; // Flipping viewport Y to work with hlsl shaders
-		m_viewport.minDepth = 0.0f;
-		m_viewport.maxDepth = 1.0f;
-
-		m_scissorRect.offset = { 0, 0 };
-		m_scissorRect.extent = m_swapChainExtent;
-	}
-
-	// Create framebuffers
-	// This may be able to stay in this class
-	{
-		m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
-		for (size_t i = 0; i < m_swapChainImageViews.size(); i++) {
-			VkImageView attachments[] = {
-				m_swapChainImageViews[i]
-			};
-
-			VkFramebufferCreateInfo framebufferInfo{};
-			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = m_renderPass;
-			framebufferInfo.attachmentCount = 1;
-			framebufferInfo.pAttachments = attachments;
-			framebufferInfo.width = m_swapChainExtent.width;
-			framebufferInfo.height = m_swapChainExtent.height;
-			framebufferInfo.layers = 1;
-
-			if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS) {
-				Logger::Error("Failed to create framebuffer!");
-				return false;
-			}
-		}
-	}
+	createFramebuffers();
 
 	// Create command pool
 	{
@@ -416,7 +251,7 @@ bool SVkAPI::init(Window* window) {
 		}
 	}
 
-	// Create command buffers
+	// Create command buffers used for the copy queue
 	{
 		m_commandBuffersCopy.resize(m_swapChainFramebuffers.size());
 		VkCommandBufferAllocateInfo allocInfo{};
@@ -427,46 +262,7 @@ bool SVkAPI::init(Window* window) {
 
 		if (vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffersCopy.data()) != VK_SUCCESS) {
 			Logger::Error("Failed to allocate command buffers!");
-			return false;
 		}
-	}
-	// Record drawing into command buffers
-	{
-		//for (size_t i = 0; i < m_commandBuffers.size(); i++) {
-		//	VkCommandBufferBeginInfo beginInfo{};
-		//	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		//	beginInfo.flags = 0; // Optional
-		//	beginInfo.pInheritanceInfo = nullptr; // Optional
-
-		//	if (vkBeginCommandBuffer(m_commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-		//		Logger::Error("Failed to begin recording command buffer!");
-		//		return false;
-		//	}
-
-		//	// Start render pass
-		//	VkRenderPassBeginInfo renderPassInfo{};
-		//	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		//	renderPassInfo.renderPass = m_renderPass;
-		//	renderPassInfo.framebuffer = m_swapChainFramebuffers[i];
-		//	renderPassInfo.renderArea.offset = { 0, 0 };
-		//	renderPassInfo.renderArea.extent = m_swapChainExtent;
-		//	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-		//	renderPassInfo.clearValueCount = 1;
-		//	renderPassInfo.pClearValues = &clearColor;
-
-		//	vkCmdBeginRenderPass(m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		//	vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
-
-		//	vkCmdDraw(m_commandBuffers[i], 3, 1, 0, 0);
-
-		//	vkCmdEndRenderPass(m_commandBuffers[i]);
-
-		//	if (vkEndCommandBuffer(m_commandBuffers[i]) != VK_SUCCESS) {
-		//		Logger::Error("failed to record command buffer!");
-		//		return false;
-		//	}
-		//}
 	}
 
 	// Create sync objects
@@ -554,7 +350,7 @@ uint32_t SVkAPI::beginPresent() {
 		m_executionCallbacks[m_currentFrame].clear();
 	}
 	
-	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_presentImageIndex);
+	m_acqureNextImageResult = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_presentImageIndex);
 
 	// Check if a previous frame is using this image (i.e. there is its fence to wait on)
 	if (m_imagesInFlight[m_presentImageIndex] != VK_NULL_HANDLE) {
@@ -574,6 +370,13 @@ void SVkAPI::present(bool vsync) {
 	// beginPresent fetches the image index to use, the assert makes sure this has been done
 	// The image index is used to bind certain buffers which is why it's fetch has to be separated
 	assert(m_presentImageIndex != -1 && "beginPresent() has to be called before present() when using Vulkan");
+
+	if (m_acqureNextImageResult == VK_ERROR_OUT_OF_DATE_KHR) {
+		recreateSwapChain();
+		return;
+	} else if (m_acqureNextImageResult != VK_SUCCESS && m_acqureNextImageResult != VK_SUBOPTIMAL_KHR) {
+		Logger::Error("Failed to acquire swap chain image!");
+	}
 
 	// Execute any waiting copy commands
 	{
@@ -620,33 +423,48 @@ void SVkAPI::present(bool vsync) {
 	presentInfo.pImageIndices = &m_presentImageIndex;
 	presentInfo.pResults = nullptr; // Optional
 
-	vkQueuePresentKHR(m_queuePresent, &presentInfo);
+	VkResult result = vkQueuePresentKHR(m_queuePresent, &presentInfo);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized) {
+		m_framebufferResized = false;
+		recreateSwapChain();
+	} else if (result != VK_SUCCESS) {
+		Logger::Error("Failed to present swap chain image!");
+	}
 
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	m_presentImageIndex = -1; // Invalidate this image index
 }
 
 unsigned int SVkAPI::getMemoryUsage() const {
-	throw std::logic_error("The method or operation is not implemented.");
+	VmaBudget budget;
+	vmaGetBudget(m_vmaAllocator, &budget);
+	return budget.usage;
 }
 
 unsigned int SVkAPI::getMemoryBudget() const {
-	throw std::logic_error("The method or operation is not implemented.");
+	VmaBudget budget;
+	vmaGetBudget(m_vmaAllocator, &budget);
+	return budget.budget;
 }
 
 bool SVkAPI::onResize(WindowResizeEvent& event) {
-	// Recreate some stuff that is now invalidated
+	// Vulkan max extent capability is (0,0) when window is minimized
+	// however, the swapchain can not be created with 0 in any extent
+	// we must therefore wait until the window is unminimized
+	auto* window = Application::getInstance()->getWindow();
+	if (window->getWindowWidth() == 0 | window->getWindowHeight() == 0 || window->isMinimized()) {
+		Application::getInstance()->pauseRendering(true);
+		m_isWindowMinimized = true;
+		return true;
+	}
 
-	vkDeviceWaitIdle(m_device);
-
-	/*createSwapChain();
-	createImageViews();
-	createRenderPass();
-	createGraphicsPipeline();
-	createFramebuffers();
-	createCommandBuffers();*/
-
-	throw std::logic_error("The method or operation is not implemented.");
+	if (m_isWindowMinimized && !event.isMinimized()) {
+		Application::getInstance()->pauseRendering(false);
+		m_isWindowMinimized = false;
+	} else {
+		m_framebufferResized = true;
+	}
+	return true;
 }
 
 const VkDevice& SVkAPI::getDevice() const {
@@ -739,6 +557,191 @@ void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
 	if (vkQueueSubmit(m_queueGraphics, 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
 		Logger::Error("Failed to submit draw command buffer!");
 	}
+}
+
+void SVkAPI::createSwapChain() {
+	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_physicalDevice);
+
+	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+	VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, Application::getInstance()->getWindow());
+
+	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+		imageCount = swapChainSupport.capabilities.maxImageCount;
+	}
+
+	VkSwapchainCreateInfoKHR createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	createInfo.surface = m_surface;
+	createInfo.minImageCount = imageCount;
+	createInfo.imageFormat = surfaceFormat.format;
+	createInfo.imageColorSpace = surfaceFormat.colorSpace;
+	createInfo.imageExtent = extent;
+	createInfo.imageArrayLayers = 1;
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+	QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
+	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+
+	if (indices.graphicsFamily != indices.presentFamily) {
+		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		createInfo.queueFamilyIndexCount = 2;
+		createInfo.pQueueFamilyIndices = queueFamilyIndices;
+	} else {
+		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		createInfo.queueFamilyIndexCount = 0; // Optional
+		createInfo.pQueueFamilyIndices = nullptr; // Optional
+	}
+
+	createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	createInfo.presentMode = presentMode;
+	createInfo.clipped = VK_TRUE;
+	createInfo.oldSwapchain = VK_NULL_HANDLE; // Set this when recreating the swap chain during for example window resizing
+
+	if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
+		Logger::Error("Failed to create swap chain!");
+	}
+
+	// Store handles to the swapchain images
+	vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
+	m_swapChainImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data());
+	m_swapChainImageFormat = createInfo.imageFormat;
+	m_swapChainExtent = createInfo.imageExtent;
+}
+
+void SVkAPI::createImageViews() {
+	m_swapChainImageViews.resize(m_swapChainImages.size());
+	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
+		VkImageViewCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.image = m_swapChainImages[i];
+		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		createInfo.format = m_swapChainImageFormat;
+		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.baseMipLevel = 0;
+		createInfo.subresourceRange.levelCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = 0;
+		createInfo.subresourceRange.layerCount = 1;
+
+		if (vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS) {
+			Logger::Error("failed to create image views!");
+		}
+	}
+}
+
+void SVkAPI::createRenderPass() {
+	VkAttachmentDescription colorAttachment{};
+	colorAttachment.format = m_swapChainImageFormat;
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	// Subpasses
+	// TODO: use multiple of these for post processing
+	VkAttachmentReference colorAttachmentRef{};
+	colorAttachmentRef.attachment = 0;
+	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass{};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorAttachmentRef;
+
+	// Render pass
+	VkRenderPassCreateInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.attachmentCount = 1;
+	renderPassInfo.pAttachments = &colorAttachment;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+
+	// Add dependency to wait for image reading to complete before writing
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
+
+	if (vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
+		Logger::Error("failed to create render pass!");
+	}
+}
+
+void SVkAPI::createViewportAndScissorRect() {
+	m_viewport.x = 0.0f;
+	m_viewport.y = (float)m_swapChainExtent.height; // Flipping viewport Y to work with hlsl shaders
+	m_viewport.width = (float)m_swapChainExtent.width;
+	m_viewport.height = -(float)m_swapChainExtent.height; // Flipping viewport Y to work with hlsl shaders
+	m_viewport.minDepth = 0.0f;
+	m_viewport.maxDepth = 1.0f;
+
+	m_scissorRect.offset = { 0, 0 };
+	m_scissorRect.extent = m_swapChainExtent;
+}
+
+void SVkAPI::createFramebuffers() {
+	m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
+	for (size_t i = 0; i < m_swapChainImageViews.size(); i++) {
+		VkImageView attachments[] = {
+			m_swapChainImageViews[i]
+		};
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_renderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = m_swapChainExtent.width;
+		framebufferInfo.height = m_swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS) {
+			Logger::Error("Failed to create framebuffer!");
+		}
+	}
+}
+
+void SVkAPI::cleanupSwapChain() {
+	for (size_t i = 0; i < m_swapChainFramebuffers.size(); i++) {
+		vkDestroyFramebuffer(m_device, m_swapChainFramebuffers[i], nullptr);
+	}
+
+	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+
+	for (size_t i = 0; i < m_swapChainImageViews.size(); i++) {
+		vkDestroyImageView(m_device, m_swapChainImageViews[i], nullptr);
+	}
+
+	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+}
+
+void SVkAPI::recreateSwapChain() {
+	Logger::Log("Recreating swap chain..");
+	vkDeviceWaitIdle(m_device);
+
+	cleanupSwapChain();
+
+	createSwapChain();
+	createImageViews();
+	createRenderPass();
+	createViewportAndScissorRect();
+	createFramebuffers();
 }
 
 bool SVkAPI::checkValidationLayerSupport() const {
@@ -886,7 +889,7 @@ VkPresentModeKHR SVkAPI::chooseSwapPresentMode(const std::vector<VkPresentModeKH
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D SVkAPI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Win32Window* window) const {
+VkExtent2D SVkAPI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Window* window) const {
 	if (capabilities.currentExtent.width != UINT32_MAX) {
 		return capabilities.currentExtent;
 	} else {
@@ -897,20 +900,6 @@ VkExtent2D SVkAPI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities
 
 		return actualExtent;
 	}
-}
-
-VkShaderModule SVkAPI::createShaderModule(const std::vector<std::byte>& code) {
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = code.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
-	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(m_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-		Logger::Error("Failed to create shader module!");
-	}
-
-	return shaderModule;
 }
 
 VkResult SVkAPI::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {

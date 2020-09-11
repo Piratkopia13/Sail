@@ -81,6 +81,15 @@ private:
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
+	void createSwapChain();
+	void createImageViews();
+	void createRenderPass();
+	void createViewportAndScissorRect();
+	void createFramebuffers();
+
+	void cleanupSwapChain();
+	void recreateSwapChain();
+
 	bool checkValidationLayerSupport() const;
 	std::vector<const char*> getRequiredExtensions() const;
 	
@@ -95,10 +104,8 @@ private:
 
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Win32Window* window) const;
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Window* window) const;
 
-	// The following methods should be moved
-	VkShaderModule createShaderModule(const std::vector<std::byte>& code);
 
 private:
 	VkInstance m_instance;
@@ -122,8 +129,6 @@ private:
 	VkRenderPass m_renderPass; // maybe not move this?
 	VkClearValue m_clearColor;
 	VkDescriptorPool m_descriptorPool;
-	//VkPipelineLayout m_pipelineLayout;
-	//VkPipeline m_graphicsPipeline;
 
 	// Queues
 	VkQueue m_queueGraphics;
@@ -139,7 +144,13 @@ private:
 	std::vector<VkFence> m_inFlightFences;
 	std::vector<VkFence> m_imagesInFlight;
 	size_t m_currentFrame;
+	
+	// Variables stored by beginFrame() and used by present()
 	uint32_t m_presentImageIndex;
+	VkResult m_acqureNextImageResult;
+
+	bool m_framebufferResized;
+	bool m_isWindowMinimized;
 
 	const std::vector<const char*> m_validationLayers;
 	const std::vector<const char*> m_deviceExtensions;

@@ -85,12 +85,13 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
+	// Viewport and scissors
 	VkPipelineViewportStateCreateInfo viewportState{};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewportState.viewportCount = 1;
-	viewportState.pViewports = &m_context->getViewport();
+	viewportState.pViewports = nullptr; // Set dynamically during rendering
 	viewportState.scissorCount = 1;
-	viewportState.pScissors = &m_context->getScissorRect();
+	viewportState.pScissors = nullptr; // Set dynamically during rendering
 
 	// Rasterizer state
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
@@ -176,6 +177,17 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	colorBlending.blendConstants[2] = 0.0f; // Optional
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
+	// Set up dynamic states to allow window resizing without recreating pipelines
+	VkDynamicState dynamicStates[] = {
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR
+	};
+
+	VkPipelineDynamicStateCreateInfo dynamicState{};
+	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.dynamicStateCount = ARRAYSIZE(dynamicStates);
+	dynamicState.pDynamicStates = dynamicStates;
+
 	// Finally, create the graphics pipeline
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -183,12 +195,12 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	pipelineInfo.pStages = shaderStages.data();
 	pipelineInfo.pVertexInputState = &static_cast<SVkInputLayout*>(inputLayout.get())->getCreateInfo();
 	pipelineInfo.pInputAssemblyState = &inputAssembly;
-	pipelineInfo.pViewportState = &viewportState;
+	pipelineInfo.pViewportState = &viewportState; // These are dynamic
 	pipelineInfo.pRasterizationState = &rasterizer;
 	pipelineInfo.pMultisampleState = &multisampling;
 	pipelineInfo.pDepthStencilState = nullptr; // Optional
 	pipelineInfo.pColorBlendState = &colorBlending;
-	pipelineInfo.pDynamicState = nullptr; // Optional
+	pipelineInfo.pDynamicState = &dynamicState;
 	pipelineInfo.layout = static_cast<SVkShader*>(shader)->getPipelineLayout();
 	pipelineInfo.renderPass = m_context->getRenderPass();
 	pipelineInfo.subpass = 0;

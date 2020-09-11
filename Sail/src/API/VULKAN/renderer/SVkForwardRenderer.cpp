@@ -56,8 +56,9 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 
 	// Start render pass
 	vkCmdBeginRenderPass(cmd, &m_context->getRenderPassInfo(), VK_SUBPASS_CONTENTS_INLINE);
-
-	
+	// Set dynamic viewport and scissor states
+	vkCmdSetViewport(cmd, 0, 1, &m_context->getViewport());
+	vkCmdSetScissor(cmd, 0, 1, &m_context->getScissorRect());
 
 	for (RenderCommand& command : commandQueue) {
 		SVkShader* shader = static_cast<SVkShader*>(command.shader);

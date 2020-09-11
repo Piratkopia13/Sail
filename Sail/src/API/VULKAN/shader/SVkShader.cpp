@@ -54,7 +54,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 		}
 		auto& range = pcRanges.emplace_back();
 		range.offset = 0;
-		range.size = pc.size; // TODO: make this dynamic and read it from shader source, also note when size is larger than the limit
+		range.size = pc.size;
 		range.stageFlags = SVkUtils::ConvertShaderBindingToStageFlags(pc.bindShader);
 	}
 

@@ -15,6 +15,8 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	}
 	m_instance = this;
 
+	m_pauseRendering = false;
+
 	// Set up window
 	Window::WindowProps windowProps;
 	windowProps.hInstance = hInstance;
@@ -102,13 +104,15 @@ int Application::startGameLoop() {
 			delta = std::min(delta, 0.04f);
 
 			// Update fps counter
-			secCounter += delta;
-			frameCounter++;
+			if (!m_pauseRendering) {
+				secCounter += delta;
+				frameCounter++;
 
-			if (secCounter >= 1) {
-				m_fps = frameCounter;
-				frameCounter = 0;
-				secCounter = 0.f;
+				if (secCounter >= 1) {
+					m_fps = frameCounter;
+					frameCounter = 0;
+					secCounter = 0.f;
+				}
 			}
 
 			// Update input states
@@ -143,7 +147,8 @@ int Application::startGameLoop() {
 			}
 
 			// Render
-			render(delta);
+			if (!m_pauseRendering)
+				render(delta);
 			
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
@@ -174,6 +179,10 @@ Window* const Application::getWindow() {
 
 void Application::scheduleForNextFrame(std::function<void()> func) {
 	m_scheduledFuncsForNextFrame.emplace_back(func);
+}
+
+void Application::pauseRendering(bool pause) {
+	m_pauseRendering = pause;
 }
 
 ImGuiHandler* const Application::getImGuiHandler() {
