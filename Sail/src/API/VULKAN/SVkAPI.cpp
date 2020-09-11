@@ -2,6 +2,7 @@
 #include "SVkAPI.h"
 #include "vulkan/vulkan_win32.h"
 #include "../Windows/Win32Window.h"
+#include "SVkUtils.h"
 
 const int SVkAPI::MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -25,7 +26,7 @@ SVkAPI::SVkAPI()
 }
 
 SVkAPI::~SVkAPI() {
-	vkDeviceWaitIdle(m_device);
+	VK_CHECK_RESULT(vkDeviceWaitIdle(m_device));
 
 	vmaDestroyAllocator(m_vmaAllocator);
 
@@ -79,10 +80,7 @@ bool SVkAPI::init(Window* window) {
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 		createInfo.ppEnabledExtensionNames = extensions.data();
 
-		if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS) {
-			Logger::Error("Failed to create Vulkan instance!");
-			return false;
-		}
+		VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &m_instance));
 
 		setupDebugMessenger();
 	}
@@ -96,18 +94,15 @@ bool SVkAPI::init(Window* window) {
 		createInfo.hwnd = *winWindow->getHwnd();
 		createInfo.hinstance = GetModuleHandle(nullptr);
 
-		if (vkCreateWin32SurfaceKHR(m_instance, &createInfo, nullptr, &m_surface) != VK_SUCCESS) {
-			Logger::Error("Failed to create window surface!");
-			return false;
-		}
+		VK_CHECK_RESULT(vkCreateWin32SurfaceKHR(m_instance, &createInfo, nullptr, &m_surface));
 	}
 
 	// Enumerate available extensions
 	{
 		uint32_t extensionCount = 0;
-		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+		VK_CHECK_RESULT(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
 		std::vector<VkExtensionProperties> extensions(extensionCount);
-		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+		VK_CHECK_RESULT(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data()));
 
 		std::cout << "available extensions:\n";
 		for (const auto& extension : extensions) {
@@ -118,13 +113,13 @@ bool SVkAPI::init(Window* window) {
 	// Select the graphics card to use
 	{
 		uint32_t deviceCount = 0;
-		vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
+		VK_CHECK_RESULT(vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr));
 		if (deviceCount == 0) {
 			Logger::Error("Failed to find GPUs with Vulkan support!");
 			return false;
 		}
 		std::vector<VkPhysicalDevice> devices(deviceCount);
-		vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
+		VK_CHECK_RESULT(vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data()));
 
 		auto isDeviceSuitable = [&](const VkPhysicalDevice& device) {
 			VkPhysicalDeviceProperties deviceProperties;
@@ -203,10 +198,7 @@ bool SVkAPI::init(Window* window) {
 			createInfo.enabledLayerCount = 0;
 		}
 
-		if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device) != VK_SUCCESS) {
-			Logger::Error("Failed to create logical device!");
-			return false;
-		}
+		VK_CHECK_RESULT(vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device));
 
 		// Store the queue handle
 		vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_queueGraphics);
@@ -235,20 +227,14 @@ bool SVkAPI::init(Window* window) {
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT; // TODO: check if transient bit is useful here
 
-		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPoolGraphics) != VK_SUCCESS) {
-			Logger::Error("Failed to create graphics command pool!");
-			return false;
-		}
+		VK_CHECK_RESULT(vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPoolGraphics));
 
 		// Copy command pool
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.queueFamilyIndex = queueFamilyIndices.copyFamily.value();
 		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
-		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPoolCopy) != VK_SUCCESS) {
-			Logger::Error("Failed to create copy command pool!");
-			return false;
-		}
+		VK_CHECK_RESULT(vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPoolCopy));
 	}
 
 	// Create command buffers used for the copy queue
@@ -260,9 +246,7 @@ bool SVkAPI::init(Window* window) {
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = (uint32_t)m_commandBuffersCopy.size();
 
-		if (vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffersCopy.data()) != VK_SUCCESS) {
-			Logger::Error("Failed to allocate command buffers!");
-		}
+		VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffersCopy.data()));
 	}
 
 	// Create sync objects
@@ -283,14 +267,10 @@ bool SVkAPI::init(Window* window) {
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
-				vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
-				vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS ||
-				vkCreateFence(m_device, &fenceInfo, nullptr, &m_fencesInFlightCopy[i]) != VK_SUCCESS) {
-
-				Logger::Error("Failed to create synchronization objects for a frame!");
-				return false;
-			}
+			VK_CHECK_RESULT(vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]));
+			VK_CHECK_RESULT(vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]));
+			VK_CHECK_RESULT(vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]));
+			VK_CHECK_RESULT(vkCreateFence(m_device, &fenceInfo, nullptr, &m_fencesInFlightCopy[i]));
 		}
 	}
 
@@ -306,10 +286,7 @@ bool SVkAPI::init(Window* window) {
 		poolInfo.pPoolSizes = &poolSize;
 		poolInfo.maxSets = static_cast<uint32_t>(m_swapChainImages.size());
 
-		if (vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
-			Logger::Error("Failed to create descriptor pool!");
-			return false;
-		}
+		VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool));
 	}
 
 	// Set up Vulkan Memory Allocator
@@ -339,7 +316,7 @@ void SVkAPI::setBlending(Blending setting) { /* Defined the the PSO */ }
 uint32_t SVkAPI::beginPresent() {
 	// Make sure the CPU waits to submit if all frames are in flight
 	VkFence waitFences[] = { m_inFlightFences[m_currentFrame], m_fencesInFlightCopy[m_currentFrame] };
-	vkWaitForFences(m_device, ARRAYSIZE(waitFences), waitFences, VK_TRUE, UINT64_MAX);
+	VK_CHECK_RESULT(vkWaitForFences(m_device, ARRAYSIZE(waitFences), waitFences, VK_TRUE, UINT64_MAX));
 
 	// At this point we know that execution has finished for m_currentFrame
 	// Call any waiting callbacks to let them know
@@ -354,10 +331,10 @@ uint32_t SVkAPI::beginPresent() {
 
 	// Check if a previous frame is using this image (i.e. there is its fence to wait on)
 	if (m_imagesInFlight[m_presentImageIndex] != VK_NULL_HANDLE) {
-		vkWaitForFences(m_device, 1, &m_imagesInFlight[m_presentImageIndex], VK_TRUE, UINT64_MAX);
+		VK_CHECK_RESULT(vkWaitForFences(m_device, 1, &m_imagesInFlight[m_presentImageIndex], VK_TRUE, UINT64_MAX));
 	}
 	if (m_fencesJustInCaseCopyInFlight[m_presentImageIndex] != VK_NULL_HANDLE) {
-		vkWaitForFences(m_device, 1, &m_fencesJustInCaseCopyInFlight[m_presentImageIndex], VK_TRUE, UINT64_MAX);
+		VK_CHECK_RESULT(vkWaitForFences(m_device, 1, &m_fencesJustInCaseCopyInFlight[m_presentImageIndex], VK_TRUE, UINT64_MAX));
 	}
 	// Mark the image as now being in use by this frame
 	m_imagesInFlight[m_presentImageIndex] = m_inFlightFences[m_currentFrame];
@@ -386,7 +363,7 @@ void SVkAPI::present(bool vsync) {
 			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-			vkBeginCommandBuffer(cmdBufferCopy, &beginInfo);
+			VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBufferCopy, &beginInfo));
 
 			for (auto& pair : m_scheduledCopyCommandsAndCallbacks) {
 				// Call the lambda to add commands to the commandBuffer
@@ -396,7 +373,7 @@ void SVkAPI::present(bool vsync) {
 			}
 			m_scheduledCopyCommandsAndCallbacks.clear();
 
-			vkEndCommandBuffer(cmdBufferCopy);
+			VK_CHECK_RESULT(vkEndCommandBuffer(cmdBufferCopy));
 
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -405,8 +382,8 @@ void SVkAPI::present(bool vsync) {
 
 			// The fence used is the same fence given to the copy command submitters,
 			// this allows them to fetch when their command has been executed
-			vkResetFences(m_device, 1, &m_fencesInFlightCopy[m_currentFrame]);
-			vkQueueSubmit(m_queueCopy, 1, &submitInfo, m_fencesInFlightCopy[m_currentFrame]);
+			VK_CHECK_RESULT(vkResetFences(m_device, 1, &m_fencesInFlightCopy[m_currentFrame]));
+			VK_CHECK_RESULT(vkQueueSubmit(m_queueCopy, 1, &submitInfo, m_fencesInFlightCopy[m_currentFrame]));
 		}
 	}
 
@@ -525,9 +502,7 @@ void SVkAPI::initCommand(Command& command) const {
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)command.buffers.size();
 
-	if (vkAllocateCommandBuffers(m_device, &allocInfo, command.buffers.data()) != VK_SUCCESS) {
-		Logger::Error("Failed to allocate command buffers!");
-	}
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, command.buffers.data()));
 }
 
 void SVkAPI::scheduleMemoryCopy(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback) {
@@ -551,12 +526,10 @@ void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
+	VK_CHECK_RESULT(vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]));
 
 	// NOTE: only graphics queue is currently used
-	if (vkQueueSubmit(m_queueGraphics, 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
-		Logger::Error("Failed to submit draw command buffer!");
-	}
+	VK_CHECK_RESULT(vkQueueSubmit(m_queueGraphics, 1, &submitInfo, m_inFlightFences[m_currentFrame]));
 }
 
 void SVkAPI::createSwapChain() {
@@ -600,14 +573,12 @@ void SVkAPI::createSwapChain() {
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE; // Set this when recreating the swap chain during for example window resizing
 
-	if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
-		Logger::Error("Failed to create swap chain!");
-	}
+	VK_CHECK_RESULT(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain));
 
 	// Store handles to the swapchain images
-	vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
+	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr));
 	m_swapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data());
+	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data()));
 	m_swapChainImageFormat = createInfo.imageFormat;
 	m_swapChainExtent = createInfo.imageExtent;
 }
@@ -630,9 +601,7 @@ void SVkAPI::createImageViews() {
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS) {
-			Logger::Error("failed to create image views!");
-		}
+		VK_CHECK_RESULT(vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]));
 	}
 }
 
@@ -678,9 +647,7 @@ void SVkAPI::createRenderPass() {
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	if (vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
-		Logger::Error("failed to create render pass!");
-	}
+	VK_CHECK_RESULT(vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass));
 }
 
 void SVkAPI::createViewportAndScissorRect() {
@@ -711,9 +678,7 @@ void SVkAPI::createFramebuffers() {
 		framebufferInfo.height = m_swapChainExtent.height;
 		framebufferInfo.layers = 1;
 
-		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS) {
-			Logger::Error("Failed to create framebuffer!");
-		}
+		VK_CHECK_RESULT(vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]));
 	}
 }
 
@@ -733,7 +698,7 @@ void SVkAPI::cleanupSwapChain() {
 
 void SVkAPI::recreateSwapChain() {
 	Logger::Log("Recreating swap chain..");
-	vkDeviceWaitIdle(m_device);
+	VK_CHECK_RESULT(vkDeviceWaitIdle(m_device));
 
 	cleanupSwapChain();
 
@@ -746,10 +711,10 @@ void SVkAPI::recreateSwapChain() {
 
 bool SVkAPI::checkValidationLayerSupport() const {
 	uint32_t layerCount;
-	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+	VK_CHECK_RESULT(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
 
 	std::vector<VkLayerProperties> availableLayers(layerCount);
-	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+	VK_CHECK_RESULT(vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()));
 
 	for (const char* layerName : m_validationLayers) {
 		bool layerFound = false;
@@ -815,7 +780,7 @@ SVkAPI::QueueFamilyIndices SVkAPI::findQueueFamilies(const VkPhysicalDevice& dev
 			indices.copyFamily = i;
 		}
 		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
+		VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport));
 		if (presentSupport) {
 			indices.presentFamily = i;
 		}
@@ -831,10 +796,10 @@ SVkAPI::QueueFamilyIndices SVkAPI::findQueueFamilies(const VkPhysicalDevice& dev
 
 bool SVkAPI::checkDeviceExtensionSupport(const VkPhysicalDevice& device) const {
 	uint32_t extensionCount;
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+	VK_CHECK_RESULT(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr));
 
 	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+	VK_CHECK_RESULT(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data()));
 
 	std::set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
 
@@ -848,22 +813,22 @@ bool SVkAPI::checkDeviceExtensionSupport(const VkPhysicalDevice& device) const {
 SVkAPI::SwapChainSupportDetails SVkAPI::querySwapChainSupport(const VkPhysicalDevice& device) const {
 	SwapChainSupportDetails details;
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &details.capabilities);
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &details.capabilities));
 	
 	uint32_t formatCount = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr);
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr));
 
 	if (formatCount != 0) {
 		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, details.formats.data());
+		VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, details.formats.data()));
 	}
 
 	uint32_t presentModeCount = 0;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, nullptr);
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, nullptr));
 
 	if (presentModeCount != 0) {
 		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, details.presentModes.data());
+		VK_CHECK_RESULT(vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, details.presentModes.data()));
 	}
 
 	return details;
