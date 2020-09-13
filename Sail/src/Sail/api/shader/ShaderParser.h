@@ -12,11 +12,14 @@
 class ShaderParser {
 private:
 	struct ShaderResource {
-		ShaderResource(const std::string& name, unsigned int slot)
+		ShaderResource(const std::string& name, unsigned int slot, unsigned int vkBinding)
 			: name(name)
-			, slot(slot) { }
+			, slot(slot)
+			, vkBinding(vkBinding)
+		{ }
 		std::string name;
 		unsigned int slot;
+		unsigned int vkBinding;
 	};
 	struct ShaderCBuffer {
 		struct CBufferVariable {
@@ -99,5 +102,6 @@ private:
 private:
 	ParsedData m_parsedData;
 	std::string m_filename;
+	std::string m_cleanSource;
 	
 };

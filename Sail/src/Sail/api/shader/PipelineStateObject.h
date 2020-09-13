@@ -29,12 +29,12 @@ public:
 	virtual ~PipelineStateObject() = 0;
 
 	// Returns false if already bound
-	virtual bool bind(void* cmdList = nullptr, uint32_t frameIndex = -1);
+	virtual bool bind(void* cmdList = nullptr);
 	virtual void unbind();
 	
 protected:
 	// Binds shader resources using specified arguments
-	bool bindInternal(void* cmdList, bool forceIfBound, uint32_t frameIndex);
+	bool bindInternal(void* cmdList, bool forceIfBound);
 
 protected:
 	Shader* shader;

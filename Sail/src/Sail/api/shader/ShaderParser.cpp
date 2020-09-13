@@ -33,13 +33,13 @@ std::string ShaderParser::parse(const std::string& source) {
 	}
 
 	// Remove comments from source
-	std::string cleanSource = removeComments(source);
+	m_cleanSource = removeComments(source);
 
 	const char* src;
 
 	// Store used vertex data attributes and their order
 	{
-		src = cleanSource.c_str();
+		src = m_cleanSource.c_str();
 		if (m_parsedData.hasVS) {
 			if (src = findToken("VSIn", src)) {
 				unsigned int mul = 1;
@@ -81,25 +81,25 @@ std::string ShaderParser::parse(const std::string& source) {
 	// This is needed to avoid copying/destructor calling
 	{
 		int numCBuffers = 0;
-		src = cleanSource.c_str();
+		src = m_cleanSource.c_str();
 		while (src = findToken("cbuffer", src))	numCBuffers++;
 		m_parsedData.cBuffers.reserve(numCBuffers);
 	}
 	{
 		int numSamplers = 0;
-		src = cleanSource.c_str();
+		src = m_cleanSource.c_str();
 		while (src = findToken("SamplerState", src)) numSamplers++;
 		m_parsedData.samplers.reserve(numSamplers);
 	}
 
 	// Process all CBuffers
-	src = cleanSource.c_str();
+	src = m_cleanSource.c_str();
 	while (src = findToken("cbuffer", src)) {
 		parseCBuffer(getBlockStartingFrom(src));
 	}
 
 	// Process all push constants
-	src = cleanSource.c_str();
+	src = m_cleanSource.c_str();
 	while (src = findToken("vk::push_constant", src)) {
 		std::string pushTokenSource = getBlockStartingFrom(src);
 		src += pushTokenSource.size();
@@ -109,27 +109,27 @@ std::string ShaderParser::parse(const std::string& source) {
 	}
 
 	// Process all samplers
-	src = cleanSource.c_str();
+	src = m_cleanSource.c_str();
 	while (src = findToken("SamplerState", src)) {
-		parseSampler(src, cleanSource);
+		parseSampler(src, m_cleanSource);
 	}
 
 	// Process all textures
 	// RWTextures needs to be handled first!
-	src = cleanSource.c_str();
+	src = m_cleanSource.c_str();
 	while (src = findToken("RWTexture2D", src)) {
 		parseRWTexture(src);
 	}
-	src = cleanSource.c_str();
+	src = m_cleanSource.c_str();
 	while (src = findToken("Texture2D", src)) {
 		parseTexture(src);
 	}
-	src = cleanSource.c_str();
+	src = m_cleanSource.c_str();
 	while (src = findToken("TextureCube", src)) {
 		parseTexture(src);
 	}
 
-	return cleanSource;
+	return m_cleanSource;
 }
 
 void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConstant) {
@@ -230,11 +230,21 @@ void ShaderParser::parseSampler(const char* sourceChar, std::string& source) {
 	}
 
 	auto bindShader = getBindShaderFromName(name);
-	ShaderResource res(name, static_cast<UINT>(slot));
+	auto uslot = static_cast<unsigned int>(slot);
+	ShaderResource res(name, uslot, uslot);
 	m_parsedData.samplers.emplace_back(res, samplerInfo.addressMode, samplerInfo.filter, bindShader, slot);
 }
 
 void ShaderParser::parseTexture(const char* source) {
+	const char* lineStart = source;
+	while (true) {
+		if (lineStart == m_cleanSource.c_str() || // Out of bounds check
+			lineStart[-1] == '\n') { // if the "next" character is a new line, we have found the line start
+			break;
+		}
+		lineStart--;
+	}
+
 	if (source[0] == '<') {
 		// A type was found in the place of a name
 		// This probably means that it is a RWTexture2D and has already been handled
@@ -249,7 +259,28 @@ void ShaderParser::parseTexture(const char* source) {
 	int slot = findNextIntOnLine(source);
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
 
-	m_parsedData.textures.emplace_back(name, slot);
+	int vkBinding = slot;
+	// if vk::binding is used, use that as the vk slot. 
+	// vk::binding is allowed on the previous line or at the start of the current line.
+	auto matchOnCurrentLine = findToken("vk::binding", lineStart, true);
+	if (matchOnCurrentLine) {
+		vkBinding = findNextIntOnLine(matchOnCurrentLine);
+	} else {
+		int newLines = 0;
+		while (newLines < 2) {
+			if (lineStart == m_cleanSource.c_str()) break; // Out of bounds check
+			if (lineStart[0] == '\n') newLines++;
+			lineStart--;
+		}
+		lineStart+=2;
+		auto matchOnPrevLine = findToken("vk::binding", lineStart, true);
+		if (matchOnPrevLine) {
+			vkBinding = findNextIntOnLine(matchOnPrevLine);
+		}
+	}
+
+
+	m_parsedData.textures.emplace_back(name, slot, vkBinding);
 }
 
 void ShaderParser::parseRWTexture(const char* source) {
@@ -268,7 +299,8 @@ void ShaderParser::parseRWTexture(const char* source) {
 	}
 
 	// Store name and slot as a texture to allow shader to manually bind this slot
-	m_parsedData.textures.emplace_back(name, slot);
+	auto uslot = static_cast<unsigned int>(slot);
+	m_parsedData.textures.emplace_back(name, uslot, uslot);
 
 	// Get texture format from source, if specified
 	ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8;
@@ -295,7 +327,7 @@ void ShaderParser::parseRWTexture(const char* source) {
 	free(lineCopy);
 
 	std::string nameSuffix(" File: " + m_filename + " slot " + std::to_string(slot));
-	m_parsedData.renderableTextures.emplace_back(ShaderResource(name, slot), format, nameSuffix);
+	m_parsedData.renderableTextures.emplace_back(ShaderResource(name, uslot, uslot), format, nameSuffix);
 }
 
 std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize, int* arrayElements) const {

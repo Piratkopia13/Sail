@@ -55,7 +55,7 @@ PipelineStateObject::PipelineStateObject(Shader* shader, unsigned int attributes
 
 PipelineStateObject::~PipelineStateObject() { }
 
-bool PipelineStateObject::bindInternal(void* cmdList, bool forceIfBound, uint32_t frameIndex) {
+bool PipelineStateObject::bindInternal(void* cmdList, bool forceIfBound) {
 	// Don't bind if already bound
 	// This is to cut down on shader state changes
 	if (!forceIfBound && CurrentlyBoundPSO == this)
@@ -66,7 +66,7 @@ bool PipelineStateObject::bindInternal(void* cmdList, bool forceIfBound, uint32_
 	context->setBlending(settings.blendMode);
 	context->setFaceCulling(settings.cullMode);
 
-	shader->bind(cmdList, frameIndex);
+	//shader->bind(cmdList, frameIndex); // Its up to the mesh to bind the shader after any descriptor updates
 
 	// Input layouts only exist for graphics PSO (not compute)
 	if (inputLayout) {
@@ -81,10 +81,10 @@ bool PipelineStateObject::bindInternal(void* cmdList, bool forceIfBound, uint32_
 }
 
 // Default bind, override and don't call this one if required by the graphics API
-bool PipelineStateObject::bind(void* cmdList, uint32_t frameIndex) {
+bool PipelineStateObject::bind(void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-	return bindInternal(cmdList, false, frameIndex);
+	return bindInternal(cmdList, false);
 }
 
 void PipelineStateObject::unbind(){

@@ -96,14 +96,19 @@ std::string Utils::String::getBlockStartingFrom(const char* source) {
 	return str;
 }
 
-const char* Utils::String::findToken(const std::string& token, const char* source) {
+const char* Utils::String::findToken(const std::string& token, const char* source, bool onFirstLine) {
 	const char* match;
 	size_t offset = 0;
+	const char* lineEnd = strstr(source, "\n");
 	while (true) {
 		if (match = strstr(source + offset, token.c_str())) {
 			bool left = match == source || isspace((match - 1)[0]);
 			match += token.size();
 			bool right = match != '\0' || isspace(match[0]); // might need to be match + 1
+			// Ignore match if onFirstLine is true and match is not on the first line
+			if (onFirstLine && lineEnd && match > lineEnd) {
+				return nullptr;
+			}
 
 			// Ignore match if line contains "SAIL_IGNORE"
 			const char* newLine = strchr(match, '\n');

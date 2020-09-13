@@ -17,9 +17,11 @@ EmptyState::EmptyState(StateStack& stack)
 
 	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 
-	m_model = ModelFactory::PlaneModel::Create(glm::vec2(0.3f), glm::vec2(30.0f));
+	m_model = ModelFactory::PlaneModel::Create(glm::vec2(0.3f), glm::vec2(1.0f));
 	//m_model2 = ModelFactory::PlaneModel::Create(glm::vec2(0.5f), glm::vec2(50.0f));
 	m_model2 = m_app->getResourceManager().getModel("box.fbx");
+
+	m_material.setDiffuseTexture("pbr/pavingStones/albedo.tga");
 }
 
 EmptyState::~EmptyState() { }
@@ -64,8 +66,8 @@ bool EmptyState::render(float dt) {
 	//transform2 = glm::translate(transform2, glm::vec3(glm::sin(counter), 0.f, 0.f));
 	glm::mat4 transform2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.f, 2.f, 0.f));
 
-	m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, transform);
-	m_forwardRenderer->submit(m_model.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, transform2);
+	//m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, transform);
+	m_forwardRenderer->submit(m_model.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), &m_material, transform2);
 
 	m_forwardRenderer->end();
 	m_forwardRenderer->present(Renderer::Default);

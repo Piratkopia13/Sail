@@ -3,6 +3,7 @@
 #include "vulkan/vulkan_win32.h"
 #include "../Windows/Win32Window.h"
 #include "SVkUtils.h"
+#include <array>
 
 const int SVkAPI::MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -36,6 +37,7 @@ SVkAPI::~SVkAPI() {
 		vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
 		vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
 		vkDestroyFence(m_device, m_fencesInFlightCopy[i], nullptr);
+		vkDestroyFence(m_device, m_fenceScheduledGraphicsCmds[i], nullptr);
 	}
 	cleanupSwapChain();
 
@@ -162,6 +164,8 @@ bool SVkAPI::init(Window* window) {
 	// Create the logical device
 	{
 		QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
+		m_queueFamilyIndicesGraphicsAndCopy.emplace_back(indices.graphicsFamily.value());
+		m_queueFamilyIndicesGraphicsAndCopy.emplace_back(indices.copyFamily.value());
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value(), indices.copyFamily.value() };
@@ -176,16 +180,22 @@ bool SVkAPI::init(Window* window) {
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
-		VkPhysicalDeviceFeatures deviceFeatures{ };
-		deviceFeatures.shaderClipDistance = VK_TRUE;
-		deviceFeatures.samplerAnisotropy = VK_TRUE;
+		//VkPhysicalDeviceRobustness2FeaturesEXT deviceRobustnessFeatures{};
+		//deviceRobustnessFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+		//deviceRobustnessFeatures.nullDescriptor = VK_TRUE; // Allow null descriptors! Used for images before they are ready to be read in shaders
+		VkPhysicalDeviceFeatures2 deviceFeatures {};
+		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		deviceFeatures.features.shaderClipDistance = VK_TRUE;
+		deviceFeatures.features.samplerAnisotropy = VK_TRUE;
+		//deviceFeatures.pNext = &deviceRobustnessFeatures;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
-		createInfo.pEnabledFeatures = &deviceFeatures;
+		createInfo.pEnabledFeatures = nullptr;
+		createInfo.pNext = &deviceFeatures;
 
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
@@ -248,6 +258,17 @@ bool SVkAPI::init(Window* window) {
 
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffersCopy.data()));
 	}
+	// Create command buffers used for the graphics queue
+	{
+		m_commandBuffersGraphics.resize(m_swapChainFramebuffers.size());
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = m_commandPoolGraphics;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = (uint32_t)m_commandBuffersGraphics.size();
+
+		VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffersGraphics.data()));
+	}
 
 	// Create sync objects
 	{
@@ -255,7 +276,9 @@ bool SVkAPI::init(Window* window) {
 		m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 		m_fencesInFlightCopy.resize(MAX_FRAMES_IN_FLIGHT);
-		m_executionCallbacks.resize(MAX_FRAMES_IN_FLIGHT);
+		m_fenceScheduledGraphicsCmds.resize(MAX_FRAMES_IN_FLIGHT);
+		m_executionCallbacksCopy.resize(MAX_FRAMES_IN_FLIGHT);
+		m_executionCallbacksGraphics.resize(MAX_FRAMES_IN_FLIGHT);
 		m_imagesInFlight.resize(m_swapChainImages.size(), VK_NULL_HANDLE);
 		m_fencesJustInCaseCopyInFlight.resize(m_swapChainImages.size(), VK_NULL_HANDLE);
 
@@ -271,19 +294,22 @@ bool SVkAPI::init(Window* window) {
 			VK_CHECK_RESULT(vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]));
 			VK_CHECK_RESULT(vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]));
 			VK_CHECK_RESULT(vkCreateFence(m_device, &fenceInfo, nullptr, &m_fencesInFlightCopy[i]));
+			VK_CHECK_RESULT(vkCreateFence(m_device, &fenceInfo, nullptr, &m_fenceScheduledGraphicsCmds[i]));
 		}
 	}
 
 	// Create descriptor pool
 	{
-		VkDescriptorPoolSize poolSize{};
-		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSize.descriptorCount = static_cast<uint32_t>(m_swapChainImages.size()) * 10; // TODO: make this dynamic? or just allocate a bunch
+		std::array<VkDescriptorPoolSize, 2> poolSizes{};
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size()) * 10; // TODO: make this dynamic? or just allocate a bunch
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size()) * 10;  // TODO: make this dynamic? or just allocate a bunch
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount = 1;
-		poolInfo.pPoolSizes = &poolSize;
+		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+		poolInfo.pPoolSizes = poolSizes.data();
 		poolInfo.maxSets = static_cast<uint32_t>(m_swapChainImages.size());
 
 		VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool));
@@ -313,6 +339,10 @@ void SVkAPI::setDepthMask(DepthMask setting) { /* Defined the the PSO */ }
 void SVkAPI::setFaceCulling(Culling setting) { /* Defined the the PSO */ }
 void SVkAPI::setBlending(Blending setting) { /* Defined the the PSO */ }
 
+void SVkAPI::waitForGPU() {
+	VK_CHECK_RESULT(vkDeviceWaitIdle(m_device));
+}
+
 uint32_t SVkAPI::beginPresent() {
 	// Make sure the CPU waits to submit if all frames are in flight
 	VkFence waitFences[] = { m_inFlightFences[m_currentFrame], m_fencesInFlightCopy[m_currentFrame] };
@@ -320,11 +350,18 @@ uint32_t SVkAPI::beginPresent() {
 
 	// At this point we know that execution has finished for m_currentFrame
 	// Call any waiting callbacks to let them know
-	if (!m_executionCallbacks[m_currentFrame].empty()) {
-		for (auto& callback : m_executionCallbacks[m_currentFrame]) {
+	if (!m_executionCallbacksCopy[m_currentFrame].empty()) {
+		for (auto& callback : m_executionCallbacksCopy[m_currentFrame]) {
 			callback();
 		}
-		m_executionCallbacks[m_currentFrame].clear();
+		m_executionCallbacksCopy[m_currentFrame].clear();
+	}
+	// TODO: check if this m_fenceScheduledGraphicsCmds fence is really required
+	if (vkGetFenceStatus(m_device, m_fenceScheduledGraphicsCmds[m_currentFrame]) == VK_SUCCESS) {
+		for (auto& callback : m_executionCallbacksGraphics[m_currentFrame]) {
+			callback();
+		}
+		m_executionCallbacksGraphics[m_currentFrame].clear();
 	}
 	
 	m_acqureNextImageResult = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_presentImageIndex);
@@ -357,7 +394,7 @@ void SVkAPI::present(bool vsync) {
 
 	// Execute any waiting copy commands
 	{
-		/*if (!m_scheduledCopyCommands.empty())*/ {
+		if (!m_scheduledCopyCommandsAndCallbacks.empty()) {
 			auto& cmdBufferCopy = m_commandBuffersCopy[m_presentImageIndex];
 			VkCommandBufferBeginInfo beginInfo{};
 			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -369,7 +406,7 @@ void SVkAPI::present(bool vsync) {
 				// Call the lambda to add commands to the commandBuffer
 				pair.first(cmdBufferCopy);
 				// Add callback to list
-				m_executionCallbacks[m_currentFrame].emplace_back(pair.second);
+				m_executionCallbacksCopy[m_currentFrame].emplace_back(pair.second);
 			}
 			m_scheduledCopyCommandsAndCallbacks.clear();
 
@@ -380,10 +417,37 @@ void SVkAPI::present(bool vsync) {
 			submitInfo.commandBufferCount = 1;
 			submitInfo.pCommandBuffers = &cmdBufferCopy;
 
-			// The fence used is the same fence given to the copy command submitters,
-			// this allows them to fetch when their command has been executed
 			VK_CHECK_RESULT(vkResetFences(m_device, 1, &m_fencesInFlightCopy[m_currentFrame]));
 			VK_CHECK_RESULT(vkQueueSubmit(m_queueCopy, 1, &submitInfo, m_fencesInFlightCopy[m_currentFrame]));
+		}
+	}
+	// Execute any waiting graphics commands
+	{
+		if (!m_scheduledGraphicsCommandsAndCallbacks.empty()) {
+			auto& cmdBufferGraphics = m_commandBuffersGraphics[m_presentImageIndex];
+			VkCommandBufferBeginInfo beginInfo{};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+			VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBufferGraphics, &beginInfo));
+
+			for (auto& pair : m_scheduledGraphicsCommandsAndCallbacks) {
+				// Call the lambda to add commands to the commandBuffer
+				pair.first(cmdBufferGraphics);
+				// Add callback to list
+				m_executionCallbacksGraphics[m_currentFrame].emplace_back(pair.second);
+			}
+			m_scheduledGraphicsCommandsAndCallbacks.clear();
+
+			VK_CHECK_RESULT(vkEndCommandBuffer(cmdBufferGraphics));
+
+			VkSubmitInfo submitInfo{};
+			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			submitInfo.commandBufferCount = 1;
+			submitInfo.pCommandBuffers = &cmdBufferGraphics;
+
+			VK_CHECK_RESULT(vkResetFences(m_device, 1, &m_fenceScheduledGraphicsCmds[m_currentFrame]));
+			VK_CHECK_RESULT(vkQueueSubmit(m_queueGraphics, 1, &submitInfo, m_fenceScheduledGraphicsCmds[m_currentFrame]));
 		}
 	}
 
@@ -494,6 +558,10 @@ const VmaAllocator& SVkAPI::getVmaAllocator() const {
 	return m_vmaAllocator;
 }
 
+const uint32_t* SVkAPI::getGraphicsAndCopyQueueFamilyIndices() const {
+	return m_queueFamilyIndicesGraphicsAndCopy.data();
+}
+
 void SVkAPI::initCommand(Command& command) const {
 	command.buffers.resize(m_swapChainFramebuffers.size());
 	VkCommandBufferAllocateInfo allocInfo{};
@@ -505,9 +573,12 @@ void SVkAPI::initCommand(Command& command) const {
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, command.buffers.data()));
 }
 
-void SVkAPI::scheduleMemoryCopy(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback) {
+void SVkAPI::scheduleOnCopyQueue(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback) {
 	m_scheduledCopyCommandsAndCallbacks.emplace_back(std::make_pair(func, callback));
-	//return m_fencesInFlightCopy[m_currentFrame];
+}
+
+void SVkAPI::scheduleOnGraphicsQueue(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback) {
+	m_scheduledGraphicsCommandsAndCallbacks.emplace_back(std::make_pair(func, callback));
 }
 
 void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
@@ -555,16 +626,16 @@ void SVkAPI::createSwapChain() {
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 	QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
-	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value(), indices.copyFamily.value() };
 
 	if (indices.graphicsFamily != indices.presentFamily) {
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-		createInfo.queueFamilyIndexCount = 2;
+		createInfo.queueFamilyIndexCount = 3;
 		createInfo.pQueueFamilyIndices = queueFamilyIndices;
 	} else {
-		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		createInfo.queueFamilyIndexCount = 0; // Optional
-		createInfo.pQueueFamilyIndices = nullptr; // Optional
+		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		createInfo.queueFamilyIndexCount = 2;
+		createInfo.pQueueFamilyIndices = &queueFamilyIndices[1]; // graphics and copy families
 	}
 
 	createInfo.preTransform = swapChainSupport.capabilities.currentTransform;

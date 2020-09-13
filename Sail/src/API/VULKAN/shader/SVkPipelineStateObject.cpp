@@ -2,9 +2,6 @@
 #include "SVkPipelineStateObject.h"
 #include "Sail/Application.h"
 #include "SVkInputLayout.h"
-#include "../SVkAPI.h"
-#include "Sail/api/shader/Shader.h"
-#include "../resources/VkTexture.h"
 #include "SVkShader.h"
 
 PipelineStateObject* PipelineStateObject::Create(Shader* shader, unsigned int attributesHash) {
@@ -29,12 +26,12 @@ SVkPipelineStateObject::~SVkPipelineStateObject() {
 	vkDestroyPipeline(m_context->getDevice(), m_pipeline, nullptr);
 }
 
-bool SVkPipelineStateObject::bind(void* cmdList, uint32_t frameIndex) {
+bool SVkPipelineStateObject::bind(void* cmdList) {
 	if (!m_pipeline)
 		Logger::Error("Tried to bind pipeline state before it has been created!");
 
 	// TODO: This returns false if pipeline is already bound, maybe do something with that
-	bindInternal(cmdList, true, frameIndex);
+	bindInternal(cmdList, true);
 
 	vkCmdBindPipeline(static_cast<VkCommandBuffer>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 

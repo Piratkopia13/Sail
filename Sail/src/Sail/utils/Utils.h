@@ -106,7 +106,7 @@ namespace Utils {
 
 	namespace String {
 		std::string getBlockStartingFrom(const char* source);
-		const char* findToken(const std::string& token, const char* source);
+		const char* findToken(const std::string& token, const char* source, bool onFirstLine = false);
 		int findNextIntOnLine(const char* source);
 		const char* nextLine(const char* source);
 		std::string nextToken(const char* source);

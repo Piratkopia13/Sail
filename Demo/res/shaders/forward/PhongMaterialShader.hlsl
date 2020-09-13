@@ -115,12 +115,14 @@ Texture2D sys_texDiffuse : register(t0);
 Texture2D sys_texNormal : register(t1);
 [[vk::binding(7)]]
 Texture2D sys_texSpecular : register(t2);
+[[vk::binding(5)]]
 SamplerState PSss : register(s0);
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
 	// REMOVE THIS LINE WHEN TEXTURE WORK IN VK
-	return float4(0.2f, 0.8f, 0.8f, 1.0f);
+	// return float4(0.2f, 0.8f, 0.8f, 1.0f);
+	return sys_texDiffuse.Sample(PSss, input.texCoords);
 
 	PhongInput phongInput;
 	phongInput.mat = sys_material;

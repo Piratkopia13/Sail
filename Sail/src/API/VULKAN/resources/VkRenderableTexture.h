@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Sail/api/RenderableTexture.h"
-#include "VkTexture.h"
+#include "SVkTexture.h"
 //#include "VkATexture.h"
 
 class VkRenderableTexture : public RenderableTexture {

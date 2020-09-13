@@ -30,4 +30,6 @@
 namespace SVkUtils {
 	VkShaderStageFlags ConvertShaderBindingToStageFlags(ShaderComponent::BIND_SHADER bindShader);
 	std::string ErrorString(VkResult errorCode);
+
+	void TransitionImageLayout(const VkCommandBuffer& cmd, const VkImage& image, VkFormat format, const VkImageLayout oldLayout, VkImageLayout newLayout);
 }

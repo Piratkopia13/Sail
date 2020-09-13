@@ -24,7 +24,7 @@ SVkIndexBuffer::SVkIndexBuffer(Mesh::Data& modelData)
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
-		vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_stagingBuffer.buffer, &m_stagingBuffer.allocation, nullptr);
+		VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_stagingBuffer.buffer, &m_stagingBuffer.allocation, nullptr));
 	}
 
 	// Copy indices to the stating buffer
@@ -42,7 +42,7 @@ SVkIndexBuffer::SVkIndexBuffer(Mesh::Data& modelData)
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-		vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_indexBuffer.buffer, &m_indexBuffer.allocation, nullptr);
+		VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_indexBuffer.buffer, &m_indexBuffer.allocation, nullptr));
 	}
 
 	auto uploadCompleteCallback = [&] {
@@ -51,7 +51,7 @@ SVkIndexBuffer::SVkIndexBuffer(Mesh::Data& modelData)
 	};
 
 	// Copy from staging to gpu local memory
-	m_context->scheduleMemoryCopy([&, bufferSize](const VkCommandBuffer& cmd) {
+	m_context->scheduleOnCopyQueue([&, bufferSize](const VkCommandBuffer& cmd) {
 		VkBufferCopy copyRegion{};
 		copyRegion.srcOffset = 0; // Optional
 		copyRegion.dstOffset = 0; // Optional

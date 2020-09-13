@@ -51,7 +51,8 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	//m_input.registerRawDevices(*m_window.getHwnd());
 
 	// Load the missing texture texture
-	//m_resourceManager.loadTexture("missing.tga"); // Uncomment when vulkan is working
+	m_resourceManager.loadTexture("missing.tga"); // Uncomment when vulkan is working
+	m_api->waitForGPU();
 }
 
 Application::~Application() {

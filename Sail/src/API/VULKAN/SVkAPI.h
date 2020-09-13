@@ -31,6 +31,21 @@ public:
 			destroy();
 		}
 	};
+	struct ImageAllocation {
+		VkImage image = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
+
+		void destroy() {
+			if (image != VK_NULL_HANDLE) {
+				vmaDestroyImage(Application::getInstance()->getAPI<SVkAPI>()->getVmaAllocator(), image, allocation);
+			}
+			image = VK_NULL_HANDLE;
+			allocation = VK_NULL_HANDLE;
+		}
+		~ImageAllocation() {
+			destroy();
+		}
+	};
 
 public:
 	SVkAPI();
@@ -41,6 +56,7 @@ public:
 	void setDepthMask(DepthMask setting) override;
 	void setFaceCulling(Culling setting) override;
 	void setBlending(Blending setting) override;
+	void waitForGPU() override;
 	
 	uint32_t beginPresent(); // Returns the swap image index to use this frame
 	void present(bool vsync = false) override;
@@ -59,10 +75,13 @@ public:
 	VkRenderPassBeginInfo getRenderPassInfo() const; // TODO: maybe renderers should handle their own render passes?
 	const VkDescriptorPool& getDescriptorPool() const;
 	const VmaAllocator& getVmaAllocator() const;
+	const uint32_t* getGraphicsAndCopyQueueFamilyIndices() const;
 	
 	void initCommand(Command& command) const;
-	// Schedules a memory copy to run at the latest during the next call to present()
-	void scheduleMemoryCopy(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback);
+	// Schedules copy queue commands to run at the latest during the next call to present()
+	void scheduleOnCopyQueue(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback = {});
+	// Schedules graphics queue commands to run at the latest during the next call to present() after any scheduled copy queue commands
+	void scheduleOnGraphicsQueue(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback = {});
 	void submitCommandBuffers(std::vector<VkCommandBuffer> cmds);
 
 private:
@@ -134,10 +153,12 @@ private:
 	VkQueue m_queueGraphics;
 	VkQueue m_queuePresent;
 	VkQueue m_queueCopy;
+	std::vector<uint32_t> m_queueFamilyIndicesGraphicsAndCopy;
 
 	VkCommandPool m_commandPoolGraphics;
 	VkCommandPool m_commandPoolCopy;
 	std::vector<VkCommandBuffer> m_commandBuffersCopy;
+	std::vector<VkCommandBuffer> m_commandBuffersGraphics;
 
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
@@ -156,10 +177,12 @@ private:
 	const std::vector<const char*> m_deviceExtensions;
 
 	std::vector<std::pair< std::function<void(const VkCommandBuffer&)>, std::function<void()> >> m_scheduledCopyCommandsAndCallbacks;
+	std::vector<std::pair< std::function<void(const VkCommandBuffer&)>, std::function<void()> >> m_scheduledGraphicsCommandsAndCallbacks;
 	std::vector<VkFence> m_fencesInFlightCopy;
 	std::vector<VkFence> m_fencesJustInCaseCopyInFlight;
-
-	std::vector<std::vector<std::function<void()>>> m_executionCallbacks;
+	std::vector<VkFence> m_fenceScheduledGraphicsCmds;
+	std::vector<std::vector<std::function<void()>>> m_executionCallbacksCopy;
+	std::vector<std::vector<std::function<void()>>> m_executionCallbacksGraphics;
 
 #ifdef NDEBUG
 	const bool m_enableValidationLayers = false;

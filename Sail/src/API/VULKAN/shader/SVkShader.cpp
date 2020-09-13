@@ -2,12 +2,10 @@
 #include "SVkShader.h"
 #include "../SVkAPI.h"
 #include "Sail/Application.h"
-//#include "VkConstantBuffer.h"
-//#include "../resources/DescriptorHeap.h"
-#include "../resources/VkTexture.h"
 #include "SVkConstantBuffer.h"
 #include "../SVkUtils.h"
-//#include "../resources/VkRenderableTexture.h"
+#include "../resources/SVkTexture.h"
+#include "SVkSampler.h"
 
 Shader* Shader::Create(Shaders::ShaderSettings settings, Shader* allocAddr) {
 	if (!allocAddr)
@@ -25,11 +23,13 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	compile();
 
 	// Create the pipeline layout from parsed data
+	auto& parsed = parser.getParsedData();
+	std::vector<VkDescriptorSetLayoutBinding> bindings;
+
 	// Uniform buffer objects in vulkan are used the same way as constant buffers in dx12
-	auto& cBuffers = parser.getParsedData().cBuffers;
-	std::vector<VkDescriptorSetLayoutBinding> uboLayoutBindings;
+	auto& cBuffers = parsed.cBuffers;
 	for (auto& cbuffer : cBuffers) {
-		auto& b = uboLayoutBindings.emplace_back();
+		auto& b = bindings.emplace_back();
 		b.binding = static_cast<uint32_t>(cbuffer.cBuffer->getSlot());
 		b.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		b.descriptorCount = 1;
@@ -38,10 +38,19 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 		b.pImmutableSamplers = nullptr; // Optional
 	}
 
+	for (auto& texture : parsed.textures) {
+		auto& b = bindings.emplace_back();
+		b.binding = static_cast<uint32_t>(texture.vkBinding);
+		b.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		b.descriptorCount = 1;
+		b.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		b.pImmutableSamplers = nullptr; // Optional
+	}
+
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = static_cast<uint32_t>(uboLayoutBindings.size());
-	layoutInfo.pBindings = uboLayoutBindings.data();
+	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	layoutInfo.pBindings = bindings.data();
 
 	if (vkCreateDescriptorSetLayout(m_context->getDevice(), &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS) {
 		Logger::Error("Failed to create descriptor set layout!");
@@ -109,7 +118,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 		descriptorWrite.pBufferInfo = bufferInfos.data();
 		descriptorWrite.pImageInfo = nullptr; // Optional
 		descriptorWrite.pTexelBufferView = nullptr; // Optional
-		
+
 		vkUpdateDescriptorSets(m_context->getDevice(), 1, &descriptorWrite, 0, nullptr);
 	}
 
@@ -179,17 +188,46 @@ bool SVkShader::onEvent(Event& event) {
 	return true;
 }
 
+void SVkShader::updateDescriptorSet(void* cmdList) {
+	if (m_imageInfos.empty()) return;
+
+	auto imageIndex = m_context->getSwapImageIndex();
+	VkWriteDescriptorSet descWrite{};
+	descWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descWrite.dstSet = m_descriptorSets[imageIndex];
+	descWrite.dstBinding = 5; // Used for combined image samplers
+	descWrite.dstArrayElement = 0;
+	descWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descWrite.descriptorCount = static_cast<uint32_t>(m_imageInfos.size());
+	descWrite.pImageInfo = m_imageInfos.data();
+	vkUpdateDescriptorSets(m_context->getDevice(), 1, &descWrite, 0, nullptr);
+
+	m_imageInfos.clear();
+}
+
 const VkPipelineLayout& SVkShader::getPipelineLayout() const {
 	return m_pipelineLayout;
 }
 
-void SVkShader::bind(void* cmdList, uint32_t frameIndex) const {
-	vkCmdBindDescriptorSets(static_cast<VkCommandBuffer>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[frameIndex], 0, nullptr);
+void SVkShader::bind(void* cmdList) const {
+	auto imageIndex = m_context->getSwapImageIndex();
+	vkCmdBindDescriptorSets(static_cast<VkCommandBuffer>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[imageIndex], 0, nullptr);
 	bindInternal(0U, cmdList);
 }
 
 bool SVkShader::setTexture(const std::string& name, Texture* texture, void* cmdList) {
-	assert(false);
+	if (!texture) return false; // No texture bound to this slot
+
+	static ShaderComponent::SVkSampler sampler(Texture::WRAP, Texture::ANISOTROPIC, ShaderComponent::PS, 0); // TODO: don't use the same sampler for everything :P
+
+	auto* vkTexture = static_cast<SVkTexture*>(texture);
+	if (vkTexture->isReadyToUse()) {
+		auto& imageInfo = m_imageInfos.emplace_back();
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = vkTexture->getView();
+		imageInfo.sampler = sampler.get();
+	}
+
 	return true;
 }
 

@@ -69,7 +69,7 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 
 		// Find a matching pipelineStateObject and bind it
 		auto& pso = resman.getPSO(shader, command.mesh);
-		pso.bind(cmd, imageIndex);
+		pso.bind(cmd);
 
 		shader->trySetCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
 		if (camera) {

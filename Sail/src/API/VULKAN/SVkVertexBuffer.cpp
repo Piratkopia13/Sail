@@ -31,7 +31,7 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 			VmaAllocationCreateInfo allocInfo = {};
 			allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
-			vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_vertexBuffers[i].buffer, &m_vertexBuffers[i].allocation, nullptr);
+			VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_vertexBuffers[i].buffer, &m_vertexBuffers[i].allocation, nullptr));
 			
 			// Copy vertex data from RAM into VRAM
 			void* data;
@@ -51,7 +51,7 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 			VmaAllocationCreateInfo allocInfo = {};
 			allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
-			vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_stagingBuffer.buffer, &m_stagingBuffer.allocation, nullptr);
+			VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_stagingBuffer.buffer, &m_stagingBuffer.allocation, nullptr));
 		}
 
 		// Copy vertices to the staging buffer
@@ -70,7 +70,7 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 			VmaAllocationCreateInfo allocInfo = {};
 			allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-			vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_vertexBuffers[0].buffer, &m_vertexBuffers[0].allocation, nullptr);
+			VK_CHECK_RESULT(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &m_vertexBuffers[0].buffer, &m_vertexBuffers[0].allocation, nullptr));
 		}
 
 		auto uploadCompleteCallback = [&] {
@@ -79,7 +79,7 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 		};
 
 		// Copy from staging to gpu local memory
-		m_context->scheduleMemoryCopy([&, bufferSize](const VkCommandBuffer& cmd) {
+		m_context->scheduleOnCopyQueue([&, bufferSize](const VkCommandBuffer& cmd) {
 			VkBufferCopy copyRegion{};
 			copyRegion.srcOffset = 0; // Optional
 			copyRegion.dstOffset = 0; // Optional

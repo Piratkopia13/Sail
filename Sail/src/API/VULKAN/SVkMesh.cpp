@@ -4,8 +4,7 @@
 #include "Sail/api/IndexBuffer.h"
 #include "Sail/Application.h"
 #include "Sail/api/shader/Shader.h"
-//#include "resources/DescriptorHeap.h"
-//#include "shader/VkShader.h"
+#include "shader/SVkShader.h"
 
 Mesh* Mesh::Create(Data& buildData) {
 	return SAIL_NEW SVkMesh(buildData);
@@ -48,6 +47,9 @@ void SVkMesh::draw(const Renderer& renderer, Material* material, Shader* shader,
 	if (material) {
 		material->bind(shader, environment, cmdList);
 	}
+	// Write the new descriptors to bind textures
+	static_cast<SVkShader*>(shader)->updateDescriptorSet(cmdList);
+	shader->bind(cmdList);
 
 	vertexBuffer->bind(cmdList);
 	if (indexBuffer)

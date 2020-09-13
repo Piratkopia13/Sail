@@ -45,7 +45,7 @@ const Shaders::ShaderSettings& Shader::getSettings() const {
 }
 
 // Default bind, override and don't call this one if required by the graphics API
-void Shader::bind(void* cmdList, uint32_t frameIndex) const {
+void Shader::bind(void* cmdList) const {
 	bindInternal(0U, cmdList);
 }
 
