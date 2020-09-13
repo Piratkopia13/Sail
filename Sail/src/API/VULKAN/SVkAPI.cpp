@@ -3,7 +3,6 @@
 #include "vulkan/vulkan_win32.h"
 #include "../Windows/Win32Window.h"
 #include "SVkUtils.h"
-#include <array>
 
 const int SVkAPI::MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -19,18 +18,18 @@ SVkAPI::SVkAPI()
 	, m_viewport()
 	, m_scissorRect()
 	, m_presentImageIndex(-1)
-	, m_clearColor({ 0.f, 0.0f, 0.f, 1.f }) // Default clear color
 	, m_framebufferResized(false)
 	, m_isWindowMinimized(false)
 	, m_isFirstFrame(true)
 {
+	m_clearValues[0] = { 0.f, 0.0f, 0.f, 1.f }; // Default clear color
+	m_clearValues[1] = { 1.f, 0.f }; // Default clear depth
+
 	Logger::Log("Initializing Vulkan...");
 }
 
 SVkAPI::~SVkAPI() {
 	VK_CHECK_RESULT(vkDeviceWaitIdle(m_device));
-
-	vmaDestroyAllocator(m_vmaAllocator);
 
 	vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -41,6 +40,7 @@ SVkAPI::~SVkAPI() {
 		vkDestroyFence(m_device, m_fenceScheduledGraphicsCmds[i], nullptr);
 	}
 	cleanupSwapChain();
+	vmaDestroyAllocator(m_vmaAllocator);
 
 	vkDestroyCommandPool(m_device, m_commandPoolGraphics, nullptr);
 	vkDestroyCommandPool(m_device, m_commandPoolCopy, nullptr);
@@ -217,6 +217,19 @@ bool SVkAPI::init(Window* window) {
 		vkGetDeviceQueue(m_device, indices.copyFamily.value(), 0, &m_queueCopy);
 	}
 
+	// Set up Vulkan Memory Allocator
+	{
+		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.physicalDevice = m_physicalDevice;
+		allocatorInfo.device = m_device;
+		allocatorInfo.instance = m_instance;
+
+		if (vmaCreateAllocator(&allocatorInfo, &m_vmaAllocator) != VK_SUCCESS) {
+			Logger::Error("Failed to create vma allocator!");
+			return false;
+		}
+	}
+
 	createSwapChain();
 
 	createImageViews();
@@ -225,6 +238,41 @@ bool SVkAPI::init(Window* window) {
 	createRenderPass();
 
 	createViewportAndScissorRect();
+
+	// Create depth resources
+	{
+		VkImageCreateInfo imageInfo{};
+		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageInfo.imageType = VK_IMAGE_TYPE_2D;
+		imageInfo.extent.width = m_swapChainExtent.width;
+		imageInfo.extent.height = m_swapChainExtent.height;
+		imageInfo.extent.depth = 1;
+		imageInfo.mipLevels = 1;
+		imageInfo.arrayLayers = 1;
+		imageInfo.format = VK_FORMAT_D24_UNORM_S8_UINT;
+		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		VK_CHECK_RESULT(vmaCreateImage(m_vmaAllocator, &imageInfo, &allocInfo, &m_depthImage.image, &m_depthImage.allocation, nullptr));
+
+		// Create the image view
+		VkImageViewCreateInfo viewInfo{};
+		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewInfo.image = m_depthImage.image;
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		viewInfo.format = imageInfo.format;
+		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+		viewInfo.subresourceRange.baseMipLevel = 0;
+		viewInfo.subresourceRange.levelCount = 1;
+		viewInfo.subresourceRange.baseArrayLayer = 0;
+		viewInfo.subresourceRange.layerCount = 1;
+		VK_CHECK_RESULT(vkCreateImageView(m_device, &viewInfo, nullptr, &m_depthImageView));
+	}
 
 	createFramebuffers();
 
@@ -316,24 +364,11 @@ bool SVkAPI::init(Window* window) {
 		VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool));
 	}
 
-	// Set up Vulkan Memory Allocator
-	{
-		VmaAllocatorCreateInfo allocatorInfo = {};
-		allocatorInfo.physicalDevice = m_physicalDevice;
-		allocatorInfo.device = m_device;
-		allocatorInfo.instance = m_instance;
-
-		if (vmaCreateAllocator(&allocatorInfo, &m_vmaAllocator) != VK_SUCCESS) {
-			Logger::Error("Failed to create vma allocator!");
-			return false;
-		}
-	}
-
 	return true;
 }
 
 void SVkAPI::clear(const glm::vec4& color) {
-	m_clearColor = { color.r, color.g, color.b, color.a };
+	m_clearValues[0] = { color.r, color.g, color.b, color.a };
 }
 
 void SVkAPI::setDepthMask(DepthMask setting) { /* Defined the the PSO */ }
@@ -552,8 +587,9 @@ VkRenderPassBeginInfo SVkAPI::getRenderPassInfo() const {
 	renderPassInfo.framebuffer = m_swapChainFramebuffers[getSwapImageIndex()];
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = m_swapChainExtent;
-	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &m_clearColor;
+	
+	renderPassInfo.clearValueCount = static_cast<uint32_t>(m_clearValues.size());
+	renderPassInfo.pClearValues = m_clearValues.data();
 
 	return renderPassInfo;
 }
@@ -781,22 +817,37 @@ void SVkAPI::createRenderPass() {
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+	VkAttachmentDescription depthAttachment{};
+	depthAttachment.format = VK_FORMAT_D24_UNORM_S8_UINT;
+	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
 	// Subpasses
 	// TODO: use multiple of these for post processing
 	VkAttachmentReference colorAttachmentRef{};
 	colorAttachmentRef.attachment = 0;
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	VkAttachmentReference depthAttachmentRef{};
+	depthAttachmentRef.attachment = 1;
+	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
+	subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
 	// Render pass
+	std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pAttachments = &colorAttachment;
+	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+	renderPassInfo.pAttachments = attachments.data();
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
 
@@ -831,13 +882,14 @@ void SVkAPI::createFramebuffers() {
 	m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
 	for (size_t i = 0; i < m_swapChainImageViews.size(); i++) {
 		VkImageView attachments[] = {
-			m_swapChainImageViews[i]
+			m_swapChainImageViews[i],
+			m_depthImageView
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferInfo.renderPass = m_renderPass;
-		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.attachmentCount = ARRAYSIZE(attachments);
 		framebufferInfo.pAttachments = attachments;
 		framebufferInfo.width = m_swapChainExtent.width;
 		framebufferInfo.height = m_swapChainExtent.height;
@@ -859,6 +911,8 @@ void SVkAPI::cleanupSwapChain() {
 	}
 
 	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+	m_depthImage.destroy();
+	vkDestroyImageView(m_device, m_depthImageView, nullptr);
 }
 
 void SVkAPI::recreateSwapChain() {

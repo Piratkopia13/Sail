@@ -4,6 +4,7 @@
 #include <optional>
 #include "vk_mem_alloc.h"
 #include "Sail/Application.h"
+#include <array>
 
 class Win32Window;
 
@@ -143,6 +144,8 @@ private:
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 	VkFormat m_swapChainImageFormat;
 	VkExtent2D m_swapChainExtent;
+	ImageAllocation m_depthImage;
+	VkImageView m_depthImageView;
 
 	// Viewport and scissor rect
 	VkViewport m_viewport;
@@ -150,7 +153,7 @@ private:
 
 	// The following variables should maybe be moved
 	VkRenderPass m_renderPass; // maybe not move this?
-	VkClearValue m_clearColor;
+	std::array<VkClearValue, 2> m_clearValues; // [0] is for color, [1] is for depth
 	VkDescriptorPool m_descriptorPool;
 
 	// Queues
