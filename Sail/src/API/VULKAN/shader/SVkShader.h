@@ -3,6 +3,8 @@
 #include "Sail/api/shader/Shader.h"
 #include "Sail/events/Events.h"
 #include "vulkan/vulkan_core.h"
+#include "SVkSampler.h"
+#include "../resources/SVkTexture.h"
 
 class SVkAPI;
 
@@ -36,4 +38,10 @@ private:
 	VkPipelineLayout m_pipelineLayout;
 
 	std::vector<VkDescriptorImageInfo> m_imageInfos;
+
+	// Texture used while waiting for the proper texture to finish uploading to the GPU
+	SVkTexture& m_missingTexture;
+
+	// TODO: don't use the same sampler for everything :P
+	ShaderComponent::SVkSampler m_tempSampler;
 };

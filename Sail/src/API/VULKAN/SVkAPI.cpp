@@ -22,6 +22,7 @@ SVkAPI::SVkAPI()
 	, m_clearColor({ 0.f, 0.0f, 0.f, 1.f }) // Default clear color
 	, m_framebufferResized(false)
 	, m_isWindowMinimized(false)
+	, m_isFirstFrame(true)
 {
 	Logger::Log("Initializing Vulkan...");
 }
@@ -344,6 +345,13 @@ void SVkAPI::waitForGPU() {
 }
 
 uint32_t SVkAPI::beginPresent() {
+	if (m_isFirstFrame) {
+		// Flush and scheduled commands on the first frame.
+		// This makes sure that the missing texture is available on the first draw call.
+		flushScheduledCommands();
+		m_isFirstFrame = false;
+	}
+
 	// Make sure the CPU waits to submit if all frames are in flight
 	VkFence waitFences[] = { m_inFlightFences[m_currentFrame], m_fencesInFlightCopy[m_currentFrame] };
 	VK_CHECK_RESULT(vkWaitForFences(m_device, ARRAYSIZE(waitFences), waitFences, VK_TRUE, UINT64_MAX));
@@ -579,6 +587,92 @@ void SVkAPI::scheduleOnCopyQueue(std::function<void(const VkCommandBuffer&)> fun
 
 void SVkAPI::scheduleOnGraphicsQueue(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback) {
 	m_scheduledGraphicsCommandsAndCallbacks.emplace_back(std::make_pair(func, callback));
+}
+
+void SVkAPI::flushScheduledCommands() {
+	std::vector<std::function<void()>> callbacks;
+
+	// Execute any waiting copy commands
+	{
+		if (!m_scheduledCopyCommandsAndCallbacks.empty()) {
+			// Create a temporary command buffer to use
+			VkCommandBufferAllocateInfo allocInfo{};
+			allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			allocInfo.commandPool = m_commandPoolCopy;
+			allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+			allocInfo.commandBufferCount = 1;
+
+			VkCommandBuffer cmdBuffer;
+			VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, &cmdBuffer));
+
+			VkCommandBufferBeginInfo beginInfo{};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+			VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &beginInfo));
+
+			for (auto& pair : m_scheduledCopyCommandsAndCallbacks) {
+				// Call the lambda to add commands to the commandBuffer
+				pair.first(cmdBuffer);
+				// Add callback to list
+				callbacks.emplace_back(pair.second);
+			}
+			m_scheduledCopyCommandsAndCallbacks.clear();
+
+			VK_CHECK_RESULT(vkEndCommandBuffer(cmdBuffer));
+
+			VkSubmitInfo submitInfo{};
+			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			submitInfo.commandBufferCount = 1;
+			submitInfo.pCommandBuffers = &cmdBuffer;
+
+			VK_CHECK_RESULT(vkQueueSubmit(m_queueCopy, 1, &submitInfo, nullptr));
+		}
+	}
+	// Execute any waiting graphics commands
+	{
+		if (!m_scheduledGraphicsCommandsAndCallbacks.empty()) {
+			// Create a temporary command buffer to use
+			VkCommandBufferAllocateInfo allocInfo{};
+			allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			allocInfo.commandPool = m_commandPoolGraphics;
+			allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+			allocInfo.commandBufferCount = 1;
+
+			VkCommandBuffer cmdBuffer;
+			VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, &cmdBuffer));
+
+			VkCommandBufferBeginInfo beginInfo{};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+			VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &beginInfo));
+
+			for (auto& pair : m_scheduledGraphicsCommandsAndCallbacks) {
+				// Call the lambda to add commands to the commandBuffer
+				pair.first(cmdBuffer);
+				// Add callback to list
+				callbacks.emplace_back(pair.second);
+			}
+			m_scheduledGraphicsCommandsAndCallbacks.clear();
+
+			VK_CHECK_RESULT(vkEndCommandBuffer(cmdBuffer));
+
+			VkSubmitInfo submitInfo{};
+			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			submitInfo.commandBufferCount = 1;
+			submitInfo.pCommandBuffers = &cmdBuffer;
+
+			VK_CHECK_RESULT(vkQueueSubmit(m_queueGraphics, 1, &submitInfo, nullptr));
+		}
+	}
+
+	// Stall CPU until GPU is finished
+	waitForGPU();
+	// Call all the callbacks
+	for (auto& cb : callbacks) {
+		cb();
+	}
 }
 
 void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {

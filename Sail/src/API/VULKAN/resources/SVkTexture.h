@@ -17,6 +17,7 @@ public:
 	static VkFormat ConvertToVkFormat(ResourceFormat::TextureFormat format);
 
 private:
+	void copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t texWidth, uint32_t texHeight);
 	void readyForUseCallback();
 
 private:

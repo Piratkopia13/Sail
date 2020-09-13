@@ -4,6 +4,8 @@
 #include "../api/shader/Shader.h"
 #include "../Application.h"
 
+const std::string ResourceManager::MISSING_TEXTURE_NAME = "missing.tga";
+
 ResourceManager::ResourceManager() {
 	// Forward shaders
 	{

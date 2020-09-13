@@ -5,7 +5,6 @@
 #include "SVkConstantBuffer.h"
 #include "../SVkUtils.h"
 #include "../resources/SVkTexture.h"
-#include "SVkSampler.h"
 
 Shader* Shader::Create(Shaders::ShaderSettings settings, Shader* allocAddr) {
 	if (!allocAddr)
@@ -16,6 +15,8 @@ Shader* Shader::Create(Shaders::ShaderSettings settings, Shader* allocAddr) {
 
 SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	: Shader(settings)
+	, m_tempSampler(Texture::WRAP, Texture::ANISOTROPIC, ShaderComponent::PS, 0)
+	, m_missingTexture(static_cast<SVkTexture&>(Application::getInstance()->getResourceManager().getTexture(ResourceManager::MISSING_TEXTURE_NAME)))
 {
 	EventSystem::getInstance()->subscribeToEvent(Event::NEW_FRAME, this);
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
@@ -218,14 +219,14 @@ void SVkShader::bind(void* cmdList) const {
 bool SVkShader::setTexture(const std::string& name, Texture* texture, void* cmdList) {
 	if (!texture) return false; // No texture bound to this slot
 
-	static ShaderComponent::SVkSampler sampler(Texture::WRAP, Texture::ANISOTROPIC, ShaderComponent::PS, 0); // TODO: don't use the same sampler for everything :P
-
 	auto* vkTexture = static_cast<SVkTexture*>(texture);
+	auto& imageInfo = m_imageInfos.emplace_back();
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.sampler = m_tempSampler.get();
 	if (vkTexture->isReadyToUse()) {
-		auto& imageInfo = m_imageInfos.emplace_back();
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo.imageView = vkTexture->getView();
-		imageInfo.sampler = sampler.get();
+	} else {
+		imageInfo.imageView = m_missingTexture.getView();
 	}
 
 	return true;

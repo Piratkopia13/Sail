@@ -78,10 +78,14 @@ public:
 	const uint32_t* getGraphicsAndCopyQueueFamilyIndices() const;
 	
 	void initCommand(Command& command) const;
+	
 	// Schedules copy queue commands to run at the latest during the next call to present()
 	void scheduleOnCopyQueue(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback = {});
 	// Schedules graphics queue commands to run at the latest during the next call to present() after any scheduled copy queue commands
 	void scheduleOnGraphicsQueue(std::function<void(const VkCommandBuffer&)> func, std::function<void()> callback = {});
+	// Submits all scheduled commands to the GPU and then stalls the CPU until work is finished
+	void flushScheduledCommands();
+
 	void submitCommandBuffers(std::vector<VkCommandBuffer> cmds);
 
 private:
@@ -172,6 +176,7 @@ private:
 
 	bool m_framebufferResized;
 	bool m_isWindowMinimized;
+	bool m_isFirstFrame;
 
 	const std::vector<const char*> m_validationLayers;
 	const std::vector<const char*> m_deviceExtensions;

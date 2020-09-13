@@ -11,6 +11,8 @@
 
 class ResourceManager {
 public:
+	static const std::string MISSING_TEXTURE_NAME;
+public:
 	ResourceManager();
 	~ResourceManager();
 

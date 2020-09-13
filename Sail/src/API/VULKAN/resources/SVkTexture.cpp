@@ -66,6 +66,8 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 
 	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &allocInfo, &m_textureImage.image, &m_textureImage.allocation, nullptr));
 
+	bool isMissingTexture = (m_filename == ResourceManager::MISSING_TEXTURE_NAME);
+
 	auto uploadCompleteCallback = [&] {
 		// Clean up staging buffer after copy is completed
 		m_stagingBuffer.destroy();
@@ -76,29 +78,20 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 		}, std::bind(&SVkTexture::readyForUseCallback, this));
 	};
 
-	m_context->scheduleOnCopyQueue([&, texWidth, texHeight, vkImageFormat](const VkCommandBuffer& cmd) {
-		// Transition image to copy destination
-		SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	// Perform copying on the copy queue if this is NOT the missing texture
+	// If it is, using the copy queue causes a minimum of 2 frame delay before texture is ready which screws up the missing texture that needs to be available on first draw call.
+	if (isMissingTexture) {
+		m_context->scheduleOnGraphicsQueue([&, texWidth, texHeight, vkImageFormat](const VkCommandBuffer& cmd) {
+			copyToImage(cmd, vkImageFormat, texWidth, texHeight);
 
-		// Copy staging buffer to image
-		VkBufferImageCopy region{};
-		region.bufferOffset = 0;
-		region.bufferRowLength = 0;
-		region.bufferImageHeight = 0;
-
-		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		region.imageSubresource.mipLevel = 0;
-		region.imageSubresource.baseArrayLayer = 0;
-		region.imageSubresource.layerCount = 1;
-
-		region.imageOffset = { 0, 0, 0 };
-		region.imageExtent = {
-			texWidth,
-			texHeight,
-			1
-		};
-		vkCmdCopyBufferToImage(cmd, m_stagingBuffer.buffer, m_textureImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-	}, uploadCompleteCallback);
+			// Transition image for shader usage (has to be done on the graphics queue)
+			SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		}, std::bind(&SVkTexture::readyForUseCallback, this));
+	} else {
+		m_context->scheduleOnCopyQueue([&, texWidth, texHeight, vkImageFormat](const VkCommandBuffer& cmd) {
+			copyToImage(cmd, vkImageFormat, texWidth, texHeight);
+		}, uploadCompleteCallback);
+	}
 
 
 	// Create the image view
@@ -159,7 +152,35 @@ VkFormat SVkTexture::ConvertToVkFormat(ResourceFormat::TextureFormat format) {
 	return vkFormat;
 }
 
+void SVkTexture::copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t texWidth, uint32_t texHeight) {
+	// Transition image to copy destination
+	SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+	// Copy staging buffer to image
+	VkBufferImageCopy region{};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = {
+		texWidth,
+		texHeight,
+		1
+	};
+	vkCmdCopyBufferToImage(cmd, m_stagingBuffer.buffer, m_textureImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+}
+
 void SVkTexture::readyForUseCallback() {
+	// Make sure buffer is destroyed
+	// It will always already be destroyed at this point, unless this is the missing texture
+	m_stagingBuffer.destroy();
+
 	m_readyToUse = true;
 	Logger::Log("Texture ready for use :)");
 }
