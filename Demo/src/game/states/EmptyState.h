@@ -27,6 +27,7 @@ private:
 	std::shared_ptr<Model> m_model;
 	std::shared_ptr<Model> m_model2;
 	PhongMaterial m_material;
+	PhongMaterial m_material2;
 
 	PerspectiveCamera m_cam;
 	FlyingCameraController m_camController;

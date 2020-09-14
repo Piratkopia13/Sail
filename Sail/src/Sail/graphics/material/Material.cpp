@@ -11,6 +11,10 @@ Material::Material(Type type)
 
 Material::~Material() { }
 
+const std::vector<Texture*>& Material::getTextures() const {
+	return textures;
+}
+
 Material::Type Material::getType() const {
 	return m_type;
 }

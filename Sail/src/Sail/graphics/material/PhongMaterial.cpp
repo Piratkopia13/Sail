@@ -7,8 +7,9 @@
 PhongMaterial::PhongMaterial()
 	: Material(Material::PHONG)
 	, m_numTextures(3)
-	, m_textures {nullptr}
 {
+	textures.resize(m_numTextures);
+
 	m_phongSettings.ka = 1.f;
 	m_phongSettings.kd = 1.f;
 	m_phongSettings.ks = 1.f;
@@ -28,9 +29,9 @@ void PhongMaterial::bind(Shader* shader, Environment* environment, void* cmdList
 	// when a normal or specular texture is bound but not a diffuse one, the order will probably be wrong in dx12 shaders
 
 	// Will pass nullptrs for unused textures, it is up to the pipeline to handle that
-	shader->setTexture("sys_texDiffuse", m_textures[0], cmdList);
-	shader->setTexture("sys_texNormal", m_textures[1], cmdList);
-	shader->setTexture("sys_texSpecular", m_textures[2], cmdList);
+	shader->setTexture("sys_texDiffuse", textures[0], cmdList);
+	shader->setTexture("sys_texNormal", textures[1], cmdList);
+	shader->setTexture("sys_texSpecular", textures[2], cmdList);
 }
 
 Shader* PhongMaterial::getShader(Renderer::Type rendererType) const {
@@ -63,36 +64,36 @@ void PhongMaterial::setColor(const glm::vec4& color) {
 
 
 void PhongMaterial::setDiffuseTexture(const std::string& filename, bool useAbsolutePath) {
-	m_textures[0] = loadTexture(filename, useAbsolutePath);
+	textures[0] = loadTexture(filename, useAbsolutePath);
 	m_phongSettings.hasDiffuseTexture = (filename.empty()) ? 0 : 1;
 }
 void PhongMaterial::setDiffuseTextureFromHandle(Texture* srv) {
-	m_textures[0] = srv;
+	textures[0] = srv;
 	m_phongSettings.hasDiffuseTexture = 1;
 }
 
 
 void PhongMaterial::setNormalTexture(const std::string& filename, bool useAbsolutePath) {
-	m_textures[1] = loadTexture(filename, useAbsolutePath);
+	textures[1] = loadTexture(filename, useAbsolutePath);
 	m_phongSettings.hasNormalTexture = (filename.empty()) ? 0 : 1;
 }
 void PhongMaterial::setNormalTextureFromHandle(Texture* srv) {
-	m_textures[1] = srv;
+	textures[1] = srv;
 	m_phongSettings.hasNormalTexture = 1;
 }
 
 
 void PhongMaterial::setSpecularTexture(const std::string& filename, bool useAbsolutePath) {
-	m_textures[2] = loadTexture(filename, useAbsolutePath);
+	textures[2] = loadTexture(filename, useAbsolutePath);
 	m_phongSettings.hasSpecularTexture = (filename.empty()) ? 0 : 1;
 }
 void PhongMaterial::setSpecularTextureFromHandle(Texture* srv) {
-	m_textures[2] = srv;
+	textures[2] = srv;
 	m_phongSettings.hasSpecularTexture = 1;
 }
 
 Texture* PhongMaterial::getTexture(unsigned int id) const {
-	return m_textures[id];
+	return textures[id];
 }
 
 PhongMaterial::PhongSettings& PhongMaterial::getPhongSettings() {

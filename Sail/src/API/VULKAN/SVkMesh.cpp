@@ -47,10 +47,7 @@ void SVkMesh::draw(const Renderer& renderer, Material* material, Shader* shader,
 	if (material) {
 		material->bind(shader, environment, cmdList);
 	}
-	// Write the new descriptors to bind textures
-	static_cast<SVkShader*>(shader)->updateDescriptorSet(cmdList);
-	shader->bind(cmdList);
-
+	
 	vertexBuffer->bind(cmdList);
 	if (indexBuffer)
 		indexBuffer->bind(cmdList);

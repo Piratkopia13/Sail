@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <unordered_map>
 
 class Mesh;
 class Material;
@@ -10,6 +11,8 @@ class Model;
 class LightSetup;
 class Environment;
 class Shader;
+class ResourceManager;
+class PipelineStateObject;
 
 class Renderer {
 public:
@@ -36,13 +39,13 @@ public:
 	struct RenderCommand {
 		DXRRenderFlag dxrFlags;
 		Mesh* mesh;
-		Shader* shader;
 		glm::mat4 transform;
 		Material* material;
 	};
 
 public:
 	static Renderer* Create(Renderer::Type type);
+	Renderer();
 	virtual ~Renderer() {}
 
 	virtual void begin(Camera* camera, Environment* environment);
@@ -55,10 +58,13 @@ public:
 	virtual void* present(PresentFlag flags, void* skippedPrepCmdList = nullptr) = 0;
 
 protected:
-	std::vector<RenderCommand> commandQueue;
+	std::unordered_map<PipelineStateObject*, std::vector<RenderCommand>> commandQueue; // Sorted by PSOs
 	Camera* camera = nullptr;
 	Environment* environment = nullptr;
 	LightSetup* lightSetup = nullptr;
+
+private:
+	ResourceManager* m_resman;
 
 };
 

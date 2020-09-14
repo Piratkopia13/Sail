@@ -30,6 +30,8 @@ public:
 	// Get the shader to use this material with the given renderer, may return nullptr when the renderer is not supported
 	virtual Shader* getShader(Renderer::Type rendererType) const = 0;
 
+	const std::vector<Texture*>& getTextures() const;
+
 	Type getType() const;
 
 	template <typename T>
@@ -39,6 +41,7 @@ public:
 
 protected:
 	Texture* loadTexture(const std::string& filename, bool useAbsolutePath = false);
+	std::vector<Texture*> textures;
 
 private:
 	Type m_type;

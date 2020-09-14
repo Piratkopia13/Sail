@@ -60,36 +60,38 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 	vkCmdSetViewport(cmd, 0, 1, &m_context->getViewport());
 	vkCmdSetScissor(cmd, 0, 1, &m_context->getScissorRect());
 
-	for (RenderCommand& command : commandQueue) {
-		SVkShader* shader = static_cast<SVkShader*>(command.shader);
-		//uniqueShaderPipelines.insert(shaderPipeline);
+	// Iterate unique PSO's
+	for (auto it : commandQueue) {
+		PipelineStateObject* pso = it.first;
+		auto& renderCommands = it.second;
 
-		// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
-		//shader->reserve(totalInstances);
+		SVkShader* shader = static_cast<SVkShader*>(pso->getShader());
+		shader->prepareToRender(renderCommands);
 
 		// Write the new descriptors to bind textures
 		//shader->updateDescriptorSet(cmd);
 
-		// Find a matching pipelineStateObject and bind it
-		auto& pso = resman.getPSO(shader, command.mesh);
-		pso.bind(cmd); // Binds the pipline and descriptor sets
+		pso->bind(cmd); // Binds the pipeline and descriptor sets
 
-		shader->trySetCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
-		if (camera) {
-			// Transpose all matrices to convert them to row-major which is required in order for the hlsl->spir-v multiplication order
-			shader->trySetCBufferVar("sys_mView", &glm::transpose(camera->getViewMatrix()), sizeof(glm::mat4), cmd);
-			shader->trySetCBufferVar("sys_mProjection", &glm::transpose(camera->getProjMatrix()), sizeof(glm::mat4), cmd);
-			shader->trySetCBufferVar("sys_mVP", &glm::transpose(camera->getViewProjection()), sizeof(glm::mat4), cmd);
-			shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), cmd);
-		}
-		if (lightSetup) {
-			auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
-			auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
-			shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize, cmd);
-			shader->trySetCBufferVar("pointLights", plData, plDataByteSize, cmd);
-		}
+		// Iterate render commands
+		for (auto& command : renderCommands) {
+			shader->trySetCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
+			if (camera) {
+				// Transpose all matrices to convert them to row-major which is required in order for the hlsl->spir-v multiplication order
+				shader->trySetCBufferVar("sys_mView", &glm::transpose(camera->getViewMatrix()), sizeof(glm::mat4), cmd);
+				shader->trySetCBufferVar("sys_mProjection", &glm::transpose(camera->getProjMatrix()), sizeof(glm::mat4), cmd);
+				shader->trySetCBufferVar("sys_mVP", &glm::transpose(camera->getViewProjection()), sizeof(glm::mat4), cmd);
+				shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), cmd);
+			}
+			if (lightSetup) {
+				auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
+				auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
+				shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize, cmd);
+				shader->trySetCBufferVar("pointLights", plData, plDataByteSize, cmd);
+			}
 
-		command.mesh->draw(*this, command.material, shader, environment, cmd);
+			command.mesh->draw(*this, command.material, shader, environment, cmd);
+		}
 	}
 
 	

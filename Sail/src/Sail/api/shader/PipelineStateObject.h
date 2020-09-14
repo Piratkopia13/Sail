@@ -28,6 +28,8 @@ public:
 	PipelineStateObject(Shader* shader, unsigned int attributesHash);
 	virtual ~PipelineStateObject() = 0;
 
+	Shader* getShader() const;
+
 	// Returns false if already bound
 	virtual bool bind(void* cmdList = nullptr);
 	virtual void unbind();

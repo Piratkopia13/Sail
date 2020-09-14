@@ -43,8 +43,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 		auto& b = bindings.emplace_back();
 		b.binding = static_cast<uint32_t>(texture.vkBinding);
 		b.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		//b.descriptorCount = (texture.arraySize == -1) ? 128 : texture.arraySize; // an array size of -1 means it is sizeless in the shader
-		b.descriptorCount = (texture.arraySize == -1) ? 2 : texture.arraySize; // an array size of -1 means it is sizeless in the shader
+		b.descriptorCount = (texture.arraySize == -1) ? TEXTURE_ARRAY_DESCRIPTOR_COUNT : texture.arraySize; // an array size of -1 means it is sizeless in the shader
 		b.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		b.pImmutableSamplers = nullptr; // Optional
 	}
@@ -190,8 +189,43 @@ bool SVkShader::onEvent(Event& event) {
 	return true;
 }
 
-void SVkShader::updateDescriptorSet(void* cmdList) {
-	if (m_imageInfos.empty()) return;
+void SVkShader::prepareToRender(const std::vector<Renderer::RenderCommand>& renderCommands) {
+	// If the shader wants all textures this frame in an array
+
+	// Find all unique textures and bind them
+	std::set<SVkTexture*> uniqueTextures;
+	for (auto& command : renderCommands) {
+		for (auto* texture : command.material->getTextures()) {
+			if (texture) uniqueTextures.insert(static_cast<SVkTexture*>(texture));
+		}
+	}
+
+	std::vector<VkDescriptorImageInfo> imageInfos;
+
+	for (auto* texture : uniqueTextures) {
+		auto& imageInfo = imageInfos.emplace_back();
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.sampler = m_tempSampler.get();
+		if (texture->isReadyToUse()) {
+			imageInfo.imageView = texture->getView();
+		} else {
+			imageInfo.imageView = m_missingTexture.getView();
+		}
+	}
+
+	if (imageInfos.size() > TEXTURE_ARRAY_DESCRIPTOR_COUNT) {
+		Logger::Error("Tried to render too many textures ("+std::to_string(imageInfos.size())+"). Set max/TEXTURE_ARRAY_DESCRIPTOR_COUNT is "+std::to_string(TEXTURE_ARRAY_DESCRIPTOR_COUNT));
+	}
+
+	// Fill the unused descriptor slots with the missing texture
+	for (unsigned int i = imageInfos.size(); i < TEXTURE_ARRAY_DESCRIPTOR_COUNT; i++) {
+		auto& imageInfo = imageInfos.emplace_back();
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.sampler = m_tempSampler.get();
+		imageInfo.imageView = m_missingTexture.getView();
+	}
+
+	if (imageInfos.empty()) return;
 
 	auto imageIndex = m_context->getSwapImageIndex();
 	VkWriteDescriptorSet descWrite{};
@@ -200,13 +234,29 @@ void SVkShader::updateDescriptorSet(void* cmdList) {
 	descWrite.dstBinding = 5; // Used for combined image samplers
 	descWrite.dstArrayElement = 0;
 	descWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//descWrite.descriptorCount = static_cast<uint32_t>(m_imageInfos.size());
-	descWrite.descriptorCount = 2;
-	descWrite.pImageInfo = m_imageInfos.data();
+	//descWrite.descriptorCount = static_cast<uint32_t>(imageInfos.size());
+	descWrite.descriptorCount = TEXTURE_ARRAY_DESCRIPTOR_COUNT;
+	descWrite.pImageInfo = imageInfos.data();
 	vkUpdateDescriptorSets(m_context->getDevice(), 1, &descWrite, 0, nullptr);
-
-	m_imageInfos.clear();
 }
+
+//void SVkShader::updateDescriptorSet(void* cmdList) {
+//	if (m_imageInfos.empty()) return;
+//
+//	auto imageIndex = m_context->getSwapImageIndex();
+//	VkWriteDescriptorSet descWrite{};
+//	descWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+//	descWrite.dstSet = m_descriptorSets[imageIndex];
+//	descWrite.dstBinding = 5; // Used for combined image samplers
+//	descWrite.dstArrayElement = 0;
+//	descWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+//	//descWrite.descriptorCount = static_cast<uint32_t>(m_imageInfos.size());
+//	descWrite.descriptorCount = 2;
+//	descWrite.pImageInfo = m_imageInfos.data();
+//	vkUpdateDescriptorSets(m_context->getDevice(), 1, &descWrite, 0, nullptr);
+//
+//	m_imageInfos.clear();
+//}
 
 const VkPipelineLayout& SVkShader::getPipelineLayout() const {
 	return m_pipelineLayout;
@@ -223,16 +273,14 @@ bool SVkShader::setTexture(const std::string& name, Texture* texture, void* cmdL
 
 	auto* vkTexture = static_cast<SVkTexture*>(texture);
 	
-	for (unsigned int i = 0; i < 2; i++) {
-		auto& imageInfo = m_imageInfos.emplace_back();
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.sampler = m_tempSampler.get();
-		if (vkTexture->isReadyToUse() && i == 0) {
-			imageInfo.imageView = vkTexture->getView();
-		} else {
-			imageInfo.imageView = m_missingTexture.getView();
-		}
-	}
+	//auto& imageInfo = m_imageInfos.emplace_back();
+	//imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	//imageInfo.sampler = m_tempSampler.get();
+	//if (vkTexture->isReadyToUse()) {
+	//	imageInfo.imageView = vkTexture->getView();
+	//} else {
+	//	imageInfo.imageView = m_missingTexture.getView();
+	//}
 
 	return true;
 }

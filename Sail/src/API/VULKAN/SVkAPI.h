@@ -109,6 +109,7 @@ private:
 	void createImageViews();
 	void createRenderPass();
 	void createViewportAndScissorRect();
+	void createDepthResources();
 	void createFramebuffers();
 
 	void cleanupSwapChain();
