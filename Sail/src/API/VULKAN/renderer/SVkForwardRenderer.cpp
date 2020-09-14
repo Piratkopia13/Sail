@@ -67,9 +67,12 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 		// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
 		//shader->reserve(totalInstances);
 
+		// Write the new descriptors to bind textures
+		//shader->updateDescriptorSet(cmd);
+
 		// Find a matching pipelineStateObject and bind it
 		auto& pso = resman.getPSO(shader, command.mesh);
-		pso.bind(cmd);
+		pso.bind(cmd); // Binds the pipline and descriptor sets
 
 		shader->trySetCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
 		if (camera) {

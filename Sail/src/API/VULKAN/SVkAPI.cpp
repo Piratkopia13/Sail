@@ -184,11 +184,16 @@ bool SVkAPI::init(Window* window) {
 		//VkPhysicalDeviceRobustness2FeaturesEXT deviceRobustnessFeatures{};
 		//deviceRobustnessFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
 		//deviceRobustnessFeatures.nullDescriptor = VK_TRUE; // Allow null descriptors! Used for images before they are ready to be read in shaders
+
+		VkPhysicalDeviceDescriptorIndexingFeatures deviceDescIndexFeatures{};
+		deviceDescIndexFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+		deviceDescIndexFeatures.runtimeDescriptorArray = VK_TRUE;
+
 		VkPhysicalDeviceFeatures2 deviceFeatures {};
 		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		deviceFeatures.features.shaderClipDistance = VK_TRUE;
 		deviceFeatures.features.samplerAnisotropy = VK_TRUE;
-		//deviceFeatures.pNext = &deviceRobustnessFeatures;
+		deviceFeatures.pNext = &deviceDescIndexFeatures;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

@@ -43,7 +43,8 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 		auto& b = bindings.emplace_back();
 		b.binding = static_cast<uint32_t>(texture.vkBinding);
 		b.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		b.descriptorCount = 1;
+		//b.descriptorCount = (texture.arraySize == -1) ? 128 : texture.arraySize; // an array size of -1 means it is sizeless in the shader
+		b.descriptorCount = (texture.arraySize == -1) ? 2 : texture.arraySize; // an array size of -1 means it is sizeless in the shader
 		b.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		b.pImmutableSamplers = nullptr; // Optional
 	}
@@ -199,7 +200,8 @@ void SVkShader::updateDescriptorSet(void* cmdList) {
 	descWrite.dstBinding = 5; // Used for combined image samplers
 	descWrite.dstArrayElement = 0;
 	descWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descWrite.descriptorCount = static_cast<uint32_t>(m_imageInfos.size());
+	//descWrite.descriptorCount = static_cast<uint32_t>(m_imageInfos.size());
+	descWrite.descriptorCount = 2;
 	descWrite.pImageInfo = m_imageInfos.data();
 	vkUpdateDescriptorSets(m_context->getDevice(), 1, &descWrite, 0, nullptr);
 
@@ -220,13 +222,16 @@ bool SVkShader::setTexture(const std::string& name, Texture* texture, void* cmdL
 	if (!texture) return false; // No texture bound to this slot
 
 	auto* vkTexture = static_cast<SVkTexture*>(texture);
-	auto& imageInfo = m_imageInfos.emplace_back();
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.sampler = m_tempSampler.get();
-	if (vkTexture->isReadyToUse()) {
-		imageInfo.imageView = vkTexture->getView();
-	} else {
-		imageInfo.imageView = m_missingTexture.getView();
+	
+	for (unsigned int i = 0; i < 2; i++) {
+		auto& imageInfo = m_imageInfos.emplace_back();
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.sampler = m_tempSampler.get();
+		if (vkTexture->isReadyToUse() && i == 0) {
+			imageInfo.imageView = vkTexture->getView();
+		} else {
+			imageInfo.imageView = m_missingTexture.getView();
+		}
 	}
 
 	return true;

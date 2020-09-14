@@ -66,7 +66,7 @@ bool PipelineStateObject::bindInternal(void* cmdList, bool forceIfBound) {
 	context->setBlending(settings.blendMode);
 	context->setFaceCulling(settings.cullMode);
 
-	//shader->bind(cmdList, frameIndex); // Its up to the mesh to bind the shader after any descriptor updates
+	//shader->bind(cmdList);
 
 	// Input layouts only exist for graphics PSO (not compute)
 	if (inputLayout) {

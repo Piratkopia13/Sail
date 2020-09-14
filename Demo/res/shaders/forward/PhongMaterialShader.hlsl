@@ -6,6 +6,7 @@ struct VSIn {
 	float3 normal : NORMAL0;
 	float3 tangent : TANGENT0;
 	float3 bitangent : BINORMAL0;
+	unsigned int vertexID : SV_VERTEXID;
 };
 
 struct PSIn {
@@ -15,6 +16,7 @@ struct PSIn {
 	float clip : SV_ClipDistance0;
 	float3 toCam : TOCAM;
 	//Material material : MAT;
+	unsigned int vertexID : ASD;
 	LightList lights : LIGHTS;
 };
 
@@ -57,6 +59,7 @@ PSIn VSMain(VSIn input) {
     // output.position = mul(output.position, sys_mVP);
 	// return output;
 
+	output.vertexID = input.vertexID;
 	// Copy over the directional light
 	// output.lights.dirLight = dirLight;
 	// // Copy over point lights
@@ -109,45 +112,52 @@ PSIn VSMain(VSIn input) {
 
 }
 
-[[vk::binding(5)]] // Since 0 and 1 are used for cbuffers - start textures after that in vk
-Texture2D sys_texDiffuse : register(t0);
-[[vk::binding(6)]]
-Texture2D sys_texNormal : register(t1);
-[[vk::binding(7)]]
-Texture2D sys_texSpecular : register(t2);
+// [[vk::binding(5)]] // Since 0 and 1 are used for cbuffers - start textures after that in vk
+// Texture2D sys_texDiffuse : register(t0);
+// [[vk::binding(6)]]
+// Texture2D sys_texNormal : register(t1);
+// [[vk::binding(7)]]
+// Texture2D sys_texSpecular : register(t2);
 [[vk::binding(5)]]
 SamplerState PSss : register(s0);
+
+[[vk::binding(5)]]
+Texture2D texArr[] : register(t3);
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
 	// REMOVE THIS LINE WHEN TEXTURE WORK IN VK
 	// return float4(0.2f, 0.8f, 0.8f, 1.0f);
-	return sys_texDiffuse.Sample(PSss, input.texCoords);
+	// return sys_texDiffuse.Sample(PSss, input.texCoords);
+	if (input.vertexID == 0)
+		return texArr[0].Sample(PSss, input.texCoords);
+	else
+		return texArr[1].Sample(PSss, input.texCoords);
 
-	PhongInput phongInput;
-	phongInput.mat = sys_material;
-	phongInput.fragToCam = input.toCam;
-	phongInput.lights = input.lights;
+	// PhongInput phongInput;
+	// phongInput.mat = sys_material;
+	// phongInput.fragToCam = input.toCam;
+	// phongInput.lights = input.lights;
 
-	phongInput.diffuseColor = sys_material.modelColor;
-	if (sys_material.hasDiffuseTexture)
-		phongInput.diffuseColor *= sys_texDiffuse.Sample(PSss, input.texCoords);
+	// phongInput.diffuseColor = sys_material.modelColor;
+	// if (sys_material.hasDiffuseTexture)
+	// 	phongInput.diffuseColor *= sys_texDiffuse.Sample(PSss, input.texCoords);
 
-	phongInput.normal = input.normal;
-	if (sys_material.hasNormalTexture)
-		phongInput.normal = sys_texNormal.Sample(PSss, input.texCoords).rgb * 2.f - 1.f;
+	// phongInput.normal = input.normal;
+	// if (sys_material.hasNormalTexture)
+	// 	phongInput.normal = sys_texNormal.Sample(PSss, input.texCoords).rgb * 2.f - 1.f;
 
-	phongInput.specMap = float3(1.f, 1.f, 1.f);
-	if (sys_material.hasSpecularTexture)
-		phongInput.specMap = sys_texSpecular.Sample(PSss, input.texCoords).rgb;
+	// phongInput.specMap = float3(1.f, 1.f, 1.f);
+	// if (sys_material.hasSpecularTexture)
+	// 	phongInput.specMap = sys_texSpecular.Sample(PSss, input.texCoords).rgb;
 
 
-    //return sys_texDiffuse.Sample(PSss, input.texCoords);
-	// return float4(phongInput.normal * 0.5f + 0.5, 1.f);
-    return phongShade(phongInput);
-    //return float4(phongInput.lights.dirLight.direction, 1.f);
-    //return float4(phongInput.diffuseColor.rgb, 1.f);
-    //return float4(0.f, 1.f, 0.f, 1.f);
+    // //return sys_texDiffuse.Sample(PSss, input.texCoords);
+	// // return float4(phongInput.normal * 0.5f + 0.5, 1.f);
+    // return phongShade(phongInput);
+    // //return float4(phongInput.lights.dirLight.direction, 1.f);
+    // //return float4(phongInput.diffuseColor.rgb, 1.f);
+    // //return float4(0.f, 1.f, 0.f, 1.f);
 
 }
 

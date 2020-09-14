@@ -67,7 +67,7 @@ bool EmptyState::render(float dt) {
 	glm::mat4 transform2 = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.f, 0.f));
 
 	m_forwardRenderer->submit(m_model.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), &m_material, transform2);
-	m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, transform);
+	//m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), nullptr, transform);
 
 	m_forwardRenderer->end();
 	m_forwardRenderer->present(Renderer::Default);

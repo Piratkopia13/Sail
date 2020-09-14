@@ -231,7 +231,7 @@ void ShaderParser::parseSampler(const char* sourceChar, std::string& source) {
 
 	auto bindShader = getBindShaderFromName(name);
 	auto uslot = static_cast<unsigned int>(slot);
-	ShaderResource res(name, uslot, uslot);
+	ShaderResource res(name, uslot, 1, uslot);
 	m_parsedData.samplers.emplace_back(res, samplerInfo.addressMode, samplerInfo.filter, bindShader, slot);
 }
 
@@ -253,7 +253,8 @@ void ShaderParser::parseTexture(const char* source) {
 	}
 
 	UINT tokenSize = 0;
-	std::string name = nextTokenAsName(source, tokenSize);
+	int arrSize = 1;
+	std::string name = nextTokenAsName(source, tokenSize, &arrSize);
 	source += tokenSize;
 
 	int slot = findNextIntOnLine(source);
@@ -280,7 +281,7 @@ void ShaderParser::parseTexture(const char* source) {
 	}
 
 
-	m_parsedData.textures.emplace_back(name, slot, vkBinding);
+	m_parsedData.textures.emplace_back(name, slot, arrSize, vkBinding);
 }
 
 void ShaderParser::parseRWTexture(const char* source) {
@@ -300,7 +301,7 @@ void ShaderParser::parseRWTexture(const char* source) {
 
 	// Store name and slot as a texture to allow shader to manually bind this slot
 	auto uslot = static_cast<unsigned int>(slot);
-	m_parsedData.textures.emplace_back(name, uslot, uslot);
+	m_parsedData.textures.emplace_back(name, uslot, 1, uslot);
 
 	// Get texture format from source, if specified
 	ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8;
@@ -327,7 +328,7 @@ void ShaderParser::parseRWTexture(const char* source) {
 	free(lineCopy);
 
 	std::string nameSuffix(" File: " + m_filename + " slot " + std::to_string(slot));
-	m_parsedData.renderableTextures.emplace_back(ShaderResource(name, uslot, uslot), format, nameSuffix);
+	m_parsedData.renderableTextures.emplace_back(ShaderResource(name, uslot, 1, uslot), format, nameSuffix);
 }
 
 std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize, int* arrayElements) const {
@@ -345,6 +346,10 @@ std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize
 		size_t start = 0;
 		while ((start = name.find("[")) != name.npos) {
 			auto size = name.substr(start).find(']') + 1;
+			if (size == 2) { // Sizeless / boundless array
+				*arrayElements = -1;
+				break;
+			}
 			// Add array size as long as the size is defined numerically and not with a macro
 			if (isdigit(*name.substr(start+1).c_str()))
 				*arrayElements *= std::stoi(name.substr(start+1, size-2));
