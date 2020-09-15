@@ -30,14 +30,16 @@ cbuffer VSPSSystemCBuffer : register(b0) {
     float3 sys_cameraPos;
 }
 
-ConstantBuffer<PhongMaterial> VSPSMaterials[] : register(b1);
+cbuffer VSPSMaterials : register(b1) {
+	PhongMaterial sys_materials[1024];
+}
 
 // Fast as frick data through the pipeline itself
 [[vk::push_constant]]
 struct {
 	matrix sys_mWorld;
-	uint materialIndex;
-} VSPCTest;
+	uint sys_materialIndex;
+} VSPSTest;
 
 struct PointLightInput {
 	float3 color;
@@ -53,8 +55,10 @@ cbuffer VSLights : register(b2) {
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
+	PhongMaterial mat = sys_materials[VSPSTest.sys_materialIndex];
+
 	// REMOVE THESE LINES WHEN TEXTURE WORK IN VK
-	matrix sys_mWorld = VSPCTest.sys_mWorld;
+	matrix sys_mWorld = VSPSTest.sys_mWorld;
 
 	// input.position.w = 1.f;
 	// output.position = mul(sys_mWorld, input.position);
@@ -90,7 +94,7 @@ PSIn VSMain(VSIn input) {
 
     output.position = mul(sys_mVP, output.position);
 
-	if (VSPSMaterials[0].hasNormalTexture) {
+	if (mat.normalTexIndex != -1) {
 	    // Convert to tangent space
 		float3x3 TBN = {
 			mul((float3x3) sys_mWorld, normalize(input.tangent)),
@@ -131,10 +135,16 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// REMOVE THIS LINE WHEN TEXTURE WORK IN VK
 	// return float4(0.2f, 0.8f, 0.8f, 1.0f);
 	// return sys_texDiffuse.Sample(PSss, input.texCoords);
-	if (input.vertexID == 0)
-		return texArr[0].Sample(PSss, input.texCoords);
-	else
-		return texArr[1].Sample(PSss, input.texCoords);
+
+	PhongMaterial mat = sys_materials[VSPSTest.sys_materialIndex];
+
+	return texArr[mat.diffuseTexIndex].Sample(PSss, input.texCoords);
+	// return mat.modelColor;
+
+	// if (input.vertexID == 0)
+	// 	return texArr[0].Sample(PSss, input.texCoords);
+	// else
+	// 	return texArr[1].Sample(PSss, input.texCoords);
 
 	// PhongInput phongInput;
 	// phongInput.mat = sys_material;

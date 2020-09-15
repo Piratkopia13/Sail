@@ -17,6 +17,16 @@ void OutlineMaterial::bind(Shader* shader, Environment* environment, void* cmdLi
 	shader->setCBufferVar("mat_thickness", &m_thickness, sizeof(float), cmdList);
 }
 
+void* OutlineMaterial::getData() {
+	assert(false && "Not implemented");
+	return 0;
+}
+
+unsigned int OutlineMaterial::getDataSize() const {
+	assert(false && "Not implemented");
+	return 0;
+}
+
 Shader* OutlineMaterial::getShader(Renderer::Type rendererType) const {
 	auto& resman = Application::getInstance()->getResourceManager();
 	switch (rendererType) {

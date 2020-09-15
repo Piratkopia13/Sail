@@ -72,6 +72,7 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 
 		// Iterate render commands
 		for (auto& command : renderCommands) {
+			shader->trySetCBufferVar("sys_materialIndex", &command.materialIndex, sizeof(unsigned int), cmd);
 			shader->trySetCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
 			if (camera) {
 				// Transpose all matrices to convert them to row-major which is required in order for the hlsl->spir-v multiplication order

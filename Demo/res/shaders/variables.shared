@@ -40,9 +40,9 @@ struct PhongMaterial {
 	float kd;
 	float ks;
 	float shininess;
-	bool hasDiffuseTexture; // TODO : Pack flags
-	bool hasNormalTexture;
-	bool hasSpecularTexture;
+	int diffuseTexIndex;
+	int normalTexIndex;
+	int specularTexIndex;
 	float padding;
 };
 

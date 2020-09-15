@@ -28,6 +28,8 @@ public:
 	~PBRMaterial();
 
 	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	virtual void* getData() override;
+	virtual unsigned int getDataSize() const override;
 	Shader* getShader(Renderer::Type rendererType) const override;
 
 	void setMetalnessScale(float metalness);

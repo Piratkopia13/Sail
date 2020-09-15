@@ -24,7 +24,8 @@ public:
 
 	bool onEvent(Event& event) override;
 
-	void prepareToRender(const std::vector<Renderer::RenderCommand>& renderCommands);
+	// This will write to each RendererCommand.materialIndex
+	void prepareToRender(std::vector<Renderer::RenderCommand>& renderCommands);
 	//void updateDescriptorSet(void* cmdList);
 	const VkPipelineLayout& getPipelineLayout() const;
 
@@ -34,6 +35,7 @@ private:
 private:
 	SVkAPI* m_context;
 	const unsigned int TEXTURE_ARRAY_DESCRIPTOR_COUNT = 128;
+	const unsigned int MATERIAL_ARRAY_DESCRIPTOR_COUNT = 1024;
 
 	VkDescriptorSetLayout m_descriptorSetLayout;
 	std::vector<VkDescriptorSet> m_descriptorSets;

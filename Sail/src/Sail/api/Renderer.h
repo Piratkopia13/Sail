@@ -41,6 +41,7 @@ public:
 		Mesh* mesh;
 		glm::mat4 transform;
 		Material* material;
+		unsigned int materialIndex = 0;
 	};
 
 public:

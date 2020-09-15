@@ -130,7 +130,8 @@ bool SVkAPI::init(Window* window) {
 			vkGetPhysicalDeviceProperties(device, &deviceProperties);
 			vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-			Logger::Log("Push constant size: " + std::to_string(deviceProperties.limits.maxPushConstantsSize));
+			Logger::Log("maxPushConstantsSize: " + std::to_string(deviceProperties.limits.maxPushConstantsSize));
+			Logger::Log("minUniformBufferOffsetAlignment: " + std::to_string(deviceProperties.limits.minUniformBufferOffsetAlignment));
 
 			QueueFamilyIndices indices = findQueueFamilies(device);
 			bool extensionsSupported = checkDeviceExtensionSupport(device);
@@ -193,6 +194,7 @@ bool SVkAPI::init(Window* window) {
 		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		deviceFeatures.features.shaderClipDistance = VK_TRUE;
 		deviceFeatures.features.samplerAnisotropy = VK_TRUE;
+		//deviceFeatures.features.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
 		deviceFeatures.pNext = &deviceDescIndexFeatures;
 
 		VkDeviceCreateInfo createInfo{};
@@ -323,7 +325,7 @@ bool SVkAPI::init(Window* window) {
 	{
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size()) * 10; // TODO: make this dynamic? or just allocate a bunch
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size()) * 10000; // TODO: make this dynamic? or just allocate a bunch
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size()) * 10;  // TODO: make this dynamic? or just allocate a bunch
 

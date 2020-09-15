@@ -27,6 +27,11 @@ public:
 
 	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) = 0;
 	
+	virtual void setTextureIndex(unsigned int textureID, unsigned int index) { };
+
+	virtual void* getData() = 0;
+	virtual unsigned int getDataSize() const = 0;
+
 	// Get the shader to use this material with the given renderer, may return nullptr when the renderer is not supported
 	virtual Shader* getShader(Renderer::Type rendererType) const = 0;
 

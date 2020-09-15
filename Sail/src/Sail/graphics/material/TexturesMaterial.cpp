@@ -19,6 +19,16 @@ void TexturesMaterial::bind(Shader* shader, Environment* environment, void* cmdL
 	}
 }
 
+void* TexturesMaterial::getData() {
+	assert(false && "Not implemented");
+	return 0;
+}
+
+unsigned int TexturesMaterial::getDataSize() const {
+	assert(false && "Not implemented");
+	return 0;
+}
+
 Shader* TexturesMaterial::getShader(Renderer::Type rendererType) const {
 	switch (rendererType) {
 	case Renderer::FORWARD:

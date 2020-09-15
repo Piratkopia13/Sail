@@ -21,7 +21,10 @@ EmptyState::EmptyState(StateStack& stack)
 	//m_model2 = ModelFactory::PlaneModel::Create(glm::vec2(0.5f), glm::vec2(50.0f));
 	m_model2 = m_app->getResourceManager().getModel("box.fbx");
 
+	m_material.setColor({0.8f, 0.2f, 0.2f, 1.0f});
 	m_material.setDiffuseTexture("pbr/pavingStones/albedo.tga");
+	
+	m_material2.setColor({ 0.2f, 0.8f, 0.2f, 1.0f });
 	m_material2.setDiffuseTexture("pbr/cerberus/Cerberus_A.tga");
 }
 

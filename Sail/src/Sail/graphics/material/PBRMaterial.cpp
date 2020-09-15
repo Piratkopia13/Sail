@@ -62,6 +62,14 @@ void PBRMaterial::bind(Shader* shader, Environment* environment, void* cmdList) 
 	shader->setTexture("sys_texMRAO", m_textures[2], cmdList);
 }
 
+void* PBRMaterial::getData() {
+	return static_cast<void*>(&getPBRSettings());
+}
+
+unsigned int PBRMaterial::getDataSize() const {
+	return sizeof(PBRSettings);
+}
+
 Shader* PBRMaterial::getShader(Renderer::Type rendererType) const {
 	auto& resman = Application::getInstance()->getResourceManager();
 	switch (rendererType) {

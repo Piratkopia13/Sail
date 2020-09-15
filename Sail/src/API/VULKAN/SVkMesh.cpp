@@ -44,9 +44,10 @@ void SVkMesh::draw(const Renderer& renderer, Material* material, Shader* shader,
 
 	auto vkCmd = static_cast<VkCommandBuffer>(cmdList);
 
-	if (material) {
+	// Materials in Vulkan are bound in shader->prepareToRender()
+	/*if (material) {
 		material->bind(shader, environment, cmdList);
-	}
+	}*/
 	
 	vertexBuffer->bind(cmdList);
 	if (indexBuffer)

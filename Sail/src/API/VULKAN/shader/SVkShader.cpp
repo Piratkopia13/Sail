@@ -167,9 +167,6 @@ void* SVkShader::compileShader(const std::string& source, const std::string& fil
 #endif
 
 	auto shaderCode = Utils::readFileBinary(path);
-	/*auto shaderCode = Utils::readFileBinary("res/shaders/vulkan/vert.spv");
-	if (shaderType == ShaderComponent::BIND_SHADER::PS)
-		shaderCode = Utils::readFileBinary("res/shaders/vulkan/frag.spv");*/
 
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -189,55 +186,132 @@ bool SVkShader::onEvent(Event& event) {
 	return true;
 }
 
-void SVkShader::prepareToRender(const std::vector<Renderer::RenderCommand>& renderCommands) {
+void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderCommands) {
 	// If the shader wants all textures this frame in an array
 
-	// Find all unique textures and bind them
-	std::set<SVkTexture*> uniqueTextures;
+	// Find all unique textures and materials
+	std::vector<SVkTexture*> uniqueTextures;
+	std::vector<Material*> uniqueMaterials;
+
+	unsigned int lastMaterialIndex = 0;
+	unsigned int lastTextureIndex = 0;
 	for (auto& command : renderCommands) {
-		for (auto* texture : command.material->getTextures()) {
-			if (texture) uniqueTextures.insert(static_cast<SVkTexture*>(texture));
+		Material* mat = command.material;
+
+		auto it = std::find(uniqueMaterials.begin(), uniqueMaterials.end(), mat);
+		if (it == uniqueMaterials.end()) {
+			uniqueMaterials.emplace_back(mat);
+			command.materialIndex = lastMaterialIndex++;
+		} else {
+			command.materialIndex = it - uniqueMaterials.begin(); // Get index of the iterator
+		}
+
+		unsigned int i = 0;
+		for (auto* texture : mat->getTextures()) {
+			if (texture) {
+				SVkTexture* tex = static_cast<SVkTexture*>(texture);
+				auto it = std::find(uniqueTextures.begin(), uniqueTextures.end(), tex);
+				if (it == uniqueTextures.end()) {
+					uniqueTextures.emplace_back(tex);
+					mat->setTextureIndex(i, lastTextureIndex++);
+				} else {
+					mat->setTextureIndex(i, lastMaterialIndex);
+				}
+
+				i++;
+			}
 		}
 	}
 
-	std::vector<VkDescriptorImageInfo> imageInfos;
+	// Find which buffer, if any, should contain materials
+	ShaderComponent::SVkConstantBuffer* materialBuffer = nullptr;;
+	for (auto& cbuffer : parser.getParsedData().cBuffers) {
+		auto* shdr = static_cast<ShaderComponent::SVkConstantBuffer*>(cbuffer.cBuffer.get());
+		if (shdr->getSlot() == 1) { // TODO: make something better identify the material cbuffer
+			materialBuffer = shdr;
+			break;
+		}
+	}
 
-	for (auto* texture : uniqueTextures) {
-		auto& imageInfo = imageInfos.emplace_back();
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.sampler = m_tempSampler.get();
-		if (texture->isReadyToUse()) {
-			imageInfo.imageView = texture->getView();
-		} else {
+	// Write materials to the buffer
+	if (materialBuffer && !uniqueMaterials.empty()) {
+		// Each shader can only support one material, which means that the size of each is the same
+		auto dataSize = uniqueMaterials[0]->getDataSize();
+
+		unsigned int i = 0;
+		for (auto& material : uniqueMaterials) {
+			materialBuffer->updateData(material->getData(), dataSize, 0, i*dataSize);
+			i++;
+		}
+	}
+
+
+	VkWriteDescriptorSet descWrite[] = { {}, {} };
+
+	// Create descriptors for textures
+	auto imageIndex = m_context->getSwapImageIndex();
+	std::vector<VkDescriptorImageInfo> imageInfos;
+	{
+
+		for (auto* texture : uniqueTextures) {
+			auto& imageInfo = imageInfos.emplace_back();
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.sampler = m_tempSampler.get();
+			if (texture->isReadyToUse()) {
+				imageInfo.imageView = texture->getView();
+			} else {
+				imageInfo.imageView = m_missingTexture.getView();
+			}
+		}
+
+		if (imageInfos.size() > TEXTURE_ARRAY_DESCRIPTOR_COUNT) {
+			Logger::Error("Tried to render too many textures (" + std::to_string(imageInfos.size()) + "). Set max/TEXTURE_ARRAY_DESCRIPTOR_COUNT is " + std::to_string(TEXTURE_ARRAY_DESCRIPTOR_COUNT));
+		}
+
+		// Fill the unused descriptor slots with the missing texture
+		for (unsigned int i = imageInfos.size(); i < TEXTURE_ARRAY_DESCRIPTOR_COUNT; i++) {
+			auto& imageInfo = imageInfos.emplace_back();
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.sampler = m_tempSampler.get();
 			imageInfo.imageView = m_missingTexture.getView();
 		}
+
+		descWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descWrite[0].dstSet = m_descriptorSets[imageIndex];
+		descWrite[0].dstBinding = 5; // Used for combined image samplers TODO: make dynamic
+		descWrite[0].dstArrayElement = 0;
+		descWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		//descWrite[0].descriptorCount = static_cast<uint32_t>(imageInfos.size());
+		descWrite[0].descriptorCount = TEXTURE_ARRAY_DESCRIPTOR_COUNT;
+		descWrite[0].pImageInfo = imageInfos.data();
+
+		if (imageInfos.empty()) return;
+		vkUpdateDescriptorSets(m_context->getDevice(), 1, &descWrite[0], 0, nullptr);
 	}
 
-	if (imageInfos.size() > TEXTURE_ARRAY_DESCRIPTOR_COUNT) {
-		Logger::Error("Tried to render too many textures ("+std::to_string(imageInfos.size())+"). Set max/TEXTURE_ARRAY_DESCRIPTOR_COUNT is "+std::to_string(TEXTURE_ARRAY_DESCRIPTOR_COUNT));
+	// Create descriptors for materials
+	std::vector<VkDescriptorBufferInfo> bufferInfos;
+	{
+		auto& bufferInfo = bufferInfos.emplace_back();
+		bufferInfo.buffer = materialBuffer->getBuffer(imageIndex);
+		bufferInfo.offset = 0;
+		bufferInfo.range = VK_WHOLE_SIZE;
+		
+		descWrite[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descWrite[1].dstSet = m_descriptorSets[imageIndex];
+		descWrite[1].dstBinding = 1; // Used for materials TODO: make dynamic
+		descWrite[1].dstArrayElement = 0;
+		descWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descWrite[1].descriptorCount = 1;
+		descWrite[1].pBufferInfo = bufferInfos.data();
+
+		if (bufferInfos.empty()) return;
+		vkUpdateDescriptorSets(m_context->getDevice(), 1, &descWrite[1], 0, nullptr);
 	}
 
-	// Fill the unused descriptor slots with the missing texture
-	for (unsigned int i = imageInfos.size(); i < TEXTURE_ARRAY_DESCRIPTOR_COUNT; i++) {
-		auto& imageInfo = imageInfos.emplace_back();
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.sampler = m_tempSampler.get();
-		imageInfo.imageView = m_missingTexture.getView();
-	}
+	/*if (imageInfos.empty() && bufferInfos.empty()) return;
+	vkUpdateDescriptorSets(m_context->getDevice(), ARRAYSIZE(descWrite), descWrite, 0, nullptr);*/
 
-	if (imageInfos.empty()) return;
-
-	auto imageIndex = m_context->getSwapImageIndex();
-	VkWriteDescriptorSet descWrite{};
-	descWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descWrite.dstSet = m_descriptorSets[imageIndex];
-	descWrite.dstBinding = 5; // Used for combined image samplers
-	descWrite.dstArrayElement = 0;
-	descWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//descWrite.descriptorCount = static_cast<uint32_t>(imageInfos.size());
-	descWrite.descriptorCount = TEXTURE_ARRAY_DESCRIPTOR_COUNT;
-	descWrite.pImageInfo = imageInfos.data();
-	vkUpdateDescriptorSets(m_context->getDevice(), 1, &descWrite, 0, nullptr);
 }
 
 //void SVkShader::updateDescriptorSet(void* cmdList) {
