@@ -68,9 +68,6 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 		SVkShader* shader = static_cast<SVkShader*>(pso->getShader());
 		shader->prepareToRender(renderCommands);
 
-		// Write the new descriptors to bind textures
-		//shader->updateDescriptorSet(cmd);
-
 		pso->bind(cmd); // Binds the pipeline and descriptor sets
 
 		// Iterate render commands
@@ -93,8 +90,6 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 			command.mesh->draw(*this, command.material, shader, environment, cmd);
 		}
 	}
-
-	
 
 	vkCmdEndRenderPass(cmd);
 

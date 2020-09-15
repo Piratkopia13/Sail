@@ -91,7 +91,8 @@ public:
 	int findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const;
 
 private:
-	void parseCBuffer(const std::string& source, bool storeAsPushConstant = false);
+	void parseConstantBuffer(const std::string& source); // Parses the first way cbuffers can be defined
+	void parseCBuffer(const std::string& source, bool storeAsPushConstant = false); // Parses the second way cbuffers can be defined
 	void parseSampler(const char* sourceChar, std::string& source); // source argument is not const since this method is allowed to change the it!
 	void parseTexture(const char* source);
 	void parseRWTexture(const char* source);

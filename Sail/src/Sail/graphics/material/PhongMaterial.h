@@ -44,8 +44,6 @@ public:
 	void setSpecularTexture(const std::string& filename, bool useAbsolutePath = false);
 	void setSpecularTextureFromHandle(Texture* srv);
 
-	//void setTextures(ID3D11ShaderResourceView** srvs, UINT numTextures);
-
 	/*	Returns a texture
 		Default texture id is as follows
 		0 - Diffuse texture

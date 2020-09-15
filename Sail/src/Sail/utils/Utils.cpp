@@ -87,13 +87,18 @@ glm::vec4 Utils::getRandomColor() {
 }
 
 
+std::string Utils::String::getLineStartingFrom(const char* source) { 
+	const char* end = strstr(source, "\n");
+	if (!end)
+		return std::string(source); // Null terminator found on line - return whole source
+	return std::string(source, strnlen(source, end - source));
+}
 
 std::string Utils::String::getBlockStartingFrom(const char* source) {
 	const char* end = strstr(source, "}");
 	if (!end)
 		return std::string(source);
-	std::string str(source, strnlen(source, end - source));
-	return str;
+	return std::string(source, strnlen(source, end - source));
 }
 
 const char* Utils::String::findToken(const std::string& token, const char* source, bool onFirstLine) {

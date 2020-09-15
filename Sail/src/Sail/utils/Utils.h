@@ -105,6 +105,7 @@ namespace Utils {
 	static std::uniform_real_distribution<float> dis(0.f, 1.f);
 
 	namespace String {
+		std::string getLineStartingFrom(const char* source);
 		std::string getBlockStartingFrom(const char* source);
 		const char* findToken(const std::string& token, const char* source, bool onFirstLine = false);
 		int findNextIntOnLine(const char* source);

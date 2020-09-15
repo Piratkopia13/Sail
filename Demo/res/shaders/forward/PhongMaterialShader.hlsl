@@ -20,15 +20,17 @@ struct PSIn {
 	LightList lights : LIGHTS;
 };
 
-// This cbuffer is shared between all
+// These cbuffers are shared between all draw calls
 cbuffer VSPSSystemCBuffer : register(b0) {
 	// matrix sys_mWorld;
     matrix sys_mVP;
-    PhongMaterial sys_material;
+    // PhongMaterial sys_material;
     //float padding;
     float4 sys_clippingPlane;
     float3 sys_cameraPos;
 }
+
+ConstantBuffer<PhongMaterial> VSPSMaterials[] : register(b1);
 
 // Fast as frick data through the pipeline itself
 [[vk::push_constant]]
@@ -43,7 +45,7 @@ struct PointLightInput {
 	float3 position;
 	float intensity;
 };
-cbuffer VSLights : register(b1) {
+cbuffer VSLights : register(b2) {
 	DirectionalLight dirLight;
     PointLightInput pointLights[NUM_POINT_LIGHTS];
 }
@@ -88,7 +90,7 @@ PSIn VSMain(VSIn input) {
 
     output.position = mul(sys_mVP, output.position);
 
-	if (sys_material.hasNormalTexture) {
+	if (VSPSMaterials[0].hasNormalTexture) {
 	    // Convert to tangent space
 		float3x3 TBN = {
 			mul((float3x3) sys_mWorld, normalize(input.tangent)),

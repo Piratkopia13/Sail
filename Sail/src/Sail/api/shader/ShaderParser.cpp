@@ -81,8 +81,8 @@ std::string ShaderParser::parse(const std::string& source) {
 	// This is needed to avoid copying/destructor calling
 	{
 		int numCBuffers = 0;
-		src = m_cleanSource.c_str();
-		while (src = findToken("cbuffer", src))	numCBuffers++;
+		src = m_cleanSource.c_str(); while (src = findToken("cbuffer", src)) numCBuffers++;
+		src = m_cleanSource.c_str(); while (src = findToken("ConstantBuffer", src)) numCBuffers++;
 		m_parsedData.cBuffers.reserve(numCBuffers);
 	}
 	{
@@ -93,9 +93,16 @@ std::string ShaderParser::parse(const std::string& source) {
 	}
 
 	// Process all CBuffers
-	src = m_cleanSource.c_str();
-	while (src = findToken("cbuffer", src)) {
-		parseCBuffer(getBlockStartingFrom(src));
+	{
+		// Constant buffers can be defined in two ways
+		src = m_cleanSource.c_str();
+		while (src = findToken("cbuffer", src)) {
+			parseCBuffer(getBlockStartingFrom(src));
+		}
+		src = m_cleanSource.c_str();
+		while (src = findToken("ConstantBuffer", src)) {
+			parseConstantBuffer(getLineStartingFrom(src));
+		}
 	}
 
 	// Process all push constants
@@ -130,6 +137,38 @@ std::string ShaderParser::parse(const std::string& source) {
 	}
 
 	return m_cleanSource;
+}
+
+void ShaderParser::parseConstantBuffer(const std::string& source) {
+	const char* src = source.c_str();
+	UINT tokenSize;
+	auto type = nextTokenAsType(src, tokenSize);
+	src += tokenSize;
+	auto typeSize = getSizeOfType(type);
+
+	int elementsInArray = 1;
+	std::string name = nextTokenAsName(src, tokenSize, &elementsInArray);
+	src += tokenSize;
+	if (elementsInArray == -1) {
+		// Array is sizeless - allocate for as many elements as possible
+		static const unsigned int CBUFFER_MAX_SIZE = 65536;
+		elementsInArray = glm::floor(CBUFFER_MAX_SIZE / (double)typeSize);
+	}
+
+	auto bindShader = getBindShaderFromName(name);
+	int registerSlot = findNextIntOnLine(src);
+
+	UINT size = typeSize * elementsInArray;
+
+	// Memory align to 16 bytes
+	if (size % 16 != 0)
+		size = size - (size % 16) + 16;
+
+	void* initData = malloc(size);
+	memset(initData, 0, size);
+	std::vector<ShaderCBuffer::CBufferVariable> vars; // No vars
+	m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, m_parsedData.hasCS);
+	free(initData);
 }
 
 void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConstant) {
@@ -348,7 +387,6 @@ std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize
 			auto size = name.substr(start).find(']') + 1;
 			if (size == 2) { // Sizeless / boundless array
 				*arrayElements = -1;
-				break;
 			}
 			// Add array size as long as the size is defined numerically and not with a macro
 			if (isdigit(*name.substr(start+1).c_str()))

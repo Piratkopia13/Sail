@@ -37,6 +37,9 @@ namespace ShaderComponent {
 
 			// Leave the buffer mapped for the lifetime of the instance
 			m_mappedData[i] = info.pMappedData;
+
+			// Place initData in the buffer
+			memcpy(m_mappedData[i], initData, size);
 		}
 	}
 
