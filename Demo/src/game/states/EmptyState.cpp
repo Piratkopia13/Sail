@@ -4,7 +4,7 @@
 
 EmptyState::EmptyState(StateStack& stack)
 	: State(stack)
-	, m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
+	, m_cam(90.f, 1280.f / 720.f, 0.01f, 5000.f)
 	, m_camController(&m_cam)
 {
 	SAIL_PROFILE_FUNCTION();
@@ -17,14 +17,14 @@ EmptyState::EmptyState(StateStack& stack)
 
 	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 
-	m_model = ModelFactory::PlaneModel::Create(glm::vec2(0.3f), glm::vec2(1.0f));
+	m_model = ModelFactory::PlaneModel::Create(glm::vec2(10.0f), glm::vec2(5.0f));
 	//m_model2 = ModelFactory::PlaneModel::Create(glm::vec2(0.5f), glm::vec2(50.0f));
 	m_model2 = m_app->getResourceManager().getModel("box.fbx");
 
-	m_material.setColor({0.8f, 0.2f, 0.2f, 1.0f});
+	//m_material.setColor({0.8f, 0.2f, 0.2f, 1.0f});
 	m_material.setDiffuseTexture("pbr/pavingStones/albedo.tga");
 	
-	m_material2.setColor({ 0.2f, 0.8f, 0.2f, 1.0f });
+	//m_material2.setColor({ 0.2f, 0.8f, 0.2f, 1.0f });
 	//m_material2.setDiffuseTexture("pbr/cerberus/Cerberus_A.tga");
 
 	DirectionalLightComponent dlComp;
@@ -40,6 +40,19 @@ bool EmptyState::processInput(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
 	m_camController.update(dt);
+
+	if (Input::WasKeyJustPressed(SAIL_KEY_G)) {
+		DirectionalLightComponent dlComp;
+		dlComp.setDirection(m_cam.getDirection());
+		m_lightSetup.setDirectionalLight(&dlComp);
+	}
+
+	if (Input::WasKeyJustPressed(SAIL_KEY_F)) {
+		PointLightComponent plComp;
+		plComp.setColor(Utils::getRandomColor());
+		plComp.setPosition(m_cam.getPosition());
+		m_lightSetup.addPointLight(&plComp);
+	}
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {

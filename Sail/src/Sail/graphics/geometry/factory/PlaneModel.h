@@ -11,16 +11,11 @@ namespace ModelFactory {
 
 			const int numVerts = 4;
 			Mesh::vec3* positions = SAIL_NEW Mesh::vec3[numVerts]{
-				/*Mesh::vec3(-halfSizes.x, 0.f, -halfSizes.y), // Uncomment when vk supports transforms
+				Mesh::vec3(-halfSizes.x, 0.f, -halfSizes.y),
 				Mesh::vec3(-halfSizes.x, 0.f, halfSizes.y),
 				Mesh::vec3(halfSizes.x, 0.f, -halfSizes.y),
-				Mesh::vec3(halfSizes.x, 0.f, halfSizes.y),*/
-				Mesh::vec3(-halfSizes.x, -halfSizes.y, 0.f), // Remove when vk supports transforms
-				Mesh::vec3(-halfSizes.x, halfSizes.y, 0.f),
-				Mesh::vec3(halfSizes.x, -halfSizes.y, 0.f),
-				Mesh::vec3(halfSizes.x, halfSizes.y, 0.f),
+				Mesh::vec3(halfSizes.x, 0.f, halfSizes.y),
 			};
-
 			
 			const int numIndices = 6;
 			ULONG* indices = SAIL_NEW ULONG[numIndices]{

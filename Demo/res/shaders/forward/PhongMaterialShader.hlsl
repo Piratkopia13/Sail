@@ -13,6 +13,7 @@ struct PSIn {
 	float3 normal : NORMAL0;
 	float2 texCoords : TEXCOORD0;
 	float clip : SV_ClipDistance0;
+	float3 worldPosition : WORLDPOS;
 	float3 toCam : TOCAM;
 	float3x3 TBN : TBN;
 };
@@ -65,6 +66,8 @@ PSIn VSMain(VSIn input) {
 	input.position.w = 1.f;
 	output.position = mul(sys_mWorld, input.position);
 	// output.position = mul(input.position, sys_mWorld);
+
+	output.worldPosition = output.position.xyz;
 
 	// Calculate the distance from the vertex to the clipping plane
 	// This needs to be done with world coordinates
@@ -126,12 +129,15 @@ float4 PSMain(PSIn input) : SV_Target0 {
         //     output.lights.pointLights[i].fragToLight = mul(output.lights.pointLights[i].fragToLight, TBN);
     }
 
+	PointLight myPointLights[NUM_POINT_LIGHTS] = pointLights;
+	for (int i = 0; i < NUM_POINT_LIGHTS; i++)
+		myPointLights[i].fragToLight = myPointLights[i].fragToLight - input.worldPosition;
 
 	PhongInput phongInput;
 	phongInput.mat = mat;
 	phongInput.fragToCam = toCam;
 	phongInput.dirLight = dirLight;
-	phongInput.pointLights = pointLights;
+	phongInput.pointLights = myPointLights;
 
 	phongInput.diffuseColor = mat.modelColor;
 	if (mat.diffuseTexIndex != -1)
@@ -146,11 +152,13 @@ float4 PSMain(PSIn input) : SV_Target0 {
 		phongInput.specMap = sampleTexture(mat.specularTexIndex, input.texCoords).rgb;
 
 
+	// return float4(myPointLights[0].fragToLight, 1.0);
     // //return sys_texDiffuse.Sample(PSss, input.texCoords);
-	return float4(phongInput.normal * 0.5f + 0.5, 1.f);
-    // return phongShade(phongInput);
+	// return float4(phongInput.normal * 0.5f + 0.5, 1.f);
+	// return float4(toCam * 0.5f + 0.5, 1.f);
+    return phongShade(phongInput);
     // //return float4(phongInput.lights.dirLight.direction, 1.f);
-    // //return float4(phongInput.diffuseColor.rgb, 1.f);
+    // return float4(phongInput.diffuseColor.rgb, 1.f);
     // return float4(0.f, 1.f, 0.f, 1.f);
 
 }
