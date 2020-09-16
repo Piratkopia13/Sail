@@ -43,7 +43,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 		auto& b = bindings.emplace_back();
 		b.binding = static_cast<uint32_t>(texture.vkBinding);
 		b.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		b.descriptorCount = (texture.arraySize == -1) ? TEXTURE_ARRAY_DESCRIPTOR_COUNT : texture.arraySize; // an array size of -1 means it is sizeless in the shader
+		b.descriptorCount = (texture.isTexturesArray) ? TEXTURE_ARRAY_DESCRIPTOR_COUNT : (texture.arraySize == -1) ? 64 : texture.arraySize; // an array size of -1 means it is sizeless in the shader, set some max number
 		b.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		b.pImmutableSamplers = nullptr; // Optional
 	}
@@ -89,7 +89,6 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_context->getDevice(), &allocInfo, m_descriptorSets.data()));
 
 	// Configure the descriptor sets
-	// TODO: add support for dynamic uniform buffers (shared between multiple instances)
 	for (size_t i = 0; i < numBuffers; i++) {
 		std::vector<VkDescriptorBufferInfo> bufferInfos;
 		for (auto& buffer : cBuffers) {
@@ -219,12 +218,24 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 		}
 	}
 
+	// Find what slot, if any, should be used to bind all textures
+	unsigned int textureArrBinding = 0;
+	bool shouldBindTextureArr = false;
+	for (auto& tex : parser.getParsedData().textures) {
+		if (tex.isTexturesArray) {
+			textureArrBinding = tex.vkBinding;
+			shouldBindTextureArr = true;
+			break;
+		}
+	}
+
 	// Find which buffer, if any, should contain materials
 	ShaderComponent::SVkConstantBuffer* materialBuffer = nullptr;;
+	unsigned int materialBinding = 0;
 	for (auto& cbuffer : parser.getParsedData().cBuffers) {
-		auto* shdr = static_cast<ShaderComponent::SVkConstantBuffer*>(cbuffer.cBuffer.get());
-		if (shdr->getSlot() == 1) { // TODO: make something better identify the material cbuffer
-			materialBuffer = shdr;
+		if (cbuffer.isMaterialArray) {
+			materialBuffer = static_cast<ShaderComponent::SVkConstantBuffer*>(cbuffer.cBuffer.get());
+			materialBinding = materialBuffer->getSlot();
 			break;
 		}
 	}
@@ -247,8 +258,7 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 	// Create descriptors for textures
 	auto imageIndex = m_context->getSwapImageIndex();
 	std::vector<VkDescriptorImageInfo> imageInfos;
-	{
-
+	if (shouldBindTextureArr) {
 		for (auto* texture : uniqueTextures) {
 			auto& imageInfo = imageInfos.emplace_back();
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -274,7 +284,7 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 
 		descWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descWrite[0].dstSet = m_descriptorSets[imageIndex];
-		descWrite[0].dstBinding = 5; // Used for combined image samplers TODO: make dynamic
+		descWrite[0].dstBinding = textureArrBinding;
 		descWrite[0].dstArrayElement = 0;
 		descWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		//descWrite[0].descriptorCount = static_cast<uint32_t>(imageInfos.size());
@@ -285,48 +295,24 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 		vkUpdateDescriptorSets(m_context->getDevice(), 1, &descWrite[0], 0, nullptr);
 	}
 
-	// Create descriptors for materials
-	std::vector<VkDescriptorBufferInfo> bufferInfos;
-	{
-		auto& bufferInfo = bufferInfos.emplace_back();
+	// Create descriptor for materials
+	if (materialBuffer)	{
+		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = materialBuffer->getBuffer(imageIndex);
 		bufferInfo.offset = 0;
 		bufferInfo.range = VK_WHOLE_SIZE;
 		
 		descWrite[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descWrite[1].dstSet = m_descriptorSets[imageIndex];
-		descWrite[1].dstBinding = 1; // Used for materials TODO: make dynamic
+		descWrite[1].dstBinding = materialBinding;
 		descWrite[1].dstArrayElement = 0;
 		descWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		descWrite[1].descriptorCount = 1;
-		descWrite[1].pBufferInfo = bufferInfos.data();
+		descWrite[1].pBufferInfo = &bufferInfo;
 
-		if (bufferInfos.empty()) return;
 		vkUpdateDescriptorSets(m_context->getDevice(), 1, &descWrite[1], 0, nullptr);
 	}
-
-	/*if (imageInfos.empty() && bufferInfos.empty()) return;
-	vkUpdateDescriptorSets(m_context->getDevice(), ARRAYSIZE(descWrite), descWrite, 0, nullptr);*/
-
 }
-
-//void SVkShader::updateDescriptorSet(void* cmdList) {
-//	if (m_imageInfos.empty()) return;
-//
-//	auto imageIndex = m_context->getSwapImageIndex();
-//	VkWriteDescriptorSet descWrite{};
-//	descWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-//	descWrite.dstSet = m_descriptorSets[imageIndex];
-//	descWrite.dstBinding = 5; // Used for combined image samplers
-//	descWrite.dstArrayElement = 0;
-//	descWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-//	//descWrite.descriptorCount = static_cast<uint32_t>(m_imageInfos.size());
-//	descWrite.descriptorCount = 2;
-//	descWrite.pImageInfo = m_imageInfos.data();
-//	vkUpdateDescriptorSets(m_context->getDevice(), 1, &descWrite, 0, nullptr);
-//
-//	m_imageInfos.clear();
-//}
 
 const VkPipelineLayout& SVkShader::getPipelineLayout() const {
 	return m_pipelineLayout;
@@ -339,18 +325,10 @@ void SVkShader::bind(void* cmdList) const {
 }
 
 bool SVkShader::setTexture(const std::string& name, Texture* texture, void* cmdList) {
-	if (!texture) return false; // No texture bound to this slot
-
-	auto* vkTexture = static_cast<SVkTexture*>(texture);
+	//if (!texture) return false; // No texture bound to this slot
+	//auto* vkTexture = static_cast<SVkTexture*>(texture);
 	
-	//auto& imageInfo = m_imageInfos.emplace_back();
-	//imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	//imageInfo.sampler = m_tempSampler.get();
-	//if (vkTexture->isReadyToUse()) {
-	//	imageInfo.imageView = vkTexture->getView();
-	//} else {
-	//	imageInfo.imageView = m_missingTexture.getView();
-	//}
+	assert(false && "Using setTexture is not supported in Vulkan. Place the texture in a material instead, and it will be set in the shader automatically.");
 
 	return true;
 }

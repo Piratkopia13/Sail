@@ -33,11 +33,11 @@ cbuffer VSSystemCBuffer : register(b0) {
     float3 sys_cameraPos;
 	float padding;
 	DirectionalLight dirLight;
-	PointLight pointLights[64];
+	PointLight pointLights[8];
 }
 
-cbuffer VSPSMaterials : register(b1) {
-	PhongMaterial sys_materials[10];
+cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
+	PhongMaterial sys_materials[1024];
 }
 
 PSIn VSMain(VSIn input) {
@@ -85,7 +85,7 @@ PSIn VSMain(VSIn input) {
 SamplerState PSss : register(s0);
 
 [[vk::binding(5)]]
-Texture2D texArr[] : register(t3);
+Texture2D texArr[] : register(t3) : SAIL_BIND_ALL_TEXTURES;
 
 float4 sampleTexture(uint index, float2 texCoords) {
 	return texArr[index].Sample(PSss, texCoords);

@@ -12,31 +12,35 @@
 class ShaderParser {
 private:
 	struct ShaderResource {
-		ShaderResource(const std::string& name, unsigned int slot, unsigned int arraySize, unsigned int vkBinding)
+		ShaderResource(const std::string& name, unsigned int slot, unsigned int arraySize, unsigned int vkBinding, bool isTexturesArray = false)
 			: name(name)
 			, slot(slot)
 			, arraySize(arraySize)
 			, vkBinding(vkBinding)
+			, isTexturesArray(isTexturesArray)
 		{ }
 		std::string name;
 		unsigned int slot;
 		unsigned int vkBinding;
 		unsigned int arraySize;
+		bool isTexturesArray; // True if all textures used in the scene should be bound to this
 	};
 	struct ShaderCBuffer {
 		struct CBufferVariable {
 			std::string name;
 			unsigned int byteOffset;
 		};
-		ShaderCBuffer(std::vector<ShaderCBuffer::CBufferVariable>& vars, void* initData, unsigned int size, ShaderComponent::BIND_SHADER bindShader, unsigned int slot, bool inComputeShader)
+		ShaderCBuffer(std::vector<ShaderCBuffer::CBufferVariable>& vars, void* initData, unsigned int size, ShaderComponent::BIND_SHADER bindShader, unsigned int slot, bool isMaterialArray, bool inComputeShader)
 			: vars(vars)
 			, bindShader(bindShader)
+			, isMaterialArray(isMaterialArray)
 		{
 			cBuffer = std::unique_ptr<ShaderComponent::ConstantBuffer>(ShaderComponent::ConstantBuffer::Create(initData, size, bindShader, slot, inComputeShader));
 		}
 		std::vector<CBufferVariable> vars;
 		std::unique_ptr<ShaderComponent::ConstantBuffer> cBuffer;
 		ShaderComponent::BIND_SHADER bindShader;
+		bool isMaterialArray;
 	};
 	struct ShaderSampler {
 		ShaderSampler(ShaderResource res, Texture::ADDRESS_MODE adressMode, Texture::FILTER filter, ShaderComponent::BIND_SHADER bindShader, unsigned int slot)

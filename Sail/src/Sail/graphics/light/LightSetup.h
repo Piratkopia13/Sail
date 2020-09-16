@@ -7,7 +7,7 @@ class PointLightComponent;
 
 class LightSetup {
 public:
-	static const UINT MAX_POINTLIGHTS_FORWARD_RENDERING = 64;  // Max number of lights as set in shader
+	static const UINT MAX_POINTLIGHTS_FORWARD_RENDERING = 8;  // Max number of lights as set in shader
 
 	struct PointLightStruct {
 		PointLightStruct() { }

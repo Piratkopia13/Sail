@@ -154,11 +154,11 @@ void ShaderParser::parseConstantBuffer(const std::string& source) {
 		static const unsigned int CBUFFER_MAX_SIZE = 65536;
 		elementsInArray = glm::floor(CBUFFER_MAX_SIZE / (double)typeSize);
 	}
-
+	
+	UINT size = typeSize * elementsInArray;
 	auto bindShader = getBindShaderFromName(name);
 	int registerSlot = findNextIntOnLine(src);
-
-	UINT size = typeSize * elementsInArray;
+	bool isMaterialArray = (strstr(src, "SAIL_BIND_ALL_MATERIALS") != nullptr);
 
 	// Memory align to 16 bytes
 	if (size % 16 != 0)
@@ -167,7 +167,7 @@ void ShaderParser::parseConstantBuffer(const std::string& source) {
 	void* initData = malloc(size);
 	memset(initData, 0, size);
 	std::vector<ShaderCBuffer::CBufferVariable> vars; // No vars
-	m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, m_parsedData.hasCS);
+	m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, isMaterialArray, m_parsedData.hasCS);
 	free(initData);
 }
 
@@ -185,10 +185,11 @@ void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConst
 		// Name is stored in the next token
 		bufferName = nextToken(src);
 	}
+	
 	auto bindShader = getBindShaderFromName(bufferName);
-
-
 	int registerSlot = findNextIntOnLine(src);
+	bool isMaterialArray = (strstr(src, "SAIL_BIND_ALL_MATERIALS") != nullptr);
+	
 	src = findToken("{", src); // Place ptr on same line as starting bracket
 	src = nextLine(src);
 
@@ -222,7 +223,7 @@ void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConst
 	} else {
 		void* initData = malloc(size);
 		memset(initData, 0, size);
-		m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, m_parsedData.hasCS);
+		m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, isMaterialArray, m_parsedData.hasCS);
 		free(initData);
 	}
 
@@ -298,6 +299,7 @@ void ShaderParser::parseTexture(const char* source) {
 
 	int slot = findNextIntOnLine(source);
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
+	bool isTexturesArray = (strstr(source, "SAIL_BIND_ALL_TEXTURES") != nullptr);
 
 	int vkBinding = slot;
 	// if vk::binding is used, use that as the vk slot. 
@@ -320,7 +322,7 @@ void ShaderParser::parseTexture(const char* source) {
 	}
 
 
-	m_parsedData.textures.emplace_back(name, slot, arrSize, vkBinding);
+	m_parsedData.textures.emplace_back(name, slot, arrSize, vkBinding, isTexturesArray);
 }
 
 void ShaderParser::parseRWTexture(const char* source) {
