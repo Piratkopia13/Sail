@@ -334,6 +334,7 @@ bool SVkAPI::init(Window* window) {
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
 		poolInfo.maxSets = static_cast<uint32_t>(m_swapChainImages.size());
+		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; // Allows freeing descriptor sets, this is required for shader hot reloading to work
 
 		VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool));
 	}
@@ -354,6 +355,8 @@ void SVkAPI::waitForGPU() {
 }
 
 uint32_t SVkAPI::beginPresent() {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	if (m_isFirstFrame) {
 		// Flush and scheduled commands on the first frame.
 		// This makes sure that the missing texture is available on the first draw call.
@@ -361,34 +364,49 @@ uint32_t SVkAPI::beginPresent() {
 		m_isFirstFrame = false;
 	}
 
-	// Make sure the CPU waits to submit if all frames are in flight
-	VkFence waitFences[] = { m_inFlightFences[m_currentFrame], m_fencesInFlightCopy[m_currentFrame] };
-	VK_CHECK_RESULT(vkWaitForFences(m_device, ARRAYSIZE(waitFences), waitFences, VK_TRUE, UINT64_MAX));
+	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Wait for fences");
 
-	// At this point we know that execution has finished for m_currentFrame
-	// Call any waiting callbacks to let them know
-	if (!m_executionCallbacksCopy[m_currentFrame].empty()) {
-		for (auto& callback : m_executionCallbacksCopy[m_currentFrame]) {
-			callback();
-		}
-		m_executionCallbacksCopy[m_currentFrame].clear();
+		// Make sure the CPU waits to submit if all frames are in flight
+		VkFence waitFences[] = { m_inFlightFences[m_currentFrame], m_fencesInFlightCopy[m_currentFrame] };
+		VK_CHECK_RESULT(vkWaitForFences(m_device, ARRAYSIZE(waitFences), waitFences, VK_TRUE, UINT64_MAX));
 	}
-	// TODO: check if this m_fenceScheduledGraphicsCmds fence is really required
-	if (vkGetFenceStatus(m_device, m_fenceScheduledGraphicsCmds[m_currentFrame]) == VK_SUCCESS) {
-		for (auto& callback : m_executionCallbacksGraphics[m_currentFrame]) {
-			callback();
+
+	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Run callbacks");
+
+		// At this point we know that execution has finished for m_currentFrame
+			// Call any waiting callbacks to let them know
+		if (!m_executionCallbacksCopy[m_currentFrame].empty()) {
+			for (auto& callback : m_executionCallbacksCopy[m_currentFrame]) {
+				callback();
+			}
+			m_executionCallbacksCopy[m_currentFrame].clear();
 		}
-		m_executionCallbacksGraphics[m_currentFrame].clear();
+		// TODO: check if this m_fenceScheduledGraphicsCmds fence is really required
+		if (vkGetFenceStatus(m_device, m_fenceScheduledGraphicsCmds[m_currentFrame]) == VK_SUCCESS) {
+			for (auto& callback : m_executionCallbacksGraphics[m_currentFrame]) {
+				callback();
+			}
+			m_executionCallbacksGraphics[m_currentFrame].clear();
+		}
 	}
 	
-	m_acqureNextImageResult = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_presentImageIndex);
-
-	// Check if a previous frame is using this image (i.e. there is its fence to wait on)
-	if (m_imagesInFlight[m_presentImageIndex] != VK_NULL_HANDLE) {
-		VK_CHECK_RESULT(vkWaitForFences(m_device, 1, &m_imagesInFlight[m_presentImageIndex], VK_TRUE, UINT64_MAX));
+	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Acquire next image");
+		m_acqureNextImageResult = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_presentImageIndex);
 	}
-	if (m_fencesJustInCaseCopyInFlight[m_presentImageIndex] != VK_NULL_HANDLE) {
-		VK_CHECK_RESULT(vkWaitForFences(m_device, 1, &m_fencesJustInCaseCopyInFlight[m_presentImageIndex], VK_TRUE, UINT64_MAX));
+
+	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Wait for fences");
+
+		// Check if a previous frame is using this image (i.e. there is its fence to wait on)
+		if (m_imagesInFlight[m_presentImageIndex] != VK_NULL_HANDLE) {
+			VK_CHECK_RESULT(vkWaitForFences(m_device, 1, &m_imagesInFlight[m_presentImageIndex], VK_TRUE, UINT64_MAX));
+		}
+		if (m_fencesJustInCaseCopyInFlight[m_presentImageIndex] != VK_NULL_HANDLE) {
+			VK_CHECK_RESULT(vkWaitForFences(m_device, 1, &m_fencesJustInCaseCopyInFlight[m_presentImageIndex], VK_TRUE, UINT64_MAX));
+		}
 	}
 	// Mark the image as now being in use by this frame
 	m_imagesInFlight[m_presentImageIndex] = m_inFlightFences[m_currentFrame];
@@ -398,6 +416,8 @@ uint32_t SVkAPI::beginPresent() {
 }
 
 void SVkAPI::present(bool vsync) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
+
 	// beginPresent fetches the image index to use, the assert makes sure this has been done
 	// The image index is used to bind certain buffers which is why it's fetch has to be separated
 	assert(m_presentImageIndex != -1 && "beginPresent() has to be called before present() when using Vulkan");

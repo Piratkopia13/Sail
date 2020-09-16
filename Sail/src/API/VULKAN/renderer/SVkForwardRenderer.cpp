@@ -36,6 +36,8 @@ void SVkForwardRenderer::begin(Camera* camera, Environment* environment) {
 }
 
 void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrepCmdList) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Forward renderer present");
+
 	// Fetch the swap image index to use this frame
 	// It may be out of order and has to be passed on to certain bind methods
 	auto imageIndex = m_context->beginPresent();
@@ -49,16 +51,20 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // Tell vk we will only submit this commmand buffer once
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	if (vkBeginCommandBuffer(cmd, &beginInfo) != VK_SUCCESS) {
-		Logger::Error("Failed to begin recording command buffer!");
-		return false;
-	}
+	{
+		SAIL_PROFILE_API_SPECIFIC_SCOPE("Begin command buffer, render pass and set viewport");
 
-	// Start render pass
-	vkCmdBeginRenderPass(cmd, &m_context->getRenderPassInfo(), VK_SUBPASS_CONTENTS_INLINE);
-	// Set dynamic viewport and scissor states
-	vkCmdSetViewport(cmd, 0, 1, &m_context->getViewport());
-	vkCmdSetScissor(cmd, 0, 1, &m_context->getScissorRect());
+		if (vkBeginCommandBuffer(cmd, &beginInfo) != VK_SUCCESS) {
+			Logger::Error("Failed to begin recording command buffer!");
+			return false;
+		}
+
+		// Start render pass
+		vkCmdBeginRenderPass(cmd, &m_context->getRenderPassInfo(), VK_SUBPASS_CONTENTS_INLINE);
+		// Set dynamic viewport and scissor states
+		vkCmdSetViewport(cmd, 0, 1, &m_context->getViewport());
+		vkCmdSetScissor(cmd, 0, 1, &m_context->getScissorRect());
+	}
 
 	// Iterate unique PSO's
 	for (auto it : commandQueue) {
@@ -68,25 +74,26 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 		SVkShader* shader = static_cast<SVkShader*>(pso->getShader());
 		shader->prepareToRender(renderCommands);
 
+		if (camera) {
+			// Transpose all matrices to convert them to row-major which is required in order for the hlsl->spir-v multiplication order
+			shader->trySetCBufferVar("sys_mView", &glm::transpose(camera->getViewMatrix()), sizeof(glm::mat4), cmd);
+			shader->trySetCBufferVar("sys_mProjection", &glm::transpose(camera->getProjMatrix()), sizeof(glm::mat4), cmd);
+			shader->trySetCBufferVar("sys_mVP", &glm::transpose(camera->getViewProjection()), sizeof(glm::mat4), cmd);
+			shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), cmd);
+		}
+		if (lightSetup) {
+			auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
+			auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
+			shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize, cmd);
+			shader->trySetCBufferVar("pointLights", plData, plDataByteSize, cmd);
+		}
+
 		pso->bind(cmd); // Binds the pipeline and descriptor sets
 
 		// Iterate render commands
 		for (auto& command : renderCommands) {
 			shader->trySetCBufferVar("sys_materialIndex", &command.materialIndex, sizeof(unsigned int), cmd);
 			shader->trySetCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
-			if (camera) {
-				// Transpose all matrices to convert them to row-major which is required in order for the hlsl->spir-v multiplication order
-				shader->trySetCBufferVar("sys_mView", &glm::transpose(camera->getViewMatrix()), sizeof(glm::mat4), cmd);
-				shader->trySetCBufferVar("sys_mProjection", &glm::transpose(camera->getProjMatrix()), sizeof(glm::mat4), cmd);
-				shader->trySetCBufferVar("sys_mVP", &glm::transpose(camera->getViewProjection()), sizeof(glm::mat4), cmd);
-				shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), cmd);
-			}
-			if (lightSetup) {
-				auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
-				auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
-				shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize, cmd);
-				shader->trySetCBufferVar("pointLights", plData, plDataByteSize, cmd);
-			}
 
 			command.mesh->draw(*this, command.material, shader, environment, cmd);
 		}

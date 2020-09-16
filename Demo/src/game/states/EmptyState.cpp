@@ -25,7 +25,12 @@ EmptyState::EmptyState(StateStack& stack)
 	m_material.setDiffuseTexture("pbr/pavingStones/albedo.tga");
 	
 	m_material2.setColor({ 0.2f, 0.8f, 0.2f, 1.0f });
-	m_material2.setDiffuseTexture("pbr/cerberus/Cerberus_A.tga");
+	//m_material2.setDiffuseTexture("pbr/cerberus/Cerberus_A.tga");
+
+	DirectionalLightComponent dlComp;
+	m_lightSetup.setDirectionalLight(&dlComp);
+
+	m_forwardRenderer->setLightSetup(&m_lightSetup);
 }
 
 EmptyState::~EmptyState() { }
@@ -35,6 +40,11 @@ bool EmptyState::processInput(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
 	m_camController.update(dt);
+
+	// Reload shaders
+	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
+		m_app->getResourceManager().reloadAllShaders();
+	}
 
 	return true;
 }

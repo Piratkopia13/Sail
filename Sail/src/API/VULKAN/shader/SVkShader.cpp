@@ -53,9 +53,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 	layoutInfo.pBindings = bindings.data();
 
-	if (vkCreateDescriptorSetLayout(m_context->getDevice(), &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS) {
-		Logger::Error("Failed to create descriptor set layout!");
-	}
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_context->getDevice(), &layoutInfo, nullptr, &m_descriptorSetLayout));
 
 	std::vector<VkPushConstantRange> pcRanges;
 	for (auto& pc : parser.getParsedData().pushConstants) {
@@ -75,9 +73,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pcRanges.size());
 	pipelineLayoutInfo.pPushConstantRanges = pcRanges.data();
 
-	if (vkCreatePipelineLayout(m_context->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
-		Logger::Error("Failed to create pipeline layout!");
-	}
+	VK_CHECK_RESULT(vkCreatePipelineLayout(m_context->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 
 	// Create one descriptor set per swap image
 
@@ -90,9 +86,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	allocInfo.pSetLayouts = layouts.data();
 
 	m_descriptorSets.resize(numBuffers);
-	if (vkAllocateDescriptorSets(m_context->getDevice(), &allocInfo, m_descriptorSets.data()) != VK_SUCCESS) {
-		Logger::Error("Failed to allocate descriptor sets!");
-	}
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_context->getDevice(), &allocInfo, m_descriptorSets.data()));
 
 	// Configure the descriptor sets
 	// TODO: add support for dynamic uniform buffers (shared between multiple instances)
@@ -129,6 +123,7 @@ SVkShader::~SVkShader() {
 	EventSystem::getInstance()->unsubscribeFromEvent(Event::NEW_FRAME, this);
 
 	vkDeviceWaitIdle(m_context->getDevice());
+	vkFreeDescriptorSets(m_context->getDevice(), m_context->getDescriptorPool(), m_descriptorSets.size(), m_descriptorSets.data());
 	vkDestroyPipelineLayout(m_context->getDevice(), m_pipelineLayout, nullptr);
 	vkDestroyDescriptorSetLayout(m_context->getDevice(), m_descriptorSetLayout, nullptr);
 }
@@ -187,6 +182,7 @@ bool SVkShader::onEvent(Event& event) {
 }
 
 void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderCommands) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Shader prepareToRender");
 	// If the shader wants all textures this frame in an array
 
 	// Find all unique textures and materials

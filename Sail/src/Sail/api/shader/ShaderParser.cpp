@@ -389,8 +389,10 @@ std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize
 				*arrayElements = -1;
 			}
 			// Add array size as long as the size is defined numerically and not with a macro
-			if (isdigit(*name.substr(start+1).c_str()))
-				*arrayElements *= std::stoi(name.substr(start+1, size-2));
+			if (isdigit(*name.substr(start + 1).c_str()))
+				*arrayElements *= std::stoi(name.substr(start + 1, size - 2));
+			else if (*arrayElements != -1) // Missing array size is fine for boundless arrays
+				Logger::Error("Array size not defined using constant: "+name);
 			name.erase(start, size);
 		}
 	}
@@ -437,8 +439,8 @@ UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
 
 	if (typeName == "PhongMaterial")					return 48;
 	if (typeName == "PBRMaterial")						return 4 * 12;
-	if (typeName == "DirectionalLight")					return 32;
-	if (typeName == "PointLight")						return 32;
+	if (typeName == "DirectionalLight")					return 4 * 8;
+	if (typeName == "PointLight")						return 4 * 8;
 	if (typeName == "PointLightInput")					return 4 * 8 * 128; // last 128 is NUM_POINT_LIGHTS
 	if (typeName == "DeferredPointLightData")			return 48;
 	if (typeName == "DeferredDirLightData")				return 32;

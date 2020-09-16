@@ -3,4 +3,6 @@
 
 // Vulkan Memory Allocator (https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
 #define VMA_IMPLEMENTATION
+//#define VMA_DEBUG_MARGIN 1024
+//#define VMA_DEBUG_DETECT_CORRUPTION 1
 #include "vk_mem_alloc.h"
