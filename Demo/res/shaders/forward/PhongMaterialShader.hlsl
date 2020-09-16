@@ -10,7 +10,7 @@ struct VSIn {
 
 struct PSIn {
 	float4 position : SV_Position;
-	float3 normal : NORMAL0;
+	float3 normalWorldSpace : NORMAL0;
 	float2 texCoords : TEXCOORD0;
 	float clip : SV_ClipDistance0;
 	float3 worldPosition : WORLDPOS;
@@ -39,33 +39,16 @@ cbuffer VSSystemCBuffer : register(b0) {
 cbuffer VSPSMaterials : register(b1) {
 	PhongMaterial sys_materials[10];
 }
-// struct PointLightInput {
-// 	float3 color;
-//     float attRadius;
-// 	float3 position;
-// 	float intensity;
-// };
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
 	PhongMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
-
-	// REMOVE THESE LINES WHEN TEXTURE WORK IN VK
-	matrix sys_mWorld = VSPSConsts.sys_mWorld;
-
-	// Copy over the directional light
-	// output.lights.dirLight = dirLight;
-	// // Copy over point lights
-    // for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-    //     output.lights.pointLights[i].attRadius = pointLights[i].attRadius;
-    //     output.lights.pointLights[i].color = pointLights[i].color;
-    //     output.lights.pointLights[i].intensity = pointLights[i].intensity;
-    // }
+	matrix mWorld = VSPSConsts.sys_mWorld;
 
 	input.position.w = 1.f;
-	output.position = mul(sys_mWorld, input.position);
-	// output.position = mul(input.position, sys_mWorld);
+	output.position = mul(mWorld, input.position);
+	// output.position = mul(input.position, mWorld);
 
 	output.worldPosition = output.position.xyz;
 
@@ -76,25 +59,21 @@ PSIn VSMain(VSIn input) {
 	// World space vector pointing from the vertex position to the camera
     output.toCam = sys_cameraPos - output.position.xyz;
 
-    // for (uint j = 0; j < NUM_POINT_LIGHTS; j++) {
-	// 	// World space vector poiting from the vertex position to the point light
-    //     output.lights.pointLights[j].fragToLight = pointLights[j].position - output.position.xyz;
-    // }
-
     output.position = mul(sys_mVP, output.position);
 
+	float3 tangentWorldSpace = normalize(mul(mWorld, float4(input.tangent, 0.f)).xyz);
+	float3 bitangentWorldSpace = normalize(mul(mWorld, float4(input.bitangent, 0.f)).xyz);
+	output.normalWorldSpace = normalize(mul(mWorld, float4(input.normal, 0.f)).xyz);
+	
 	if (mat.normalTexIndex != -1) {
-	    // Convert to tangent space
+	    // TBN matrix to go from tangent space to world space
 		output.TBN = float3x3(
-			mul((float3x3) sys_mWorld, normalize(input.tangent)),
-			mul((float3x3) sys_mWorld, normalize(input.bitangent)),
-			mul((float3x3) sys_mWorld, normalize(input.normal))
+			tangentWorldSpace,
+			bitangentWorldSpace,
+			output.normalWorldSpace
 		);
-		output.TBN = transpose(output.TBN);
+		// output.TBN = transpose(output.TBN);
 	}
-
-	output.normal = mul((float3x3) sys_mWorld, input.normal);
-	output.normal = normalize(output.normal);
 
 	output.texCoords = input.texCoords;
 
@@ -116,26 +95,13 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
 	PhongMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 
-	// REMOVE THIS LINE WHEN TEXTURE WORK IN VK
-	// return sampleTexture(mat.diffuseTexIndex, input.texCoords);
-
-	float3 toCam = input.toCam;
-
-	if (mat.normalTexIndex != -1) {
-		toCam = mul(toCam, input.TBN);
-
-		// output.lights.dirLight.direction = mul(output.lights.dirLight.direction, TBN);
-        // for (int i = 0; i < NUM_POINT_LIGHTS; i++)
-        //     output.lights.pointLights[i].fragToLight = mul(output.lights.pointLights[i].fragToLight, TBN);
-    }
-
 	PointLight myPointLights[NUM_POINT_LIGHTS] = pointLights;
 	for (int i = 0; i < NUM_POINT_LIGHTS; i++)
 		myPointLights[i].fragToLight = myPointLights[i].fragToLight - input.worldPosition;
 
 	PhongInput phongInput;
 	phongInput.mat = mat;
-	phongInput.fragToCam = toCam;
+	phongInput.fragToCam = input.toCam;
 	phongInput.dirLight = dirLight;
 	phongInput.pointLights = myPointLights;
 
@@ -143,9 +109,17 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	if (mat.diffuseTexIndex != -1)
 		phongInput.diffuseColor *= sampleTexture(mat.diffuseTexIndex, input.texCoords);
 
-	phongInput.normal = input.normal;
-	if (mat.normalTexIndex != -1)
-		phongInput.normal = sampleTexture(mat.normalTexIndex, input.texCoords).rgb * 2.f - 1.f;
+	phongInput.normal = input.normalWorldSpace;
+	if (mat.normalTexIndex != -1) {
+		// Sample tangent space normal from texture
+		float3 normalSample = sampleTexture(mat.normalTexIndex, input.texCoords).rgb;
+		// normalSample.y = 1.0f - normalSample.y;
+		normalSample.x = 1.0f - normalSample.x;
+		phongInput.normal = normalize(normalSample * 2.f - 1.f);
+
+		// Convert to world space
+		phongInput.normal = mul(phongInput.normal, input.TBN);
+	}
 
 	phongInput.specMap = float3(1.f, 1.f, 1.f);
 	if (mat.specularTexIndex != -1)

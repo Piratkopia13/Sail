@@ -22,7 +22,10 @@ EmptyState::EmptyState(StateStack& stack)
 	m_model2 = m_app->getResourceManager().getModel("box.fbx");
 
 	//m_material.setColor({0.8f, 0.2f, 0.2f, 1.0f});
-	m_material.setDiffuseTexture("pbr/pavingStones/albedo.tga");
+	/*m_material2.setDiffuseTexture("pbr/pavingStones/albedo.tga");
+	m_material2.setNormalTexture("pbr/pavingStones/normal.tga");*/
+	m_material2.setDiffuseTexture("pbr/ice/albedo.tga");
+	m_material2.setNormalTexture("pbr/ice/normal.tga");
 	
 	//m_material2.setColor({ 0.2f, 0.8f, 0.2f, 1.0f });
 	//m_material2.setDiffuseTexture("pbr/cerberus/Cerberus_A.tga");
@@ -84,16 +87,19 @@ bool EmptyState::render(float dt) {
 	// Draw the scene
 	m_forwardRenderer->begin(&m_cam, nullptr);
 
-	static glm::mat4 transform = glm::identity<glm::mat4>();
-	transform = glm::rotate(transform, dt * 1.f, glm::vec3(1.f, 1.0f, 0.f));
+	static glm::mat4 transform(1.f);
+	transform = glm::rotate(transform, dt * 0.2f, glm::vec3(0.f, 1.0f, 0.f));
 
 	static float counter = 0.f;
 	counter += dt * 0.0001f;
 	//static glm::mat4 transform2 = glm::identity<glm::mat4>();
 	//transform2 = glm::translate(transform2, glm::vec3(glm::sin(counter), 0.f, 0.f));
-	glm::mat4 transform2 = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.f, 0.f));
+	glm::mat4 transform2 = glm::translate(glm::mat4(1.0f), glm::vec3(4.f, 0.f, 0.f));
+	//static glm::mat4 transform2(1.f);
+	//transform2 = glm::rotate(transform2, dt * 0.1f, glm::vec3(0.f, 1.0f, 0.f));
 
-	m_forwardRenderer->submit(m_model.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), &m_material, transform2);
+
+	m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), &m_material, transform2);
 	m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), &m_material2, transform);
 
 	m_forwardRenderer->end();
