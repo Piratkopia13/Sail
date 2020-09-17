@@ -88,10 +88,12 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	m_descriptorSets.resize(numBuffers);
 	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_context->getDevice(), &allocInfo, m_descriptorSets.data()));
 
-	// Configure the descriptor sets
+	// Write descriptors to cbuffers that do not need their their descriptors updated during rendering
+	std::vector<VkWriteDescriptorSet> writeDescriptors;
 	for (size_t i = 0; i < numBuffers; i++) {
-		std::vector<VkDescriptorBufferInfo> bufferInfos;
 		for (auto& buffer : cBuffers) {
+			if (buffer.isMaterialArray) continue;;
+
 			auto* svkBuffer = static_cast<ShaderComponent::SVkConstantBuffer*>(buffer.cBuffer.get());
 			
 			VkDescriptorBufferInfo info{};
@@ -99,22 +101,21 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 			info.offset = 0;
 			info.range = VK_WHOLE_SIZE;
 
-			bufferInfos.emplace_back(info);
+			auto& desc = writeDescriptors.emplace_back();
+			desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			desc.dstSet = m_descriptorSets[i];
+			desc.dstBinding = svkBuffer->getSlot();
+			desc.dstArrayElement = 0;
+			desc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			desc.descriptorCount = 1; // One binding for each constant buffer / ubo
+			desc.pBufferInfo = &info;
+			desc.pImageInfo = nullptr; // Optional
+			desc.pTexelBufferView = nullptr; // Optional
 		}
 
-		VkWriteDescriptorSet descriptorWrite{};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = m_descriptorSets[i];
-		descriptorWrite.dstBinding = 0;
-		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrite.descriptorCount = bufferInfos.size(); // One binding for each constant buffer / ubo
-		descriptorWrite.pBufferInfo = bufferInfos.data();
-		descriptorWrite.pImageInfo = nullptr; // Optional
-		descriptorWrite.pTexelBufferView = nullptr; // Optional
-
-		vkUpdateDescriptorSets(m_context->getDevice(), 1, &descriptorWrite, 0, nullptr);
 	}
+	if (!writeDescriptors.empty()) 
+		vkUpdateDescriptorSets(m_context->getDevice(), writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
 
 }
 
