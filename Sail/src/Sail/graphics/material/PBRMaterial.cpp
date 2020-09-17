@@ -20,9 +20,13 @@ PBRMaterial::PBRMaterial()
 	m_pbrSettings.roughnessScale = 1.f;
 	m_pbrSettings.aoIntensity = 0.f;
 
-	m_pbrSettings.hasAlbedoTexture = 0;
-	m_pbrSettings.hasNormalTexture = 0;
-	m_pbrSettings.hasMetalnessRoughnessAOTexture = 0;
+	m_pbrSettings.albedoTexIndex = -1;
+	m_pbrSettings.normalTexIndex = -1;
+	m_pbrSettings.mraoTexIndex = -1;
+	
+	m_pbrSettings.radianceMapTexIndex = -1;
+	m_pbrSettings.irradianceMapTexIndex = -1;
+	m_pbrSettings.brdfLutTexIndex = -1;
 
 	m_pbrSettings.modelColor = glm::vec4(1.0f);
 
@@ -103,17 +107,14 @@ void PBRMaterial::setColor(const glm::vec4& color) {
 
 void PBRMaterial::setAlbedoTexture(const std::string& filename, bool useAbsolutePath) {
 	m_textures[0] = loadTexture(filename, useAbsolutePath);
-	m_pbrSettings.hasAlbedoTexture = (filename.empty()) ? 0 : 1;
 }
 
 void PBRMaterial::setNormalTexture(const std::string& filename, bool useAbsolutePath) {
 	m_textures[1] = loadTexture(filename, useAbsolutePath);
-	m_pbrSettings.hasNormalTexture = (filename.empty()) ? 0 : 1;
 }
 
 void PBRMaterial::setMetalnessRoughnessAOTexture(const std::string& filename, bool useAbsolutePath) {
 	m_textures[2] = loadTexture(filename, useAbsolutePath);
-	m_pbrSettings.hasMetalnessRoughnessAOTexture = (filename.empty()) ? 0 : 1;
 }
 
 Texture* PBRMaterial::getTexture(unsigned int id) const {

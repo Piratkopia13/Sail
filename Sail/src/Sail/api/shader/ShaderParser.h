@@ -97,9 +97,11 @@ public:
 private:
 	void parseConstantBuffer(const std::string& source); // Parses the first way cbuffers can be defined
 	void parseCBuffer(const std::string& source, bool storeAsPushConstant = false); // Parses the second way cbuffers can be defined
-	void parseSampler(const char* sourceChar, std::string& source); // source argument is not const since this method is allowed to change the it!
+	void parseSampler(const char* sourceChar); // This method is allowed to change m_cleanSource!
 	void parseTexture(const char* source);
 	void parseRWTexture(const char* source);
+
+	bool getVkBinding(const char* lineStart, unsigned int& outVkBinding) const;
 	std::string nextTokenAsName(const char* source, unsigned int& outTokenSize, int* arrayElements = nullptr) const;
 	std::string nextTokenAsType(const char* source, unsigned int& outTokenSize) const;
 	ShaderComponent::BIND_SHADER getBindShaderFromName(const std::string& name) const;

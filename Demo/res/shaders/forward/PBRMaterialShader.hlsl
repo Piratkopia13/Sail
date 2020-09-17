@@ -17,31 +17,33 @@ struct PSIn {
 	float3x3 tbn : TBN;
 };
 
-cbuffer VSPSSystemCBuffer : register(b0) {
+[[vk::push_constant]]
+struct {
 	matrix sys_mWorld;
+	uint sys_materialIndex;
+} VSPSConsts;
+
+cbuffer VSPSSystemCBuffer : register(b0) {
     matrix sys_mVP;
-    PBRMaterial sys_material;
-    //float padding;
-    float4 sys_clippingPlane;
     float3 sys_cameraPos;
+	float padding;
+    float4 sys_clippingPlane;
+	DirectionalLight dirLight;
+	PointLight pointLights[8];
 }
 
-struct PointLightInput {
-	float3 color;
-    float attRadius;
-	float3 position;
-	float intensity;
-};
-cbuffer PSLights : register(b1) {
-	DirectionalLight dirLight;
-    PointLightInput pointLights[NUM_POINT_LIGHTS];
+cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
+	PBRMaterial sys_materials[1024];
 }
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
+	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+	matrix mWorld = VSPSConsts.sys_mWorld;
+
 	input.position.w = 1.f;
-	output.position = mul(sys_mWorld, input.position);
+	output.position = mul(mWorld, input.position);
 
 	// Calculate the distance from the vertex to the clipping plane
 	// This needs to be done with world coordinates
@@ -53,34 +55,43 @@ PSIn VSMain(VSIn input) {
 	output.position = mul(sys_mVP, output.position);
 	output.tbn = 0.f;
 
-	if (sys_material.hasNormalTexture) {
+	if (mat.normalTexIndex != -1) {
 	    // Convert to tangent space
 		float3x3 tbn = {
-			mul((float3x3) sys_mWorld, normalize(input.tangent)),
-			mul((float3x3) sys_mWorld, normalize(input.bitangent)),
-			mul((float3x3) sys_mWorld, normalize(input.normal))
+			mul((float3x3) mWorld, normalize(input.tangent)),
+			mul((float3x3) mWorld, normalize(input.bitangent)),
+			mul((float3x3) mWorld, normalize(input.normal))
 		};
 		// tbn = transpose(tbn);
 
 		output.tbn = tbn;
     }
 
-	output.normal = mul((float3x3) sys_mWorld, normalize(input.normal));
+	output.normal = mul((float3x3) mWorld, normalize(input.normal));
 	output.texCoords = input.texCoords;
 
 	return output;
 }
 
 
-Texture2D sys_texBrdfLUT : register(t0);
-TextureCube irradianceMap : register(t1);
-TextureCube radianceMap : register(t2);
+// Texture2D sys_texBrdfLUT : register(t0);
+// TextureCube irradianceMap : register(t1);
+// TextureCube radianceMap : register(t2);
 
-Texture2D sys_texAlbedo : register(t3);
-Texture2D sys_texNormal : register(t4);
-Texture2D sys_texMRAO : register(t5);
-SamplerState PSss : register(s0);
-SamplerState PSLinearSampler : register(s2);
+// Texture2D sys_texAlbedo : register(t3);
+// Texture2D sys_texNormal : register(t4);
+// Texture2D sys_texMRAO : register(t5);
+// SamplerState PSss : register(s0);
+
+SamplerState PSLinearSampler : register(s5);
+SamplerState PSss : register(s6);
+
+Texture2D texArr[] : register(t7) : SAIL_BIND_ALL_TEXTURES;
+TextureCube texCubeArr[] : register(t8) : SAIL_BIND_ALL_TEXTURECUBES;
+
+float4 sampleTexture(uint index, float2 texCoords) {
+	return texArr[index].Sample(PSss, texCoords);
+}
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
@@ -89,48 +100,51 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// return irradianceMap.SampleLevel(PSss, viewDir, 0);
 	// return radianceMap.SampleLevel(PSss, viewDir, 0);
 
+	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+	
 	PBRScene scene;
 	
 	// Lights
-	scene.lights.dirLight = dirLight;
+	scene.dirLight = dirLight;
 	[unroll]
 	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-		scene.lights.pointLights[i].color = pointLights[i].color;
-		scene.lights.pointLights[i].attRadius = pointLights[i].attRadius;
-		scene.lights.pointLights[i].intensity = pointLights[i].intensity;
+		scene.pointLights[i].color = pointLights[i].color;
+		scene.pointLights[i].attRadius = pointLights[i].attRadius;
+		scene.pointLights[i].intensity = pointLights[i].intensity;
 		// World space vector poiting from the vertex position to the point light
-		scene.lights.pointLights[i].fragToLight = pointLights[i].position - input.worldPos;
+		scene.pointLights[i].fragToLight = pointLights[i].fragToLight - input.worldPos;
 	}
 
-	scene.brdfLUT = sys_texBrdfLUT;
-	scene.prefilterMap = radianceMap;
-	scene.irradianceMap = irradianceMap;
+	scene.brdfLUT = texArr[mat.brdfLutTexIndex];
+	scene.prefilterMap = texCubeArr[mat.radianceMapTexIndex];
+	scene.irradianceMap = texCubeArr[mat.irradianceMapTexIndex];
 	scene.linearSampler = PSLinearSampler;
 	
 	PBRPixel pixel;
-    pixel.invViewDir = sys_cameraPos - input.worldPos;
+    pixel.camPos = sys_cameraPos;
+	pixel.worldPos = input.worldPos;
 
-	pixel.albedo = sys_material.modelColor.rgb;
-	if (sys_material.hasAlbedoTexture)
-		pixel.albedo *= sys_texAlbedo.Sample(PSss, input.texCoords).rgb;
+	pixel.albedo = mat.modelColor.rgb;
+	if (mat.albedoTexIndex != -1)
+		pixel.albedo *= sampleTexture(mat.albedoTexIndex, input.texCoords).rgb;
 
 	pixel.worldNormal = input.normal;
-	if (sys_material.hasNormalTexture) {
-		float3 normalSample = sys_texNormal.Sample(PSss, input.texCoords).rgb;
+	if (mat.normalTexIndex != -1) {
+		float3 normalSample = sampleTexture(mat.normalTexIndex, input.texCoords).rgb;
         normalSample.y = 1.f - normalSample.y;
         normalSample.x = 1.f - normalSample.x;
 		
         pixel.worldNormal = mul(normalize(normalSample * 2.f - 1.f), input.tbn);
 	}
 
-	pixel.metalness = sys_material.metalnessScale;
-	pixel.roughness = sys_material.roughnessScale;
+	pixel.metalness = mat.metalnessScale;
+	pixel.roughness = mat.roughnessScale;
 	pixel.ao = 1.f;
-	if (sys_material.hasMRAOTexture) {
-		float3 mrao = sys_texMRAO.Sample(PSss, input.texCoords).rgb;
+	if (mat.mraoTexIndex != -1) {
+		float3 mrao = sampleTexture(mat.mraoTexIndex, input.texCoords).rgb;
 		pixel.metalness *= mrao.r;
 		pixel.roughness *= 1.f - mrao.g; // Invert roughness from texture to make it correct
-		pixel.ao = mrao.b + sys_material.aoIntensity;
+		pixel.ao = mrao.b + mat.aoIntensity;
 	}
 
 	// Shade

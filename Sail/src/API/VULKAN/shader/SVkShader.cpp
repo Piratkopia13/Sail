@@ -5,6 +5,7 @@
 #include "SVkConstantBuffer.h"
 #include "../SVkUtils.h"
 #include "../resources/SVkTexture.h"
+#include "SVkSampler.h"
 
 Shader* Shader::Create(Shaders::ShaderSettings settings, Shader* allocAddr) {
 	if (!allocAddr)
@@ -15,7 +16,6 @@ Shader* Shader::Create(Shaders::ShaderSettings settings, Shader* allocAddr) {
 
 SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	: Shader(settings)
-	, m_tempSampler(Texture::WRAP, Texture::ANISOTROPIC, ShaderComponent::PS, 0)
 	, m_missingTexture(static_cast<SVkTexture&>(Application::getInstance()->getResourceManager().getTexture(ResourceManager::MISSING_TEXTURE_NAME)))
 {
 	EventSystem::getInstance()->subscribeToEvent(Event::NEW_FRAME, this);
@@ -42,8 +42,17 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	for (auto& texture : parsed.textures) {
 		auto& b = bindings.emplace_back();
 		b.binding = static_cast<uint32_t>(texture.vkBinding);
-		b.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		b.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		b.descriptorCount = (texture.isTexturesArray) ? TEXTURE_ARRAY_DESCRIPTOR_COUNT : (texture.arraySize == -1) ? 64 : texture.arraySize; // an array size of -1 means it is sizeless in the shader, set some max number
+		b.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		b.pImmutableSamplers = nullptr; // Optional
+	}
+
+	for (auto& sampler : parsed.samplers) {
+		auto& b = bindings.emplace_back();
+		b.binding = static_cast<uint32_t>(sampler.res.vkBinding);
+		b.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+		b.descriptorCount = 1;
 		b.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		b.pImmutableSamplers = nullptr; // Optional
 	}
@@ -92,7 +101,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	std::vector<VkWriteDescriptorSet> writeDescriptors;
 	for (size_t i = 0; i < numBuffers; i++) {
 		for (auto& buffer : cBuffers) {
-			if (buffer.isMaterialArray) continue;;
+			if (buffer.isMaterialArray) continue; // material arrays will be updated in prepareToRender()
 
 			auto* svkBuffer = static_cast<ShaderComponent::SVkConstantBuffer*>(buffer.cBuffer.get());
 			
@@ -109,8 +118,20 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 			desc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			desc.descriptorCount = 1; // One binding for each constant buffer / ubo
 			desc.pBufferInfo = &info;
-			desc.pImageInfo = nullptr; // Optional
-			desc.pTexelBufferView = nullptr; // Optional
+		}
+
+		for (auto& sampler : parsed.samplers) {
+			VkDescriptorImageInfo info{};
+			info.sampler = static_cast<ShaderComponent::SVkSampler*>(sampler.sampler.get())->get();
+			
+			auto& desc = writeDescriptors.emplace_back();
+			desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			desc.dstSet = m_descriptorSets[i];
+			desc.dstBinding = sampler.res.vkBinding;
+			desc.dstArrayElement = 0;
+			desc.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+			desc.descriptorCount = 1; // One binding for each sampler
+			desc.pImageInfo = &info;
 		}
 
 	}
@@ -263,7 +284,6 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 		for (auto* texture : uniqueTextures) {
 			auto& imageInfo = imageInfos.emplace_back();
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.sampler = m_tempSampler.get();
 			if (texture->isReadyToUse()) {
 				imageInfo.imageView = texture->getView();
 			} else {
@@ -279,7 +299,6 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 		for (unsigned int i = imageInfos.size(); i < TEXTURE_ARRAY_DESCRIPTOR_COUNT; i++) {
 			auto& imageInfo = imageInfos.emplace_back();
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.sampler = m_tempSampler.get();
 			imageInfo.imageView = m_missingTexture.getView();
 		}
 
@@ -287,7 +306,7 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 		descWrite[0].dstSet = m_descriptorSets[imageIndex];
 		descWrite[0].dstBinding = textureArrBinding;
 		descWrite[0].dstArrayElement = 0;
-		descWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		//descWrite[0].descriptorCount = static_cast<uint32_t>(imageInfos.size());
 		descWrite[0].descriptorCount = TEXTURE_ARRAY_DESCRIPTOR_COUNT;
 		descWrite[0].pImageInfo = imageInfos.data();

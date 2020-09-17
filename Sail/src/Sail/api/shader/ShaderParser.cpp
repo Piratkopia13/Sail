@@ -118,7 +118,7 @@ std::string ShaderParser::parse(const std::string& source) {
 	// Process all samplers
 	src = m_cleanSource.c_str();
 	while (src = findToken("SamplerState", src)) {
-		parseSampler(src, m_cleanSource);
+		parseSampler(src);
 	}
 
 	// Process all textures
@@ -230,16 +230,25 @@ void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConst
 	//Logger::Log(src);
 }
 
-void ShaderParser::parseSampler(const char* sourceChar, std::string& source) {
-	UINT tokenSize = 0;
-	std::string name = nextTokenAsName(sourceChar, tokenSize);
-	sourceChar += tokenSize;
+void ShaderParser::parseSampler(const char* src) {
+	const char* lineStart = src;
+	while (true) {
+		if (lineStart == m_cleanSource.c_str() || // Out of bounds check
+			lineStart[-1] == '\n') { // if the "next" character is a new line, we have found the line start
+			break;
+		}
+		lineStart--;
+	}
 
-	const char* newLine = strchr(sourceChar, '\n');
-	size_t lineLength = newLine - sourceChar;
+	UINT tokenSize = 0;
+	std::string name = nextTokenAsName(src, tokenSize);
+	src += tokenSize;
+
+	const char* newLine = strchr(src, '\n');
+	size_t lineLength = newLine - src;
 	char* lineCopy = (char*)malloc(lineLength + 1);
 	memset(lineCopy, '\0', lineLength + 1);
-	strncpy_s(lineCopy, lineLength + 1, sourceChar, lineLength);
+	strncpy_s(lineCopy, lineLength + 1, src, lineLength);
 
 	// Parse "SAIL_X" macros in source and replace register slot if found
 	bool replaceRegisterSlot = false;
@@ -249,12 +258,16 @@ void ShaderParser::parseSampler(const char* sourceChar, std::string& source) {
 	for (auto& it : samplerMap) {
 		if (strstr(lineCopy, it.first.c_str())) {
 			samplerInfo = it.second;
+#ifdef _SAIL_DX12 // DX12 implementation has specific slots for samplers and requires us to correct the slot in the shader source code
 			replaceRegisterSlot = true;
+#endif
 			macro = it.first;
 			break;
 		}
 	}
+#ifdef _SAIL_DX12
 	assert(!(!replaceRegisterSlot && strstr(lineCopy, "SAIL_")) && "Unrecognized macro found on sampler");
+#endif
 	free(lineCopy);
 	
 	int slot = 0;
@@ -263,15 +276,18 @@ void ShaderParser::parseSampler(const char* sourceChar, std::string& source) {
 		std::string newReg = "register(s";
 		newReg += std::to_string(slot);
 		newReg += "); // SLOT REPLACED BY SAIL SHADERPARSER!";
-		source.replace(source.find(macro), macro.length()+1, newReg); // +1 to include the ending semicolon
+		m_cleanSource.replace(m_cleanSource.find(macro), macro.length()+1, newReg); // +1 to include the ending semicolon
 	} else {
-		slot = findNextIntOnLine(sourceChar);
+		slot = findNextIntOnLine(src);
 		if (slot == -1) slot = 0; // No slot specified, use 0 as default
 	}
 
 	auto bindShader = getBindShaderFromName(name);
 	auto uslot = static_cast<unsigned int>(slot);
-	ShaderResource res(name, uslot, 1, uslot);
+	unsigned int vkBinding = uslot;
+	getVkBinding(lineStart, vkBinding);
+
+	ShaderResource res(name, uslot, 1, vkBinding);
 	m_parsedData.samplers.emplace_back(res, samplerInfo.addressMode, samplerInfo.filter, bindShader, slot);
 }
 
@@ -301,26 +317,8 @@ void ShaderParser::parseTexture(const char* source) {
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
 	bool isTexturesArray = (strstr(source, "SAIL_BIND_ALL_TEXTURES") != nullptr);
 
-	int vkBinding = slot;
-	// if vk::binding is used, use that as the vk slot. 
-	// vk::binding is allowed on the previous line or at the start of the current line.
-	auto matchOnCurrentLine = findToken("vk::binding", lineStart, true);
-	if (matchOnCurrentLine) {
-		vkBinding = findNextIntOnLine(matchOnCurrentLine);
-	} else {
-		int newLines = 0;
-		while (newLines < 2) {
-			if (lineStart == m_cleanSource.c_str()) break; // Out of bounds check
-			if (lineStart[0] == '\n') newLines++;
-			lineStart--;
-		}
-		lineStart+=2;
-		auto matchOnPrevLine = findToken("vk::binding", lineStart, true);
-		if (matchOnPrevLine) {
-			vkBinding = findNextIntOnLine(matchOnPrevLine);
-		}
-	}
-
+	unsigned int vkBinding = static_cast<unsigned int>(slot);
+	getVkBinding(lineStart, vkBinding);
 
 	m_parsedData.textures.emplace_back(name, slot, arrSize, vkBinding, isTexturesArray);
 }
@@ -370,6 +368,30 @@ void ShaderParser::parseRWTexture(const char* source) {
 
 	std::string nameSuffix(" File: " + m_filename + " slot " + std::to_string(slot));
 	m_parsedData.renderableTextures.emplace_back(ShaderResource(name, uslot, 1, uslot), format, nameSuffix);
+}
+
+bool ShaderParser::getVkBinding(const char* lineStart, unsigned int& outVkBinding) const {
+	// if vk::binding is used, use that as the vk slot. 
+	// vk::binding is allowed on the previous line or at the start of the current line.
+	auto matchOnCurrentLine = findToken("vk::binding", lineStart, true);
+	if (matchOnCurrentLine) {
+		outVkBinding = findNextIntOnLine(matchOnCurrentLine);
+		return true;
+	} else {
+		int newLines = 0;
+		while (newLines < 2) {
+			if (lineStart == m_cleanSource.c_str()) break; // Out of bounds check
+			if (lineStart[0] == '\n') newLines++;
+			lineStart--;
+		}
+		lineStart += 2;
+		auto matchOnPrevLine = findToken("vk::binding", lineStart, true);
+		if (matchOnPrevLine) {
+			outVkBinding = findNextIntOnLine(matchOnPrevLine);
+			return true;
+		}
+	}
+	return false;
 }
 
 std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize, int* arrayElements) const {

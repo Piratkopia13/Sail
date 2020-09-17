@@ -45,7 +45,4 @@ private:
 
 	// Texture used while waiting for the proper texture to finish uploading to the GPU
 	SVkTexture& m_missingTexture;
-
-	// TODO: don't use the same sampler for everything :P
-	ShaderComponent::SVkSampler m_tempSampler;
 };

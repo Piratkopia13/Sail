@@ -16,11 +16,13 @@ public:
 		float metalnessScale;
 		float roughnessScale;
 		float aoIntensity;
-		float padding1;
-		int hasAlbedoTexture;
-		int hasNormalTexture;
-		int hasMetalnessRoughnessAOTexture;
-		float padding2;
+		int albedoTexIndex;
+		int normalTexIndex;
+		int mraoTexIndex; // R/G/B = Metalness/Roughness/Ambient occlusion
+		int radianceMapTexIndex;
+		int irradianceMapTexIndex;
+		int brdfLutTexIndex;
+		glm::vec3 padding;
 	};
 
 public:

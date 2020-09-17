@@ -23,7 +23,6 @@ struct PSIn {
 struct {
 	matrix sys_mWorld;
 	uint sys_materialIndex;
-	float3 padding;
 } VSPSConsts;
 
 // These cbuffers are shared between all draw calls
@@ -81,10 +80,8 @@ PSIn VSMain(VSIn input) {
 
 }
 
-[[vk::binding(5)]]
-SamplerState PSss : register(s0);
+SamplerState PSss : register(s2) : SAIL_SAMPLER_ANIS_WRAP;
 
-[[vk::binding(5)]]
 Texture2D texArr[] : register(t3) : SAIL_BIND_ALL_TEXTURES;
 
 float4 sampleTexture(uint index, float2 texCoords) {

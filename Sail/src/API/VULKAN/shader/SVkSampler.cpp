@@ -13,7 +13,7 @@ namespace ShaderComponent {
 	}
 
 	void SVkSampler::bind() {
-		//throw std::logic_error("The method or operation is not implemented.");
+		// Already bound via descriptor set created in SVkShader
 	}
 
 	const VkSampler& SVkSampler::get() const {
@@ -23,25 +23,66 @@ namespace ShaderComponent {
 	SVkSampler::SVkSampler(Texture::ADDRESS_MODE addressMode, Texture::FILTER filter, BIND_SHADER bindShader, unsigned int slot) {
 		m_context = Application::getInstance()->getAPI<SVkAPI>();
 
-		VkSamplerCreateInfo samplerInfo{};
-		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.magFilter = VK_FILTER_LINEAR;
-		samplerInfo.minFilter = VK_FILTER_LINEAR;
-		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.anisotropyEnable = VK_TRUE;
-		samplerInfo.maxAnisotropy = 16.0f;
-		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-		samplerInfo.unnormalizedCoordinates = VK_FALSE;
-		samplerInfo.compareEnable = VK_FALSE;
-		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		samplerInfo.mipLodBias = 0.0f;
-		samplerInfo.minLod = 0.0f;
-		samplerInfo.maxLod = 0.0f;
+		// Convert address mode to vk specific
+		VkSamplerAddressMode vkAddressMode;
+		switch (addressMode) {
+		case Texture::WRAP:
+			vkAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			break;
+		case Texture::MIRROR:
+			vkAddressMode = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+			break;
+		case Texture::CLAMP:
+			vkAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+			break;
+		case Texture::BORDER:
+			vkAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+			break;
+		case Texture::MIRROR_ONCE:
+			vkAddressMode = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+			break;
+		default:
+			vkAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		}
 
-		VK_CHECK_RESULT(vkCreateSampler(m_context->getDevice(), &samplerInfo, nullptr, &m_textureSampler));
+		// Convert filter to vk specific
+		VkFilter vkFilter;
+		switch (filter) {
+		case Texture::POINT:
+			vkFilter = VK_FILTER_NEAREST;
+			break;
+		case Texture::LINEAR:
+			vkFilter = VK_FILTER_LINEAR;
+			break;
+		case Texture::ANISOTROPIC:
+			vkFilter = VK_FILTER_LINEAR;
+			break;
+		default:
+			vkFilter = VK_FILTER_LINEAR;
+		}
+
+
+		// Set up sampler
+		bool enableAnisotropic = (filter == Texture::ANISOTROPIC);
+		VkSamplerCreateInfo info{};
+		info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		info.magFilter = vkFilter;
+		info.minFilter = vkFilter;
+		info.addressModeU = vkAddressMode;
+		info.addressModeV = vkAddressMode;
+		info.addressModeW = vkAddressMode;
+		info.anisotropyEnable = (enableAnisotropic) ? VK_TRUE : VK_FALSE;
+		info.maxAnisotropy = 16.0f;
+		info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+		info.unnormalizedCoordinates = VK_FALSE;
+		info.compareEnable = VK_FALSE;
+		info.compareOp = VK_COMPARE_OP_ALWAYS;
+		info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		info.mipLodBias = 0.0f;
+		info.minLod = 0.0f;
+		info.maxLod = 0.0f;
+
+		VK_CHECK_RESULT(vkCreateSampler(m_context->getDevice(), &info, nullptr, &m_textureSampler));
 	}
 
 }

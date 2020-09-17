@@ -5,14 +5,13 @@
 EmptyState::EmptyState(StateStack& stack)
 	: State(stack)
 	, m_cam(90.f, 1280.f / 720.f, 0.01f, 5000.f)
-	, m_camController(&m_cam)
-{
+	, m_camController(&m_cam) {
 	SAIL_PROFILE_FUNCTION();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
 
-	m_cam.setPosition({0.f, 0.f, -1.f});
+	m_cam.setPosition({ 0.f, 0.f, -1.f });
 	// Make sure the following can be removed
 
 	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
@@ -26,6 +25,8 @@ EmptyState::EmptyState(StateStack& stack)
 	m_material2.setNormalTexture("pbr/pavingStones/normal.tga");*/
 	m_material2.setDiffuseTexture("pbr/ice/albedo.tga");
 	m_material2.setNormalTexture("pbr/ice/normal.tga");
+
+	//m_pbrMaterial.setColor({1.f, 1.f, 1.f, 1.f});
 	
 	//m_material2.setColor({ 0.2f, 0.8f, 0.2f, 1.0f });
 	//m_material2.setDiffuseTexture("pbr/cerberus/Cerberus_A.tga");
