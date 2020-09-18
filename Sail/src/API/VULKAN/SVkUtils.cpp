@@ -44,7 +44,7 @@ std::string SVkUtils::ErrorString(VkResult errorCode) {
 	}
 }
 
-void SVkUtils::TransitionImageLayout(const VkCommandBuffer& cmd, const VkImage& image, VkFormat format, const VkImageLayout oldLayout, VkImageLayout newLayout, unsigned int layerCount) {
+void SVkUtils::TransitionImageLayout(const VkCommandBuffer& cmd, const VkImage& image, VkFormat format, const VkImageLayout oldLayout, VkImageLayout newLayout, unsigned int layerCount, unsigned int mipLevels) {
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
@@ -54,7 +54,7 @@ void SVkUtils::TransitionImageLayout(const VkCommandBuffer& cmd, const VkImage& 
 	barrier.image = image;
 	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.levelCount = mipLevels;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = layerCount;
 	

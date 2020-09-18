@@ -1,4 +1,5 @@
 #pragma once
+#include "glm/gtx/compatibility.hpp"
 
 namespace ResourceFormat {
 
@@ -21,6 +22,9 @@ namespace ResourceFormat {
 		unsigned int bitsPerChannel;
 		unsigned int channels;
 		unsigned int byteSize;
+		int mipLevels = -1; // -1 means that mips shuold be generated
+		std::vector<glm::int2> mipExtents;
+		std::vector<unsigned int> mipOffsets;
 		void* data = nullptr;
 		bool isCubeMap = false;
 		bool isSRGB = false;

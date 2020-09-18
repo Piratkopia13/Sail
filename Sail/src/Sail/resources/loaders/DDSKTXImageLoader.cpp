@@ -18,34 +18,34 @@ FileLoader::DDSKTXImageLoader::DDSKTXImageLoader(const std::string& filename, Re
 		assert(tc.depth == 1);
 		assert(tc.num_layers == 1);
 		
+		// Load each mip level into an offset
+		textureData.data = SAIL_NEW std::byte[tc.size_bytes];
 
-		// Temp method of loading texture data before mip levels are supported
-		{
-			textureData.data = SAIL_NEW std::byte[tc.size_bytes];
-			char* cpyPtr = (char*)textureData.data;
+		unsigned int offset = 0;
+		for (int mip = 0; mip < tc.num_mips; mip++) {
 			for (int face = 0; face < DDSKTX_CUBE_FACE_COUNT; face++) {
 				ddsktx_sub_data subData;
-				int mip = 0;
 				ddsktx_get_sub(&tc, &subData, ddsData.data(), size, 0, face, mip);
-				//textureData.byteSize = subData.size_bytes;
-				textureData.width = subData.width;
-				textureData.height = subData.height;
-				//textureData.width = tc.width;
-				//textureData.height = tc.height;
 
-				memcpy(cpyPtr, subData.buff, subData.size_bytes);
-				cpyPtr += subData.size_bytes;
+				if (face == 0) {
+					textureData.mipExtents.emplace_back(subData.width, subData.height);
+					textureData.mipOffsets.emplace_back(offset);
+				}
+
+				memcpy((char*)textureData.data + offset, subData.buff, subData.size_bytes);
+				offset += subData.size_bytes;
 			}
-			textureData.byteSize = cpyPtr - textureData.data;
 		}
+		textureData.byteSize = offset;
 		
 			
 		/*textureData.byteSize = tc.size_bytes;
 		textureData.data = SAIL_NEW std::byte[textureData.byteSize];
-		memcpy(textureData.data, &ddsData[tc.data_offset], textureData.byteSize);
+		memcpy(textureData.data, &ddsData[tc.data_offset], textureData.byteSize);*/
 		textureData.width = tc.width;
-		textureData.height = tc.height;*/
+		textureData.height = tc.height;
 
+		textureData.mipLevels = tc.num_mips;
 		textureData.format = convertFormat(tc.format);
 		textureData.isCubeMap = (tc.flags & DDSKTX_TEXTURE_FLAG_CUBEMAP);
 		textureData.isSRGB = (tc.flags & DDSKTX_TEXTURE_FLAG_SRGB);

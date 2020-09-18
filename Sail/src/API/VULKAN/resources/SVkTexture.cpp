@@ -24,6 +24,10 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	unsigned int texHeight;
 	VkFormat vkImageFormat;
 	VkImageType imageType;
+	int mipLevels;
+	std::vector<VkExtent3D> mipExtents;
+	std::vector<unsigned int> mipOffsets;
+	bool generateMips = false;
 
 	{
 		// Load file using the resource manager
@@ -35,6 +39,25 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 		vkImageFormat = ConvertToVkFormat(data.getFormat(), data.isSRGB());
 		imageType = VK_IMAGE_TYPE_2D;
 		m_isCubeMap = data.isCubeMap();
+
+		mipLevels = data.getMipLevels();
+		for (auto& extent : data.getMipExtents()) {
+			mipExtents.push_back({(uint32_t)extent.x, (uint32_t)extent.y, 1});
+		}
+		mipOffsets = data.getMipOffsets();
+
+		if (mipLevels == -1) {
+			generateMips = true;
+			mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+
+			// TODO: REMOVE THIS when mip generation is implemented
+			{
+				mipLevels = 1;
+				mipExtents.push_back({ (uint32_t)texWidth, (uint32_t)texHeight, 1 });
+				mipOffsets.emplace_back(0);
+			}
+		}
+
 	}
 
 	// Create cpu visible staging buffer
@@ -62,7 +85,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	imageInfo.extent.width = static_cast<uint32_t>(texWidth);
 	imageInfo.extent.height = static_cast<uint32_t>(texHeight);
 	imageInfo.extent.depth = 1;
-	imageInfo.mipLevels = 1;
+	imageInfo.mipLevels = mipLevels;
 	imageInfo.arrayLayers = (m_isCubeMap) ? 6 : 1;
 	imageInfo.format = vkImageFormat;
 	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -81,28 +104,28 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 
 	bool isMissingTexture = (m_filename == ResourceManager::MISSING_TEXTURE_NAME || m_filename == ResourceManager::MISSING_TEXTURECUBE_NAME);
 
-	auto uploadCompleteCallback = [&] {
+	auto uploadCompleteCallback = [&, vkImageFormat, mipLevels] {
 		// Clean up staging buffer after copy is completed
 		m_stagingBuffer.destroy();
 
-		m_context->scheduleOnGraphicsQueue([&, vkImageFormat](const VkCommandBuffer& cmd) {
+		m_context->scheduleOnGraphicsQueue([&, vkImageFormat, mipLevels](const VkCommandBuffer& cmd) {
 			// Transition image for shader usage (has to be done on the graphics queue)
-			SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, (m_isCubeMap) ? 6 : 1);
+			SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, (m_isCubeMap) ? 6 : 1, mipLevels);
 		}, std::bind(&SVkTexture::readyForUseCallback, this));
 	};
 
 	// Perform copying on the copy queue if this is NOT the missing texture
 	// If it is, using the copy queue causes a minimum of 2 frame delay before texture is ready which screws up the missing texture that needs to be available on first draw call.
 	if (isMissingTexture) {
-		m_context->scheduleOnGraphicsQueue([&, texWidth, texHeight, vkImageFormat](const VkCommandBuffer& cmd) {
-			copyToImage(cmd, vkImageFormat, texWidth, texHeight);
+		m_context->scheduleOnGraphicsQueue([&, vkImageFormat, generateMips, mipLevels, mipExtents, mipOffsets](const VkCommandBuffer& cmd) {
+			copyToImage(cmd, vkImageFormat, (generateMips) ? 1 : mipLevels, mipExtents, mipOffsets);
 
 			// Transition image for shader usage (has to be done on the graphics queue)
-			SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, (m_isCubeMap) ? 6 : 1);
+			SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, (m_isCubeMap) ? 6 : 1, mipLevels);
 		}, std::bind(&SVkTexture::readyForUseCallback, this));
 	} else {
-		m_context->scheduleOnCopyQueue([&, texWidth, texHeight, vkImageFormat](const VkCommandBuffer& cmd) {
-			copyToImage(cmd, vkImageFormat, texWidth, texHeight);
+		m_context->scheduleOnCopyQueue([&, vkImageFormat, generateMips, mipLevels, mipExtents, mipOffsets](const VkCommandBuffer& cmd) {
+			copyToImage(cmd, vkImageFormat, (generateMips) ? 1 : mipLevels, mipExtents, mipOffsets);
 		}, uploadCompleteCallback);
 	}
 
@@ -115,7 +138,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	viewInfo.format = vkImageFormat;
 	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = (m_isCubeMap) ? 6 : 1;
 	VK_CHECK_RESULT(vkCreateImageView(m_context->getDevice(), &viewInfo, nullptr, &m_textureImageView));
@@ -176,29 +199,30 @@ VkFormat SVkTexture::ConvertToVkFormat(ResourceFormat::TextureFormat format, boo
 	return VK_FORMAT_R8G8B8A8_UNORM;
 }
 
-void SVkTexture::copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t texWidth, uint32_t texHeight) {
+void SVkTexture::copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t mipLevels, const std::vector<VkExtent3D>& mipExtents, const std::vector<unsigned int>& mipOffsets) {
 	unsigned int layerCount = (m_isCubeMap) ? 6 : 1;
 	// Transition image to copy destination
-	SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layerCount);
+	SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layerCount, mipLevels);
 
 	// Copy staging buffer to image
-	VkBufferImageCopy region{};
-	region.bufferOffset = 0;
-	region.bufferRowLength = 0;
-	region.bufferImageHeight = 0;
+	std::vector<VkBufferImageCopy> regions;
+	regions.reserve(mipLevels);
+	for (uint32_t mip = 0; mip < mipLevels; mip++) {
+		auto& region = regions.emplace_back();
+		region.bufferOffset = mipOffsets[mip];
+		region.bufferRowLength = 0;
+		region.bufferImageHeight = 0;
 
-	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	region.imageSubresource.mipLevel = 0;
-	region.imageSubresource.baseArrayLayer = 0;
-	region.imageSubresource.layerCount = layerCount;
+		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.imageSubresource.mipLevel = mip;
+		region.imageSubresource.baseArrayLayer = 0;
+		region.imageSubresource.layerCount = layerCount;
 
-	region.imageOffset = { 0, 0, 0 };
-	region.imageExtent = {
-		texWidth,
-		texHeight,
-		1
-	};
-	vkCmdCopyBufferToImage(cmd, m_stagingBuffer.buffer, m_textureImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+		region.imageOffset = { 0, 0, 0 };
+		region.imageExtent = mipExtents[mip];
+	}
+
+	vkCmdCopyBufferToImage(cmd, m_stagingBuffer.buffer, m_textureImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels, regions.data());
 }
 
 void SVkTexture::readyForUseCallback() {

@@ -76,6 +76,18 @@ bool TextureData::isSRGB() const {
 	return m_data.isSRGB;
 }
 
+int TextureData::getMipLevels() const {
+	return m_data.mipLevels;
+}
+
+const std::vector<glm::int2>& TextureData::getMipExtents() const {
+	return m_data.mipExtents;
+}
+
+const std::vector<unsigned int>& TextureData::getMipOffsets() const {
+	return m_data.mipOffsets;
+}
+
 unsigned int TextureData::getAllocatedMemorySize() const {
 	return m_data.byteSize;
 }

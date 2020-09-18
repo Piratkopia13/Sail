@@ -16,7 +16,7 @@ public:
 	static VkFormat ConvertToVkFormat(ResourceFormat::TextureFormat format, bool isSRGB);
 
 private:
-	void copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t texWidth, uint32_t texHeight);
+	void copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t mipLevels, const std::vector<VkExtent3D>& mipExtents, const std::vector<unsigned int>& mipOffsets);
 	void readyForUseCallback();
 
 private:

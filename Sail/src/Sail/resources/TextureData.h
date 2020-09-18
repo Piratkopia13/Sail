@@ -22,6 +22,9 @@ public:
 	glm::vec4 getPixel(unsigned int x, unsigned int y);
 	bool isCubeMap() const;
 	bool isSRGB() const;
+	int getMipLevels() const;
+	const std::vector<glm::int2>& getMipExtents() const;
+	const std::vector<unsigned int>& getMipOffsets() const;
 
 	unsigned int getAllocatedMemorySize() const;
 
