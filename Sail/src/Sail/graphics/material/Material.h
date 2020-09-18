@@ -27,6 +27,7 @@ public:
 
 	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) = 0;
 	
+	virtual void setEnvironment(Environment* environment) { };
 	virtual void setTextureIndex(unsigned int textureID, unsigned int index) { };
 
 	virtual void* getData() = 0;

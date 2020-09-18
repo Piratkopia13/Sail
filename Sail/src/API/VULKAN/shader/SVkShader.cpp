@@ -256,9 +256,8 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 						mat->setTextureIndex(i, lastMaterialIndex);
 					}
 				}
-
-				i++;
 			}
+			i++;
 		}
 	}
 

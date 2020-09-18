@@ -13,10 +13,11 @@
 
 PBRMaterial::PBRMaterial()
 	: Material(Material::PBR)
-	, m_numTextures(3)
-	, m_textures{ nullptr }
+	, m_numTextures(6)
 {
-	m_pbrSettings.metalnessScale = 1.f;
+	textures.resize(6);
+
+	m_pbrSettings.metalnessScale = 0.f;
 	m_pbrSettings.roughnessScale = 1.f;
 	m_pbrSettings.aoIntensity = 0.f;
 
@@ -32,6 +33,7 @@ PBRMaterial::PBRMaterial()
 
 	Application::getInstance()->getResourceManager().loadTexture("pbr/brdfLUT.tga");
 	m_brdfLutTexture = &Application::getInstance()->getResourceManager().getTexture("pbr/brdfLUT.tga");
+	textures[5] = m_brdfLutTexture;
 }
 PBRMaterial::~PBRMaterial() {}
 
@@ -61,9 +63,23 @@ void PBRMaterial::bind(Shader* shader, Environment* environment, void* cmdList) 
 #endif
 	}
 
-	shader->setTexture("sys_texAlbedo", m_textures[0], cmdList);
-	shader->setTexture("sys_texNormal", m_textures[1], cmdList);
-	shader->setTexture("sys_texMRAO", m_textures[2], cmdList);
+	shader->setTexture("sys_texAlbedo", textures[0], cmdList);
+	shader->setTexture("sys_texNormal", textures[1], cmdList);
+	shader->setTexture("sys_texMRAO", textures[2], cmdList);
+}
+
+void PBRMaterial::setEnvironment(Environment* environment) {
+	textures[3] = environment->getRadianceTexture();
+	textures[4] = environment->getIrradianceTexture();
+}
+
+void PBRMaterial::setTextureIndex(unsigned int textureID, unsigned int index) {
+	if (textureID == 0) m_pbrSettings.albedoTexIndex = index;
+	else if (textureID == 1) m_pbrSettings.normalTexIndex = index;
+	else if (textureID == 2) m_pbrSettings.mraoTexIndex = index;
+	else if (textureID == 3) m_pbrSettings.radianceMapTexIndex = index;
+	else if (textureID == 4) m_pbrSettings.irradianceMapTexIndex = index;
+	else if (textureID == 5) m_pbrSettings.brdfLutTexIndex = index;
 }
 
 void* PBRMaterial::getData() {
@@ -106,19 +122,19 @@ void PBRMaterial::setColor(const glm::vec4& color) {
 }
 
 void PBRMaterial::setAlbedoTexture(const std::string& filename, bool useAbsolutePath) {
-	m_textures[0] = loadTexture(filename, useAbsolutePath);
+	textures[0] = loadTexture(filename, useAbsolutePath);
 }
 
 void PBRMaterial::setNormalTexture(const std::string& filename, bool useAbsolutePath) {
-	m_textures[1] = loadTexture(filename, useAbsolutePath);
+	textures[1] = loadTexture(filename, useAbsolutePath);
 }
 
 void PBRMaterial::setMetalnessRoughnessAOTexture(const std::string& filename, bool useAbsolutePath) {
-	m_textures[2] = loadTexture(filename, useAbsolutePath);
+	textures[2] = loadTexture(filename, useAbsolutePath);
 }
 
 Texture* PBRMaterial::getTexture(unsigned int id) const {
-	return m_textures[id];
+	return textures[id];
 }
 
 PBRMaterial::PBRSettings& PBRMaterial::getPBRSettings() {

@@ -88,7 +88,7 @@ bool EmptyState::render(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
 	// Draw the scene
-	m_forwardRenderer->begin(&m_cam, nullptr);
+	m_forwardRenderer->begin(&m_cam, &m_environment);
 
 	static glm::mat4 transform(1.f);
 	transform = glm::rotate(transform, dt * 0.2f, glm::vec3(0.f, 1.0f, 0.f));
