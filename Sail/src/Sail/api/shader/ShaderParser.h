@@ -12,18 +12,20 @@
 class ShaderParser {
 private:
 	struct ShaderResource {
-		ShaderResource(const std::string& name, unsigned int slot, unsigned int arraySize, unsigned int vkBinding, bool isTexturesArray = false)
+		ShaderResource(const std::string& name, unsigned int slot, unsigned int arraySize, unsigned int vkBinding, bool isTexturesArray = false, bool isTextureCubesArray = false)
 			: name(name)
 			, slot(slot)
 			, arraySize(arraySize)
 			, vkBinding(vkBinding)
 			, isTexturesArray(isTexturesArray)
+			, isTextureCubesArray(isTextureCubesArray)
 		{ }
 		std::string name;
 		unsigned int slot;
 		unsigned int vkBinding;
 		unsigned int arraySize;
-		bool isTexturesArray; // True if all textures used in the scene should be bound to this
+		bool isTexturesArray; // True if all 2D textures used in the scene should be bound to this
+		bool isTextureCubesArray; // True if all cube textures used in the scene should be bound to this
 	};
 	struct ShaderCBuffer {
 		struct CBufferVariable {

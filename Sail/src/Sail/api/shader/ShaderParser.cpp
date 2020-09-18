@@ -315,12 +315,14 @@ void ShaderParser::parseTexture(const char* source) {
 
 	int slot = findNextIntOnLine(source);
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
-	bool isTexturesArray = (strstr(source, "SAIL_BIND_ALL_TEXTURES") != nullptr);
+	auto line = getLineStartingFrom(source);
+	bool isTexturesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURES") != nullptr);
+	bool isTextureCubesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURECUBES") != nullptr);
 
 	unsigned int vkBinding = static_cast<unsigned int>(slot);
 	getVkBinding(lineStart, vkBinding);
 
-	m_parsedData.textures.emplace_back(name, slot, arrSize, vkBinding, isTexturesArray);
+	m_parsedData.textures.emplace_back(name, slot, arrSize, vkBinding, isTexturesArray, isTextureCubesArray);
 }
 
 void ShaderParser::parseRWTexture(const char* source) {

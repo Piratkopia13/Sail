@@ -43,6 +43,7 @@ private:
 
 	std::vector<VkDescriptorImageInfo> m_imageInfos;
 
-	// Texture used while waiting for the proper texture to finish uploading to the GPU
+	// Textures used while waiting for the proper textures to finish uploading to the GPU
 	SVkTexture& m_missingTexture;
+	SVkTexture& m_missingTextureCube;
 };

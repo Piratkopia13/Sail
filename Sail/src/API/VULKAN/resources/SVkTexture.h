@@ -9,9 +9,8 @@ public:
 	SVkTexture(const std::string& filename, bool useAbsolutePath = false);
 	~SVkTexture();
 
-	// Returns true when texture is ready for usage
-	bool isReadyToUse() const;
-
+	bool isReadyToUse() const; // Returns true when texture is ready for usage
+	bool isCubeMap() const;
 	const VkImageView& getView() const;
 
 	static VkFormat ConvertToVkFormat(ResourceFormat::TextureFormat format);
@@ -27,6 +26,7 @@ private:
 	SVkAPI::BufferAllocation m_stagingBuffer;
 	SVkAPI::ImageAllocation m_textureImage;
 	VkImageView m_textureImageView;
+	bool m_isCubeMap;
 
 	bool m_readyToUse;
 };

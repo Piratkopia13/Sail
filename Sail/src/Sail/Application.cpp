@@ -50,8 +50,9 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Register devices to use raw input from hardware
 	//m_input.registerRawDevices(*m_window.getHwnd());
 
-	// Load the missing texture texture
+	// Load the missing texture textures
 	m_resourceManager.loadTexture(ResourceManager::MISSING_TEXTURE_NAME);
+	m_resourceManager.loadTexture(ResourceManager::MISSING_TEXTURECUBE_NAME);
 }
 
 Application::~Application() {

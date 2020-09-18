@@ -12,6 +12,7 @@
 class ResourceManager {
 public:
 	static const std::string MISSING_TEXTURE_NAME;
+	static const std::string MISSING_TEXTURECUBE_NAME;
 public:
 	ResourceManager();
 	~ResourceManager();

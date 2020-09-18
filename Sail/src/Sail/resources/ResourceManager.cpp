@@ -5,6 +5,7 @@
 #include "../Application.h"
 
 const std::string ResourceManager::MISSING_TEXTURE_NAME = "missing.tga";
+const std::string ResourceManager::MISSING_TEXTURECUBE_NAME = "missing_cube.dds";
 
 ResourceManager::ResourceManager() {
 	// Forward shaders

@@ -23,10 +23,10 @@ EmptyState::EmptyState(StateStack& stack)
 	//m_material.setColor({0.8f, 0.2f, 0.2f, 1.0f});
 	/*m_material2.setDiffuseTexture("pbr/pavingStones/albedo.tga");
 	m_material2.setNormalTexture("pbr/pavingStones/normal.tga");*/
-	m_material2.setDiffuseTexture("pbr/ice/albedo.tga");
-	m_material2.setNormalTexture("pbr/ice/normal.tga");
+	//m_material2.setDiffuseTexture("pbr/ice/albedo.tga");
+	//m_material2.setNormalTexture("pbr/ice/normal.tga");
 
-	//m_pbrMaterial.setColor({1.f, 1.f, 1.f, 1.f});
+	m_pbrMaterial.setColor({1.f, 1.f, 1.f, 1.f});
 	
 	//m_material2.setColor({ 0.2f, 0.8f, 0.2f, 1.0f });
 	//m_material2.setDiffuseTexture("pbr/cerberus/Cerberus_A.tga");
@@ -35,6 +35,8 @@ EmptyState::EmptyState(StateStack& stack)
 	m_lightSetup.setDirectionalLight(&dlComp);
 
 	m_forwardRenderer->setLightSetup(&m_lightSetup);
+
+	//Application::getInstance()->getResourceManager().loadTexture("environments/studio/skybox.dds");
 }
 
 EmptyState::~EmptyState() { }
@@ -100,8 +102,8 @@ bool EmptyState::render(float dt) {
 	//transform2 = glm::rotate(transform2, dt * 0.1f, glm::vec3(0.f, 1.0f, 0.f));
 
 
-	m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), &m_material, transform2);
-	m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), &m_material2, transform);
+	m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PBRMaterialShader), &m_pbrMaterial, transform2);
+	//m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), &m_material2, transform);
 
 	m_forwardRenderer->end();
 	m_forwardRenderer->present(Renderer::Default);
