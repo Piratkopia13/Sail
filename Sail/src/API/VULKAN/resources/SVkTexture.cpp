@@ -3,8 +3,6 @@
 #include "Sail/Application.h"
 #include "../SVkUtils.h"
 
-#define DDSKTX_IMPLEMENT
-#include "dds-ktx/dds-ktx.h"
 #include "Sail/utils/Utils.h"
 
 Texture* Texture::Create(const std::string& filename, bool useAbsolutePath) {
@@ -26,67 +24,17 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	unsigned int texHeight;
 	VkFormat vkImageFormat;
 	VkImageType imageType;
-	unsigned int arrayLayers = 1;
 
-	std::vector<std::byte> ddsData;
-	if (filename.substr(filename.length() - 3) == "dds") {
-
-		std::string path = (useAbsolutePath) ? filename : TextureData::DEFAULT_TEXTURE_LOCATION + filename;
-
-		ddsData = Utils::readFileBinary(path);
-		int size = ddsData.size();
-		assert(!ddsData.empty());
-		ddsktx_texture_info tc = { 0 };
-		ddsktx_error err;
-		//GLuint tex = 0;
-		if (ddsktx_parse(&tc, ddsData.data(), size, &err)) {
-			assert(tc.depth == 1);
-			//assert(!(tc.flags & DDSKTX_TEXTURE_FLAG_CUBEMAP));
-			assert(tc.num_layers == 1);
-
-			texData = &ddsData[tc.data_offset];
-			bufferSize = tc.size_bytes;
-			texWidth = tc.width;
-			texHeight = tc.height;
-			//vkImageFormat = ConvertToVkFormat(ResourceFormat::R16G16B16A16_FLOAT);
-			vkImageFormat = VK_FORMAT_BC7_SRGB_BLOCK;
-			imageType = VK_IMAGE_TYPE_2D;
-			m_isCubeMap = true;
-			arrayLayers = 6;
-
-			//Create GPU texture from tc data
-			/*glGenTextures(1, &tex);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(img->gl_target, tex);*/
-
-			//for (int mip = 0; mip < tc.num_mips; mip++) {
-			//	ddsktx_sub_data sub_data;
-			//	ddsktx_get_sub(&tc, &sub_data, ddsData.data(), size, 0, 0, mip);
-			//	// Fill/Set texture sub resource data (mips in this case)
-			//	if (ddsktx_format_compressed(tc.format)) {
-			//		//glCompressedTexImage2D(..);
-			//	} else {
-			//		//glTexImage2D(..);
-			//	}
-			//}
-
-			// Now we can delete file data
-			//ddsData.clear();
-		} else {
-			Logger::Error(err.msg);
-		}
-
-
-	} else {
+	{
 		// Load file using the resource manager
 		auto& data = getTextureData(filename, useAbsolutePath);
-		// Texture data will either be in HDR (float values) or not, get the correct one
-		texData = (data.getTextureData8bit()) ? (void*)data.getTextureData8bit() : (void*)data.getTextureDataFloat();
+		texData = data.getData();
 		bufferSize = data.getAllocatedMemorySize();
 		texWidth = data.getWidth();
 		texHeight = data.getHeight();
-		vkImageFormat = ConvertToVkFormat(data.getFormat());
+		vkImageFormat = ConvertToVkFormat(data.getFormat(), data.isSRGB());
 		imageType = VK_IMAGE_TYPE_2D;
+		m_isCubeMap = data.isCubeMap();
 	}
 
 	// Create cpu visible staging buffer
@@ -115,7 +63,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	imageInfo.extent.height = static_cast<uint32_t>(texHeight);
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = 1;
-	imageInfo.arrayLayers = arrayLayers;
+	imageInfo.arrayLayers = (m_isCubeMap) ? 6 : 1;
 	imageInfo.format = vkImageFormat;
 	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -190,35 +138,42 @@ bool SVkTexture::isCubeMap() const {
 	return m_isCubeMap;
 }
 
-VkFormat SVkTexture::ConvertToVkFormat(ResourceFormat::TextureFormat format) {
-	VkFormat vkFormat;
+VkFormat SVkTexture::ConvertToVkFormat(ResourceFormat::TextureFormat format, bool isSRGB) {
 	switch (format) {
 	case ResourceFormat::R8:
-		vkFormat = VK_FORMAT_R8_SRGB;
+		return (isSRGB) ? VK_FORMAT_R8_SRGB : VK_FORMAT_R8_UNORM;
 		break;
 	case ResourceFormat::R8G8:
-		vkFormat = VK_FORMAT_R8G8_SRGB;
+		return (isSRGB) ? VK_FORMAT_R8G8_SRGB : VK_FORMAT_R8G8_UNORM;
 		break;
 	case ResourceFormat::R8G8B8A8:
-		vkFormat = VK_FORMAT_R8G8B8A8_SRGB;
+		return (isSRGB) ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
 		break;
 	case ResourceFormat::R16_FLOAT:
-		vkFormat = VK_FORMAT_R16_SFLOAT;
+		return VK_FORMAT_R16_SFLOAT;
 		break;
 	case ResourceFormat::R16G16_FLOAT:
-		vkFormat = VK_FORMAT_R16G16_SFLOAT;
+		return VK_FORMAT_R16G16_SFLOAT;
 		break;
 	case ResourceFormat::R16G16B16A16_FLOAT:
-		vkFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+		return VK_FORMAT_R16G16B16A16_SFLOAT;
 		break;
 	case ResourceFormat::R32G32B32A32_FLOAT:
-		vkFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+		return VK_FORMAT_R32G32B32A32_SFLOAT;
 		break;
-	default:
-		vkFormat = VK_FORMAT_R8G8B8A8_SRGB;
+	case ResourceFormat::BC3:
+		return (isSRGB) ? VK_FORMAT_BC3_SRGB_BLOCK : VK_FORMAT_BC3_UNORM_BLOCK;
+		break;
+	case ResourceFormat::BC5:
+		return VK_FORMAT_BC5_UNORM_BLOCK;
+		break;
+	case ResourceFormat::BC7:
+		return (isSRGB) ? VK_FORMAT_BC7_SRGB_BLOCK : VK_FORMAT_BC7_UNORM_BLOCK;
 		break;
 	}
-	return vkFormat;
+
+	assert(false && "Format missing from convert method");
+	return VK_FORMAT_R8G8B8A8_UNORM;
 }
 
 void SVkTexture::copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t texWidth, uint32_t texHeight) {

@@ -1,9 +1,9 @@
 #include "pch.h"
-#include "TGALoader.h"
+#include "TGAImageLoader.h"
 
 namespace FileLoader {
 
-	TGALoader::TGALoader(const std::string& filename, ResourceFormat::TextureData& textureData) {
+	TGAImageLoader::TGAImageLoader(const std::string& filename, ResourceFormat::TextureData& textureData) {
 		// Load the targa image data into memory.
 		bool result = loadTarga(filename, textureData);
 		if (!result) {
@@ -13,10 +13,10 @@ namespace FileLoader {
 		}
 	}
 
-	TGALoader::~TGALoader() {
+	TGAImageLoader::~TGAImageLoader() {
 	}
 	
-	bool TGALoader::loadTarga(const std::string& filename, ResourceFormat::TextureData& textureData) {
+	bool TGAImageLoader::loadTarga(const std::string& filename, ResourceFormat::TextureData& textureData) {
 
 		textureData.channels = 4;
 		textureData.bitsPerChannel = 8;
@@ -76,10 +76,11 @@ namespace FileLoader {
 		}
 
 		// Allocate memory for the targa destination data.
-		textureData.textureData8bit = SAIL_NEW unsigned char[imageSize];
-		if (!textureData.textureData8bit) {
+		textureData.data = SAIL_NEW unsigned char[imageSize];
+		if (!textureData.data) {
 			return false;
 		}
+		textureData.byteSize = imageSize * sizeof(unsigned char);
 
 		// Initialize the index into the targa destination data array.
 		index = 0;
@@ -90,10 +91,11 @@ namespace FileLoader {
 		// Now copy the targa image data into the targa destination array in the correct order since the targa format is stored upside down.
 		for (j = 0; j < textureData.height; j++) {
 			for (i = 0; i < textureData.width; i++) {
-				textureData.textureData8bit[index + 0] = targaImage[k + 2];  // Red.
-				textureData.textureData8bit[index + 1] = targaImage[k + 1];  // Green.
-				textureData.textureData8bit[index + 2] = targaImage[k + 0];  // Blue
-				textureData.textureData8bit[index + 3] = targaImage[k + 3];  // Alpha
+				unsigned char* dataAsUChar = static_cast<unsigned char*>(textureData.data);
+				dataAsUChar[index + 0] = targaImage[k + 2];  // Red.
+				dataAsUChar[index + 1] = targaImage[k + 1];  // Green.
+				dataAsUChar[index + 2] = targaImage[k + 0];  // Blue
+				dataAsUChar[index + 3] = targaImage[k + 3];  // Alpha
 
 																// Increment the indexes into the targa data.
 				k += 4;

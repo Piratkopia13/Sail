@@ -1,7 +1,8 @@
 #include "pch.h"
 #include "TextureData.h"
-#include "loaders/TGALoader.h"
+#include "loaders/TGAImageLoader.h"
 #include "loaders/STBImageLoader.h"
+#include "loaders/DDSKTXImageLoader.h"
 
 const std::string TextureData::DEFAULT_TEXTURE_LOCATION = "res/textures/";
 
@@ -9,15 +10,13 @@ TextureData::TextureData() {
 	m_data.channels = 4;
 	m_data.height = 0;
 	m_data.width = 0;
-	m_data.textureDataFloat = nullptr;
-	m_data.textureData8bit = nullptr;
+	m_data.data = nullptr;
 }
 TextureData::TextureData(const std::string& filename, bool useAbsolutePath) {
 	load(filename, useAbsolutePath);
 }
 TextureData::~TextureData() {
-	Memory::SafeDeleteArr(m_data.textureData8bit);
-	Memory::SafeDeleteArr(m_data.textureDataFloat);
+	Memory::SafeDeleteArr(m_data.data);
 }
 
 void TextureData::load(const std::string& filename, bool useAbsolutePath) {
@@ -26,8 +25,12 @@ void TextureData::load(const std::string& filename, bool useAbsolutePath) {
 	auto ext = path.substr(path.length() - 3);
 	if (ext == "hdr" || ext == "jpg" || ext == "png") {
 		FileLoader::STBImageLoader(path, m_data);
+	} else if (ext == "dds" || ext == "ktx") {
+		FileLoader::DDSKTXImageLoader(path, m_data);
+	} else if (ext == "tga") {
+		FileLoader::TGAImageLoader TGALoader(path, m_data);
 	} else {
-		FileLoader::TGALoader TGALoader(path, m_data);
+		Logger::Error("Tried to load unsupported texture format: " + ext);
 	}
 }
 
@@ -46,13 +49,10 @@ unsigned int TextureData::getBytesPerPixel() const {
 	return (m_data.channels * m_data.bitsPerChannel) / 8;
 }
 
-unsigned char* TextureData::getTextureData8bit() const {
-	return m_data.textureData8bit;
+void* TextureData::getData() const {
+	return m_data.data;
 }
 
-float* TextureData::getTextureDataFloat() const {
-	return m_data.textureDataFloat;
-}
 glm::vec4 TextureData::getPixel(unsigned int x, unsigned int y) {
 
 	assert(m_data.format == ResourceFormat::R8G8B8A8); // TODO: Add support for other formats
@@ -60,17 +60,22 @@ glm::vec4 TextureData::getPixel(unsigned int x, unsigned int y) {
 	if (x < 0 || x > m_data.width - 1) return glm::vec4(0.f);
 	if (y < 0 || y > m_data.height - 1) return glm::vec4(0.f);
 
-	return glm::vec4(	m_data.textureData8bit[y * m_data.width * m_data.channels + (x * m_data.channels)],
-					m_data.textureData8bit[y * m_data.width * m_data.channels + (x * m_data.channels) + 1],
-					m_data.textureData8bit[y * m_data.width * m_data.channels + (x * m_data.channels) + 2],
-					m_data.textureData8bit[y * m_data.width * m_data.channels + (x * m_data.channels) + 3]);
+	unsigned char* dataAsUChar = static_cast<unsigned char*>(m_data.data);
+	return glm::vec4(	dataAsUChar[y * m_data.width * m_data.channels + (x * m_data.channels)],
+						dataAsUChar[y * m_data.width * m_data.channels + (x * m_data.channels) + 1],
+						dataAsUChar[y * m_data.width * m_data.channels + (x * m_data.channels) + 2],
+						dataAsUChar[y * m_data.width * m_data.channels + (x * m_data.channels) + 3]);
 
 }
 
+bool TextureData::isCubeMap() const {
+	return m_data.isCubeMap;
+}
+
+bool TextureData::isSRGB() const {
+	return m_data.isSRGB;
+}
+
 unsigned int TextureData::getAllocatedMemorySize() const {
-	unsigned int total = 0;
-	if (m_data.textureData8bit || m_data.textureDataFloat) {
-		total += m_data.width * m_data.height * m_data.channels * (m_data.bitsPerChannel / 8);
-	}
-	return total;
+	return m_data.byteSize;
 }

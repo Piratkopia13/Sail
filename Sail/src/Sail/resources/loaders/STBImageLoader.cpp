@@ -22,8 +22,9 @@ FileLoader::STBImageLoader::STBImageLoader(const std::string& filename, Resource
 
 		// Copy the data over to a SAIL_NEW allocated memory region. This is required for the TextureData class to be able to delete the memory when possible
 		unsigned int imageSize = textureData.width * textureData.height * textureData.channels;
-		textureData.textureDataFloat = SAIL_NEW float[imageSize];
-		memcpy(textureData.textureDataFloat, data, imageSize * sizeof(float));
+		textureData.data = SAIL_NEW float[imageSize];
+		textureData.byteSize = imageSize * sizeof(float);
+		memcpy(textureData.data, data, textureData.byteSize);
 
 		stbi_image_free(data);
 	} else {
@@ -37,8 +38,9 @@ FileLoader::STBImageLoader::STBImageLoader(const std::string& filename, Resource
 
 		// Copy the data over to a SAIL_NEW allocated memory region. This is required for the TextureData class to be able to delete the memory when possible
 		unsigned int imageSize = textureData.width * textureData.height * textureData.channels;
-		textureData.textureData8bit = SAIL_NEW unsigned char[imageSize];
-		memcpy(textureData.textureData8bit, data, imageSize * sizeof(unsigned char));
+		textureData.data = SAIL_NEW unsigned char[imageSize];
+		textureData.byteSize = imageSize * sizeof(unsigned char);
+		memcpy(textureData.data, data, textureData.byteSize);
 
 		stbi_image_free(data);
 	}

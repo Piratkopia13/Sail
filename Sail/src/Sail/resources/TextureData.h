@@ -18,9 +18,10 @@ public:
 	unsigned int getWidth() const;
 	unsigned int getHeight() const;
 	unsigned int getBytesPerPixel() const;
-	unsigned char* getTextureData8bit() const;
-	float* getTextureDataFloat() const;
+	void* getData() const;
 	glm::vec4 getPixel(unsigned int x, unsigned int y);
+	bool isCubeMap() const;
+	bool isSRGB() const;
 
 	unsigned int getAllocatedMemorySize() const;
 

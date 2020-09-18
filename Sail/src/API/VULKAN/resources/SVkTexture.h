@@ -13,7 +13,7 @@ public:
 	bool isCubeMap() const;
 	const VkImageView& getView() const;
 
-	static VkFormat ConvertToVkFormat(ResourceFormat::TextureFormat format);
+	static VkFormat ConvertToVkFormat(ResourceFormat::TextureFormat format, bool isSRGB);
 
 private:
 	void copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t texWidth, uint32_t texHeight);
