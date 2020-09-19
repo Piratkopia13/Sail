@@ -17,6 +17,7 @@ public:
 
 private:
 	void copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t mipLevels, const std::vector<VkExtent3D>& mipExtents, const std::vector<unsigned int>& mipOffsets);
+	void generateMipmaps(const VkCommandBuffer& cmd, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, VkFormat vkImageFormat);
 	void readyForUseCallback();
 
 private:
@@ -27,6 +28,7 @@ private:
 	SVkAPI::ImageAllocation m_textureImage;
 	VkImageView m_textureImageView;
 	bool m_isCubeMap;
+	bool m_generateMips;
 
 	bool m_readyToUse;
 };
