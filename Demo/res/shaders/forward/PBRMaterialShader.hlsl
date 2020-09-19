@@ -108,7 +108,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	float3 camToFrag = normalize(input.worldPos - sys_cameraPos);
 	// return texCubeArr[mat.irradianceMapTexIndex].Sample(PSss, camToFrag);
 	// return texCubeArr[mat.radianceMapTexIndex].Sample(PSss, camToFrag);
-	return sampleTexture(mat.brdfLutTexIndex, input.texCoords) * 0.5f + sampleTexture(10, input.texCoords) * 0.5f;
+	return sampleTexture(mat.brdfLutTexIndex, input.texCoords);
 	
 	PBRScene scene;
 	

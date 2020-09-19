@@ -80,7 +80,7 @@ namespace ShaderComponent {
 		info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 		info.mipLodBias = 0.0f;
 		info.minLod = 0.0f;
-		info.maxLod = 0.0f;
+		info.maxLod = FLT_MAX;
 
 		VK_CHECK_RESULT(vkCreateSampler(m_context->getDevice(), &info, nullptr, &m_textureSampler));
 	}

@@ -233,6 +233,18 @@ void SVkTexture::copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat,
 // Has to be submitted on a queue with graphics capability (since it uses blit)
 void SVkTexture::generateMipmaps(const VkCommandBuffer& cmd, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, VkFormat vkImageFormat) {
 	if (m_generateMips) {
+
+		static bool checkSupport = true;
+		if (checkSupport) {
+			// Check if image format supports linear blitting
+			VkFormatProperties formatProperties;
+			vkGetPhysicalDeviceFormatProperties(m_context->getPhysicalDevice(), vkImageFormat, &formatProperties);
+			if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+				Logger::Error("Texture image format does not support linear blitting!");
+			}
+
+			checkSupport = false;
+		}
 	
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
