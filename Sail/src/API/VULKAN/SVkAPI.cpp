@@ -289,8 +289,10 @@ bool SVkAPI::init(Window* window) {
 		allocInfo.commandPool = m_commandPoolGraphics;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = (uint32_t)m_commandBuffersGraphics.size();
-
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffersGraphics.data()));
+
+		m_commandBuffersLastGraphics.resize(m_swapChainFramebuffers.size());
+		VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffersLastGraphics.data()));
 	}
 
 	// Create sync objects
@@ -379,14 +381,14 @@ uint32_t SVkAPI::beginPresent() {
 			// Call any waiting callbacks to let them know
 		if (!m_executionCallbacksCopy[m_currentFrame].empty()) {
 			for (auto& callback : m_executionCallbacksCopy[m_currentFrame]) {
-				callback();
+				if (callback) callback();
 			}
 			m_executionCallbacksCopy[m_currentFrame].clear();
 		}
 		// TODO: check if this m_fenceScheduledGraphicsCmds fence is really required
 		if (vkGetFenceStatus(m_device, m_fenceScheduledGraphicsCmds[m_currentFrame]) == VK_SUCCESS) {
 			for (auto& callback : m_executionCallbacksGraphics[m_currentFrame]) {
-				callback();
+				if (callback) callback();
 			}
 			m_executionCallbacksGraphics[m_currentFrame].clear();
 		}
@@ -487,6 +489,37 @@ void SVkAPI::present(bool vsync) {
 			VK_CHECK_RESULT(vkQueueSubmit(m_queueGraphics, 1, &submitInfo, m_fenceScheduledGraphicsCmds[m_currentFrame]));
 		}
 	}
+
+	// Execute one last graphics command buffer
+	// This transitions the backbuffer layout to be ready for present
+	// When this transition is done, we know that the frame is finished on the GPU - therefore the renderFinishedSemaphore is used
+	{
+		auto& cmdLastGraphics = m_commandBuffersLastGraphics[m_presentImageIndex];
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdLastGraphics, &beginInfo));
+
+		SVkUtils::TransitionImageLayout(cmdLastGraphics, m_swapChainImages[m_presentImageIndex], m_swapChainImageFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+		VK_CHECK_RESULT(vkEndCommandBuffer(cmdLastGraphics));
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &cmdLastGraphics;
+
+		VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = signalSemaphores;
+
+		VK_CHECK_RESULT(vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]));
+
+		VK_CHECK_RESULT(vkQueueSubmit(m_queueGraphics, 1, &submitInfo, m_inFlightFences[m_currentFrame]));
+
+	}
+
 
 	// Present
 	VkPresentInfoKHR presentInfo{};
@@ -701,7 +734,7 @@ void SVkAPI::flushScheduledCommands() {
 	waitForGPU();
 	// Call all the callbacks
 	for (auto& cb : callbacks) {
-		cb();
+		if (cb) cb();
 	}
 }
 
@@ -709,6 +742,7 @@ void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
+	// TODO: if this method is called multiple times in one frame, the waitSemaphore only needs to be set on the first call
 	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
@@ -717,14 +751,8 @@ void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
 	submitInfo.commandBufferCount = static_cast<uint32_t>(cmds.size());
 	submitInfo.pCommandBuffers = cmds.data();
 
-	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
-
-	VK_CHECK_RESULT(vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]));
-
 	// NOTE: only graphics queue is currently used
-	VK_CHECK_RESULT(vkQueueSubmit(m_queueGraphics, 1, &submitInfo, m_inFlightFences[m_currentFrame]));
+	VK_CHECK_RESULT(vkQueueSubmit(m_queueGraphics, 1, &submitInfo, VK_NULL_HANDLE));
 }
 
 void SVkAPI::createSwapChain() {
@@ -809,7 +837,7 @@ void SVkAPI::createRenderPass() {
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // There is always a transition to LAYOUT_PRESENT happening right before present
 
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format = VK_FORMAT_D24_UNORM_S8_UINT;
@@ -821,8 +849,6 @@ void SVkAPI::createRenderPass() {
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	// Subpasses
-	// TODO: use multiple of these for post processing
 	VkAttachmentReference colorAttachmentRef{};
 	colorAttachmentRef.attachment = 0;
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -830,6 +856,8 @@ void SVkAPI::createRenderPass() {
 	depthAttachmentRef.attachment = 1;
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+	// Subpasses
+	// TODO: use multiple of these for post processing
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;

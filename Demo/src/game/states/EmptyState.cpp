@@ -114,5 +114,7 @@ bool EmptyState::render(float dt) {
 bool EmptyState::renderImgui(float dt) {
 	SAIL_PROFILE_FUNCTION();
 	
+	ImGui::ShowDemoWindow();
+
 	return false;
 }

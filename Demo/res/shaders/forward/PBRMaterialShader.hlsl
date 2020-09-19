@@ -83,7 +83,7 @@ PSIn VSMain(VSIn input) {
 // Texture2D sys_texMRAO : register(t5);
 // SamplerState PSss : register(s0);
 
-SamplerState PSLinearSampler : register(s5) : SAIL_SAMPLER_POINT_CLAMP;
+SamplerState PSssPoint : register(s5) : SAIL_SAMPLER_POINT_CLAMP;
 SamplerState PSss : register(s6) : SAIL_SAMPLER_ANIS_WRAP;
 
 Texture2D texArr[] : register(t7) : SAIL_BIND_ALL_TEXTURES;
@@ -105,10 +105,10 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
 	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 
-	float3 camToFrag = normalize(input.worldPos - sys_cameraPos);
+	// float3 camToFrag = normalize(input.worldPos - sys_cameraPos);
 	// return texCubeArr[mat.irradianceMapTexIndex].Sample(PSss, camToFrag);
 	// return texCubeArr[mat.radianceMapTexIndex].Sample(PSss, camToFrag);
-	return sampleTexture(mat.brdfLutTexIndex, input.texCoords);
+	// return sampleTexture(mat.brdfLutTexIndex, input.texCoords);
 	
 	PBRScene scene;
 	
@@ -127,7 +127,8 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	scene.brdfLUT = texArr[mat.brdfLutTexIndex];
 	scene.prefilterMap = texCubeArr[mat.radianceMapTexIndex];
 	scene.irradianceMap = texCubeArr[mat.irradianceMapTexIndex];
-	scene.linearSampler = PSLinearSampler;
+	scene.linearSampler = PSss;
+	scene.pointSampler = PSssPoint;
 	
 	PBRPixel pixel;
 	pixel.inShadow = false;
@@ -149,7 +150,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
 	pixel.metalness = mat.metalnessScale;
 	pixel.roughness = mat.roughnessScale;
-	pixel.ao = 1.f;
+	pixel.ao = 1.0f;
 	if (mat.mraoTexIndex != -1) {
 		float3 mrao = sampleTexture(mat.mraoTexIndex, input.texCoords).rgb;
 		pixel.metalness *= mrao.r;

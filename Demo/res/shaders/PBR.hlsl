@@ -82,6 +82,7 @@ struct PBRScene {
     TextureCube<float4> irradianceMap;
     TextureCube<float4> prefilterMap;
     SamplerState linearSampler;
+    SamplerState pointSampler;
 };
 struct PBRPixel {
     float3 camPos;
@@ -151,7 +152,7 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel) {
     // Reflection
     const float MAX_REFLECTION_LOD = 4.0;
     float3 prefilteredColor = scene.prefilterMap.SampleLevel(scene.linearSampler, R, pixel.roughness * MAX_REFLECTION_LOD).rgb;
-    float2 envBRDF  = scene.brdfLUT.SampleLevel(scene.linearSampler, float2(max(dot(N, V), 0.0f), pixel.roughness), 0).rg;
+    float2 envBRDF  = scene.brdfLUT.SampleLevel(scene.pointSampler, float2(max(dot(N, V), 0.0f), pixel.roughness), 0).rg;
     float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
     float3 ambient = (kD * diffuse + specular) * pixel.ao;

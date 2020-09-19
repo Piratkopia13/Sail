@@ -10,6 +10,8 @@ class Win32Window;
 
 class SVkAPI : public GraphicsAPI {
 public:
+	friend class SVkImGuiHandler;
+
 	static const int MAX_FRAMES_IN_FLIGHT;
 
 	struct Command {
@@ -167,6 +169,7 @@ private:
 	VkCommandPool m_commandPoolCopy;
 	std::vector<VkCommandBuffer> m_commandBuffersCopy;
 	std::vector<VkCommandBuffer> m_commandBuffersGraphics;
+	std::vector<VkCommandBuffer> m_commandBuffersLastGraphics;
 
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
