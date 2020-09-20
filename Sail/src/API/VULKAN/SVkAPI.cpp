@@ -39,7 +39,7 @@ SVkAPI::~SVkAPI() {
 		vkDestroyFence(m_device, m_fencesInFlightCopy[i], nullptr);
 		vkDestroyFence(m_device, m_fenceScheduledGraphicsCmds[i], nullptr);
 	}
-	cleanupSwapChain();
+	cleanupSwapchain();
 	vmaDestroyAllocator(m_vmaAllocator);
 
 	vkDestroyCommandPool(m_device, m_commandPoolGraphics, nullptr);
@@ -138,7 +138,7 @@ bool SVkAPI::init(Window* window) {
 
 			bool swapChainAdequate = false;
 			if (extensionsSupported) {
-				SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+				SwapchainSupportDetails swapChainSupport = querySwapchainSupport(device);
 				swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 			}
 
@@ -237,7 +237,7 @@ bool SVkAPI::init(Window* window) {
 		}
 	}
 
-	createSwapChain();
+	createSwapchain();
 
 	createImageViews();
 
@@ -272,7 +272,7 @@ bool SVkAPI::init(Window* window) {
 
 	// Create command buffers used for the copy queue
 	{
-		m_commandBuffersCopy.resize(m_swapChainFramebuffers.size());
+		m_commandBuffersCopy.resize(m_swapchainFramebuffers.size());
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.commandPool = m_commandPoolCopy;
@@ -283,7 +283,7 @@ bool SVkAPI::init(Window* window) {
 	}
 	// Create command buffers used for the graphics queue
 	{
-		m_commandBuffersGraphics.resize(m_swapChainFramebuffers.size());
+		m_commandBuffersGraphics.resize(m_swapchainFramebuffers.size());
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.commandPool = m_commandPoolGraphics;
@@ -291,7 +291,7 @@ bool SVkAPI::init(Window* window) {
 		allocInfo.commandBufferCount = (uint32_t)m_commandBuffersGraphics.size();
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffersGraphics.data()));
 
-		m_commandBuffersLastGraphics.resize(m_swapChainFramebuffers.size());
+		m_commandBuffersLastGraphics.resize(m_swapchainFramebuffers.size());
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffersLastGraphics.data()));
 	}
 
@@ -304,8 +304,8 @@ bool SVkAPI::init(Window* window) {
 		m_fenceScheduledGraphicsCmds.resize(MAX_FRAMES_IN_FLIGHT);
 		m_executionCallbacksCopy.resize(MAX_FRAMES_IN_FLIGHT);
 		m_executionCallbacksGraphics.resize(MAX_FRAMES_IN_FLIGHT);
-		m_imagesInFlight.resize(m_swapChainImages.size(), VK_NULL_HANDLE);
-		m_fencesJustInCaseCopyInFlight.resize(m_swapChainImages.size(), VK_NULL_HANDLE);
+		m_imagesInFlight.resize(m_swapchainImages.size(), VK_NULL_HANDLE);
+		m_fencesJustInCaseCopyInFlight.resize(m_swapchainImages.size(), VK_NULL_HANDLE);
 
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -327,15 +327,15 @@ bool SVkAPI::init(Window* window) {
 	{
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size()) * 10000; // TODO: make this dynamic? or just allocate a bunch
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10000; // TODO: make this dynamic? or just allocate a bunch
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size()) * 10;  // TODO: make this dynamic? or just allocate a bunch
+		poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10;  // TODO: make this dynamic? or just allocate a bunch
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(m_swapChainImages.size());
+		poolInfo.maxSets = static_cast<uint32_t>(m_swapchainImages.size());
 		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; // Allows freeing descriptor sets, this is required for shader hot reloading to work
 
 		VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool));
@@ -396,7 +396,7 @@ uint32_t SVkAPI::beginPresent() {
 	
 	{
 		SAIL_PROFILE_API_SPECIFIC_SCOPE("Acquire next image");
-		m_acqureNextImageResult = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_presentImageIndex);
+		m_acqureNextImageResult = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_presentImageIndex);
 	}
 
 	{
@@ -425,7 +425,7 @@ void SVkAPI::present(bool vsync) {
 	assert(m_presentImageIndex != -1 && "beginPresent() has to be called before present() when using Vulkan");
 
 	if (m_acqureNextImageResult == VK_ERROR_OUT_OF_DATE_KHR) {
-		recreateSwapChain();
+		recreateSwapchain();
 		return;
 	} else if (m_acqureNextImageResult != VK_SUCCESS && m_acqureNextImageResult != VK_SUBOPTIMAL_KHR) {
 		Logger::Error("Failed to acquire swap chain image!");
@@ -501,7 +501,7 @@ void SVkAPI::present(bool vsync) {
 
 		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdLastGraphics, &beginInfo));
 
-		SVkUtils::TransitionImageLayout(cmdLastGraphics, m_swapChainImages[m_presentImageIndex], m_swapChainImageFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		SVkUtils::TransitionImageLayout(cmdLastGraphics, m_swapchainImages[m_presentImageIndex], m_swapchainImageFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 		VK_CHECK_RESULT(vkEndCommandBuffer(cmdLastGraphics));
 
@@ -528,7 +528,7 @@ void SVkAPI::present(bool vsync) {
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = &m_renderFinishedSemaphores[m_currentFrame];
 
-	VkSwapchainKHR swapChains[] = { m_swapChain };
+	VkSwapchainKHR swapChains[] = { m_swapchain };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &m_presentImageIndex;
@@ -537,7 +537,7 @@ void SVkAPI::present(bool vsync) {
 	VkResult result = vkQueuePresentKHR(m_queuePresent, &presentInfo);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized) {
 		m_framebufferResized = false;
-		recreateSwapChain();
+		recreateSwapchain();
 	} else if (result != VK_SUCCESS) {
 		Logger::Error("Failed to present swap chain image!");
 	}
@@ -603,17 +603,17 @@ uint32_t SVkAPI::getSwapImageIndex() const {
 	return m_presentImageIndex;
 }
 
-size_t SVkAPI::getNumSwapChainImages() const {
-	return m_swapChainImages.size();
+size_t SVkAPI::getNumSwapchainImages() const {
+	return m_swapchainImages.size();
 }
 
 VkRenderPassBeginInfo SVkAPI::getRenderPassInfo() const {
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = m_renderPass;
-	renderPassInfo.framebuffer = m_swapChainFramebuffers[getSwapImageIndex()];
+	renderPassInfo.framebuffer = m_swapchainFramebuffers[getSwapImageIndex()];
 	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = m_swapChainExtent;
+	renderPassInfo.renderArea.extent = m_swapchainExtent;
 	
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(m_clearValues.size());
 	renderPassInfo.pClearValues = m_clearValues.data();
@@ -634,7 +634,7 @@ const uint32_t* SVkAPI::getGraphicsAndCopyQueueFamilyIndices() const {
 }
 
 void SVkAPI::initCommand(Command& command) const {
-	command.buffers.resize(m_swapChainFramebuffers.size());
+	command.buffers.resize(m_swapchainFramebuffers.size());
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = m_commandPoolGraphics;
@@ -755,8 +755,8 @@ void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
 	VK_CHECK_RESULT(vkQueueSubmit(m_queueGraphics, 1, &submitInfo, VK_NULL_HANDLE));
 }
 
-void SVkAPI::createSwapChain() {
-	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_physicalDevice);
+void SVkAPI::createSwapchain() {
+	SwapchainSupportDetails swapChainSupport = querySwapchainSupport(m_physicalDevice);
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -796,24 +796,24 @@ void SVkAPI::createSwapChain() {
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE; // Set this when recreating the swap chain during for example window resizing
 
-	VK_CHECK_RESULT(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain));
+	VK_CHECK_RESULT(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain));
 
 	// Store handles to the swapchain images
-	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr));
-	m_swapChainImages.resize(imageCount);
-	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data()));
-	m_swapChainImageFormat = createInfo.imageFormat;
-	m_swapChainExtent = createInfo.imageExtent;
+	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, nullptr));
+	m_swapchainImages.resize(imageCount);
+	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, m_swapchainImages.data()));
+	m_swapchainImageFormat = createInfo.imageFormat;
+	m_swapchainExtent = createInfo.imageExtent;
 }
 
 void SVkAPI::createImageViews() {
-	m_swapChainImageViews.resize(m_swapChainImages.size());
-	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
+	m_swapchainImageViews.resize(m_swapchainImages.size());
+	for (size_t i = 0; i < m_swapchainImages.size(); i++) {
 		VkImageViewCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = m_swapChainImages[i];
+		createInfo.image = m_swapchainImages[i];
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		createInfo.format = m_swapChainImageFormat;
+		createInfo.format = m_swapchainImageFormat;
 		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -824,13 +824,13 @@ void SVkAPI::createImageViews() {
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
-		VK_CHECK_RESULT(vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]));
+		VK_CHECK_RESULT(vkCreateImageView(m_device, &createInfo, nullptr, &m_swapchainImageViews[i]));
 	}
 }
 
 void SVkAPI::createRenderPass() {
 	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = m_swapChainImageFormat;
+	colorAttachment.format = m_swapchainImageFormat;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -890,22 +890,22 @@ void SVkAPI::createRenderPass() {
 
 void SVkAPI::createViewportAndScissorRect() {
 	m_viewport.x = 0.0f;
-	m_viewport.y = (float)m_swapChainExtent.height; // Flipping viewport Y to work with hlsl shaders
-	m_viewport.width = (float)m_swapChainExtent.width;
-	m_viewport.height = -(float)m_swapChainExtent.height; // Flipping viewport Y to work with hlsl shaders
+	m_viewport.y = (float)m_swapchainExtent.height; // Flipping viewport Y to work with hlsl shaders
+	m_viewport.width = (float)m_swapchainExtent.width;
+	m_viewport.height = -(float)m_swapchainExtent.height; // Flipping viewport Y to work with hlsl shaders
 	m_viewport.minDepth = 0.0f;
 	m_viewport.maxDepth = 1.0f;
 
 	m_scissorRect.offset = { 0, 0 };
-	m_scissorRect.extent = m_swapChainExtent;
+	m_scissorRect.extent = m_swapchainExtent;
 }
 
 void SVkAPI::createDepthResources() {
 	VkImageCreateInfo imageInfo{};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imageInfo.imageType = VK_IMAGE_TYPE_2D;
-	imageInfo.extent.width = m_swapChainExtent.width;
-	imageInfo.extent.height = m_swapChainExtent.height;
+	imageInfo.extent.width = m_swapchainExtent.width;
+	imageInfo.extent.height = m_swapchainExtent.height;
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = 1;
 	imageInfo.arrayLayers = 1;
@@ -935,10 +935,10 @@ void SVkAPI::createDepthResources() {
 }
 
 void SVkAPI::createFramebuffers() {
-	m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
-	for (size_t i = 0; i < m_swapChainImageViews.size(); i++) {
+	m_swapchainFramebuffers.resize(m_swapchainImageViews.size());
+	for (size_t i = 0; i < m_swapchainImageViews.size(); i++) {
 		VkImageView attachments[] = {
-			m_swapChainImageViews[i],
+			m_swapchainImageViews[i],
 			m_depthImageView
 		};
 
@@ -947,37 +947,37 @@ void SVkAPI::createFramebuffers() {
 		framebufferInfo.renderPass = m_renderPass;
 		framebufferInfo.attachmentCount = ARRAYSIZE(attachments);
 		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = m_swapChainExtent.width;
-		framebufferInfo.height = m_swapChainExtent.height;
+		framebufferInfo.width = m_swapchainExtent.width;
+		framebufferInfo.height = m_swapchainExtent.height;
 		framebufferInfo.layers = 1;
 
-		VK_CHECK_RESULT(vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]));
+		VK_CHECK_RESULT(vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapchainFramebuffers[i]));
 	}
 }
 
-void SVkAPI::cleanupSwapChain() {
-	for (size_t i = 0; i < m_swapChainFramebuffers.size(); i++) {
-		vkDestroyFramebuffer(m_device, m_swapChainFramebuffers[i], nullptr);
+void SVkAPI::cleanupSwapchain() {
+	for (size_t i = 0; i < m_swapchainFramebuffers.size(); i++) {
+		vkDestroyFramebuffer(m_device, m_swapchainFramebuffers[i], nullptr);
 	}
 
 	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 
-	for (size_t i = 0; i < m_swapChainImageViews.size(); i++) {
-		vkDestroyImageView(m_device, m_swapChainImageViews[i], nullptr);
+	for (size_t i = 0; i < m_swapchainImageViews.size(); i++) {
+		vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
 	}
 
-	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 	m_depthImage.destroy();
 	vkDestroyImageView(m_device, m_depthImageView, nullptr);
 }
 
-void SVkAPI::recreateSwapChain() {
+void SVkAPI::recreateSwapchain() {
 	Logger::Log("Recreating swap chain..");
 	VK_CHECK_RESULT(vkDeviceWaitIdle(m_device));
 
-	cleanupSwapChain();
+	cleanupSwapchain();
 
-	createSwapChain();
+	createSwapchain();
 	createImageViews();
 	createRenderPass();
 	createViewportAndScissorRect();
@@ -1087,8 +1087,8 @@ bool SVkAPI::checkDeviceExtensionSupport(const VkPhysicalDevice& device) const {
 	return requiredExtensions.empty();
 }
 
-SVkAPI::SwapChainSupportDetails SVkAPI::querySwapChainSupport(const VkPhysicalDevice& device) const {
-	SwapChainSupportDetails details;
+SVkAPI::SwapchainSupportDetails SVkAPI::querySwapchainSupport(const VkPhysicalDevice& device) const {
+	SwapchainSupportDetails details;
 
 	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &details.capabilities));
 	

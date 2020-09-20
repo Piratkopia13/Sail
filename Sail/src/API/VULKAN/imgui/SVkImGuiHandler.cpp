@@ -103,7 +103,7 @@ void SVkImGuiHandler::init() {
 	// Create render pass
 	{
 		VkAttachmentDescription colorAttachment = {};
-		colorAttachment.format = m_context->m_swapChainImageFormat;
+		colorAttachment.format = m_context->m_swapchainImageFormat;
 		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -173,7 +173,7 @@ void SVkImGuiHandler::init() {
 	initInfo.DescriptorPool = m_descriptorPool;
 	initInfo.Allocator = VK_NULL_HANDLE;
 	initInfo.MinImageCount = 2;
-	initInfo.ImageCount = m_context->getNumSwapChainImages();
+	initInfo.ImageCount = m_context->getNumSwapchainImages();
 	initInfo.CheckVkResultFn = checkVkResult;
 	ImGui_ImplVulkan_Init(&initInfo, m_renderPass);
 
@@ -204,9 +204,9 @@ void SVkImGuiHandler::end() {
 			VkRenderPassBeginInfo renderPassInfo{};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			renderPassInfo.renderPass = m_renderPass;
-			renderPassInfo.framebuffer = m_context->m_swapChainFramebuffers[m_context->getSwapImageIndex()];
+			renderPassInfo.framebuffer = m_context->m_swapchainFramebuffers[m_context->getSwapImageIndex()];
 			renderPassInfo.renderArea.offset = { 0, 0 };
-			renderPassInfo.renderArea.extent = m_context->m_swapChainExtent;
+			renderPassInfo.renderArea.extent = m_context->m_swapchainExtent;
 
 			renderPassInfo.clearValueCount = static_cast<uint32_t>(m_context->m_clearValues.size());
 			renderPassInfo.pClearValues = m_context->m_clearValues.data();

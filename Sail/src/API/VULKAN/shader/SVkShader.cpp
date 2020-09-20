@@ -87,7 +87,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 
 	// Create one descriptor set per swap image
 
-	auto numBuffers = m_context->getNumSwapChainImages();
+	auto numBuffers = m_context->getNumSwapchainImages();
 	std::vector<VkDescriptorSetLayout> layouts(numBuffers, m_descriptorSetLayout);
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

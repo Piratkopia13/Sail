@@ -14,7 +14,7 @@ namespace ShaderComponent {
 		, m_bufferSize(size)
 	{
 		m_context = Application::getInstance()->getAPI<SVkAPI>();
-		auto numBuffers = m_context->getNumSwapChainImages();	// Num swap chain images could change after swap chain recreate / window resize
+		auto numBuffers = m_context->getNumSwapchainImages();	// Num swap chain images could change after swap chain recreate / window resize
 																// TODO: recreate buffers after swap chain recreation
 		auto allocator = m_context->getVmaAllocator();
 

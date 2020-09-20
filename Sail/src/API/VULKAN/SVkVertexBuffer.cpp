@@ -15,7 +15,7 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 	, m_allowUpdates(allowUpdates)
 {
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
-	auto numImages = m_context->getNumSwapChainImages();
+	auto numImages = m_context->getNumSwapchainImages();
 	auto bufferSize = getVertexBufferSize();
 	auto allocator = m_context->getVmaAllocator();
 

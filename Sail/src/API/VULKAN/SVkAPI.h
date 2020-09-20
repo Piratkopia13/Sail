@@ -74,7 +74,7 @@ public:
 	const VkRect2D& getScissorRect() const;
 	const VkRenderPass& getRenderPass() const;
 	uint32_t getSwapImageIndex() const; // It is only valid to call this between beginPresent() and present(), otherwise it will return -1
-	size_t getNumSwapChainImages() const;
+	size_t getNumSwapchainImages() const;
 	VkRenderPassBeginInfo getRenderPassInfo() const; // TODO: maybe renderers should handle their own render passes?
 	const VkDescriptorPool& getDescriptorPool() const;
 	const VmaAllocator& getVmaAllocator() const;
@@ -101,21 +101,21 @@ private:
 			return graphicsFamily.has_value() && presentFamily.has_value() && copyFamily.has_value();
 		}
 	};
-	struct SwapChainSupportDetails {
+	struct SwapchainSupportDetails {
 		VkSurfaceCapabilitiesKHR capabilities = {};
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
-	void createSwapChain();
+	void createSwapchain();
 	void createImageViews();
 	void createRenderPass();
 	void createViewportAndScissorRect();
 	void createDepthResources();
 	void createFramebuffers();
 
-	void cleanupSwapChain();
-	void recreateSwapChain();
+	void cleanupSwapchain();
+	void recreateSwapchain();
 
 	bool checkValidationLayerSupport() const;
 	std::vector<const char*> getRequiredExtensions() const;
@@ -127,7 +127,7 @@ private:
 
 	QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device) const;
 	bool checkDeviceExtensionSupport(const VkPhysicalDevice& device) const;
-	SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice& device) const;
+	SwapchainSupportDetails querySwapchainSupport(const VkPhysicalDevice& device) const;
 
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
@@ -141,12 +141,12 @@ private:
 	VkDevice m_device;
 	VkSurfaceKHR m_surface;
 
-	VkSwapchainKHR m_swapChain;
-	std::vector<VkImage> m_swapChainImages;
-	std::vector<VkImageView> m_swapChainImageViews;
-	std::vector<VkFramebuffer> m_swapChainFramebuffers;
-	VkFormat m_swapChainImageFormat;
-	VkExtent2D m_swapChainExtent;
+	VkSwapchainKHR m_swapchain;
+	std::vector<VkImage> m_swapchainImages;
+	std::vector<VkImageView> m_swapchainImageViews;
+	std::vector<VkFramebuffer> m_swapchainFramebuffers;
+	VkFormat m_swapchainImageFormat;
+	VkExtent2D m_swapchainExtent;
 	ImageAllocation m_depthImage;
 	VkImageView m_depthImageView;
 
