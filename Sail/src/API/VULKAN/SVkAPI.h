@@ -79,6 +79,7 @@ public:
 	const VkDescriptorPool& getDescriptorPool() const;
 	const VmaAllocator& getVmaAllocator() const;
 	const uint32_t* getGraphicsAndCopyQueueFamilyIndices() const;
+	VkSampleCountFlagBits getSampleCount() const;
 	
 	void initCommand(Command& command) const;
 	
@@ -111,6 +112,7 @@ private:
 	void createImageViews();
 	void createRenderPass();
 	void createViewportAndScissorRect();
+	void createColorResources();
 	void createDepthResources();
 	void createFramebuffers();
 
@@ -128,6 +130,7 @@ private:
 	QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device) const;
 	bool checkDeviceExtensionSupport(const VkPhysicalDevice& device) const;
 	SwapchainSupportDetails querySwapchainSupport(const VkPhysicalDevice& device) const;
+	VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
@@ -149,6 +152,12 @@ private:
 	VkExtent2D m_swapchainExtent;
 	ImageAllocation m_depthImage;
 	VkImageView m_depthImageView;
+
+	VkSampleCountFlagBits m_msaaSamples;
+	
+	// Only used when msaa count is > 1
+	ImageAllocation m_colorImage;
+	VkImageView m_colorImageView;
 
 	// Viewport and scissor rect
 	VkViewport m_viewport;

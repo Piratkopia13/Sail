@@ -6,6 +6,7 @@
 class Settings {
 public:
 	enum Type {
+		Graphics_MSAA,
 		Graphics_SSAO,
 		Graphics_DXR,
 	};
