@@ -73,7 +73,7 @@ void PBRMaterial::setEnvironment(Environment* environment) {
 	textures[4] = environment->getIrradianceTexture();
 }
 
-void PBRMaterial::setTextureIndex(unsigned int textureID, unsigned int index) {
+void PBRMaterial::setTextureIndex(unsigned int textureID, int index) {
 	if (textureID == 0) m_pbrSettings.albedoTexIndex = index;
 	else if (textureID == 1) m_pbrSettings.normalTexIndex = index;
 	else if (textureID == 2) m_pbrSettings.mraoTexIndex = index;

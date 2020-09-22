@@ -249,6 +249,8 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 				} else {
 					mat->setTextureIndex(i, it - uniqueTexs.begin()); // Get the index of the iterator
 				}
+			} else {
+				mat->setTextureIndex(i, -1); // No texture bound, set index to -1
 			}
 			i++;
 		}

@@ -222,6 +222,7 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	}
 
 	// Clean up shader modules
+	// TODO: fix crash when multiple PSOs use the same shader instance
 	for (auto& stage : shaderStages) {
 		vkDestroyShaderModule(m_context->getDevice(), stage.module, nullptr);
 	}

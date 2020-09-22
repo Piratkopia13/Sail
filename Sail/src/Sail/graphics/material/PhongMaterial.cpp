@@ -34,7 +34,7 @@ void PhongMaterial::bind(Shader* shader, Environment* environment, void* cmdList
 	shader->setTexture("sys_texSpecular", textures[2], cmdList);
 }
 
-void PhongMaterial::setTextureIndex(unsigned int textureID, unsigned int index) {
+void PhongMaterial::setTextureIndex(unsigned int textureID, int index) {
 	if (textureID == 0) m_phongSettings.diffuseTexIndex = index;
 	else if (textureID == 1) m_phongSettings.normalTexIndex = index;
 	else if (textureID == 2) m_phongSettings.specularTexIndex = index;

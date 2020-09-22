@@ -35,7 +35,8 @@ FileLoader::STBImageLoader::STBImageLoader(const std::string& filename, Resource
 		
 		textureData.bitsPerChannel = 8;
 		textureData.format = ResourceFormat::R8G8B8A8;
-		textureData.isSRGB = true; // TODO: load this from the file?
+
+		textureData.isSRGB = false; // TGA images can not be in srgb
 
 		// Copy the data over to a SAIL_NEW allocated memory region. This is required for the TextureData class to be able to delete the memory when possible
 		unsigned int imageSize = textureData.width * textureData.height * textureData.channels;
