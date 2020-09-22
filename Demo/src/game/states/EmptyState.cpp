@@ -36,7 +36,36 @@ EmptyState::EmptyState(StateStack& stack)
 
 	m_forwardRenderer->setLightSetup(&m_lightSetup);
 
-	//Application::getInstance()->getResourceManager().loadTexture("environments/studio/skybox.dds");
+
+	{
+		// Add a directional light
+		auto e = Entity::Create("Directional light");
+		glm::vec3 color(1.0f, 1.0f, 1.0f);
+		glm::vec3 direction(0.4f, -0.2f, 1.0f);
+		direction = glm::normalize(direction);
+		e->addComponent<DirectionalLightComponent>(color, direction);
+		m_scene.addEntity(e);
+	}
+
+	{
+		auto e = Entity::Create("Static cube");
+		e->addComponent<ModelComponent>(m_model2);
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
+		mat->get()->setRoughnessScale(0.f);
+		mat->get()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+		m_scene.addEntity(e);
+	}
+
+	{
+		auto e = Entity::Create("Static cube");
+		e->addComponent<ModelComponent>(m_model2);
+		e->addComponent<TransformComponent>(glm::vec3(0.f, -2.f, 0.f));
+		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
+		mat->get()->setRoughnessScale(0.f);
+		mat->get()->setColor(glm::vec4(0.8f, 0.1f, 0.4f, 1.0f));
+		m_scene.addEntity(e);
+	}
 }
 
 EmptyState::~EmptyState() { }
@@ -87,26 +116,28 @@ bool EmptyState::update(float dt) {
 bool EmptyState::render(float dt) {
 	SAIL_PROFILE_FUNCTION();
 
-	// Draw the scene
-	m_forwardRenderer->begin(&m_cam, &m_environment);
+	m_scene.draw(m_cam);
 
-	static glm::mat4 transform(1.f);
-	transform = glm::rotate(transform, dt * 0.2f, glm::vec3(0.f, 1.0f, 0.f));
+	//// Draw the scene
+	//m_forwardRenderer->begin(&m_cam, &m_environment);
 
-	static float counter = 0.f;
-	counter += dt * 0.0001f;
-	//static glm::mat4 transform2 = glm::identity<glm::mat4>();
-	//transform2 = glm::translate(transform2, glm::vec3(glm::sin(counter), 0.f, 0.f));
-	glm::mat4 transform2 = glm::translate(glm::mat4(1.0f), glm::vec3(4.f, 0.f, 0.f));
-	//static glm::mat4 transform2(1.f);
-	//transform2 = glm::rotate(transform2, dt * 0.1f, glm::vec3(0.f, 1.0f, 0.f));
+	//static glm::mat4 transform(1.f);
+	//transform = glm::rotate(transform, dt * 0.2f, glm::vec3(0.f, 1.0f, 0.f));
+
+	//static float counter = 0.f;
+	//counter += dt * 0.0001f;
+	////static glm::mat4 transform2 = glm::identity<glm::mat4>();
+	////transform2 = glm::translate(transform2, glm::vec3(glm::sin(counter), 0.f, 0.f));
+	//glm::mat4 transform2 = glm::translate(glm::mat4(1.0f), glm::vec3(4.f, 0.f, 0.f));
+	////static glm::mat4 transform2(1.f);
+	////transform2 = glm::rotate(transform2, dt * 0.1f, glm::vec3(0.f, 1.0f, 0.f));
 
 
-	m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PBRMaterialShader), &m_pbrMaterial, transform2);
-	//m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), &m_material2, transform);
+	//m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PBRMaterialShader), &m_pbrMaterial, transform2);
+	////m_forwardRenderer->submit(m_model2.get(), &Application::getInstance()->getResourceManager().getShaderSet(Shaders::PhongMaterialShader), &m_material2, transform);
 
-	m_forwardRenderer->end();
-	m_forwardRenderer->present(Renderer::Default);
+	//m_forwardRenderer->end();
+	//m_forwardRenderer->present(Renderer::Default);
 
 	return true;
 }

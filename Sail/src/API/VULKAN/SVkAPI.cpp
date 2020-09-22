@@ -325,17 +325,21 @@ bool SVkAPI::init(Window* window) {
 
 	// Create descriptor pool
 	{
-		std::array<VkDescriptorPoolSize, 2> poolSizes{};
+		std::array<VkDescriptorPoolSize, 4> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10000; // TODO: make this dynamic? or just allocate a bunch
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10000; // TODO: make these dynamic? or just allocate a bunch
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10;  // TODO: make this dynamic? or just allocate a bunch
+		poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10000;
+		poolSizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		poolSizes[2].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10000;
+		poolSizes[3].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+		poolSizes[3].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10000;
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(m_swapchainImages.size());
+		poolInfo.maxSets = static_cast<uint32_t>(m_swapchainImages.size()) * 10000;
 		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; // Allows freeing descriptor sets, this is required for shader hot reloading to work
 
 		VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool));

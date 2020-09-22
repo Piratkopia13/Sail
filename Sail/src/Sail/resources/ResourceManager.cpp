@@ -38,6 +38,7 @@ ResourceManager::ResourceManager() {
 		settings.filename = "forward/CubemapShader.hlsl";
 		settings.materialType = Material::TEXTURES;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::FRONTFACE;
+		settings.defaultPSOSettings.depthMask = GraphicsAPI::WRITE_MASK;
 		settings.identifier = Shaders::CubemapShader;
 		m_shaderSettings.insert({ settings.identifier, settings });
 	}

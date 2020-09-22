@@ -214,14 +214,9 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Shader prepareToRender");
 	// If the shader wants all textures this frame in an array
 
-	// Find all unique textures and materials
-	std::vector<SVkTexture*> uniqueTextures;
-	std::vector<SVkTexture*> uniqueTextureCubes;
+	// Iterate render commands and place uniques materials into the list, and update their index
 	std::vector<Material*> uniqueMaterials;
-
 	unsigned int lastMaterialIndex = 0;
-	unsigned int lastTextureIndex = 0;
-	unsigned int lastTextureCubeIndex = 0;
 	for (auto& command : renderCommands) {
 		Material* mat = command.material;
 
@@ -232,29 +227,27 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 		} else {
 			command.materialIndex = it - uniqueMaterials.begin(); // Get index of the iterator
 		}
+	}
 
+	// Iterate unique materials and place unique textures and textureCubes into the list, and update their index
+	std::vector<SVkTexture*> uniqueTextures;
+	std::vector<SVkTexture*> uniqueTextureCubes;
+	unsigned int lastTextureIndex = 0;
+	unsigned int lastTextureCubeIndex = 0;
+	for (auto& mat : uniqueMaterials) {
 		unsigned int i = 0;
 		for (auto* texture : mat->getTextures()) {
 			if (texture) {
 				SVkTexture* tex = static_cast<SVkTexture*>(texture);
-				if (tex->isCubeMap()) {
-					// Put texture into vector of unique cubemaps, and update indices
-					auto it = std::find(uniqueTextureCubes.begin(), uniqueTextureCubes.end(), tex);
-					if (it == uniqueTextureCubes.end()) {
-						uniqueTextureCubes.emplace_back(tex);
-						mat->setTextureIndex(i, lastTextureCubeIndex++);
-					} else {
-						mat->setTextureIndex(i, lastMaterialIndex);
-					}
+				auto& uniqueTexs = (tex->isCubeMap()) ? uniqueTextureCubes : uniqueTextures;
+				auto& texIndex = (tex->isCubeMap()) ? lastTextureCubeIndex : lastTextureIndex;
+
+				auto it = std::find(uniqueTexs.begin(), uniqueTexs.end(), tex);
+				if (it == uniqueTexs.end()) {
+					uniqueTexs.emplace_back(tex);
+					mat->setTextureIndex(i, texIndex++);
 				} else {
-					// Put texture into vector of unique 2D textures, and update indices
-					auto it = std::find(uniqueTextures.begin(), uniqueTextures.end(), tex);
-					if (it == uniqueTextures.end()) {
-						uniqueTextures.emplace_back(tex);
-						mat->setTextureIndex(i, lastTextureIndex++);
-					} else {
-						mat->setTextureIndex(i, lastMaterialIndex);
-					}
+					mat->setTextureIndex(i, it - uniqueTexs.begin()); // Get the index of the iterator
 				}
 			}
 			i++;

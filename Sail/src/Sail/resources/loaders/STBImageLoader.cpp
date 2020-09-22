@@ -32,9 +32,10 @@ FileLoader::STBImageLoader::STBImageLoader(const std::string& filename, Resource
 		
 		stbi_uc* data = stbi_load(filename.c_str(), (int*)&textureData.width, (int*)&textureData.height, &numChannels, textureData.channels);
 		//int bpp = stbi_info_from_memory(data, , (int*)&textureData.width, (int*)&textureData.height, &numChannels);
-
+		
 		textureData.bitsPerChannel = 8;
 		textureData.format = ResourceFormat::R8G8B8A8;
+		textureData.isSRGB = true; // TODO: load this from the file?
 
 		// Copy the data over to a SAIL_NEW allocated memory region. This is required for the TextureData class to be able to delete the memory when possible
 		unsigned int imageSize = textureData.width * textureData.height * textureData.channels;

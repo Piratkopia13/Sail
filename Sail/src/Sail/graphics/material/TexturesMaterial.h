@@ -23,7 +23,6 @@ public:
 	void clearTextures();
 
 private:
-	std::vector<Texture*> m_textures;
 	unsigned int m_numTextures;
 	Shader* m_forwardShader;
 

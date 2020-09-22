@@ -11,7 +11,7 @@ Game::Game(HINSTANCE hInstance)
 	// Register states
 	registerStates();
 	// Set starting state
-	m_stateStack.pushState(States::Empty);
+	m_stateStack.pushState(States::Editor);
 
 	// Set default settings
 	getSettings().set(Settings::Graphics_SSAO, true);

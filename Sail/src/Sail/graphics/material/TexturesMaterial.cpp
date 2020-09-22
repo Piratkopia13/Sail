@@ -13,7 +13,7 @@ TexturesMaterial::~TexturesMaterial() { }
 
 void TexturesMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
 	unsigned int i = 0;
-	for (auto& texture : m_textures) {
+	for (auto& texture : textures) {
 		shader->setTexture("sys_tex"+std::to_string(i), texture, cmdList);
 		i++;
 	}
@@ -45,9 +45,9 @@ void TexturesMaterial::setForwardShader(Shaders::ShaderIdentifier shaderId) {
 }
 
 void TexturesMaterial::addTexture(const std::string& filename, bool useAbsolutePath) {
-	m_textures.emplace_back(loadTexture(filename, useAbsolutePath));
+	textures.emplace_back(loadTexture(filename, useAbsolutePath));
 }
 
 void TexturesMaterial::clearTextures() {
-	m_textures.clear();
+	textures.clear();
 }

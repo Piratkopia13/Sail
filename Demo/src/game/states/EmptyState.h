@@ -32,6 +32,8 @@ private:
 
 	PBRMaterial m_pbrMaterial;
 
+	Scene m_scene;
+
 	PerspectiveCamera m_cam;
 	FlyingCameraController m_camController;
 	LightSetup m_lightSetup;

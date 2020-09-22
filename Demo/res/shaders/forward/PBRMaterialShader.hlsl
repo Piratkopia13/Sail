@@ -140,34 +140,34 @@ float4 PSMain(PSIn input) : SV_Target0 {
 		pixel.albedo *= sampleTexture(mat.albedoTexIndex, input.texCoords).rgb;
 
 	pixel.worldNormal = input.normal;
-	if (mat.normalTexIndex != -1) {
-		float3 normalSample = sampleTexture(mat.normalTexIndex, input.texCoords).rgb;
-        normalSample.y = 1.f - normalSample.y;
-        normalSample.x = 1.f - normalSample.x;
+	// if (mat.normalTexIndex != -1) {
+	// 	float3 normalSample = sampleTexture(mat.normalTexIndex, input.texCoords).rgb;
+    //     normalSample.y = 1.f - normalSample.y;
+    //     normalSample.x = 1.f - normalSample.x;
 		
-        pixel.worldNormal = mul(normalize(normalSample * 2.f - 1.f), input.tbn);
-	}
+    //     pixel.worldNormal = mul(normalize(normalSample * 2.f - 1.f), input.tbn);
+	// }
 
 	pixel.metalness = mat.metalnessScale;
 	pixel.roughness = mat.roughnessScale;
 	pixel.ao = 1.0f;
-	if (mat.mraoTexIndex != -1) {
-		float3 mrao = sampleTexture(mat.mraoTexIndex, input.texCoords).rgb;
-		pixel.metalness *= mrao.r;
-		pixel.roughness *= 1.f - mrao.g; // Invert roughness from texture to make it correct
-		pixel.ao = mrao.b + mat.aoIntensity;
-	}
+	// if (mat.mraoTexIndex != -1) {
+	// 	float3 mrao = sampleTexture(mat.mraoTexIndex, input.texCoords).rgb;
+	// 	pixel.metalness *= mrao.r;
+	// 	pixel.roughness *= 1.f - mrao.g; // Invert roughness from texture to make it correct
+	// 	pixel.ao = mrao.b + mat.aoIntensity;
+	// }
 
 	// Shade
 	float3 shadedColor = pbrShade(scene, pixel);
 
 	// Gamma correction
-    float3 output = shadedColor / (shadedColor + 1.0f);
+    // float3 output = shadedColor / (shadedColor + 1.0f);
     // Tone mapping using the Reinhard operator
-    output = pow(output, 1.0f / 2.2f);
-	return float4(output, 1.0);
+    // output = pow(output, 1.0f / 2.2f);
+	// return float4(output, 1.0);
 
-	// return float4(shadedColor, 1.0);
+	return float4(shadedColor, 1.0);
 	// return float4(input.worldPos, 1.0);
 }
 

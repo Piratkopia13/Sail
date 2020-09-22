@@ -77,7 +77,6 @@ inline float3 shadeWithLight(PointLight light, float3 N, float3 V, float3 F0, fl
 struct PBRScene {
     DirectionalLight dirLight;
     PointLight pointLights[NUM_POINT_LIGHTS];
-    unsigned int numPLs;
     Texture2D<float4> brdfLUT;
     TextureCube<float4> irradianceMap;
     TextureCube<float4> prefilterMap;
@@ -122,7 +121,7 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel) {
 
         // Point lights
         PointLight p;
-        for(unsigned int i = 0; i < scene.numPLs; i++) {
+        for(unsigned int i = 0; i < NUM_POINT_LIGHTS; i++) {
             p = scene.pointLights[i];
             // Ignore point light if color is black or intensity is zero
             if (p.intensity == 0.f || all(p.color == 0.0f)) {
