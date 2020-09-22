@@ -4,7 +4,7 @@
 #include "Application.h"
 
 Settings::Settings() {
-	set(Settings::Graphics_MSAA, 8); // 8x MSAA as default
+	set(Settings::Graphics_MSAA, 2); // 2x MSAA as default
 	//set(Settings::Graphics_MSAA, 1);
 
 	m_requirementsMap[Graphics_DXR] = [] { return Application::getInstance()->getAPI()->supportsFeature(GraphicsAPI::RAYTRACING); };

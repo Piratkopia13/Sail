@@ -120,7 +120,7 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	// Multisampling
 	VkPipelineMultisampleStateCreateInfo multisampling{};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.sampleShadingEnable = VK_TRUE;
+	multisampling.sampleShadingEnable = (m_context->getSampleCount() > 1); // TODO: this is quite expensive, consider disabling
 	multisampling.rasterizationSamples = m_context->getSampleCount();
 	multisampling.minSampleShading = 0.2f; // Optional
 	multisampling.pSampleMask = nullptr; // Optional
