@@ -156,6 +156,11 @@ bool SVkAPI::init(Window* window) {
 			if (isDeviceSuitable(device)) {
 				m_physicalDevice = device;
 				m_msaaSamples = getMaxUsableSampleCount();
+
+				VkPhysicalDeviceProperties deviceProperties;
+				vkGetPhysicalDeviceProperties(device, &deviceProperties);
+				Logger::Log("Using device " + std::string(deviceProperties.deviceName));
+
 				break;
 			}
 		}
@@ -1112,9 +1117,7 @@ void SVkAPI::setupDebugMessenger() {
 	createInfo.pfnUserCallback = DebugCallback;
 	createInfo.pUserData = nullptr; // Optional
 
-	if (CreateDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger) != VK_SUCCESS) {
-		Logger::Error("Failed to set up debug messenger");
-	}
+	VK_CHECK_RESULT(CreateDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger));
 }
 
 SVkAPI::QueueFamilyIndices SVkAPI::findQueueFamilies(const VkPhysicalDevice& device) const {
