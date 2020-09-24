@@ -8,37 +8,47 @@ struct PSIn {
     float3 color : COLOR;
 };
 
-cbuffer VSSystemCBuffer : register(b0) {
+[[vk::push_constant]]
+struct {
 	matrix sys_mWorld;
+	uint sys_materialIndex;
+} VSPSConsts;
+
+cbuffer VSSystemCBuffer : register(b0) {
 	matrix sys_mVP;
-    float3 mat_color;
-    float mat_thickness;
+}
+
+struct OutlineMaterial {
+    float3 color;
+    float thickness;
+};
+
+cbuffer VSMaterialsBuffer : register(b1) : SAIL_BIND_ALL_MATERIALS {
+	OutlineMaterial sys_materials[1024];
 }
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
-	output.color = mat_color;
+	OutlineMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+    matrix mWorld = VSPSConsts.sys_mWorld;
+	output.color = mat.color;
 
     // Method 1 scale model 
-    matrix mWorld = sys_mWorld;
-    mWorld[0][0] *= 1.f + mat_thickness;
-    mWorld[1][1] *= 1.f + mat_thickness;
-    mWorld[2][2] *= 1.f + mat_thickness;
+	mWorld[0][0] *= 1.f + mat.thickness;
+    mWorld[1][1] *= 1.f + mat.thickness;
+    mWorld[2][2] *= 1.f + mat.thickness;
 
 	input.position.w = 1.f;
 	output.position = mul(mWorld, input.position);
 
     // Method 2 - move each vertex outwards along its normal
-    // output.position.xyz += input.normal * mat_thickness;
+    // output.position.xyz += input.normal * mat.thickness;
 
 	output.position = mul(sys_mVP, output.position);
 	
 	return output;
 }
-
-TextureCube sys_tex0 : register(t0);
-SamplerState PSss : register(s2); // Linear sampler
 
 float4 PSMain(PSIn input) : SV_TARGET {
 	return float4(input.color, 1.f);

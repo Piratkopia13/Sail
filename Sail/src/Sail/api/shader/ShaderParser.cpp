@@ -448,7 +448,7 @@ ShaderComponent::BIND_SHADER ShaderParser::getBindShaderFromName(const std::stri
 	return ShaderComponent::VS; // Default to binding to VertexShader
 }
 
-// TODO: registerTypeSize(typeName, size)
+// TODO: Parse this from the shader structs. or (but probably not) registerTypeSize(typeName, size)
 UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "uint" ||
 		typeName == "int"  ||
@@ -463,8 +463,9 @@ UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "float4x4" ||
 		typeName == "matrix")							return 4 * 4 * 4;
 
-	if (typeName == "PhongMaterial")					return 48;
-	if (typeName == "PBRMaterial")						return 4 * 12;
+	if (typeName == "PhongMaterial")					return 4 * 12;
+	if (typeName == "PBRMaterial")						return 4 * 16;
+	if (typeName == "OutlineMaterial")					return 4 * 4;
 	if (typeName == "DirectionalLight")					return 4 * 8;
 	if (typeName == "PointLight")						return 4 * 8;
 	if (typeName == "PointLightInput")					return 4 * 8 * 128; // last 128 is NUM_POINT_LIGHTS

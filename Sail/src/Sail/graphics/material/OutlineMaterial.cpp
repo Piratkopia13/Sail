@@ -6,25 +6,24 @@
 
 OutlineMaterial::OutlineMaterial()
 	: Material(Material::OUTLINE)
-	, m_color(glm::vec3(0.8f, 0.8f, 0.2f))
-	, m_thickness(0.06f)
-{ }
+{
+	m_settings.color = glm::vec3(0.8f, 0.8f, 0.2f);
+	m_settings.thickness = 0.06f;
+}
 
 OutlineMaterial::~OutlineMaterial() { }
 
 void OutlineMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
-	shader->setCBufferVar("mat_color", &m_color, sizeof(glm::vec3), cmdList);
-	shader->setCBufferVar("mat_thickness", &m_thickness, sizeof(float), cmdList);
+	shader->setCBufferVar("mat_color", &m_settings.color, sizeof(glm::vec3), cmdList);
+	shader->setCBufferVar("mat_thickness", &m_settings.thickness, sizeof(float), cmdList);
 }
 
 void* OutlineMaterial::getData() {
-	assert(false && "Not implemented");
-	return 0;
+	return static_cast<void*>(&m_settings);
 }
 
 unsigned int OutlineMaterial::getDataSize() const {
-	assert(false && "Not implemented");
-	return 0;
+	return sizeof(OutlineSettings);
 }
 
 Shader* OutlineMaterial::getShader(Renderer::Type rendererType) const {
@@ -40,18 +39,18 @@ Shader* OutlineMaterial::getShader(Renderer::Type rendererType) const {
 }
 
 void OutlineMaterial::setColor(const glm::vec3& color) {
-	m_color = color;
+	m_settings.color = color;
 }
 
 const glm::vec3& OutlineMaterial::getColor() const {
-	return m_color;
+	return m_settings.color;
 }
 
 void OutlineMaterial::setThickness(float thickness) {
-	m_thickness = thickness;
+	m_settings.thickness = thickness;
 }
 
 float OutlineMaterial::getThickness() const {
-	return m_thickness;
+	return m_settings.thickness;
 }
 

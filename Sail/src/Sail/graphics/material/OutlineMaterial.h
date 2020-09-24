@@ -21,7 +21,12 @@ public:
 	float getThickness() const;
 
 private:
-	glm::vec3 m_color;
-	float m_thickness;
+	// Matching shader struct
+	struct OutlineSettings {
+		glm::vec3 color;
+		float thickness;
+	};
+
+	OutlineSettings m_settings;
 
 };

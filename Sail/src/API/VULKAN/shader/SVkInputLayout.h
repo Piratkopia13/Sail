@@ -21,7 +21,7 @@ protected:
 	virtual int convertInputClassification(InputClassification inputSlotClass) override;
 
 private:
-	void push(VkFormat format, unsigned int typeSize, unsigned int location);
+	void push(VkFormat format, uint32_t typeSize, uint32_t location);
 
 private:
 	std::vector<VkVertexInputBindingDescription> m_bindingDescriptions;
