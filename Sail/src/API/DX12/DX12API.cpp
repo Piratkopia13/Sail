@@ -166,7 +166,8 @@ void DX12API::createDevice() {
 			supportedFeatures |= GraphicsAPI::RAYTRACING; // Tell parent class that raytracing is supported in this API
 			m_supportedFeatures.dxr1_0 = true;
 		}
-		m_supportedFeatures.dxr1_1 = (featureSuppport.RaytracingTier == D3D12_RAYTRACING_TIER_1_1);
+		//m_supportedFeatures.dxr1_1 = (featureSuppport.RaytracingTier == D3D12_RAYTRACING_TIER_1_1); // TODO: This does not compile on most systems, fix
+		m_supportedFeatures.dxr1_1 = false;
 		std::string tierStr = (!m_supportedFeatures.dxr1_0) ? "Not supported" : (featureSuppport.RaytracingTier == D3D12_RAYTRACING_TIER_1_0) ? "1.0" : (m_supportedFeatures.dxr1_1) ? "1.1" : ">1.1";
 		std::cout << "Feature support:" << '\n';
 		std::cout << "\tRaytracingTier: " << tierStr << '\n';
