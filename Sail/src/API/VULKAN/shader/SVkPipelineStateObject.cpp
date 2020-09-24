@@ -20,10 +20,15 @@ SVkPipelineStateObject::SVkPipelineStateObject(Shader* shader, unsigned int attr
 	} else {
 		createGraphicsPipelineState();
 	}
+
+	m_vkShader = static_cast<SVkShader*>(shader);
+	// Create the descriptor set according to the layout as defined in the shader
+	m_vkShader->createDescriptorSet(m_descriptorSets);
 }
 
 SVkPipelineStateObject::~SVkPipelineStateObject() {
 	vkDestroyPipeline(m_context->getDevice(), m_pipeline, nullptr);
+	vkFreeDescriptorSets(m_context->getDevice(), m_context->getDescriptorPool(), m_descriptorSets.size(), m_descriptorSets.data());
 }
 
 bool SVkPipelineStateObject::bind(void* cmdList) {
@@ -35,7 +40,14 @@ bool SVkPipelineStateObject::bind(void* cmdList) {
 
 	vkCmdBindPipeline(static_cast<VkCommandBuffer>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
+	vkCmdBindDescriptorSets(static_cast<VkCommandBuffer>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkShader->getPipelineLayout(), 0, 1, &getDescriptorSet(), 0, nullptr);
+
 	return true;
+}
+
+const VkDescriptorSet& SVkPipelineStateObject::getDescriptorSet() const {
+	auto imageIndex = m_context->getSwapImageIndex();
+	return m_descriptorSets[imageIndex];
 }
 
 void SVkPipelineStateObject::createGraphicsPipelineState() {
@@ -53,9 +65,6 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 		shaderStageInfo.stage = stage;
 		shaderStageInfo.module = *shaderModule;
 		shaderStageInfo.pName = entrypoint;
-
-		// new was used to pass the shader module through a void*, therefor we must delete it
-		delete shaderModule;
 		
 		return shaderStageInfo;
 	};
@@ -219,12 +228,6 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 
 	if (vkCreateGraphicsPipelines(m_context->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline) != VK_SUCCESS) {
 		Logger::Error("Failed to create graphics pipeline!");
-	}
-
-	// Clean up shader modules
-	// TODO: fix crash when multiple PSOs use the same shader instance
-	for (auto& stage : shaderStages) {
-		vkDestroyShaderModule(m_context->getDevice(), stage.module, nullptr);
 	}
 
 }

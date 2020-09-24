@@ -374,6 +374,8 @@ void SVkAPI::waitForGPU() {
 uint32_t SVkAPI::beginPresent() {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
+	EventSystem::getInstance()->dispatchEvent(NewFrameEvent());
+
 	if (m_isFirstFrame) {
 		// Flush and scheduled commands on the first frame.
 		// This makes sure that the missing texture is available on the first draw call.

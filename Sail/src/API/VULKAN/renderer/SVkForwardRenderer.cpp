@@ -68,11 +68,11 @@ void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrep
 
 	// Iterate unique PSO's
 	for (auto it : commandQueue) {
-		PipelineStateObject* pso = it.first;
+		SVkPipelineStateObject* pso = static_cast<SVkPipelineStateObject*>(it.first);
 		auto& renderCommands = it.second;
 
 		SVkShader* shader = static_cast<SVkShader*>(pso->getShader());
-		shader->prepareToRender(renderCommands);
+		shader->prepareToRender(renderCommands, pso);
 
 		if (camera) {
 			// Transpose all matrices to convert them to row-major which is required in order for the hlsl->spir-v multiplication order

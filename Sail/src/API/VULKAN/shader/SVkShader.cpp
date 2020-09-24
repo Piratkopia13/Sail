@@ -29,8 +29,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
 
 	// Uniform buffer objects in vulkan are used the same way as constant buffers in dx12
-	auto& cBuffers = parsed.cBuffers;
-	for (auto& cbuffer : cBuffers) {
+	for (auto& cbuffer : parsed.cBuffers) {
 		auto& b = bindings.emplace_back();
 		b.binding = static_cast<uint32_t>(cbuffer.cBuffer->getSlot());
 		b.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -85,76 +84,29 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 
 	VK_CHECK_RESULT(vkCreatePipelineLayout(m_context->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 
-	// Create one descriptor set per swap image
-
-	auto numBuffers = m_context->getNumSwapchainImages();
-	std::vector<VkDescriptorSetLayout> layouts(numBuffers, m_descriptorSetLayout);
-	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = m_context->getDescriptorPool();
-	allocInfo.descriptorSetCount = static_cast<uint32_t>(numBuffers);
-	allocInfo.pSetLayouts = layouts.data();
-
-	m_descriptorSets.resize(numBuffers);
-	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_context->getDevice(), &allocInfo, m_descriptorSets.data()));
-
-	// Write descriptors to cbuffers that do not need their their descriptors updated during rendering
-	for (size_t i = 0; i < numBuffers; i++) {
-		std::vector<VkWriteDescriptorSet> writeDescriptors;
-
-		std::vector<VkDescriptorBufferInfo> cbufferInfos;
-		cbufferInfos.reserve(cBuffers.size());
-		for (auto& buffer : cBuffers) {
-			if (buffer.isMaterialArray) continue; // material arrays will be updated in prepareToRender()
-
-			auto* svkBuffer = static_cast<ShaderComponent::SVkConstantBuffer*>(buffer.cBuffer.get());
-			
-			auto& info = cbufferInfos.emplace_back();
-			info.buffer = svkBuffer->getBuffer(i);
-			info.offset = 0;
-			info.range = VK_WHOLE_SIZE;
-
-			auto& desc = writeDescriptors.emplace_back();
-			desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			desc.dstSet = m_descriptorSets[i];
-			desc.dstBinding = svkBuffer->getSlot();
-			desc.dstArrayElement = 0;
-			desc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			desc.descriptorCount = 1; // One binding for each constant buffer / ubo
-			desc.pBufferInfo = &info;
-		}
-
-		std::vector<VkDescriptorImageInfo> samplerInfos;
-		samplerInfos.reserve(parsed.samplers.size());
-		for (auto& sampler : parsed.samplers) {
-			auto& info = samplerInfos.emplace_back();
-			info.sampler = static_cast<ShaderComponent::SVkSampler*>(sampler.sampler.get())->get();
-			
-			auto& desc = writeDescriptors.emplace_back();
-			desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			desc.dstSet = m_descriptorSets[i];
-			desc.dstBinding = sampler.res.vkBinding;
-			desc.dstArrayElement = 0;
-			desc.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-			desc.descriptorCount = 1; // One binding for each sampler
-			desc.pImageInfo = &info;
-		}
-
-		// Write descriptors for this frame index
-		// NOTE: All used descriptorInfos must be kept in memory when this is called
-		if (!writeDescriptors.empty()) 
-			vkUpdateDescriptorSets(m_context->getDevice(), writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
-	}
-
 }
 
 SVkShader::~SVkShader() {
 	EventSystem::getInstance()->unsubscribeFromEvent(Event::NEW_FRAME, this);
 
 	vkDeviceWaitIdle(m_context->getDevice());
-	vkFreeDescriptorSets(m_context->getDevice(), m_context->getDescriptorPool(), m_descriptorSets.size(), m_descriptorSets.data());
+
 	vkDestroyPipelineLayout(m_context->getDevice(), m_pipelineLayout, nullptr);
 	vkDestroyDescriptorSetLayout(m_context->getDevice(), m_descriptorSetLayout, nullptr);
+
+	// Clean up shader modules
+	auto safeDestroyModule = [&](void* module) {
+		if (module) {
+			vkDestroyShaderModule(m_context->getDevice(), *static_cast<const VkShaderModule*>(module), nullptr);
+			delete module;
+		}
+	};
+	safeDestroyModule(getVsBlob());
+	safeDestroyModule(getGsBlob());
+	safeDestroyModule(getPsBlob());
+	safeDestroyModule(getDsBlob());
+	safeDestroyModule(getHsBlob());
+	safeDestroyModule(getCsBlob());
 }
 
 void* SVkShader::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
@@ -197,6 +149,7 @@ void* SVkShader::compileShader(const std::string& source, const std::string& fil
 	createInfo.codeSize = shaderCode.size();
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
 
+	// TODO: Shader modules are alive for the whole lifetime of SVkShader, consider if this is really required
 	VkShaderModule* shaderModule = SAIL_NEW VkShaderModule;
 	if (vkCreateShaderModule(m_context->getDevice(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
 		Logger::Error("Failed to create shader module!");
@@ -206,41 +159,46 @@ void* SVkShader::compileShader(const std::string& source, const std::string& fil
 }
 
 bool SVkShader::onEvent(Event& event) {
-	assert(false);
+	auto newFrame = [&](NewFrameEvent& event) {
+		// Clear frame dependent resources
+		m_uniqueMaterials.clear();
+		m_uniqueTextures.clear();
+		m_uniqueTextureCubes.clear();
+		m_lastMaterialIndex = 0;
+		m_lastTextureIndex = 0;
+		m_lastTextureCubeIndex = 0;
+		return true;
+	};
+	EventHandler::HandleType<NewFrameEvent>(event, newFrame);
 	return true;
 }
 
-void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderCommands) {
+void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderCommands, const SVkPipelineStateObject* pso) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Shader prepareToRender");
 	// If the shader wants all textures this frame in an array
 
+	unsigned int materialIndexStart = m_lastMaterialIndex;
 	// Iterate render commands and place uniques materials into the list, and update their index
-	std::vector<Material*> uniqueMaterials;
-	unsigned int lastMaterialIndex = 0;
 	for (auto& command : renderCommands) {
 		Material* mat = command.material;
 
-		auto it = std::find(uniqueMaterials.begin(), uniqueMaterials.end(), mat);
-		if (it == uniqueMaterials.end()) {
-			uniqueMaterials.emplace_back(mat);
-			command.materialIndex = lastMaterialIndex++;
+		auto it = std::find(m_uniqueMaterials.begin(), m_uniqueMaterials.end(), mat);
+		if (it == m_uniqueMaterials.end()) {
+			m_uniqueMaterials.emplace_back(mat);
+			command.materialIndex = m_lastMaterialIndex++;
 		} else {
-			command.materialIndex = it - uniqueMaterials.begin(); // Get index of the iterator
+			command.materialIndex = it - m_uniqueMaterials.begin(); // Get index of the iterator
 		}
 	}
 
 	// Iterate unique materials and place unique textures and textureCubes into the list, and update their index
-	std::vector<SVkTexture*> uniqueTextures;
-	std::vector<SVkTexture*> uniqueTextureCubes;
-	unsigned int lastTextureIndex = 0;
-	unsigned int lastTextureCubeIndex = 0;
-	for (auto& mat : uniqueMaterials) {
+	for (auto& mat : m_uniqueMaterials) {
 		unsigned int i = 0;
 		for (auto* texture : mat->getTextures()) {
 			if (texture) {
 				SVkTexture* tex = static_cast<SVkTexture*>(texture);
-				auto& uniqueTexs = (tex->isCubeMap()) ? uniqueTextureCubes : uniqueTextures;
-				auto& texIndex = (tex->isCubeMap()) ? lastTextureCubeIndex : lastTextureIndex;
+				auto& uniqueTexs = (tex->isCubeMap()) ? m_uniqueTextureCubes : m_uniqueTextures;
+				auto& texIndex = (tex->isCubeMap()) ? m_lastTextureCubeIndex : m_lastTextureIndex;
 
 				auto it = std::find(uniqueTexs.begin(), uniqueTexs.end(), tex);
 				if (it == uniqueTexs.end()) {
@@ -284,17 +242,15 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 	}
 
 	// Write materials to the buffer
-	if (materialBuffer && !uniqueMaterials.empty()) {
+	unsigned int newMaterials = m_lastMaterialIndex - materialIndexStart;
+	if (materialBuffer && !m_uniqueMaterials.empty() && newMaterials > 0) {
 		// Each shader can only support one material, which means that the size of each is the same
-		auto dataSize = uniqueMaterials[0]->getDataSize();
+		auto dataSize = m_uniqueMaterials[0]->getDataSize();
 
-		unsigned int i = 0;
-		for (auto& material : uniqueMaterials) {
-			materialBuffer->updateData(material->getData(), dataSize, 0, i*dataSize);
-			i++;
+		for (unsigned int i = materialIndexStart; i < materialIndexStart+newMaterials; i++) {
+			materialBuffer->updateData(m_uniqueMaterials[i]->getData(), dataSize, 0, i*dataSize);
 		}
 	}
-
 
 	VkWriteDescriptorSet descWrite[] = { {}, {}, {} };
 
@@ -302,7 +258,7 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 	// Create descriptors for the 2D texture array
 	if (shouldBindTextureArr) {
 		std::vector<VkDescriptorImageInfo> imageInfos;
-		for (auto* texture : uniqueTextures) {
+		for (auto* texture : m_uniqueTextures) {
 			auto& imageInfo = imageInfos.emplace_back();
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			if (texture->isReadyToUse()) {
@@ -324,7 +280,7 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 		}
 
 		descWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descWrite[0].dstSet = m_descriptorSets[imageIndex];
+		descWrite[0].dstSet = pso->getDescriptorSet();
 		descWrite[0].dstBinding = textureArrBinding;
 		descWrite[0].dstArrayElement = 0;
 		descWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
@@ -339,7 +295,7 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 	// Create descriptors for the texture cube array
 	if (shouldBindTextureCubeArr) {
 		std::vector<VkDescriptorImageInfo> imageInfos;
-		for (auto* texture : uniqueTextureCubes) {
+		for (auto* texture : m_uniqueTextureCubes) {
 			auto& imageInfo = imageInfos.emplace_back();
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			if (texture->isReadyToUse()) {
@@ -362,7 +318,7 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 		}
 
 		descWrite[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descWrite[1].dstSet = m_descriptorSets[imageIndex];
+		descWrite[1].dstSet = pso->getDescriptorSet();
 		descWrite[1].dstBinding = textureCubeArrBinding;
 		descWrite[1].dstArrayElement = 0;
 		descWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
@@ -381,7 +337,7 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 		bufferInfo.range = VK_WHOLE_SIZE;
 		
 		descWrite[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descWrite[2].dstSet = m_descriptorSets[imageIndex];
+		descWrite[2].dstSet = pso->getDescriptorSet();
 		descWrite[2].dstBinding = materialBinding;
 		descWrite[2].dstArrayElement = 0;
 		descWrite[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -398,7 +354,6 @@ const VkPipelineLayout& SVkShader::getPipelineLayout() const {
 
 void SVkShader::bind(void* cmdList) const {
 	auto imageIndex = m_context->getSwapImageIndex();
-	vkCmdBindDescriptorSets(static_cast<VkCommandBuffer>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[imageIndex], 0, nullptr);
 	bindInternal(0U, cmdList);
 }
 
@@ -443,4 +398,69 @@ bool SVkShader::trySetPushConstant(const std::string& name, const void* data, un
 		}
 	}
 	return wasPushConstant;
+}
+
+void SVkShader::createDescriptorSet(std::vector<VkDescriptorSet>& outDescriptorSet) const {
+	// Create one descriptor set per swap image
+
+	auto& parsed = parser.getParsedData();
+
+	auto numBuffers = m_context->getNumSwapchainImages();
+	std::vector<VkDescriptorSetLayout> layouts(numBuffers, m_descriptorSetLayout);
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = m_context->getDescriptorPool();
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(numBuffers);
+	allocInfo.pSetLayouts = layouts.data();
+
+	outDescriptorSet.resize(numBuffers);
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_context->getDevice(), &allocInfo, outDescriptorSet.data()));
+
+	// Write descriptors to cbuffers that do not need their their descriptors updated during rendering
+	for (size_t i = 0; i < numBuffers; i++) {
+		std::vector<VkWriteDescriptorSet> writeDescriptors;
+
+		std::vector<VkDescriptorBufferInfo> cbufferInfos;
+		cbufferInfos.reserve(parsed.cBuffers.size());
+		for (auto& buffer : parsed.cBuffers) {
+			if (buffer.isMaterialArray) continue; // material arrays will be updated in prepareToRender()
+
+			auto* svkBuffer = static_cast<ShaderComponent::SVkConstantBuffer*>(buffer.cBuffer.get());
+
+			auto& info = cbufferInfos.emplace_back();
+			info.buffer = svkBuffer->getBuffer(i);
+			info.offset = 0;
+			info.range = VK_WHOLE_SIZE;
+
+			auto& desc = writeDescriptors.emplace_back();
+			desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			desc.dstSet = outDescriptorSet[i];
+			desc.dstBinding = svkBuffer->getSlot();
+			desc.dstArrayElement = 0;
+			desc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			desc.descriptorCount = 1; // One binding for each constant buffer / ubo
+			desc.pBufferInfo = &info;
+		}
+
+		std::vector<VkDescriptorImageInfo> samplerInfos;
+		samplerInfos.reserve(parsed.samplers.size());
+		for (auto& sampler : parsed.samplers) {
+			auto& info = samplerInfos.emplace_back();
+			info.sampler = static_cast<ShaderComponent::SVkSampler*>(sampler.sampler.get())->get();
+
+			auto& desc = writeDescriptors.emplace_back();
+			desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			desc.dstSet = outDescriptorSet[i];
+			desc.dstBinding = sampler.res.vkBinding;
+			desc.dstArrayElement = 0;
+			desc.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+			desc.descriptorCount = 1; // One binding for each sampler
+			desc.pImageInfo = &info;
+		}
+
+		// Write descriptors for this frame index
+		// NOTE: All used descriptorInfos must be kept in memory when this is called
+		if (!writeDescriptors.empty())
+			vkUpdateDescriptorSets(m_context->getDevice(), writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+	}
 }
