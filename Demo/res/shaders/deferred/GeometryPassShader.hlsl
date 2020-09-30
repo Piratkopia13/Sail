@@ -17,19 +17,30 @@ struct PSIn {
 	float3x3 tbn : TBN;
 };
 
-cbuffer VSPSSystemCBuffer : register(b0) {
+[[vk::push_constant]]
+struct {
 	matrix sys_mWorld;
-    matrix sys_mView;
+	uint sys_materialIndex;
+} VSPSConsts;
+
+cbuffer VSPSSystemCBuffer : register(b0) {
+	matrix sys_mView;
     matrix sys_mProjection;
-    PBRMaterial sys_material;
     float4 sys_clippingPlane;
+}
+
+cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
+	PBRMaterial sys_materials[1024];
 }
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
+	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+	matrix mWorld = VSPSConsts.sys_mWorld;
+
 	input.position.w = 1.f;
-	output.position = mul(sys_mWorld, input.position);
+	output.position = mul(mWorld, input.position);
 
 	// Calculate the distance from the vertex to the clipping plane
 	// This needs to be done with world coordinates
@@ -44,28 +55,26 @@ PSIn VSMain(VSIn input) {
 
 	output.tbn = 0.f;
 
-	if (sys_material.hasNormalTexture) {
+	if (mat.normalTexIndex != -1) {
 	    // Convert to tangent space
 		float3x3 tbn = {
-			mul((float3x3) sys_mWorld, normalize(input.tangent)),
-			mul((float3x3) sys_mWorld, normalize(input.bitangent)),
-			mul((float3x3) sys_mWorld, normalize(input.normal))
+			mul((float3x3) mWorld, normalize(input.tangent)),
+			mul((float3x3) mWorld, normalize(input.bitangent)),
+			mul((float3x3) mWorld, normalize(input.normal))
 		};
 		output.tbn = tbn;
     }
 
-	// float4 worldNormal = mul(sys_mWorld, float4(normalize(input.normal), 0.f));
+	// float4 worldNormal = mul(mWorld, float4(normalize(input.normal), 0.f));
 	// output.normal = mul(sys_mView, worldNormal).xyz;
-    output.normal = mul(sys_mWorld, float4(normalize(input.normal), 0.f)).xyz;
+    output.normal = mul(mWorld, float4(normalize(input.normal), 0.f)).xyz;
 	output.texCoords = input.texCoords;
 
 	return output;
 }
 
-Texture2D sys_texAlbedo : register(t3);
-Texture2D sys_texNormal : register(t4);
-Texture2D sys_texMRAO : register(t5);
-SamplerState PSss : register(s0);
+Texture2D texArr[] : register(t2) : SAIL_BIND_ALL_TEXTURES;
+SamplerState PSss : register(s3) : SAIL_SAMPLER_ANIS_WRAP;
 
 struct GBuffers {
 	float4 positions    : SV_Target0;
@@ -74,20 +83,24 @@ struct GBuffers {
     float4 mrao         : SV_Target3; // Metalness, roughness, ao
 };
 
+float4 sampleTexture(uint index, float2 texCoords) {
+	return texArr[index].Sample(PSss, texCoords);
+}
+
 GBuffers PSMain(PSIn input) {
+	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 
 	GBuffers gbuffers;
-
     gbuffers.positions = float4(input.vsPos, 1.f);
 
-	float3 albedo = sys_material.modelColor.rgb;
-	if (sys_material.hasAlbedoTexture)
-		albedo *= sys_texAlbedo.Sample(PSss, input.texCoords).rgb;
+	float3 albedo = mat.modelColor.rgb;
+	if (mat.albedoTexIndex != -1)
+		albedo *= sampleTexture(mat.albedoTexIndex, input.texCoords).rgb;
     gbuffers.albedo = float4(albedo, 1.0f);
 
 	float3 worldNormal = input.normal;
-	if (sys_material.hasNormalTexture) {
-		float3 normalSample = sys_texNormal.Sample(PSss, input.texCoords).rgb;
+	if (mat.normalTexIndex != -1) {
+		float3 normalSample = sampleTexture(mat.normalTexIndex, input.texCoords).rgb;
         normalSample.y = 1.f - normalSample.y;
         normalSample.x = 1.f - normalSample.x;
 		
@@ -96,14 +109,14 @@ GBuffers PSMain(PSIn input) {
     gbuffers.worldNormals = float4(worldNormal, 1.0f);
     // gbuffers.worldNormals = float4(normalize(input.normal), 1.0f);
 
-	float metalness = sys_material.metalnessScale;
-	float roughness = sys_material.roughnessScale;
+	float metalness = mat.metalnessScale;
+	float roughness = mat.roughnessScale;
 	float ao = 1.f;
-	if (sys_material.hasMRAOTexture) {
-		float3 mrao = sys_texMRAO.Sample(PSss, input.texCoords).rgb;
+	if (mat.mraoTexIndex != -1) {
+		float3 mrao = sampleTexture(mat.mraoTexIndex, input.texCoords).rgb;
 		metalness *= mrao.r;
 		roughness *= 1.f - mrao.g; // Invert roughness from texture to make it correct
-		ao = mrao.b + sys_material.aoIntensity;
+		ao = mrao.b + mat.aoIntensity;
 	}
     gbuffers.mrao = float4(metalness, roughness, ao, 1.0f);
 

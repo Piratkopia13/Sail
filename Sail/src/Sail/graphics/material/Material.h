@@ -9,6 +9,7 @@ class PhongMaterial;
 class PBRMaterial;
 class TexturesMaterial;
 class Texture;
+class RenderableTexture;
 class Environment;
 
 class Material {
@@ -37,6 +38,7 @@ public:
 	virtual Shader* getShader(Renderer::Type rendererType) const = 0;
 
 	const std::vector<Texture*>& getTextures() const;
+	const std::vector<RenderableTexture*>& getRenderableTextures() const;
 
 	Type getType() const;
 
@@ -48,6 +50,7 @@ public:
 protected:
 	Texture* loadTexture(const std::string& filename, bool useAbsolutePath = false);
 	std::vector<Texture*> textures;
+	std::vector<RenderableTexture*> renderableTextures;
 
 private:
 	Type m_type;

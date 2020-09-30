@@ -69,6 +69,9 @@ void StateStack::update(float dt) {
 }
 
 void StateStack::render(float dt) {
+	auto* api = Application::getInstance()->getAPI();
+
+	api->beginPresent();
 
 	// Loop through the states and draw them all
 	/*for (int i = m_stack.size() - 1; i >= 0; i--) {
@@ -84,7 +87,7 @@ void StateStack::render(float dt) {
 		Application::getInstance()->getImGuiHandler()->end();
 	}
 
-	Application::getInstance()->getAPI()->present(false);
+	api->present(false);
 }
 
 void StateStack::pushState(States::ID stateID) {

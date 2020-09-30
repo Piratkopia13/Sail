@@ -37,6 +37,7 @@ public:
 	virtual void setDepthMask(DepthMask setting) = 0;
 	virtual void setFaceCulling(Culling setting) = 0;
 	virtual void setBlending(Blending setting) = 0;
+	virtual void beginPresent() { /* All APIs might not need to implement this */ };
 	virtual void present(bool vsync = false) = 0;
 	virtual unsigned int getMemoryUsage() const = 0;
 	virtual unsigned int getMemoryBudget() const = 0;

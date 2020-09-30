@@ -101,18 +101,41 @@ std::string Utils::String::getBlockStartingFrom(const char* source) {
 	return std::string(source, strnlen(source, end - source));
 }
 
-const char* Utils::String::findToken(const std::string& token, const char* source, bool onFirstLine) {
+const char* Utils::String::findToken(const std::string& token, const char* source, bool onFirstLine, bool ignoreBlocks) {
 	const char* match;
 	size_t offset = 0;
 	const char* lineEnd = strstr(source, "\n");
 	while (true) {
 		if (match = strstr(source + offset, token.c_str())) {
-			bool left = match == source || isspace((match - 1)[0]);
+			//bool left = match == source || isspace((match - 1)[0]);
 			match += token.size();
-			bool right = match != '\0' || isspace(match[0]); // might need to be match + 1
+			//bool right = match != '\0' || isspace(match[0]); // might need to be match + 1
 			// Ignore match if onFirstLine is true and match is not on the first line
 			if (onFirstLine && lineEnd && match > lineEnd) {
 				return nullptr;
+			}
+
+			// Ignore match if ignoreBlocks == true and match is within brackets
+			if (ignoreBlocks) {
+				bool skip = false;
+				int numClosingBrackets = 0;
+				const char* walker = match;
+				while (walker != source) {
+					walker--;
+					if (walker[0] == '{') {
+						if (numClosingBrackets == 0) {
+							skip = true;
+							break;
+						} else {
+							numClosingBrackets--;
+						}
+					}
+					if (walker[0] == '}') numClosingBrackets++;
+				}
+				if (skip) {
+					offset += match - source;
+					continue;
+				}
 			}
 
 			// Ignore match if line contains "SAIL_IGNORE"

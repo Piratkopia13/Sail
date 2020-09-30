@@ -57,7 +57,7 @@ ResourceManager::ResourceManager() {
 	{
 		Shaders::ShaderSettings settings;
 		settings.filename = "deferred/ShadingPassShader.hlsl";
-		settings.materialType = Material::CUSTOM;
+		settings.materialType = Material::TEXTURES;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
 		settings.defaultPSOSettings.depthMask = GraphicsAPI::BUFFER_DISABLED;
 		settings.identifier = Shaders::DeferredShadingPassShader;
@@ -209,10 +209,22 @@ void ResourceManager::reloadAllShaders() {
 	Application::getInstance()->getAPI()->waitForGPU();
 	for (auto& it : m_shaders) {
 		Shader* shader = it.second;
-		shader->~Shader(); // Delete old shader
-		Shader::Create(m_shaderSettings[it.first], shader); // Allocate new shader on the same memory address as the old
+
+		// Method 1
+		// Allows shader to store critical data during reload (currently only used in Vulkan)
+		{
+			shader->recompile();
+		}
+		// Method 2
+		// Recreates instance - allows changing vertex layout, buffers, register slots etc. in reloaded shaders
+		{
+			//shader->~Shader(); // Delete old shader
+			//Shader::Create(m_shaderSettings[it.first], shader); // Allocate new shader on the same memory address as the old
+		}
 		Logger::Log("Reloaded shader " + std::to_string(it.first));
 	}
+	// Existing PSO's are now invalid since their shader has reloaded
+	m_psos.clear();
 }
 
 PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {

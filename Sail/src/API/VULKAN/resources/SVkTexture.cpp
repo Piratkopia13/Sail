@@ -4,6 +4,7 @@
 #include "../SVkUtils.h"
 
 #include "Sail/utils/Utils.h"
+#include "SVkATexture.h"
 
 Texture* Texture::Create(const std::string& filename, bool useAbsolutePath) {
 	return SAIL_NEW SVkTexture(filename, useAbsolutePath);
@@ -11,13 +12,15 @@ Texture* Texture::Create(const std::string& filename, bool useAbsolutePath) {
 
 SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	: Texture(filename)
+	, SVkATexture(true)
 	, m_filename(filename)
-	, m_readyToUse(false)
 	, m_isCubeMap(false)
 	, m_generateMips(false)
 {
-	m_context = Application::getInstance()->getAPI<SVkAPI>();
-	auto& allocator = m_context->getVmaAllocator();
+	auto& allocator = context->getVmaAllocator();
+
+	textureImages.resize(1);
+	imageViews.resize(1);
 
 	void* texData;
 	unsigned int bufferSize;
@@ -36,7 +39,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 		bufferSize = data.getAllocatedMemorySize();
 		texWidth = data.getWidth();
 		texHeight = data.getHeight();
-		vkImageFormat = ConvertToVkFormat(data.getFormat(), data.isSRGB());
+		vkImageFormat = SVkATexture::ConvertToVkFormat(data.getFormat(), data.isSRGB());
 		imageType = VK_IMAGE_TYPE_2D;
 		m_isCubeMap = data.isCubeMap();
 
@@ -91,14 +94,14 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	}
 	imageInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
 	imageInfo.queueFamilyIndexCount = 2;
-	imageInfo.pQueueFamilyIndices = m_context->getGraphicsAndCopyQueueFamilyIndices();;
+	imageInfo.pQueueFamilyIndices = context->getGraphicsAndCopyQueueFamilyIndices();;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageInfo.flags = (m_isCubeMap) ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &allocInfo, &m_textureImage.image, &m_textureImage.allocation, nullptr));
+	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &allocInfo, &textureImages[0].image, &textureImages[0].allocation, nullptr));
 
 	bool isMissingTexture = (m_filename == ResourceManager::MISSING_TEXTURE_NAME || m_filename == ResourceManager::MISSING_TEXTURECUBE_NAME);
 
@@ -106,7 +109,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 		// Clean up staging buffer after copy is completed
 		m_stagingBuffer.destroy();
 
-		m_context->scheduleOnGraphicsQueue([&, mipExtents, mipLevels, vkImageFormat](const VkCommandBuffer& cmd) {
+		context->scheduleOnGraphicsQueue([&, mipExtents, mipLevels, vkImageFormat](const VkCommandBuffer& cmd) {
 
 			// Generate mips if m_generateMips is set and then transition to shader usage, otherwise just transition
 			generateMipmaps(cmd, mipExtents[0].width, mipExtents[0].height, mipLevels, vkImageFormat);
@@ -117,7 +120,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	// Perform copying on the copy queue if this is NOT the missing texture
 	// If it is, using the copy queue causes a minimum of 2 frame delay before texture is ready which screws up the missing texture that needs to be available on first draw call.
 	if (isMissingTexture) {
-		m_context->scheduleOnGraphicsQueue([&, vkImageFormat, mipLevels, mipExtents, mipOffsets](const VkCommandBuffer& cmd) {
+		context->scheduleOnGraphicsQueue([&, vkImageFormat, mipLevels, mipExtents, mipOffsets](const VkCommandBuffer& cmd) {
 			
 			copyToImage(cmd, vkImageFormat, mipLevels, mipExtents, mipOffsets);
 			// Generate mips if m_generateMips is set and then transition to shader usage, otherwise just transition
@@ -125,7 +128,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 
 		}, std::bind(&SVkTexture::readyForUseCallback, this));
 	} else {
-		m_context->scheduleOnCopyQueue([&, vkImageFormat, mipLevels, mipExtents, mipOffsets](const VkCommandBuffer& cmd) {
+		context->scheduleOnCopyQueue([&, vkImageFormat, mipLevels, mipExtents, mipOffsets](const VkCommandBuffer& cmd) {
 			copyToImage(cmd, vkImageFormat, mipLevels, mipExtents, mipOffsets);
 		}, uploadCompleteCallback);
 	}
@@ -133,7 +136,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	// Create the image view
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	viewInfo.image = m_textureImage.image;
+	viewInfo.image = textureImages[0].image;
 	viewInfo.viewType = (m_isCubeMap) ? VK_IMAGE_VIEW_TYPE_CUBE : (imageType == VK_IMAGE_TYPE_3D) ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D;
 	viewInfo.format = vkImageFormat;
 	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -141,68 +144,21 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = (m_isCubeMap) ? 6 : 1;
-	VK_CHECK_RESULT(vkCreateImageView(m_context->getDevice(), &viewInfo, nullptr, &m_textureImageView));
+	VK_CHECK_RESULT(vkCreateImageView(context->getDevice(), &viewInfo, nullptr, &imageViews[0]));
 	
 }
 
 SVkTexture::~SVkTexture() {
-	vkDestroyImageView(m_context->getDevice(), m_textureImageView, nullptr);
-}
-
-const VkImageView& SVkTexture::getView() const {
-	return m_textureImageView;
-}
-
-bool SVkTexture::isReadyToUse() const {
-	return m_readyToUse;
 }
 
 bool SVkTexture::isCubeMap() const {
 	return m_isCubeMap;
 }
 
-VkFormat SVkTexture::ConvertToVkFormat(ResourceFormat::TextureFormat format, bool isSRGB) {
-	switch (format) {
-	case ResourceFormat::R8:
-		return (isSRGB) ? VK_FORMAT_R8_SRGB : VK_FORMAT_R8_UNORM;
-		break;
-	case ResourceFormat::R8G8:
-		return (isSRGB) ? VK_FORMAT_R8G8_SRGB : VK_FORMAT_R8G8_UNORM;
-		break;
-	case ResourceFormat::R8G8B8A8:
-		return (isSRGB) ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
-		break;
-	case ResourceFormat::R16_FLOAT:
-		return VK_FORMAT_R16_SFLOAT;
-		break;
-	case ResourceFormat::R16G16_FLOAT:
-		return VK_FORMAT_R16G16_SFLOAT;
-		break;
-	case ResourceFormat::R16G16B16A16_FLOAT:
-		return VK_FORMAT_R16G16B16A16_SFLOAT;
-		break;
-	case ResourceFormat::R32G32B32A32_FLOAT:
-		return VK_FORMAT_R32G32B32A32_SFLOAT;
-		break;
-	case ResourceFormat::BC3:
-		return (isSRGB) ? VK_FORMAT_BC3_SRGB_BLOCK : VK_FORMAT_BC3_UNORM_BLOCK;
-		break;
-	case ResourceFormat::BC5:
-		return VK_FORMAT_BC5_UNORM_BLOCK;
-		break;
-	case ResourceFormat::BC7:
-		return (isSRGB) ? VK_FORMAT_BC7_SRGB_BLOCK : VK_FORMAT_BC7_UNORM_BLOCK;
-		break;
-	}
-
-	assert(false && "Format missing from convert method");
-	return VK_FORMAT_R8G8B8A8_UNORM;
-}
-
 void SVkTexture::copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t mipLevels, const std::vector<VkExtent3D>& mipExtents, const std::vector<unsigned int>& mipOffsets) {
 	unsigned int layerCount = (m_isCubeMap) ? 6 : 1;
 	// Transition image to copy destination
-	SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layerCount, mipLevels);
+	SVkUtils::TransitionImageLayout(cmd, textureImages[0].image, vkImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layerCount, mipLevels);
 
 	if (m_generateMips) {
 		// If mips will be generated, we only have data for the first mip level
@@ -227,7 +183,7 @@ void SVkTexture::copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat,
 		region.imageExtent = mipExtents[mip];
 	}
 
-	vkCmdCopyBufferToImage(cmd, m_stagingBuffer.buffer, m_textureImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels, regions.data());
+	vkCmdCopyBufferToImage(cmd, m_stagingBuffer.buffer, textureImages[0].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels, regions.data());
 }
 
 // Has to be submitted on a queue with graphics capability (since it uses blit)
@@ -238,7 +194,7 @@ void SVkTexture::generateMipmaps(const VkCommandBuffer& cmd, int32_t texWidth, i
 		if (checkSupport) {
 			// Check if image format supports linear blitting
 			VkFormatProperties formatProperties;
-			vkGetPhysicalDeviceFormatProperties(m_context->getPhysicalDevice(), vkImageFormat, &formatProperties);
+			vkGetPhysicalDeviceFormatProperties(context->getPhysicalDevice(), vkImageFormat, &formatProperties);
 			if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
 				Logger::Error("Texture image format does not support linear blitting!");
 			}
@@ -248,7 +204,7 @@ void SVkTexture::generateMipmaps(const VkCommandBuffer& cmd, int32_t texWidth, i
 	
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.image = m_textureImage.image;
+		barrier.image = textureImages[0].image;
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -287,8 +243,8 @@ void SVkTexture::generateMipmaps(const VkCommandBuffer& cmd, int32_t texWidth, i
 			blit.dstSubresource.layerCount = 1;
 
 			vkCmdBlitImage(cmd,
-				m_textureImage.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-				m_textureImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				textureImages[0].image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				textureImages[0].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 				1, &blit,
 				VK_FILTER_LINEAR);
 
@@ -323,7 +279,7 @@ void SVkTexture::generateMipmaps(const VkCommandBuffer& cmd, int32_t texWidth, i
 		// Mip maps are read from the file and not generated
 
 		// Transition image for shader usage (has to be done on the graphics queue)
-		SVkUtils::TransitionImageLayout(cmd, m_textureImage.image, vkImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, (m_isCubeMap) ? 6 : 1, mipLevels);
+		SVkUtils::TransitionImageLayout(cmd, textureImages[0].image, vkImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, (m_isCubeMap) ? 6 : 1, mipLevels);
 	}
 
 }
@@ -333,6 +289,6 @@ void SVkTexture::readyForUseCallback() {
 	// It will always already be destroyed at this point, unless this is the missing texture
 	m_stagingBuffer.destroy();
 
-	m_readyToUse = true;
+	readyToUse = true;
 	Logger::Log("Texture ready for use :)");
 }

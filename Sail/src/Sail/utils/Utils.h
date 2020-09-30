@@ -107,7 +107,7 @@ namespace Utils {
 	namespace String {
 		std::string getLineStartingFrom(const char* source);
 		std::string getBlockStartingFrom(const char* source);
-		const char* findToken(const std::string& token, const char* source, bool onFirstLine = false);
+		const char* findToken(const std::string& token, const char* source, bool onFirstLine = false, bool ignoreBlocks = false); // ignoreBlocks: ignores characters enclosed in brackets "{..}"
 		int findNextIntOnLine(const char* source);
 		const char* nextLine(const char* source);
 		std::string nextToken(const char* source);

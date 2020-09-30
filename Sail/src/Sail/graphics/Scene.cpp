@@ -10,7 +10,7 @@
 #include "material/OutlineMaterial.h"
 #include "../KeyCodes.h"
 
-#define USE_DEFERRED 0
+#define USE_DEFERRED 1
 
 Scene::Scene()  {
 #if USE_DEFERRED

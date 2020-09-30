@@ -14,6 +14,15 @@ public:
 	void useDepthBuffer(void* buffer, void* cmdList) override;
 
 private:
+	void createRenderPass();
+
+	const VkCommandBuffer& runFramePreparation();
+	void runRenderingPass(const VkCommandBuffer& cmd, const VkRenderPass& renderPass);
+	void runFrameExecution(const VkCommandBuffer& cmd);
+
+private:
 	SVkAPI* m_context;
 	SVkAPI::Command m_command;
+	VkRenderPass m_renderPassClear;
+	VkRenderPass m_renderPassLoad;
 };

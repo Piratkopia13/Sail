@@ -15,8 +15,7 @@ public:
 	~SVkShader();
 
 	virtual void bind(void* cmdList) const override;
-
-	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
+	virtual void recompile() override;
 
 	virtual bool setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) override;
 	virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) override;
@@ -27,8 +26,13 @@ public:
 
 	// This will write to each RendererCommand.materialIndex
 	void prepareToRender(std::vector<Renderer::RenderCommand>& renderCommands, const SVkPipelineStateObject* pso);
-	//void updateDescriptorSet(void* cmdList);
 	const VkPipelineLayout& getPipelineLayout() const;
+
+	void setRenderPass(const VkRenderPass& renderPass);
+	const VkRenderPass& getRenderPass() const;
+
+protected:
+	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
 
 private:
 	bool trySetPushConstant(const std::string& name, const void* data, unsigned int size, void* cmdList);
@@ -45,7 +49,7 @@ private:
 	VkDescriptorSetLayout m_descriptorSetLayout;
 	VkPipelineLayout m_pipelineLayout;
 
-	std::vector<VkDescriptorImageInfo> m_imageInfos;
+	VkRenderPass m_renderPass;
 
 	// Textures used while waiting for the proper textures to finish uploading to the GPU
 	SVkTexture& m_missingTexture;
@@ -54,8 +58,8 @@ private:
 	// Resources reset every frame
 	// Since the same shader can be used for multiple PSOs, they need to be stored between every call to prepareToRender() this frame
 	std::vector<Material*> m_uniqueMaterials;
-	std::vector<SVkTexture*> m_uniqueTextures;
-	std::vector<SVkTexture*> m_uniqueTextureCubes;
+	std::vector<SVkATexture*> m_uniqueTextures;
+	std::vector<SVkATexture*> m_uniqueTextureCubes;
 	unsigned int m_lastMaterialIndex = 0;
 	unsigned int m_lastTextureIndex = 0;
 	unsigned int m_lastTextureCubeIndex = 0;

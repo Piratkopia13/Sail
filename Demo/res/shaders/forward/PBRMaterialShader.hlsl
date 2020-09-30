@@ -87,7 +87,6 @@ SamplerState PSssPoint : register(s5) : SAIL_SAMPLER_POINT_CLAMP;
 SamplerState PSss : register(s6) : SAIL_SAMPLER_ANIS_WRAP;
 
 Texture2D texArr[] : register(t7) : SAIL_BIND_ALL_TEXTURES;
-
 TextureCube texCubeArr[] : register(t8) : SAIL_BIND_ALL_TEXTURECUBES;
 
 float4 sampleTexture(uint index, float2 texCoords) {

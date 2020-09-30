@@ -19,14 +19,11 @@ struct PSIn {
 cbuffer PSSystemCBuffer : register(b0) {
     matrix sys_mViewInv;
     float3 sys_cameraPos;
-    uint sys_numPLights;
     int useSSAO;
     int useShadowTexture;
-}
-
-cbuffer PSLights : register(b1) {
+	float3 padding;
 	DirectionalLight dirLight;
-    PointLightInput pointLights[NUM_POINT_LIGHTS];
+    PointLightInput pointLights[8];
 }
 
 PSIn VSMain(VSIn input) {
@@ -41,19 +38,24 @@ PSIn VSMain(VSIn input) {
 }
 
 
-Texture2D sys_texBrdfLUT : register(t0);
-TextureCube irradianceMap : register(t1);
-TextureCube radianceMap : register(t2);
+// Texture2D sys_texBrdfLUT : register(t0);
+// TextureCube irradianceMap : register(t1);
+// TextureCube radianceMap : register(t2);
 
-Texture2D def_positions     : register(t3);
-Texture2D def_worldNormals  : register(t4);
-Texture2D def_albedo        : register(t5);
-Texture2D def_mrao          : register(t6);
-Texture2D tex_ssao          : register(t7);
-Texture2D tex_shadows       : register(t8);
+// Texture2D def_positions     : register(t3);
+// Texture2D def_worldNormals  : register(t4);
+// Texture2D def_albedo        : register(t5);
+// Texture2D def_mrao          : register(t6);
+// Texture2D tex_ssao          : register(t7);
+// Texture2D tex_shadows       : register(t8);
+
 // RaytracingAccelerationStructure rtScene : register(t8);
-SamplerState PSss            : SAIL_SAMPLER_ANIS_WRAP; // s0
-SamplerState PSLinearSampler : SAIL_SAMPLER_LINEAR_CLAMP; // s2
+SamplerState PSss 		: register(s1) : SAIL_SAMPLER_ANIS_WRAP;
+SamplerState PSssPoint 	: register(s2) : SAIL_SAMPLER_POINT_CLAMP;
+SamplerState PSssLinear : register(s3) : SAIL_SAMPLER_LINEAR_CLAMP;
+
+Texture2D texArr[] 		 : register(t4) : SAIL_BIND_ALL_TEXTURES;
+TextureCube texCubeArr[] : register(t5) : SAIL_BIND_ALL_TEXTURECUBES;
 
 float4 PSMain(PSIn input) : SV_Target0 {
 	// return sys_texBrdfLUT.Sample(PSss, input.texCoord);
@@ -61,8 +63,20 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// return irradianceMap.SampleLevel(PSss, viewDir, 0);
 	// return radianceMap.SampleLevel(PSss, viewDir, 0);
 
-    float3 worldPos = mul(sys_mViewInv, def_positions.Sample(PSss, input.texCoord)).xyz;
-	float3 worldNormal = def_worldNormals.Sample(PSss, input.texCoord).rgb;
+	Texture2D texPositions 	= texArr[1];
+	Texture2D texNormals 	= texArr[2];
+	Texture2D texAlbedo 	= texArr[3];
+	Texture2D texMrao 		= texArr[4];
+	Texture2D texShadows 	= texArr[5]; // NOT USED
+	Texture2D texSsao 		= texArr[6]; // NOT USED
+	
+	Texture2D texBrdfLut		 = texArr[0];
+	TextureCube texRadianceMap 	 = texCubeArr[0];
+	TextureCube texIrradianceMap = texCubeArr[1];
+
+
+    float3 worldPos = mul(sys_mViewInv, texPositions.Sample(PSss, input.texCoord)).xyz;
+	float3 worldNormal = texNormals.Sample(PSss, input.texCoord).rgb;
     // return float4(worldPos / 50.f, 1.0f);
 
 
@@ -101,7 +115,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 
 	float shadows = 0.f;
 	if (useShadowTexture)
-		shadows = 1.f - tex_shadows.Sample(PSss, input.texCoord).r;
+		shadows = 1.f - texShadows.Sample(PSss, input.texCoord).r;
 	// return shadows;
 
 	PBRScene scene;
@@ -109,28 +123,28 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// Lights
 	scene.dirLight = dirLight;
 	scene.pointLights = pointLights;
-	scene.numPLs = sys_numPLights;
 
-	scene.brdfLUT = sys_texBrdfLUT;
-	scene.prefilterMap = radianceMap;
-	scene.irradianceMap = irradianceMap;
-	scene.linearSampler = PSLinearSampler;
+	scene.brdfLUT = texBrdfLut;
+	scene.prefilterMap = texRadianceMap;
+	scene.irradianceMap = texIrradianceMap;
+	scene.linearSampler = PSssLinear;
+	scene.pointSampler = PSssPoint;
 	
 	PBRPixel pixel;
     pixel.worldPos = worldPos;
 	pixel.camPos = sys_cameraPos;
 
 	pixel.inShadow = shadows;
-	pixel.albedo = def_albedo.Sample(PSss, input.texCoord).rgb;
+	pixel.albedo = texAlbedo.Sample(PSssLinear, input.texCoord).rgb;
 	pixel.worldNormal = worldNormal;
     // return float4(pixel.worldNormal / 2.f, 1.0f);
     
-    float3 mrao = def_mrao.Sample(PSss, input.texCoord).rgb;
+    float3 mrao = texMrao.Sample(PSssLinear, input.texCoord).rgb;
 	pixel.metalness = mrao.r;
 	pixel.roughness = mrao.g;
 	pixel.ao = mrao.b;
-    if (useSSAO)
-	    pixel.ao *= pow(tex_ssao.Sample(PSLinearSampler, input.texCoord).r, 3.f);
+    if (useSSAO) // TODO: fix
+	    pixel.ao *= pow(texSsao.Sample(PSssLinear, input.texCoord).r, 3.f);
 
     // return float4(pixel.ao, pixel.ao, pixel.ao, 1.0f);
 
@@ -138,12 +152,12 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	float3 shadedColor = pbrShade(scene, pixel);
 
 	// Gamma correction
-    float3 output = shadedColor / (shadedColor + 1.0f);
+    // float3 output = shadedColor / (shadedColor + 1.0f);
     // Tone mapping using the Reinhard operator
-    output = pow(output, 1.0f / 2.2f);
-	return float4(output, 1.0);
+    // output = pow(output, 1.0f / 2.2f);
+	// return float4(output, 1.0);
 
-	// return float4(shadedColor, 1.0);
+	return float4(shadedColor, 1.0);
 	// return float4(worldPos, 1.0);
 }
 

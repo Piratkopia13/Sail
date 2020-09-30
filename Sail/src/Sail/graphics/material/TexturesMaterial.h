@@ -18,8 +18,9 @@ public:
 	Shader* getShader(Renderer::Type rendererType) const override;
 	void setForwardShader(Shaders::ShaderIdentifier shaderId);
 
-	// An empty filename will remove the texture
-	void addTexture(const std::string& filename, bool useAbsolutePath = false);
+	void addTexture(RenderableTexture* texture);
+	void addTexture(Texture* texture);
+	void addTexture(const std::string& filename, bool useAbsolutePath = false); // An empty filename will remove the texture
 	void clearTextures();
 
 private:

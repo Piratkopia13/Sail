@@ -54,19 +54,19 @@ public:
 	SVkAPI();
 	~SVkAPI();
 
-	bool init(Window* window) override;
-	void clear(const glm::vec4& color) override;
-	void setDepthMask(DepthMask setting) override;
-	void setFaceCulling(Culling setting) override;
-	void setBlending(Blending setting) override;
-	void waitForGPU() override;
+	virtual bool init(Window* window) override;
+	virtual void clear(const glm::vec4& color) override;
+	virtual void setDepthMask(DepthMask setting) override;
+	virtual void setFaceCulling(Culling setting) override;
+	virtual void setBlending(Blending setting) override;
+	virtual void waitForGPU() override;
 	
-	uint32_t beginPresent(); // Returns the swap image index to use this frame
-	void present(bool vsync = false) override;
+	virtual void beginPresent() override;
+	virtual void present(bool vsync = false) override;
 	
-	unsigned int getMemoryUsage() const override;
-	unsigned int getMemoryBudget() const override;
-	bool onResize(WindowResizeEvent& event) override;
+	virtual unsigned int getMemoryUsage() const override;
+	virtual unsigned int getMemoryBudget() const override;
+	virtual bool onResize(WindowResizeEvent& event) override;
 
 	const VkDevice& getDevice() const;
 	const VkPhysicalDevice& getPhysicalDevice() const;
@@ -80,6 +80,11 @@ public:
 	const VmaAllocator& getVmaAllocator() const;
 	const uint32_t* getGraphicsAndCopyQueueFamilyIndices() const;
 	VkSampleCountFlagBits getSampleCount() const;
+	VkFormat getDepthFormat() const;
+	VkFormat getSwapchainImageFormat() const;
+	const VkFramebuffer& getCurrentFramebuffer() const;
+	const VkExtent2D& getCurrentExtent() const;
+	const VkImageView& getDepthView() const;
 	
 	void initCommand(Command& command) const;
 	
@@ -135,6 +140,7 @@ private:
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Window* window) const;
+	VkFormat chooseDepthFormat();
 
 
 private:
@@ -152,6 +158,7 @@ private:
 	VkExtent2D m_swapchainExtent;
 	ImageAllocation m_depthImage;
 	VkImageView m_depthImageView;
+	VkFormat m_depthImageFormat;
 
 	VkSampleCountFlagBits m_msaaSamples;
 	
@@ -193,6 +200,7 @@ private:
 	bool m_framebufferResized;
 	bool m_isWindowMinimized;
 	bool m_isFirstFrame;
+	bool m_hasSubmittedThisFrame;
 
 	const std::vector<const char*> m_validationLayers;
 	const std::vector<const char*> m_deviceExtensions;

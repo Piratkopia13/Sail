@@ -48,6 +48,15 @@ void TexturesMaterial::addTexture(const std::string& filename, bool useAbsoluteP
 	textures.emplace_back(loadTexture(filename, useAbsolutePath));
 }
 
+void TexturesMaterial::addTexture(Texture* texture) {
+	textures.emplace_back(texture);
+}
+
+void TexturesMaterial::addTexture(RenderableTexture* texture) {
+	renderableTextures.emplace_back(texture);
+}
+
 void TexturesMaterial::clearTextures() {
 	textures.clear();
+	renderableTextures.clear();
 }

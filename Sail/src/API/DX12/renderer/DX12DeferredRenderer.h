@@ -19,17 +19,17 @@ public:
 	void* present(Renderer::PresentFlag flags, void* skippedPrepCmdList = nullptr) override;
 	void* getDepthBuffer() override;
 
+	bool onEvent(Event& event) override;
+
+	static const std::unique_ptr<DX12RenderableTexture>* GetGBuffers();
+
+private:
 	ID3D12GraphicsCommandList4* runFramePreparation();
 	void runGeometryPass(ID3D12GraphicsCommandList4* cmdList);
 	void runShadingPass(ID3D12GraphicsCommandList4* cmdList);
 	void runSSAO(ID3D12GraphicsCommandList4* cmdList);
 	void runFrameExecution(ID3D12GraphicsCommandList4* cmdList);
 
-	bool onEvent(Event& event) override;
-
-	static const std::unique_ptr<DX12RenderableTexture>* GetGBuffers();
-
-private:
 	D3D12_CPU_DESCRIPTOR_HANDLE getGeometryPassDsv();
 
 private:

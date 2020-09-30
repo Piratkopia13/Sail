@@ -16,16 +16,14 @@ public:
 	Shader(Shaders::ShaderSettings settings);
 	virtual ~Shader();
 
-	// filepath is used for include paths and error messages 
-	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) = 0;
 	Material::Type getMaterialType() const;
 	bool isComputeShader() const;
-
 	unsigned int getID() const;
 	unsigned int getAttributesHash() const;
 	const Shaders::ShaderSettings& getSettings() const;
 
 	virtual void bind(void* cmdList) const;
+	virtual void recompile() = 0;
 	
 	RenderableTexture* getRenderableTexture(const std::string& name) const;
 
@@ -45,6 +43,8 @@ public:
 	void* getCsBlob() const;
 
 protected:
+	// filepath is used for include paths and error messages 
+	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) = 0;
 	// Compiles shaders into blobs
 	virtual void compile();
 

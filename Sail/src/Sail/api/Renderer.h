@@ -22,6 +22,7 @@ public:
 		RAYTRACED,
 		//TILED
 	};
+	// TODO: some of these flags are explicitly used for only one renderer, consider changing how flags work to make it more general
 	enum PresentFlag {
 		Default = 1 << 0,
 		SkipPreparation = 1 << 1,

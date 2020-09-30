@@ -6,6 +6,7 @@
 #include "../SVkUtils.h"
 #include "../resources/SVkTexture.h"
 #include "SVkSampler.h"
+#include "../resources/SVkRenderableTexture.h"
 
 Shader* Shader::Create(Shaders::ShaderSettings settings, Shader* allocAddr) {
 	if (!allocAddr)
@@ -21,6 +22,7 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 {
 	EventSystem::getInstance()->subscribeToEvent(Event::NEW_FRAME, this);
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
+	m_renderPass = VK_NULL_HANDLE; // PSO will use default render pass if not set, this can be overridden by setRenderPass before the PSO has been created
 
 	compile();
 
@@ -212,6 +214,17 @@ void SVkShader::prepareToRender(std::vector<Renderer::RenderCommand>& renderComm
 			}
 			i++;
 		}
+		// Handle renderable texture
+		// TODO: add support for materials to use indices for renderable textures
+		for (auto* rendTexture : mat->getRenderableTextures()) {
+			if (rendTexture) {
+				SVkRenderableTexture* tex = static_cast<SVkRenderableTexture*>(rendTexture);
+				auto it = std::find(m_uniqueTextures.begin(), m_uniqueTextures.end(), tex);
+				if (it == m_uniqueTextures.end()) {
+					m_uniqueTextures.emplace_back(tex);
+				}
+			}
+		}
 	}
 
 	// Find what slot, if any, should be used to bind all textures
@@ -352,9 +365,37 @@ const VkPipelineLayout& SVkShader::getPipelineLayout() const {
 	return m_pipelineLayout;
 }
 
+void SVkShader::setRenderPass(const VkRenderPass& renderPass) {
+	m_renderPass = renderPass;
+}
+
+const VkRenderPass& SVkShader::getRenderPass() const {
+	return m_renderPass;
+}
+
 void SVkShader::bind(void* cmdList) const {
 	auto imageIndex = m_context->getSwapImageIndex();
 	bindInternal(0U, cmdList);
+}
+
+void SVkShader::recompile() {
+	vkDeviceWaitIdle(m_context->getDevice());
+	// Clean up shader modules
+	auto safeDestroyModule = [&](void* module) {
+		if (module) {
+			vkDestroyShaderModule(m_context->getDevice(), *static_cast<const VkShaderModule*>(module), nullptr);
+			delete module;
+		}
+	};
+	safeDestroyModule(getVsBlob());
+	safeDestroyModule(getGsBlob());
+	safeDestroyModule(getPsBlob());
+	safeDestroyModule(getDsBlob());
+	safeDestroyModule(getHsBlob());
+	safeDestroyModule(getCsBlob());
+
+	parser.clearParsedData();
+	compile();
 }
 
 bool SVkShader::setTexture(const std::string& name, Texture* texture, void* cmdList) {

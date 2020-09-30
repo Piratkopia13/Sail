@@ -189,7 +189,7 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 	sGBufferTextures[0]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	sGBufferTextures[1]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::SSAOShader);
+	auto* shader = &resman.getShaderSet(Shaders::SSAOShader);
 	auto* mesh = m_screenQuadModel->getMesh(0);
 
 	// Find a matching pipelineStateObject and bind it

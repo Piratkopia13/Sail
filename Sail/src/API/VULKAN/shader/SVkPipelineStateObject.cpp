@@ -13,6 +13,7 @@ SVkPipelineStateObject::SVkPipelineStateObject(Shader* shader, unsigned int attr
 	, m_pipeline()
 {
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
+	m_vkShader = static_cast<SVkShader*>(shader);
 	
 	// Create a compute pipeline state if it has a compute shader
 	if (shader->isComputeShader()) {
@@ -21,7 +22,6 @@ SVkPipelineStateObject::SVkPipelineStateObject(Shader* shader, unsigned int attr
 		createGraphicsPipelineState();
 	}
 
-	m_vkShader = static_cast<SVkShader*>(shader);
 	// Create the descriptor set according to the layout as defined in the shader
 	m_vkShader->createDescriptorSet(m_descriptorSets);
 }
@@ -220,8 +220,8 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = &dynamicState;
-	pipelineInfo.layout = static_cast<SVkShader*>(shader)->getPipelineLayout();
-	pipelineInfo.renderPass = m_context->getRenderPass();
+	pipelineInfo.layout = m_vkShader->getPipelineLayout();
+	pipelineInfo.renderPass = (m_vkShader->getRenderPass()) ? m_vkShader->getRenderPass() : m_context->getRenderPass(); // Use default render pass if none is set
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional

@@ -12,6 +12,10 @@ const ShaderParser::ParsedData& ShaderParser::getParsedData() const {
 	return m_parsedData;
 }
 
+void ShaderParser::clearParsedData() {
+	m_parsedData.clear();
+}
+
 std::string ShaderParser::parse(const std::string& source) {
 	SAIL_PROFILE_FUNCTION();
 
@@ -41,7 +45,7 @@ std::string ShaderParser::parse(const std::string& source) {
 	{
 		src = m_cleanSource.c_str();
 		if (m_parsedData.hasVS) {
-			if (src = findToken("VSIn", src)) {
+			if (src = findToken("VSIn", src, false, true)) {
 				unsigned int mul = 1;
 				while (src && nextToken(src) != "};") {
 					src = findToken(":", src);
@@ -81,14 +85,14 @@ std::string ShaderParser::parse(const std::string& source) {
 	// This is needed to avoid copying/destructor calling
 	{
 		int numCBuffers = 0;
-		src = m_cleanSource.c_str(); while (src = findToken("cbuffer", src)) numCBuffers++;
-		src = m_cleanSource.c_str(); while (src = findToken("ConstantBuffer", src)) numCBuffers++;
+		src = m_cleanSource.c_str(); while (src = findToken("cbuffer", src, false, true)) numCBuffers++;
+		src = m_cleanSource.c_str(); while (src = findToken("ConstantBuffer", src, false, true)) numCBuffers++;
 		m_parsedData.cBuffers.reserve(numCBuffers);
 	}
 	{
 		int numSamplers = 0;
 		src = m_cleanSource.c_str();
-		while (src = findToken("SamplerState", src)) numSamplers++;
+		while (src = findToken("SamplerState", src, false, true)) numSamplers++;
 		m_parsedData.samplers.reserve(numSamplers);
 	}
 
@@ -96,18 +100,18 @@ std::string ShaderParser::parse(const std::string& source) {
 	{
 		// Constant buffers can be defined in two ways
 		src = m_cleanSource.c_str();
-		while (src = findToken("cbuffer", src)) {
+		while (src = findToken("cbuffer", src, false, true)) {
 			parseCBuffer(getBlockStartingFrom(src));
 		}
 		src = m_cleanSource.c_str();
-		while (src = findToken("ConstantBuffer", src)) {
+		while (src = findToken("ConstantBuffer", src, false, true)) {
 			parseConstantBuffer(getLineStartingFrom(src));
 		}
 	}
 
 	// Process all push constants
 	src = m_cleanSource.c_str();
-	while (src = findToken("vk::push_constant", src)) {
+	while (src = findToken("vk::push_constant", src, false, true)) {
 		std::string pushTokenSource = getBlockStartingFrom(src);
 		src += pushTokenSource.size();
 		const char* end = Utils::String::findToken(";", src);
@@ -124,15 +128,15 @@ std::string ShaderParser::parse(const std::string& source) {
 	// Process all textures
 	// RWTextures needs to be handled first!
 	src = m_cleanSource.c_str();
-	while (src = findToken("RWTexture2D", src)) {
+	while (src = findToken("RWTexture2D", src, false, true)) {
 		parseRWTexture(src);
 	}
 	src = m_cleanSource.c_str();
-	while (src = findToken("Texture2D", src)) {
+	while (src = findToken("Texture2D", src, false, true)) {
 		parseTexture(src);
 	}
 	src = m_cleanSource.c_str();
-	while (src = findToken("TextureCube", src)) {
+	while (src = findToken("TextureCube", src, false, true)) {
 		parseTexture(src);
 	}
 

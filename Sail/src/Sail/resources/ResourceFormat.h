@@ -14,6 +14,7 @@ namespace ResourceFormat {
 		BC3,
 		BC5,
 		BC7,
+		DEPTH
 	};
 
 	struct TextureData {

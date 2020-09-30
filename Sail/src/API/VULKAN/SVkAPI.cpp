@@ -22,6 +22,7 @@ SVkAPI::SVkAPI()
 	, m_framebufferResized(false)
 	, m_isWindowMinimized(false)
 	, m_isFirstFrame(true)
+	, m_hasSubmittedThisFrame(false)
 	, m_msaaSamples(VK_SAMPLE_COUNT_1_BIT)
 {
 	m_clearValues[0] = { 0.f, 0.0f, 0.f, 1.f }; // Default clear color
@@ -371,7 +372,7 @@ void SVkAPI::waitForGPU() {
 	VK_CHECK_RESULT(vkDeviceWaitIdle(m_device));
 }
 
-uint32_t SVkAPI::beginPresent() {
+void SVkAPI::beginPresent() {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	EventSystem::getInstance()->dispatchEvent(NewFrameEvent());
@@ -430,8 +431,6 @@ uint32_t SVkAPI::beginPresent() {
 	// Mark the image as now being in use by this frame
 	m_imagesInFlight[m_presentImageIndex] = m_inFlightFences[m_currentFrame];
 	m_fencesJustInCaseCopyInFlight[m_presentImageIndex] = m_fencesInFlightCopy[m_currentFrame];
-
-	return m_presentImageIndex;
 }
 
 void SVkAPI::present(bool vsync) {
@@ -449,6 +448,7 @@ void SVkAPI::present(bool vsync) {
 	}
 
 	// Execute any waiting copy commands
+	// NOTE: these do not wait for the last "same frame index" to finish rendering if no submitCommandBuffers() call was made this frame
 	{
 		if (!m_scheduledCopyCommandsAndCallbacks.empty()) {
 			auto& cmdBufferCopy = m_commandBuffersCopy[m_presentImageIndex];
@@ -478,6 +478,7 @@ void SVkAPI::present(bool vsync) {
 		}
 	}
 	// Execute any waiting graphics commands
+	// NOTE: these do not wait for the last "same frame index" to finish rendering if no submitCommandBuffers() call was made this frame
 	{
 		if (!m_scheduledGraphicsCommandsAndCallbacks.empty()) {
 			auto& cmdBufferGraphics = m_commandBuffersGraphics[m_presentImageIndex];
@@ -561,6 +562,7 @@ void SVkAPI::present(bool vsync) {
 
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	m_presentImageIndex = -1; // Invalidate this image index
+	m_hasSubmittedThisFrame = false;
 }
 
 unsigned int SVkAPI::getMemoryUsage() const {
@@ -652,6 +654,26 @@ const uint32_t* SVkAPI::getGraphicsAndCopyQueueFamilyIndices() const {
 
 VkSampleCountFlagBits SVkAPI::getSampleCount() const {
 	return m_msaaSamples;
+}
+
+VkFormat SVkAPI::getDepthFormat() const {
+	return m_depthImageFormat;
+}
+
+VkFormat SVkAPI::getSwapchainImageFormat() const {
+	return m_swapchainImageFormat;
+}
+
+const VkFramebuffer& SVkAPI::getCurrentFramebuffer() const {
+	return m_swapchainFramebuffers[m_presentImageIndex];
+}
+
+const VkExtent2D& SVkAPI::getCurrentExtent() const {
+	return m_swapchainExtent;
+}
+
+const VkImageView& SVkAPI::getDepthView() const {
+	return m_depthImageView;
 }
 
 void SVkAPI::initCommand(Command& command) const {
@@ -763,10 +785,10 @@ void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	// TODO: if this method is called multiple times in one frame, the waitSemaphore only needs to be set on the first call
+	// NOTE: if this method is called multiple times in one frame, the waitSemaphore only needs to be set on the first call
 	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.waitSemaphoreCount = (m_hasSubmittedThisFrame) ? 0 : 1; // Only wait on the first submit, the rest will implicitly wait because of order preservation
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = static_cast<uint32_t>(cmds.size());
@@ -774,6 +796,7 @@ void SVkAPI::submitCommandBuffers(std::vector<VkCommandBuffer> cmds) {
 
 	// NOTE: only graphics queue is currently used
 	VK_CHECK_RESULT(vkQueueSubmit(m_queueGraphics, 1, &submitInfo, VK_NULL_HANDLE));
+	m_hasSubmittedThisFrame = true;
 }
 
 void SVkAPI::createSwapchain() {
@@ -825,6 +848,8 @@ void SVkAPI::createSwapchain() {
 	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, m_swapchainImages.data()));
 	m_swapchainImageFormat = createInfo.imageFormat;
 	m_swapchainExtent = createInfo.imageExtent;
+
+	m_depthImageFormat = chooseDepthFormat();
 }
 
 void SVkAPI::createImageViews() {
@@ -854,20 +879,26 @@ void SVkAPI::createRenderPass() {
 	colorAttachment.format = m_swapchainImageFormat;
 	colorAttachment.samples = m_msaaSamples;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	//colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	//colorAttachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // There is always a transition to LAYOUT_PRESENT happening right before present
 
 	VkAttachmentDescription depthAttachment{};
-	depthAttachment.format = VK_FORMAT_D24_UNORM_S8_UINT;
+	depthAttachment.format = m_depthImageFormat;
 	depthAttachment.samples = m_msaaSamples;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	//depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	//depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	//depthAttachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentDescription colorAttachmentResolve{};
@@ -880,15 +911,9 @@ void SVkAPI::createRenderPass() {
 	colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	VkAttachmentReference colorAttachmentRef{};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	VkAttachmentReference depthAttachmentRef{};
-	depthAttachmentRef.attachment = 1;
-	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	VkAttachmentReference colorAttachmentResolveRef{};
-	colorAttachmentResolveRef.attachment = 2;
-	colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	VkAttachmentReference colorAttachmentRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+	VkAttachmentReference depthAttachmentRef = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+	VkAttachmentReference colorAttachmentResolveRef = { 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
 	// Subpasses
 	// TODO: use multiple of these for post processing
@@ -984,7 +1009,7 @@ void SVkAPI::createDepthResources() {
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = 1;
 	imageInfo.arrayLayers = 1;
-	imageInfo.format = VK_FORMAT_D24_UNORM_S8_UINT;
+	imageInfo.format = m_depthImageFormat;
 	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -1055,6 +1080,9 @@ void SVkAPI::cleanupSwapchain() {
 }
 
 void SVkAPI::recreateSwapchain() {
+	// NOTE: It is important to call this after vkQueuePresentKHR to ensure that the semaphores are in a consistent state,
+	//       otherwise a signalled semaphore may never be properly waited upon.Now to actually detect resizes we can use the
+
 	Logger::Log("Recreating swap chain..");
 	VK_CHECK_RESULT(vkDeviceWaitIdle(m_device));
 
@@ -1067,6 +1095,8 @@ void SVkAPI::recreateSwapchain() {
 	createColorResources();
 	createDepthResources();
 	createFramebuffers();
+
+	EventSystem::getInstance()->dispatchEvent(SwapchainRecreatedEvent());
 }
 
 bool SVkAPI::checkValidationLayerSupport() const {
@@ -1239,6 +1269,30 @@ VkExtent2D SVkAPI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities
 
 		return actualExtent;
 	}
+}
+
+VkFormat SVkAPI::chooseDepthFormat() {
+	// Since all depth formats may be optional, we need to find a suitable depth format to use
+	// Start with the highest precision packed format
+	std::vector<VkFormat> depthFormats = {
+		VK_FORMAT_D32_SFLOAT_S8_UINT,
+		VK_FORMAT_D32_SFLOAT,
+		VK_FORMAT_D24_UNORM_S8_UINT,
+		VK_FORMAT_D16_UNORM_S8_UINT,
+		VK_FORMAT_D16_UNORM
+	};
+
+	for (auto& format : depthFormats) {
+		VkFormatProperties formatProps;
+		vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, &formatProps);
+		// Format must support depth stencil attachment for optimal tiling
+		if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+			return format;
+		}
+	}
+
+	Logger::Error("No depth format supported by the device. say wut?");
+	return VK_FORMAT_UNDEFINED;
 }
 
 VkResult SVkAPI::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {

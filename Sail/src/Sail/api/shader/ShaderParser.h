@@ -86,6 +86,7 @@ private:
 			samplers.clear();
 			textures.clear();
 			renderableTextures.clear();
+			pushConstants.clear();
 		}
 	};
 public:
@@ -94,6 +95,7 @@ public:
 	std::string parse(const std::string& source);
 
 	const ParsedData& getParsedData() const;
+	void clearParsedData();
 	int findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const;
 
 private:
