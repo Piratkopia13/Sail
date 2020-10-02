@@ -135,8 +135,12 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	pixel.worldPos = input.worldPos;
 
 	pixel.albedo = mat.modelColor.rgb;
-	if (mat.albedoTexIndex != -1)
-		pixel.albedo *= sampleTexture(mat.albedoTexIndex, input.texCoords).rgb;
+	float alpha = mat.modelColor.a;
+	if (mat.albedoTexIndex != -1) {
+		float4 albedoSample = sampleTexture(mat.albedoTexIndex, input.texCoords);
+		pixel.albedo *= albedoSample.rgb;
+		alpha *= albedoSample.a;
+	}
 
 	pixel.worldNormal = input.normal;
 	if (mat.normalTexIndex != -1) {
@@ -168,7 +172,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
     // output = pow(output, 1.0f / 2.2f);
 	// return float4(output, 1.0);
 
-	return float4(shadedColor, 1.0);
+	return float4(shadedColor, alpha);
 	// return float4(input.worldPos, 1.0);
 }
 

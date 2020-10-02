@@ -10,6 +10,9 @@ SVkDeferredRenderer::SVkDeferredRenderer() {
 	EventSystem::getInstance()->subscribeToEvent(Event::SWAPCHAIN_RECREATED, this);
 	auto* app = Application::getInstance();
 	m_context = app->getAPI<SVkAPI>();
+
+	assert(m_context->getSampleCount() == 1 && "MSAA is not supported when using a deferred renderer");
+
 	m_context->initCommand(m_command);
 
 	m_width = app->getWindow()->getWindowWidth();

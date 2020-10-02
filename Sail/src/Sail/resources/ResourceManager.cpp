@@ -14,6 +14,7 @@ ResourceManager::ResourceManager() {
 		settings.filename = "forward/PBRMaterialShader.hlsl";
 		settings.materialType = Material::PBR;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
+		settings.defaultPSOSettings.blendMode = GraphicsAPI::ALPHA;
 		settings.identifier = Shaders::PBRMaterialShader;
 		m_shaderSettings.insert({ settings.identifier, settings });
 	}

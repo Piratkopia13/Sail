@@ -40,6 +40,7 @@ public:
 	void setRoughnessScale(float roughness);
 	void setAOIntensity(float intensity);
 	void setColor(const glm::vec4& color);
+	void enableTransparency(bool enable); // If set to true - meshes will be drawn with alpha blending enabled in a forward pass
 
 	// An empty filename will remove the texture
 	void setAlbedoTexture(const std::string& filename, bool useAbsolutePath = false);
@@ -59,6 +60,6 @@ public:
 private:
 	PBRSettings m_pbrSettings;
 	Texture* m_brdfLutTexture;
-	
+	bool m_hasTransparency;	
 	UINT m_numTextures;
 };

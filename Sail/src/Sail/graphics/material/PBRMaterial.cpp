@@ -14,6 +14,7 @@
 PBRMaterial::PBRMaterial()
 	: Material(Material::PBR)
 	, m_numTextures(6)
+	, m_hasTransparency(false)
 {
 	textures.resize(6);
 
@@ -97,6 +98,7 @@ Shader* PBRMaterial::getShader(Renderer::Type rendererType) const {
 		return &resman.getShaderSet(Shaders::PBRMaterialShader);
 		break;
 	case Renderer::DEFERRED:
+		if (m_hasTransparency || m_pbrSettings.modelColor.a < 1.0f) return nullptr; // Deferred pass can not draw transparent meshes, use forward pass instead
 		return &resman.getShaderSet(Shaders::DeferredGeometryPassShader);
 		break;
 	default:
@@ -119,6 +121,10 @@ void PBRMaterial::setAOIntensity(float intensity) {
 
 void PBRMaterial::setColor(const glm::vec4& color) {
 	m_pbrSettings.modelColor = color;
+}
+
+void PBRMaterial::enableTransparency(bool enable) {
+	m_hasTransparency = enable;
 }
 
 void PBRMaterial::setAlbedoTexture(const std::string& filename, bool useAbsolutePath) {
