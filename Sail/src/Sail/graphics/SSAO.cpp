@@ -3,8 +3,6 @@
 #include "../Application.h"
 
 SSAO::SSAO() {
-	EventSystem::getInstance()->subscribeToEvent(Event::WINDOW_RESIZE, this);
-
 	m_resScale = 1 / 2.f; // Half res
 
 	auto* app = Application::getInstance();
@@ -41,9 +39,7 @@ SSAO::SSAO() {
 	}
 }
 
-SSAO::~SSAO() {
-	EventSystem::getInstance()->unsubscribeFromEvent(Event::WINDOW_RESIZE, this);
-}
+SSAO::~SSAO() { }
 
 RenderableTexture* SSAO::getRenderTargetTexture() {
 	return m_outputTexture.get();
@@ -65,14 +61,8 @@ const std::tuple<void*, unsigned int> SSAO::getNoise() const {
 	return { (void*)m_noise.data(), m_noise.size() * sizeof(m_noise[0]) };
 }
 
-bool SSAO::onEvent(Event& event) {
-	auto resizeEvent = [&](WindowResizeEvent& event) {
-		m_width = event.getWidth() * m_resScale;
-		m_height = event.getHeight() * m_resScale;
-		m_outputTexture->resize(m_width, m_height);
-
-		return true;
-	};
-	EventHandler::HandleType<WindowResizeEvent>(event, resizeEvent);
-	return true;
+void SSAO::resize(uint32_t width, uint32_t height) {
+	m_width = width * m_resScale;
+	m_height = height * m_resScale;
+	m_outputTexture->resize(m_width, m_height);
 }

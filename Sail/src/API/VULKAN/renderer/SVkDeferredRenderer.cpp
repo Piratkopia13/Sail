@@ -6,7 +6,9 @@
 #include "../shader/SVkShader.h"
 #include "../SVkUtils.h"
 
-SVkDeferredRenderer::SVkDeferredRenderer() {
+SVkDeferredRenderer::SVkDeferredRenderer() 
+	: m_ssaoRenderPass(VK_NULL_HANDLE)
+{
 	EventSystem::getInstance()->subscribeToEvent(Event::SWAPCHAIN_RECREATED, this);
 	auto* app = Application::getInstance();
 	m_context = app->getAPI<SVkAPI>();
@@ -29,12 +31,19 @@ SVkDeferredRenderer::SVkDeferredRenderer() {
 	auto& geometryPassShader = static_cast<SVkShader&>(app->getResourceManager().getShaderSet(Shaders::DeferredGeometryPassShader));
 	geometryPassShader.setRenderPass(m_geometryRenderPass);
 
-	createFramebuffers();
+	createGeometryFramebuffers();
 
 	Application::getInstance()->getResourceManager().loadTexture("pbr/brdfLUT.tga");
 	m_brdfLutTexture = &Application::getInstance()->getResourceManager().getTexture("pbr/brdfLUT.tga");
 
 	m_screenQuadModel = ModelFactory::ScreenQuadModel::Create();
+
+	// SSAO
+	if (app->getSettings().getBool(Settings::Graphics_SSAO)) {
+		m_ssao = std::make_unique<SSAO>();
+		createSSAORenderPass();
+		createSSAOFramebuffers();
+	}
 }
 
 SVkDeferredRenderer::~SVkDeferredRenderer() {
@@ -43,13 +52,29 @@ SVkDeferredRenderer::~SVkDeferredRenderer() {
 
 	vkDestroyRenderPass(m_context->getDevice(), m_geometryRenderPass, nullptr);
 	vkDestroyRenderPass(m_context->getDevice(), m_shadingRenderPass, nullptr);
-	for (auto& fb : m_frameBuffers) {
+	vkDestroyRenderPass(m_context->getDevice(), m_ssaoRenderPass, nullptr);
+	for (auto& fb : m_geometryFramebuffers) {
+		vkDestroyFramebuffer(m_context->getDevice(), fb, nullptr);
+	}
+	for (auto& fb : m_ssaoFramebuffers) {
 		vkDestroyFramebuffer(m_context->getDevice(), fb, nullptr);
 	}
 }
 
 void* SVkDeferredRenderer::present(Renderer::PresentFlag flags, void* skippedPrepCmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Deferred renderer present");
+
+	bool doSSAO = Application::getInstance()->getSettings().getBool(Settings::Graphics_SSAO);
+	if (!m_ssao && doSSAO) {
+		// Handle enabling of ssao in runtime
+		m_ssao = std::make_unique<SSAO>();
+		createSSAORenderPass();
+		createSSAOFramebuffers();
+	} else if (m_ssao && !doSSAO) {
+		// Handle disabling of ssao in runtime
+		m_context->waitForGPU();
+		m_ssao.reset();
+	}
 
 	VkCommandBuffer cmd = nullptr;
 	if (flags & Renderer::PresentFlag::SkipPreparation) {
@@ -63,6 +88,8 @@ void* SVkDeferredRenderer::present(Renderer::PresentFlag flags, void* skippedPre
 		cmd = runFramePreparation();
 	if (!(flags & Renderer::PresentFlag::SkipRendering)) {
 		runGeometryPass(cmd);
+		if (doSSAO)
+			runSSAO(cmd);
 	}
 	if (!(flags & Renderer::PresentFlag::SkipDeferredShading))
 		runShadingPass(cmd);
@@ -86,10 +113,13 @@ bool SVkDeferredRenderer::onEvent(Event& event) {
 		m_gbuffers.albedo->resize(m_width, m_height);
 		m_gbuffers.mrao->resize(m_width, m_height);
 
-		for (auto& fb : m_frameBuffers) {
+		for (auto& fb : m_geometryFramebuffers) {
 			vkDestroyFramebuffer(m_context->getDevice(), fb, nullptr);
 		}
-		createFramebuffers();
+		createGeometryFramebuffers();
+
+		m_ssao->resize(m_width, m_height);
+		createSSAOFramebuffers();
 
 		return true;
 	};
@@ -235,11 +265,61 @@ void SVkDeferredRenderer::createShadingRenderPass() {
 	VK_CHECK_RESULT(vkCreateRenderPass(m_context->getDevice(), &renderPassInfo, nullptr, &m_shadingRenderPass));
 }
 
-void SVkDeferredRenderer::createFramebuffers() {
+void SVkDeferredRenderer::createSSAORenderPass() {
+	if (m_ssaoRenderPass)
+		vkDestroyRenderPass(m_context->getDevice(), m_ssaoRenderPass, nullptr);
+
+	std::array<VkAttachmentDescription, 1> attachmentDescs = {};
+
+	// Init attachment properties
+	attachmentDescs[0].format = static_cast<SVkRenderableTexture*>(m_ssao->getRenderTargetTexture())->getFormat();
+	attachmentDescs[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachmentDescs[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachmentDescs[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachmentDescs[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachmentDescs[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachmentDescs[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachmentDescs[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+	VkAttachmentReference colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.pColorAttachments = &colorReference;
+	subpass.colorAttachmentCount = 1;
+
+	std::array<VkSubpassDependency, 1> dependencies;
+	dependencies[0].srcSubpass = 0;
+	dependencies[0].dstSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[0].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	VkRenderPassCreateInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.pAttachments = attachmentDescs.data();
+	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentDescs.size());
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = dependencies.size();
+	renderPassInfo.pDependencies = dependencies.data();
+
+	VK_CHECK_RESULT(vkCreateRenderPass(m_context->getDevice(), &renderPassInfo, nullptr, &m_ssaoRenderPass));
+
+	// Make sure ssao shader will be created using this render pass
+	auto& ssaoShader = static_cast<SVkShader&>(Application::getInstance()->getResourceManager().getShaderSet(Shaders::SSAOShader));
+	ssaoShader.setRenderPass(m_ssaoRenderPass);
+}
+
+void SVkDeferredRenderer::createGeometryFramebuffers() {
 	m_gbuffers.depthView = m_context->getDepthView();
 
-	auto numBuffers = m_context->getNumSwapchainImages();
-	m_frameBuffers.resize(numBuffers);
+	//auto numBuffers = m_context->getNumSwapchainImages();
+	auto numBuffers = m_gbuffers.positions->getNumBuffers();
+
+	m_geometryFramebuffers.resize(numBuffers);
 	for (int i = 0; i < numBuffers; i++) {
 		// Create the framebuffer
 		VkImageView attachments[] = {
@@ -258,9 +338,37 @@ void SVkDeferredRenderer::createFramebuffers() {
 		framebufferInfo.height = m_height;
 		framebufferInfo.layers = 1;
 
-		VK_CHECK_RESULT(vkCreateFramebuffer(m_context->getDevice(), &framebufferInfo, nullptr, &m_frameBuffers[i]));
+		VK_CHECK_RESULT(vkCreateFramebuffer(m_context->getDevice(), &framebufferInfo, nullptr, &m_geometryFramebuffers[i]));
 	}
 }
+
+void SVkDeferredRenderer::createSSAOFramebuffers() {
+	for (auto& fb : m_ssaoFramebuffers) {
+		vkDestroyFramebuffer(m_context->getDevice(), fb, nullptr);
+	}
+
+	auto numBuffers = m_geometryFramebuffers.size();
+
+	m_ssaoFramebuffers.resize(numBuffers);
+	for (int i = 0; i < numBuffers; i++) {
+		// Create the framebuffer
+		VkImageView attachments[] = {
+			static_cast<SVkRenderableTexture*>(m_ssao->getRenderTargetTexture())->getView(i)
+		};
+
+		VkFramebufferCreateInfo framebufferInfo = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+		framebufferInfo.renderPass = m_ssaoRenderPass;
+		framebufferInfo.attachmentCount = ARRAYSIZE(attachments);
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = m_ssao->getRenderTargetWidth();
+		framebufferInfo.height = m_ssao->getRenderTargetHeight();
+		framebufferInfo.layers = 1;
+
+		VK_CHECK_RESULT(vkCreateFramebuffer(m_context->getDevice(), &framebufferInfo, nullptr, &m_ssaoFramebuffers[i]));
+	}
+}
+
+
 
 const VkCommandBuffer& SVkDeferredRenderer::runFramePreparation() {
 	// Fetch the swap image index to use this frame
@@ -296,7 +404,7 @@ void SVkDeferredRenderer::runGeometryPass(const VkCommandBuffer& cmd) {
 
 		VkRenderPassBeginInfo renderPassBeginInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
 		renderPassBeginInfo.renderPass = m_geometryRenderPass;
-		renderPassBeginInfo.framebuffer = m_frameBuffers[imageIndex];
+		renderPassBeginInfo.framebuffer = m_geometryFramebuffers[(m_geometryFramebuffers.size() == 1) ? 0 : imageIndex];
 		renderPassBeginInfo.renderArea.extent.width = m_width;
 		renderPassBeginInfo.renderArea.extent.height = m_height;
 		renderPassBeginInfo.clearValueCount = clearValues.size();
@@ -338,11 +446,155 @@ void SVkDeferredRenderer::runGeometryPass(const VkCommandBuffer& cmd) {
 	vkCmdEndRenderPass(cmd);
 }
 
+void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION("SSAO");
+	auto& resman = Application::getInstance()->getResourceManager();
+	auto imageIndex = m_context->getSwapImageIndex();
+
+	auto* ssaoRenderTarget = static_cast<SVkRenderableTexture*>(m_ssao->getRenderTargetTexture());
+	float ssaoWidth = m_ssao->getRenderTargetWidth();
+	float ssaoHeight = m_ssao->getRenderTargetHeight();
+
+	{
+		// Clear values for all attachments written in the fragment shader
+		std::array<VkClearValue, 1> clearValues;
+		clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+
+		VkRenderPassBeginInfo renderPassBeginInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+		renderPassBeginInfo.renderPass = m_ssaoRenderPass;
+		renderPassBeginInfo.framebuffer = m_ssaoFramebuffers[(m_ssaoFramebuffers.size() == 1) ? 0 : imageIndex];
+		renderPassBeginInfo.renderArea.extent.width = ssaoWidth;
+		renderPassBeginInfo.renderArea.extent.height = ssaoHeight;
+		renderPassBeginInfo.clearValueCount = clearValues.size();
+		renderPassBeginInfo.pClearValues = clearValues.data();
+
+		// Start render pass
+		vkCmdBeginRenderPass(cmd, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		VkViewport viewport;
+		viewport.x = 0.f;
+		viewport.y = ssaoHeight;
+		viewport.width = ssaoWidth;
+		viewport.height = -ssaoHeight;
+		viewport.minDepth = 0.f;
+		viewport.maxDepth = 1.f;
+
+		VkRect2D scissorRect;
+		scissorRect.extent.width = ssaoWidth;
+		scissorRect.extent.height = ssaoHeight;
+		scissorRect.offset = { 0, 0 };
+
+		// Set dynamic viewport and scissor states
+		vkCmdSetViewport(cmd, 0, 1, &viewport);
+		vkCmdSetScissor(cmd, 0, 1, &scissorRect);
+	}
+
+	auto* shader = static_cast<SVkShader*>(&resman.getShaderSet(Shaders::SSAOShader));
+	auto* mesh = m_screenQuadModel->getMesh(0);
+
+	// Find a matching pipelineStateObject
+	auto& pso = static_cast<SVkPipelineStateObject&>(resman.getPSO(shader, mesh));
+
+	// Set up material
+	{
+		m_shadingPassMaterial.clearTextures();
+		// This order needs to match the indexing used in the shader
+		m_shadingPassMaterial.addTexture(m_gbuffers.positions.get());
+		m_shadingPassMaterial.addTexture(m_gbuffers.normals.get());
+	}
+
+	Renderer::RenderCommand fakeRenderCmd;
+	fakeRenderCmd.material = &m_shadingPassMaterial;
+	std::vector< Renderer::RenderCommand> fakeVec = { fakeRenderCmd };
+	shader->prepareToRender(fakeVec, &pso);
+
+	// Draw
+	{
+		if (camera) {
+			shader->trySetCBufferVar("sys_mView", &glm::transpose(camera->getViewMatrix()), sizeof(glm::mat4), cmd);
+			shader->trySetCBufferVar("sys_mProjection", &glm::transpose(camera->getProjMatrix()), sizeof(glm::mat4), cmd);
+		}
+		auto& [kernelData, kernelDataSize] = m_ssao->getKernel();
+		shader->trySetCBufferVar("kernel", kernelData, kernelDataSize, cmd);
+		auto& [noiseData, noiseDataSize] = m_ssao->getNoise();
+		shader->trySetCBufferVar("noise", noiseData, noiseDataSize, cmd);
+		glm::vec2 ssaoSize(ssaoWidth, ssaoHeight);
+		shader->trySetCBufferVar("windowSize", &ssaoSize, sizeof(glm::vec2), cmd);
+
+		pso.bind(cmd); // Binds the pipeline and descriptor sets
+
+		mesh->draw(*this, &m_shadingPassMaterial, shader, environment, cmd);
+	}
+
+	vkCmdEndRenderPass(cmd);
+
+	//// Blur ssao output
+	//auto& blurHorizontalShader = Application::getInstance()->getResourceManager().getShaderSet(Shaders::GaussianBlurHorizontalComputeShader);
+	//auto& blurVerticalShader = Application::getInstance()->getResourceManager().getShaderSet(Shaders::GaussianBlurVerticalComputeShader);
+
+	//auto& settingsHorizontal = blurHorizontalShader.getSettings().computeShaderSettings;
+	//auto& settingsVertical = blurVerticalShader.getSettings().computeShaderSettings;
+	//float textureSizeDiff = 1.f;
+
+	//const auto& heap = m_context->getMainGPUDescriptorHeap();
+	//DX12ComputeShaderDispatcher csDispatcher;
+	//csDispatcher.begin(cmdList);
+
+	//// Dispatch horizontal blur pass
+	//{
+	//	blurHorizontalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmdList);
+
+	//	DescriptorHeap::DescriptorTableInstanceBuilder instance;
+
+	//	instance.add("t0", [&](auto cpuHandle) { }); // TODO: figure out why this line is needed for u10 to bind (something is probably wrong in addAndBind)
+	//	instance.add("u10", [&](auto cpuHandle) {
+	//		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, ssaoRenderTarget->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//		ssaoRenderTarget->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	//	});
+
+	//	// Add the instance to the heap
+	//	// This binds resource views in the right places in the heap according to the root signature
+	//	heap->addAndBind(instance, cmdList, true);
+
+	//	unsigned int x = (unsigned int)glm::ceil(m_ssao->getRenderTargetWidth() * settingsHorizontal.threadGroupXScale);
+	//	unsigned int y = (unsigned int)glm::ceil(m_ssao->getRenderTargetHeight() * settingsHorizontal.threadGroupYScale);
+	//	unsigned int z = 1;
+	//	csDispatcher.dispatch(blurHorizontalShader, { x, y, z }, cmdList);
+	//}
+
+	//// Dispatch vertical blur pass
+	//{
+	//	blurVerticalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmdList);
+
+	//	DescriptorHeap::DescriptorTableInstanceBuilder instance;
+
+	//	m_ssaoShadingTexture = static_cast<DX12RenderableTexture*>(blurVerticalShader.getRenderableTexture("output"));
+	//	m_ssaoShadingTexture->resize(m_ssao->getRenderTargetWidth(), m_ssao->getRenderTargetHeight());
+	//	instance.add("t0", [&](auto cpuHandle) {
+	//		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, ssaoRenderTarget->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//		ssaoRenderTarget->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	//	});
+	//	instance.add("u10", [&](auto cpuHandle) {
+	//		m_context->getDevice()->CopyDescriptorsSimple(1, cpuHandle, m_ssaoShadingTexture->getUavCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//		m_ssaoShadingTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	//	});
+
+	//	heap->addAndBind(instance, cmdList, true);
+
+	//	unsigned int x = (unsigned int)glm::ceil(m_ssao->getRenderTargetWidth() * settingsVertical.threadGroupXScale);
+	//	unsigned int y = (unsigned int)glm::ceil(m_ssao->getRenderTargetHeight() * settingsVertical.threadGroupYScale);
+	//	unsigned int z = 1;
+	//	csDispatcher.dispatch(blurVerticalShader, { x, y, z }, cmdList);
+	//}
+	//m_ssaoBlurredTexture = m_ssaoOutputTexture.get();
+}
+
 void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 	// Fetch the swap image index to use this frame
 	auto imageIndex = m_context->getSwapImageIndex();
 
 	auto& resman = Application::getInstance()->getResourceManager();
+	bool useSSAO = Application::getInstance()->getSettings().getBool(Settings::Graphics_SSAO);
 	
 	// TODO:: figure out if a semaphore or barrier is still needed to sync gbuffer pass finishing before shading pass starts
 
@@ -370,7 +622,7 @@ void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 	auto* shader = static_cast<SVkShader*>(&resman.getShaderSet(Shaders::DeferredShadingPassShader));
 	auto* mesh = m_screenQuadModel->getMesh(0);
 
-	// Find a matching pipelineStateObject and bind it
+	// Find a matching pipelineStateObject
 	auto& pso = static_cast<SVkPipelineStateObject&>(resman.getPSO(shader, mesh));
 
 	// Set up material
@@ -382,7 +634,8 @@ void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 		m_shadingPassMaterial.addTexture(m_gbuffers.albedo.get());
 		m_shadingPassMaterial.addTexture(m_gbuffers.mrao.get());
 
-		//m_shadingPassMaterial.addTexture(ssao);
+		if (m_ssao)
+			m_shadingPassMaterial.addTexture(m_ssao->getRenderTargetTexture());
 		//m_shadingPassMaterial.addTexture(shadows);
 
 		m_shadingPassMaterial.addTexture(m_brdfLutTexture);
@@ -395,7 +648,7 @@ void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 	std::vector< Renderer::RenderCommand> fakeVec = { fakeRenderCmd };
 	shader->prepareToRender(fakeVec, &pso);
 
-	int useSSAOInt = 0;
+	int useSSAOInt = (int)useSSAO;
 	shader->trySetCBufferVar("useSSAO", &useSSAOInt, sizeof(int), cmd);
 	int useShadowTextureInt = 0;
 	shader->trySetCBufferVar("useShadowTexture", &useShadowTextureInt, sizeof(int), cmd);

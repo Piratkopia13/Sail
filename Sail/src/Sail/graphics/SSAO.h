@@ -1,8 +1,7 @@
 #pragma once
 #include "../api/RenderableTexture.h"
-#include "../events/Events.h"
 
-class SSAO : public IEventListener {
+class SSAO {
 public:
 	SSAO();
 	~SSAO();
@@ -14,9 +13,9 @@ public:
 
 	const std::tuple<void*, unsigned int> getKernel() const;
 	const std::tuple<void*, unsigned int> getNoise() const;
-	
-	bool onEvent(Event& event) override;
 
+	void resize(uint32_t width, uint32_t height);
+	
 private:
 	std::unique_ptr<RenderableTexture> m_outputTexture;
 	float m_resScale;

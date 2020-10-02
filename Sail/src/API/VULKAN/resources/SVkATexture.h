@@ -9,6 +9,7 @@ public:
 	bool isReadyToUse() const; // Returns true when texture is ready for usage
 	const VkImage& getImage(unsigned int swapImageIndex = 0) const;
 	const VkImageView& getView(unsigned int swapImageIndex = 0) const;
+	uint32_t getNumBuffers() const;
 
 	static VkFormat ConvertToVkFormat(ResourceFormat::TextureFormat format, bool isSRGB);
 

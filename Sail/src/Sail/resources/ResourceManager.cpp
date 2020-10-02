@@ -67,7 +67,8 @@ ResourceManager::ResourceManager() {
 	{
 		Shaders::ShaderSettings settings;
 		settings.filename = "deferred/ssao.hlsl";
-		settings.materialType = Material::CUSTOM;
+		//settings.materialType = Material::CUSTOM;
+		settings.materialType = Material::TEXTURES;
 		settings.defaultPSOSettings.cullMode = GraphicsAPI::BACKFACE;
 		settings.defaultPSOSettings.depthMask = GraphicsAPI::BUFFER_DISABLED;
 		settings.defaultPSOSettings.rtFormats.insert({ 0, ResourceFormat::R8 });

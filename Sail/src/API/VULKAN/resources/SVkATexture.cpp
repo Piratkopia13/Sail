@@ -28,6 +28,10 @@ const VkImageView& SVkATexture::getView(unsigned int swapImageIndex) const {
 	return imageViews[i];
 }
 
+uint32_t SVkATexture::getNumBuffers() const {
+	return textureImages.size();
+}
+
 VkFormat SVkATexture::ConvertToVkFormat(ResourceFormat::TextureFormat format, bool isSRGB) {
 	switch (format) {
 	case ResourceFormat::R8:

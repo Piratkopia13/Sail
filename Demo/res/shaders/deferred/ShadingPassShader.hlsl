@@ -67,8 +67,8 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	Texture2D texNormals 	= texArr[2];
 	Texture2D texAlbedo 	= texArr[3];
 	Texture2D texMrao 		= texArr[4];
-	Texture2D texShadows 	= texArr[5]; // NOT USED
-	Texture2D texSsao 		= texArr[6]; // NOT USED
+	Texture2D texSsao 		= texArr[5];
+	Texture2D texShadows 	= texArr[6]; // NOT USED
 	
 	Texture2D texBrdfLut		 = texArr[0];
 	TextureCube texRadianceMap 	 = texCubeArr[0];
@@ -143,9 +143,8 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	pixel.metalness = mrao.r;
 	pixel.roughness = mrao.g;
 	pixel.ao = mrao.b;
-    if (useSSAO) // TODO: fix
-	    pixel.ao *= pow(texSsao.Sample(PSssLinear, input.texCoord).r, 3.f);
-
+    if (useSSAO)
+	    pixel.ao *= pow(texSsao.Sample(PSssPoint, input.texCoord).r, 3.f);
     // return float4(pixel.ao, pixel.ao, pixel.ao, 1.0f);
 
     // Shade

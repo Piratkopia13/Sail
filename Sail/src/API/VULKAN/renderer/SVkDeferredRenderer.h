@@ -5,6 +5,7 @@
 #include "Sail/graphics/material/TexturesMaterial.h"
 #include "../SVkAPI.h"
 #include "../resources/SVkRenderableTexture.h"
+#include "Sail/graphics/SSAO.h"
 
 class SVkDeferredRenderer : public Renderer, public IEventListener {
 public:
@@ -30,10 +31,13 @@ private:
 
 	void createGeometryRenderPass();
 	void createShadingRenderPass();
-	void createFramebuffers();
+	void createGeometryFramebuffers();
+	void createSSAORenderPass();
+	void createSSAOFramebuffers();
 
 	const VkCommandBuffer& runFramePreparation();
 	void runGeometryPass(const VkCommandBuffer& cmd);
+	void runSSAO(const VkCommandBuffer& cmd);
 	void runShadingPass(const VkCommandBuffer& cmd);
 	void runFrameExecution(const VkCommandBuffer& cmd);
 
@@ -44,12 +48,17 @@ private:
 
 	VkRenderPass m_geometryRenderPass;
 	GBufferTextures m_gbuffers;
-	std::vector<VkFramebuffer> m_frameBuffers;
+	std::vector<VkFramebuffer> m_geometryFramebuffers;
 
 	VkRenderPass m_shadingRenderPass;
 	std::unique_ptr<Model> m_screenQuadModel;
 	TexturesMaterial m_shadingPassMaterial;
 	Texture* m_brdfLutTexture;
+
+	std::unique_ptr<SSAO> m_ssao;
+	VkRenderPass m_ssaoRenderPass;
+	std::vector<VkFramebuffer> m_ssaoFramebuffers;
+	SVkRenderableTexture* m_ssaoShadingTexture;
 
 	unsigned int m_width, m_height;
 

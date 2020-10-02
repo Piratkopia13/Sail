@@ -368,7 +368,7 @@ bool DX12DeferredRenderer::onEvent(Event& event) {
 		for (unsigned i = 0; i < NUM_GBUFFERS; i++) {
 			sGBufferTextures[i]->resize(event.getWidth(), event.getHeight());
 		}
-
+		m_ssao->resize(event.getWidth(), event.getHeight());
 		return true;
 	};
 	EventHandler::HandleType<WindowResizeEvent>(event, resizeEvent);
