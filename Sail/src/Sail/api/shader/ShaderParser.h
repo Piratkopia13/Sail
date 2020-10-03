@@ -10,20 +10,22 @@
 #include "InputLayout.h"
 
 class ShaderParser {
-private:
+public:
 	struct ShaderResource {
-		ShaderResource(const std::string& name, unsigned int slot, unsigned int arraySize, unsigned int vkBinding, bool isTexturesArray = false, bool isTextureCubesArray = false)
+		ShaderResource(const std::string& name, unsigned int slot, unsigned int arraySize, unsigned int vkBinding, bool isTexturesArray = false, bool isTextureCubesArray = false, bool isWritable = false)
 			: name(name)
 			, slot(slot)
 			, arraySize(arraySize)
 			, vkBinding(vkBinding)
 			, isTexturesArray(isTexturesArray)
 			, isTextureCubesArray(isTextureCubesArray)
+			, isWritable(isWritable)
 		{ }
 		std::string name;
 		unsigned int slot;
 		unsigned int vkBinding;
 		unsigned int arraySize;
+		bool isWritable;
 		bool isTexturesArray; // True if all 2D textures used in the scene should be bound to this
 		bool isTextureCubesArray; // True if all cube textures used in the scene should be bound to this
 	};
@@ -32,13 +34,15 @@ private:
 			std::string name;
 			unsigned int byteOffset;
 		};
-		ShaderCBuffer(std::vector<ShaderCBuffer::CBufferVariable>& vars, void* initData, unsigned int size, ShaderComponent::BIND_SHADER bindShader, unsigned int slot, bool isMaterialArray, bool inComputeShader)
-			: vars(vars)
+		ShaderCBuffer(const std::string& name, std::vector<ShaderCBuffer::CBufferVariable>& vars, void* initData, unsigned int size, ShaderComponent::BIND_SHADER bindShader, unsigned int slot, bool isMaterialArray, bool inComputeShader)
+			: name(name)
+			, vars(vars)
 			, bindShader(bindShader)
 			, isMaterialArray(isMaterialArray)
 		{
 			cBuffer = std::unique_ptr<ShaderComponent::ConstantBuffer>(ShaderComponent::ConstantBuffer::Create(initData, size, bindShader, slot, inComputeShader));
 		}
+		std::string name;
 		std::vector<CBufferVariable> vars;
 		std::unique_ptr<ShaderComponent::ConstantBuffer> cBuffer;
 		ShaderComponent::BIND_SHADER bindShader;
@@ -56,7 +60,7 @@ private:
 	struct ShaderRenderableTexture {
 		ShaderRenderableTexture(ShaderResource res, ResourceFormat::TextureFormat format, const std::string& nameSuffix = "")
 			: res(res) {
-			renderableTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(320, 180, "Renderable Texture owned by a ShaderPipeline" + nameSuffix, format));
+			renderableTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(320, 180, RenderableTexture::USAGE_GENERAL, "Renderable Texture owned by a ShaderPipeline" + nameSuffix, format));
 		}
 		ShaderResource res;
 		std::unique_ptr<RenderableTexture> renderableTexture;

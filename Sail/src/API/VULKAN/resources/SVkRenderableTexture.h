@@ -7,7 +7,7 @@
 class SVkRenderableTexture : public RenderableTexture, public SVkATexture {
 
 public:
-	SVkRenderableTexture(uint32_t width, uint32_t height, ResourceFormat::TextureFormat format,
+	SVkRenderableTexture(uint32_t width, uint32_t height, UsageFlags usage, ResourceFormat::TextureFormat format,
 		bool singleBuffer = true, unsigned int arraySize = 1, const glm::vec4& clearColor = glm::vec4(1.0f));
 
 	~SVkRenderableTexture();
@@ -27,6 +27,7 @@ private:
 	uint32_t m_width;
 	uint32_t m_height;
 	VkFormat m_format;
+	UsageFlags m_usageFlags;
 
 	bool m_isDepthStencil;
 	unsigned int m_arraySize;

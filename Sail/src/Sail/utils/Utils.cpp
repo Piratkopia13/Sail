@@ -220,6 +220,18 @@ bool Utils::String::startsWith(const char* source, const std::string& prefix) {
 	return strncmp(source, prefix.c_str(), prefix.size()) == 0;
 }
 
+const char* Utils::String::getStartOfCurrentLine(const char* source, const char* sourceStart) {
+	const char* lineStart = source;
+	while (true) {
+		if (lineStart == sourceStart || // Out of bounds check
+			lineStart[-1] == '\n') { // if the "next" character is a new line, we have found the line start
+			break;
+		}
+		lineStart--;
+	}
+	return lineStart;
+}
+
 void Logger::Log(const std::string& msg) {
 	HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 

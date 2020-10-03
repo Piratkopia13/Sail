@@ -171,7 +171,7 @@ void ShaderParser::parseConstantBuffer(const std::string& source) {
 	void* initData = malloc(size);
 	memset(initData, 0, size);
 	std::vector<ShaderCBuffer::CBufferVariable> vars; // No vars
-	m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, isMaterialArray, m_parsedData.hasCS);
+	m_parsedData.cBuffers.emplace_back(name, vars, initData, size, bindShader, registerSlot, isMaterialArray, m_parsedData.hasCS);
 	free(initData);
 }
 
@@ -227,7 +227,7 @@ void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConst
 	} else {
 		void* initData = malloc(size);
 		memset(initData, 0, size);
-		m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, isMaterialArray, m_parsedData.hasCS);
+		m_parsedData.cBuffers.emplace_back(bufferName, vars, initData, size, bindShader, registerSlot, isMaterialArray, m_parsedData.hasCS);
 		free(initData);
 	}
 
@@ -235,14 +235,7 @@ void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConst
 }
 
 void ShaderParser::parseSampler(const char* src) {
-	const char* lineStart = src;
-	while (true) {
-		if (lineStart == m_cleanSource.c_str() || // Out of bounds check
-			lineStart[-1] == '\n') { // if the "next" character is a new line, we have found the line start
-			break;
-		}
-		lineStart--;
-	}
+	const char* lineStart = getStartOfCurrentLine(src, m_cleanSource.c_str());
 
 	UINT tokenSize = 0;
 	std::string name = nextTokenAsName(src, tokenSize);
@@ -296,14 +289,7 @@ void ShaderParser::parseSampler(const char* src) {
 }
 
 void ShaderParser::parseTexture(const char* source) {
-	const char* lineStart = source;
-	while (true) {
-		if (lineStart == m_cleanSource.c_str() || // Out of bounds check
-			lineStart[-1] == '\n') { // if the "next" character is a new line, we have found the line start
-			break;
-		}
-		lineStart--;
-	}
+	const char* lineStart = getStartOfCurrentLine(source, m_cleanSource.c_str());
 
 	if (source[0] == '<') {
 		// A type was found in the place of a name
@@ -330,12 +316,15 @@ void ShaderParser::parseTexture(const char* source) {
 }
 
 void ShaderParser::parseRWTexture(const char* source) {
+	const char* lineStart = getStartOfCurrentLine(source, m_cleanSource.c_str());
+	
 	UINT tokenSize = 0;
 	std::string type = nextTokenAsType(source, tokenSize);
 	source += tokenSize;
 
 	tokenSize = 0;
-	std::string name = nextTokenAsName(source, tokenSize);
+	int arrSize = 1;
+	std::string name = nextTokenAsName(source, tokenSize, &arrSize);
 	source += tokenSize;
 
 	tokenSize = 0;
@@ -343,10 +332,16 @@ void ShaderParser::parseRWTexture(const char* source) {
 	if (slot == -1) {
 		slot = 0; // No slot specified, use 0 as default
 	}
+	auto line = getLineStartingFrom(source);
+	bool isTexturesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURES") != nullptr);
+	bool isTextureCubesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURECUBES") != nullptr);
+
+	unsigned int vkBinding = static_cast<unsigned int>(slot);
+	getVkBinding(lineStart, vkBinding);
 
 	// Store name and slot as a texture to allow shader to manually bind this slot
 	auto uslot = static_cast<unsigned int>(slot);
-	m_parsedData.textures.emplace_back(name, uslot, 1, uslot);
+	m_parsedData.textures.emplace_back(name, uslot, arrSize, vkBinding, isTexturesArray, isTextureCubesArray, true);
 
 	// Get texture format from source, if specified
 	ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8;

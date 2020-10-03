@@ -5,7 +5,15 @@
 
 class RenderableTexture {
 public:
-	static RenderableTexture* Create(uint32_t width = 320, uint32_t height = 320, const std::string& name = "Unnamed Renderable Texture", 
+	enum UsageFlags {
+		USAGE_DEFAULT			= 0,
+		USAGE_SAMPLING_ACCESS	= 1 << 0,
+		USAGE_UNORDERED_ACCESS	= 1 << 1,
+		USAGE_GENERAL			= USAGE_SAMPLING_ACCESS | USAGE_UNORDERED_ACCESS
+	};
+
+public:
+	static RenderableTexture* Create(uint32_t width = 320, uint32_t height = 320, UsageFlags usage = USAGE_DEFAULT, const std::string& name = "Unnamed Renderable Texture", 
 		ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8, bool singleBuffer = true, uint32_t arraySize = 1, const glm::vec4& clearColor = glm::vec4(0.f));
 	virtual ~RenderableTexture() {}
 

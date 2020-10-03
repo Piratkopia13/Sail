@@ -11,6 +11,20 @@ class SVkAPI;
 
 class SVkShader : public Shader, public IEventListener {
 public:
+	struct ImageDescriptor {
+		std::vector<VkDescriptorImageInfo> infos;
+		std::string name;
+	};
+	struct BufferDescriptor {
+		std::vector<VkDescriptorBufferInfo> infos;
+		std::string name;
+	};
+	struct Descriptors {
+		std::vector<ImageDescriptor> images;
+		std::vector<BufferDescriptor> buffers;
+	};
+
+public:
 	SVkShader(Shaders::ShaderSettings settings);
 	~SVkShader();
 
@@ -25,7 +39,13 @@ public:
 	bool onEvent(Event& event) override;
 
 	// This will write to each RendererCommand.materialIndex
-	void prepareToRender(std::vector<Renderer::RenderCommand>& renderCommands, const SVkPipelineStateObject* pso);
+	// It will also update material texture indices
+	// Should be called whenever a list of renderCommands is available
+	void updateDescriptorsAndMaterialIndices(std::vector<Renderer::RenderCommand>& renderCommands, const SVkPipelineStateObject* pso);
+
+	// "Manual" method to updates descriptors
+	void updateDescriptors(const Descriptors& descriptors, const SVkPipelineStateObject* pso);
+
 	const VkPipelineLayout& getPipelineLayout() const;
 
 	void setRenderPass(const VkRenderPass& renderPass);

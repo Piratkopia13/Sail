@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Sail/api/shader/ComputeShaderDispatcher.h"
 
 class DX12API;

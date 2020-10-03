@@ -203,7 +203,7 @@ void SVkForwardRenderer::runRenderingPass(const VkCommandBuffer& cmd, const VkRe
 		auto& renderCommands = it.second;
 
 		SVkShader* shader = static_cast<SVkShader*>(pso->getShader());
-		shader->prepareToRender(renderCommands, pso);
+		shader->updateDescriptorsAndMaterialIndices(renderCommands, pso);
 
 		if (camera) {
 			// Transpose all matrices to convert them to row-major which is required in order for the hlsl->spir-v multiplication order

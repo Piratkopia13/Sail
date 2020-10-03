@@ -11,7 +11,7 @@ SSAO::SSAO() {
 
 	m_width = windowWidth * m_resScale;
 	m_height = windowHeight * m_resScale;
-	m_outputTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(m_width, m_height, "SSAO output ", ResourceFormat::R8));
+	m_outputTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(m_width, m_height, RenderableTexture::USAGE_GENERAL, "SSAO output ", ResourceFormat::R8));
 
 	std::uniform_real_distribution<float> randomFloats(0.f, 1.f); // random floats between 0 - 1
 	std::default_random_engine generator;

@@ -114,6 +114,7 @@ namespace Utils {
 		const char* removeBeginningWhitespaces(const char* source);
 		std::string removeComments(const std::string& source);
 		bool startsWith(const char* source, const std::string& prefix);
+		const char* getStartOfCurrentLine(const char* source, const char* sourceStart); // SourceStart is used for out of bounds checks
 	};
 
 	template < typename T>

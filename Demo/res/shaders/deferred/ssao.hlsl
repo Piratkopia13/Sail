@@ -26,15 +26,11 @@ PSIn VSMain(VSIn input) {
 	return output;
 }
 
-// Texture2D def_positions       : register(t1);
-// Texture2D def_worldNormals    : register(t2);
-Texture2D texArr[] 		 : register(t4) : SAIL_BIND_ALL_TEXTURES;
+Texture2D def_positions       : register(t1);
+Texture2D def_worldNormals    : register(t2);
 SamplerState PSssNearestClamp : register(s3) : SAIL_SAMPLER_POINT_CLAMP; // Use to sample positions (s3)
 
 float PSMain(PSIn input) : SV_Target0 {
-    Texture2D def_positions = texArr[0];
-    Texture2D def_worldNormals = texArr[1];
-
     float3 fragPos      = def_positions.Sample(PSssNearestClamp, input.texCoord).xyz;
     float3 worldNormal  = def_worldNormals.Sample(PSssNearestClamp, input.texCoord).xyz;
     float3 vsNormal     = mul(sys_mView, float4(normalize(worldNormal), 0.f)).xyz; // should be changed to inverse transpose to support non-uniformly scaled objects

@@ -4,16 +4,17 @@
 #include "Sail/api/Window.h"
 #include "../SVkUtils.h"
 
-RenderableTexture* RenderableTexture::Create(uint32_t width, uint32_t height, const std::string& name, ResourceFormat::TextureFormat format, bool singleBuffer, uint32_t arraySize, const glm::vec4& clearColor)
+RenderableTexture* RenderableTexture::Create(uint32_t width, uint32_t height, UsageFlags usage, const std::string& name, ResourceFormat::TextureFormat format, bool singleBuffer, uint32_t arraySize, const glm::vec4& clearColor)
 {
-	return SAIL_NEW SVkRenderableTexture(width, height, format, singleBuffer, arraySize, clearColor);
+	return SAIL_NEW SVkRenderableTexture(width, height, usage, format, singleBuffer, arraySize, clearColor);
 }
 
-SVkRenderableTexture::SVkRenderableTexture(uint32_t width, uint32_t height, ResourceFormat::TextureFormat format,
+SVkRenderableTexture::SVkRenderableTexture(uint32_t width, uint32_t height, UsageFlags usage, ResourceFormat::TextureFormat format,
 	bool singleBuffer, unsigned int arraySize, const glm::vec4& clearColor)
 	: SVkATexture(singleBuffer)
 	, m_width(width)
 	, m_height(height)
+	, m_usageFlags(usage)
 	, m_arraySize(arraySize)
 {
 	readyToUse = true;
@@ -73,7 +74,13 @@ void SVkRenderableTexture::createTextures() {
 	auto& allocator = context->getVmaAllocator();
 
 	VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	if (m_usageFlags & UsageFlags::USAGE_SAMPLING_ACCESS) {
+		usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+	}
+	if (m_usageFlags & UsageFlags::USAGE_UNORDERED_ACCESS) {
+		usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+	}
 	if (m_isDepthStencil) {
 		aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 		usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;

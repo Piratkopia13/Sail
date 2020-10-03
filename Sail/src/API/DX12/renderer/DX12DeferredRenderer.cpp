@@ -272,7 +272,6 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 		unsigned int z = 1;
 		csDispatcher.dispatch(blurVerticalShader, { x, y, z }, cmdList);
 	}
-	//m_ssaoBlurredTexture = m_ssaoOutputTexture.get();
 }
 
 void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {

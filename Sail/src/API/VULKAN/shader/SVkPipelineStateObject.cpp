@@ -3,6 +3,7 @@
 #include "Sail/Application.h"
 #include "SVkInputLayout.h"
 #include "SVkShader.h"
+#include "../SVkUtils.h"
 
 PipelineStateObject* PipelineStateObject::Create(Shader* shader, unsigned int attributesHash) {
 	return SAIL_NEW SVkPipelineStateObject(shader, attributesHash);
@@ -38,9 +39,11 @@ bool SVkPipelineStateObject::bind(void* cmdList) {
 	// TODO: This returns false if pipeline is already bound, maybe do something with that
 	bindInternal(cmdList, true);
 
-	vkCmdBindPipeline(static_cast<VkCommandBuffer>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+	VkPipelineBindPoint bindPoint = (shader->isComputeShader()) ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-	vkCmdBindDescriptorSets(static_cast<VkCommandBuffer>(cmdList), VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkShader->getPipelineLayout(), 0, 1, &getDescriptorSet(), 0, nullptr);
+	vkCmdBindPipeline(static_cast<VkCommandBuffer>(cmdList), bindPoint, m_pipeline);
+
+	vkCmdBindDescriptorSets(static_cast<VkCommandBuffer>(cmdList), bindPoint, m_vkShader->getPipelineLayout(), 0, 1, &getDescriptorSet(), 0, nullptr);
 
 	return true;
 }
@@ -60,8 +63,7 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 	auto createShaderStageInfo = [](VkShaderStageFlagBits stage, VkShaderModule* shaderModule, const char* entrypoint) {
-		VkPipelineShaderStageCreateInfo shaderStageInfo{};
-		shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		VkPipelineShaderStageCreateInfo shaderStageInfo = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		shaderStageInfo.stage = stage;
 		shaderStageInfo.module = *shaderModule;
 		shaderStageInfo.pName = entrypoint;
@@ -86,22 +88,19 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	}
 
 	// Input assembly
-	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 	// Viewport and scissors
-	VkPipelineViewportStateCreateInfo viewportState{};
-	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	VkPipelineViewportStateCreateInfo viewportState = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO  };
 	viewportState.viewportCount = 1;
 	viewportState.pViewports = nullptr; // Set dynamically during rendering
 	viewportState.scissorCount = 1;
 	viewportState.pScissors = nullptr; // Set dynamically during rendering
 
 	// Rasterizer state
-	VkPipelineRasterizationStateCreateInfo rasterizer{};
-	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	VkPipelineRasterizationStateCreateInfo rasterizer = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO  };
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 		
@@ -127,8 +126,7 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
 
 	// Multisampling
-	VkPipelineMultisampleStateCreateInfo multisampling{};
-	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	VkPipelineMultisampleStateCreateInfo multisampling = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO  };
 	multisampling.sampleShadingEnable = (m_context->getSampleCount() > 1); // TODO: this is quite expensive, consider disabling
 	multisampling.rasterizationSamples = m_context->getSampleCount();
 	multisampling.minSampleShading = 0.2f; // Optional
@@ -137,8 +135,7 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
 	// Depth stencil
-	VkPipelineDepthStencilStateCreateInfo depthStencil{};
-	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	VkPipelineDepthStencilStateCreateInfo depthStencil = { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO  };
 	depthStencil.depthTestEnable = (settings.depthMask != GraphicsAPI::BUFFER_DISABLED);
 	depthStencil.depthWriteEnable = (settings.depthMask != GraphicsAPI::WRITE_MASK);
 	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
@@ -185,8 +182,7 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 		colorBlendAttachments.emplace_back(colorBlendAttachment);
 	}
 
-	VkPipelineColorBlendStateCreateInfo colorBlending{};
-	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	VkPipelineColorBlendStateCreateInfo colorBlending = { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO  };
 	colorBlending.logicOpEnable = VK_FALSE;
 	colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
 	colorBlending.attachmentCount = settings.numRenderTargets;
@@ -202,14 +198,12 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 		VK_DYNAMIC_STATE_SCISSOR
 	};
 
-	VkPipelineDynamicStateCreateInfo dynamicState{};
-	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	VkPipelineDynamicStateCreateInfo dynamicState = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
 	dynamicState.dynamicStateCount = ARRAYSIZE(dynamicStates);
 	dynamicState.pDynamicStates = dynamicStates;
 
 	// Finally, create the graphics pipeline
-	VkGraphicsPipelineCreateInfo pipelineInfo{};
-	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	VkGraphicsPipelineCreateInfo pipelineInfo = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  };
 	pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
 	pipelineInfo.pStages = shaderStages.data();
 	pipelineInfo.pVertexInputState = &static_cast<SVkInputLayout*>(inputLayout.get())->getCreateInfo();
@@ -226,12 +220,22 @@ void SVkPipelineStateObject::createGraphicsPipelineState() {
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
 
-	if (vkCreateGraphicsPipelines(m_context->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline) != VK_SUCCESS) {
-		Logger::Error("Failed to create graphics pipeline!");
-	}
-
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_context->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
 }
 
 void SVkPipelineStateObject::createComputePipelineState() {
-	assert(false);
+	VkShaderModule csModule = *static_cast<VkShaderModule*>(shader->getCsBlob());
+
+	VkPipelineShaderStageCreateInfo shaderStageInfo = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO  };
+	shaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+	shaderStageInfo.module = csModule;
+	shaderStageInfo.pName = "CSMain";
+
+	VkComputePipelineCreateInfo pipelineInfo = { VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+	pipelineInfo.stage = shaderStageInfo;
+	pipelineInfo.layout = m_vkShader->getPipelineLayout();
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+	pipelineInfo.basePipelineIndex = -1;  // Optional
+
+	VK_CHECK_RESULT(vkCreateComputePipelines(m_context->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
 }
