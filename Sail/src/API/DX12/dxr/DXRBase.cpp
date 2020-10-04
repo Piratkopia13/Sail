@@ -44,7 +44,7 @@ DXRBase::~DXRBase() {
 	}
 }
 
-void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::updateAccelerationStructures(const std::unordered_map<PipelineStateObject*, std::vector<Renderer::RenderCommand>>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	unsigned int frameIndex = context->getSwapIndex();
@@ -61,72 +61,78 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	}
 	
 	// Iterate all static meshes
-	for (auto& renderCommand : sceneGeometry) {
-		if (renderCommand.dxrFlags & Renderer::MESH_STATIC) {
-			Mesh* mesh = renderCommand.mesh;
-			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
-			if (searchResult == m_bottomBuffers[frameIndex].end()) {
-				// If mesh does not have a BLAS
-				createBLAS(renderCommand, flagFastTrace, cmdList);
-			} else {
-				// Mesh has a BLAS
-				// TODO: uncomment and fix
-				//if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
-				//	Logger::Log("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
-				//	// Destroy old blas
-				//	searchResult->second.blas.release();
-				//	m_bottomBuffers[frameIndex].erase(searchResult);
-				//	// Create new one
-				//	createBLAS(renderCommand, flagFastTrace, cmdList);
-				//} else 
-				{
-					// Mesh already has a BLAS - add transform to instance list
-					searchResult->second.instanceList.emplace_back((glm::mat3x4)renderCommand.transform);
+	for (auto& it : sceneGeometry) {
+		for (auto& renderCommand : it.second) {
+			if (renderCommand.dxrFlags & Renderer::MESH_STATIC) {
+				Mesh* mesh = renderCommand.mesh;
+				auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
+				if (searchResult == m_bottomBuffers[frameIndex].end()) {
+					// If mesh does not have a BLAS
+					createBLAS(renderCommand, flagFastTrace, cmdList);
+				} else {
+					// Mesh has a BLAS
+					// TODO: uncomment and fix
+					//if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
+					//	Logger::Log("A BLAS rebuild has been triggered on a STATIC mesh. Consider changing it to DYNAMIC!");
+					//	// Destroy old blas
+					//	searchResult->second.blas.release();
+					//	m_bottomBuffers[frameIndex].erase(searchResult);
+					//	// Create new one
+					//	createBLAS(renderCommand, flagFastTrace, cmdList);
+					//} else 
+					{
+						// Mesh already has a BLAS - add transform to instance list
+						searchResult->second.instanceList.emplace_back((glm::mat3x4)renderCommand.transform);
+					}
 				}
+				totalNumInstances++;
 			}
-			totalNumInstances++;
 		}
 	}
 
 	// Iterate all dynamic meshes
-	for (auto& renderCommand : sceneGeometry) {
-		if (renderCommand.dxrFlags & Renderer::MESH_DYNAMIC) {
-			Mesh* mesh = renderCommand.mesh;
-		
-			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
-			auto flags = flagNone;
-			if (renderCommand.dxrFlags & Renderer::MESH_HERO) {
-				flags = flagFastTrace | flagAllowUpdate;
-			} else {
-				flags = flagFastBuild | flagAllowUpdate;
-			}
+	for (auto& it : sceneGeometry) {
+		for (auto& renderCommand : it.second) {
+			if (renderCommand.dxrFlags & Renderer::MESH_DYNAMIC) {
+				Mesh* mesh = renderCommand.mesh;
 
-			// If mesh does not have a BLAS or was first built as STATIC
-			if (searchResult == m_bottomBuffers[frameIndex].end() || !searchResult->second.blas.allowUpdate) {
-				createBLAS(renderCommand, flags, cmdList);
-			} else {
-				// TODO: uncomment and fix
-				/*if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
-					createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
-				}*/
-				// Add transform to instance list
-				searchResult->second.instanceList.emplace_back((glm::mat3x4)renderCommand.transform);
-			}
+				auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
+				auto flags = flagNone;
+				if (renderCommand.dxrFlags & Renderer::MESH_HERO) {
+					flags = flagFastTrace | flagAllowUpdate;
+				} else {
+					flags = flagFastBuild | flagAllowUpdate;
+				}
 
-			totalNumInstances++;
+				// If mesh does not have a BLAS or was first built as STATIC
+				if (searchResult == m_bottomBuffers[frameIndex].end() || !searchResult->second.blas.allowUpdate) {
+					createBLAS(renderCommand, flags, cmdList);
+				} else {
+					// TODO: uncomment and fix
+					/*if (renderCommand.hasUpdatedSinceLastRender[frameIndex]) {
+						createBLAS(renderCommand, flags, cmdList, &searchResult->second.blas);
+					}*/
+					// Add transform to instance list
+					searchResult->second.instanceList.emplace_back((glm::mat3x4)renderCommand.transform);
+				}
+
+				totalNumInstances++;
+			}
 		}
 	}
 
 	// Destroy BLASes that are no longer part of the scene
 	for (auto it = m_bottomBuffers[frameIndex].begin(); it != m_bottomBuffers[frameIndex].end();) {
 		bool destroy = true;
-		for (auto& renderCommand : sceneGeometry) {
-			Mesh* mesh = renderCommand.mesh;
+		for (auto& it2 : sceneGeometry) {
+			for (auto& renderCommand : it2.second) {
+				Mesh* mesh = renderCommand.mesh;
 
-			if (it->first == mesh) {
-				destroy = false;
-				++it;
-				break;
+				if (it->first == mesh) {
+					destroy = false;
+					++it;
+					break;
+				}
 			}
 		}
 		if (destroy) {

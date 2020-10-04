@@ -39,6 +39,42 @@ std::string ShaderParser::parse(const std::string& source) {
 	// Remove comments from source
 	m_cleanSource = removeComments(source);
 
+	// Remove platform specific shader code
+	{
+		std::string::size_type start;
+#ifdef _SAIL_VK
+		while ((start = m_cleanSource.find("#ifdef _SAIL_VK")) != std::string::npos) {
+			size_t elseStart = start + m_cleanSource.substr(start).find("#else");
+			size_t endifStart = start + m_cleanSource.substr(start).find("#endif");
+			if (elseStart < endifStart) {
+				// Remove everything starting from the #else to the #endif
+				size_t size = endifStart - elseStart;
+				m_cleanSource.erase(elseStart, size+6);
+				// Remove the #ifdef
+				m_cleanSource.erase(start, 15);
+			} else {
+				// No else found inside this if, do nothing
+			}
+		}
+#else
+		while ((start = m_cleanSource.find("#ifdef _SAIL_VK")) != std::string::npos) {
+			size_t elseStart = start + m_cleanSource.substr(start).find("#else");
+			size_t endifStart = start + m_cleanSource.substr(start).find("#endif");
+			if (elseStart < endifStart) {
+				// Remove everything starting from the #ifdef to the #else
+				size_t size = elseStart - start + 5;
+				m_cleanSource.erase(start, size);
+				// Remove the #endif
+				m_cleanSource.erase(endifStart - size, 6);
+			} else {
+				// Remove everything starting from the #ifdef to the #endif
+				size_t size = endifStart - start + 6;
+				m_cleanSource.erase(start, size);
+			}
+		}
+#endif
+	}
+
 	const char* src;
 
 	// Store used vertex data attributes and their order
@@ -183,6 +219,9 @@ void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConst
 	if (storeAsPushConstant) {
 		// Name is stored right after the block
 		const char* start = findToken("}", src);
+		if (strlen(start) <= 1) {
+			Logger::Error("A push constant struct was specified without a name.");
+		}
 		UINT size;
 		bufferName = nextTokenAsName(start, size);
 	} else {

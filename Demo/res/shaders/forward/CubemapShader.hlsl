@@ -10,7 +10,6 @@ struct PSIn {
 cbuffer VSSystemCBuffer : register(b0) {
 	matrix sys_mView;
 	matrix sys_mProjection;
-	matrix sys_mVP;
 }
 
 PSIn VSMain(VSIn input) {
@@ -27,11 +26,20 @@ PSIn VSMain(VSIn input) {
 	return output;
 }
 
+#ifdef _SAIL_VK
 TextureCube sys_tex0[] : register(t1) : SAIL_BIND_ALL_TEXTURECUBES;
 SamplerState PSss : register(s2) : SAIL_SAMPLER_ANIS_WRAP;
+#else
+TextureCube sys_tex0 : register(t1) : SAIL_BIND_ALL_TEXTURECUBES;
+SamplerState PSss : SAIL_SAMPLER_ANIS_WRAP;
+#endif
 
 float4 PSMain(PSIn input) : SV_TARGET {
+#ifdef _SAIL_VK
 	float3 color = sys_tex0[0].SampleLevel(PSss, input.texCoord, 0).rgb;
+#else
+	float3 color = sys_tex0.SampleLevel(PSss, input.texCoord, 0).rgb;
+#endif
 
 	return float4(color, 1.0f);
 

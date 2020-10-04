@@ -134,6 +134,7 @@ void* SVkShader::compileShader(const std::string& source, const std::string& fil
 		outputPath += "-"+stageStr+".spv";
 		cmd << " -O " << outputPath;
 		cmd << " -S " << stageStr; // vs, ps, etc.
+		cmd << " -D _SAIL_VK=1"; // Sets a define to allow shaders to change if compiling for vulkan
 		cmd << " -T spirv";
 
 		system(cmd.str().c_str());

@@ -36,7 +36,7 @@ private:
 	DX12API* m_context;
 	DX12API::Command m_command;
 
-	static std::unique_ptr<DX12RenderableTexture> sGBufferTextures[NUM_GBUFFERS];
+	static std::unique_ptr<DX12RenderableTexture> sGBufferTextures[NUM_GBUFFERS+1];
 	std::unique_ptr<Model> m_screenQuadModel;
 	DeferredShadingPassMaterial m_shadingPassMaterial;
 

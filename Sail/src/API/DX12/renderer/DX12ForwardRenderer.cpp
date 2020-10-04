@@ -103,25 +103,24 @@ void DX12ForwardRenderer::runRenderingPass(ID3D12GraphicsCommandList4* cmdList) 
 
 	auto& resman = Application::getInstance()->getResourceManager();
 
-	// TODO: Sort meshes according to shaderPipeline
-	unsigned int totalInstances = commandQueue.size();
-	for (RenderCommand& command : commandQueue) {
-		DX12Shader* shader = static_cast<DX12Shader*>(command.shader);
-		//uniqueShaderPipelines.insert(shaderPipeline);
+	// Iterate unique PSO's
+	for (auto it : commandQueue) {
+		PipelineStateObject* pso = it.first;
+		auto& renderCommands = it.second;
+		DX12Shader* shader = static_cast<DX12Shader*>(pso->getShader());
+		unsigned int totalInstances = renderCommands.size();
 
 		// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
 		shader->reserve(totalInstances);
 
-		// Find a matching pipelineStateObject and bind it
-		auto& pso = resman.getPSO(shader, command.mesh);
-		pso.bind(cmdList);
+		pso->bind(cmdList);
 
-		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
-		shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), cmdList);
-		shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4), cmdList);
-		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), cmdList);
-		shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), cmdList);
-
+		if (camera) {
+			shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), cmdList);
+			shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4), cmdList);
+			shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), cmdList);
+			shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), cmdList);
+		}
 		if (lightSetup) {
 			auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
 			auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
@@ -129,7 +128,10 @@ void DX12ForwardRenderer::runRenderingPass(ID3D12GraphicsCommandList4* cmdList) 
 			shader->trySetCBufferVar("pointLights", plData, plDataByteSize, cmdList);
 		}
 
-		command.mesh->draw(*this, command.material, shader, environment, cmdList);
+		for (RenderCommand& command : renderCommands) {
+			shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
+			command.mesh->draw(*this, command.material, shader, environment, cmdList);
+		}
 	}
 }
 

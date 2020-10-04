@@ -15,20 +15,16 @@ DX12ATexture::DX12ATexture()
 
 	state.resize(numSwapBuffers);
 	srvHeapCDHs.resize(numSwapBuffers);
-	depthSrvHeapCDHs.resize(numSwapBuffers);
 	uavHeapCDHs.resize(numSwapBuffers);
 	textureDefaultBuffers.resize(numSwapBuffers);
 	// Store the cpu descriptor handle that will contain the srv for this texture
 	for (unsigned int i = 0; i < numSwapBuffers; i++) {
-		srvHeapCDHs[i] 		= cpuDescHeap.getCPUDescriptorHandleForIndex(i * 3 + 0);
-		uavHeapCDHs[i] 		= cpuDescHeap.getCPUDescriptorHandleForIndex(i * 3 + 1);
-		depthSrvHeapCDHs[i] = cpuDescHeap.getCPUDescriptorHandleForIndex(i * 3 + 2);
+		srvHeapCDHs[i] 		= cpuDescHeap.getCPUDescriptorHandleForIndex(i * 2 + 0);
+		uavHeapCDHs[i] 		= cpuDescHeap.getCPUDescriptorHandleForIndex(i * 2 + 1);
 	}
 }
 
-DX12ATexture::~DX12ATexture() {
-	
-}
+DX12ATexture::~DX12ATexture() { }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getSrvCDH(int swapBuffer) const {
 	int i = (swapBuffer == -1) ? context->getSwapIndex() : swapBuffer;

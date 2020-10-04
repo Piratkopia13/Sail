@@ -27,8 +27,9 @@ public:
 	
 	RenderableTexture* getRenderableTexture(const std::string& name) const;
 
-	virtual bool setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) = 0;
-	virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) = 0;
+	// These really do not make any sense in modern APIs
+	//virtual bool setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) = 0;
+	//virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) = 0;
 
 	virtual void setCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList);
 	virtual bool trySetCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList);

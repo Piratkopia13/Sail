@@ -14,7 +14,7 @@
 #include "../shader/DX12ComputeShaderDispatcher.h"
 #include "DX12RaytracingRenderer.h"
 
-std::unique_ptr<DX12RenderableTexture> DX12DeferredRenderer::sGBufferTextures[NUM_GBUFFERS];
+std::unique_ptr<DX12RenderableTexture> DX12DeferredRenderer::sGBufferTextures[NUM_GBUFFERS + 1]; // +1 for depth
 
 DX12DeferredRenderer::DX12DeferredRenderer() {
 	EventSystem::getInstance()->subscribeToEvent(Event::WINDOW_RESIZE, this);
@@ -27,11 +27,11 @@ DX12DeferredRenderer::DX12DeferredRenderer() {
 	auto windowWidth = app->getWindow()->getWindowWidth();
 	auto windowHeight = app->getWindow()->getWindowHeight();
 
-	for (int i = 0; i < NUM_GBUFFERS; i++) {
-		glm::vec4 clearColor(0.f);
-		clearColor.z = (i == 0) ? FLT_MAX : 0.f; // Position texture z needs this for ssao to work with skybox in background
+	for (int i = 0; i < NUM_GBUFFERS + 1; i++) {
+		//glm::vec4 clearColor(0.f);
+		//clearColor.z = (i == 0) ? FLT_MAX : 0.f; // Position texture z needs this for ssao to work with skybox in background
 		sGBufferTextures[i] = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(
-			RenderableTexture::Create(windowWidth, windowHeight, "GBuffer renderer output " + std::to_string(i), (i < 2) ? ResourceFormat::R16G16B16A16_FLOAT : ResourceFormat::R8G8B8A8, (i == 0), false, clearColor)));
+			RenderableTexture::Create(windowWidth, windowHeight, RenderableTexture::USAGE_SAMPLING_ACCESS, "GBuffer renderer output " + std::to_string(i), (i < 2) ? ResourceFormat::R16G16B16A16_FLOAT : (i == NUM_GBUFFERS) ? ResourceFormat::DEPTH : ResourceFormat::R8G8B8A8)));
 	}
 
 	m_screenQuadModel = ModelFactory::ScreenQuadModel::Create();
@@ -139,28 +139,26 @@ void DX12DeferredRenderer::runGeometryPass(ID3D12GraphicsCommandList4* cmdList) 
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Geometry pass");
 	auto& resman = Application::getInstance()->getResourceManager();
 
-	// TODO: Sort meshes according to shaderPipeline
-	unsigned int totalInstances = commandQueue.size();
-	for (RenderCommand& command : commandQueue) {
-		DX12Shader* shader = static_cast<DX12Shader*>(command.shader);
-		if (!shader) {
-			Logger::Warning("Tried to render a model with no shader set");
-			continue;
-		}
+	// Iterate unique PSO's
+	for (auto it : commandQueue) {
+		PipelineStateObject* pso = it.first;
+		auto& renderCommands = it.second;
+		DX12Shader* shader = static_cast<DX12Shader*>(pso->getShader());
+		unsigned int totalInstances = renderCommands.size();
 
 		// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
 		shader->reserve(totalInstances);
 
-		// Find a matching pipelineStateObject and bind it
-		auto& pso = resman.getPSO(shader, command.mesh);
-		pso.bind(cmdList);
+		pso->bind(cmdList);
 
-		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
 		shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), cmdList);
 		shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4), cmdList);
 		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), cmdList);
 
-		command.mesh->draw(*this, command.material, shader, environment, cmdList);
+		for (RenderCommand& command : renderCommands) {
+			shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
+			command.mesh->draw(*this, command.material, shader, environment, cmdList);
+		}
 	}
 }
 

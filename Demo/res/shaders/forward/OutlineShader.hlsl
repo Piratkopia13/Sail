@@ -8,6 +8,14 @@ struct PSIn {
     float3 color : COLOR;
 };
 
+struct OutlineMaterial {
+    float3 color;
+    float thickness;
+};
+
+#ifdef _SAIL_VK
+// VK ONLY
+
 [[vk::push_constant]]
 struct {
 	matrix sys_mWorld;
@@ -18,20 +26,33 @@ cbuffer VSSystemCBuffer : register(b0) {
 	matrix sys_mVP;
 }
 
-struct OutlineMaterial {
-    float3 color;
-    float thickness;
-};
-
 cbuffer VSMaterialsBuffer : register(b1) : SAIL_BIND_ALL_MATERIALS {
 	OutlineMaterial sys_materials[1024];
 }
 
+#else
+// NOT VK
+
+cbuffer VSSystemCBuffer : register(b0) {
+	matrix sys_mVP;
+	matrix sys_mWorld;
+	float3 mat_color;
+    float mat_thickness;
+}
+#endif
+
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
+#ifdef _SAIL_VK
 	OutlineMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
     matrix mWorld = VSPSConsts.sys_mWorld;
+#else
+	OutlineMaterial mat;
+	mat.color = mat_color;
+	mat.thickness = mat_thickness;
+    matrix mWorld = sys_mWorld;
+#endif
 	output.color = mat.color;
 
     // Method 1 scale model 

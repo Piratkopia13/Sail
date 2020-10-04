@@ -6,18 +6,19 @@
 
 // TODO: fix compilation error
 // Depth texture is now handled separately, see VK implementation for details
-RenderableTexture* RenderableTexture::Create(unsigned int width, unsigned int height, const std::string& name, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, const glm::vec4& clearColor, unsigned int arraySize, bool singleBuffer) {
-	return SAIL_NEW DX12RenderableTexture(1, width, height, format, createDepthStencilView, createOnlyDSV, clearColor, singleBuffer, 0U, 0U, name, arraySize);
+RenderableTexture* RenderableTexture::Create(uint32_t width, uint32_t height, UsageFlags usage, const std::string& name, ResourceFormat::TextureFormat format, bool singleBuffer, uint32_t arraySize, const glm::vec4& clearColor) {
+	return SAIL_NEW DX12RenderableTexture(width, height, usage, name, format, singleBuffer, arraySize, clearColor);
 }
 
-DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width, unsigned int height, ResourceFormat::TextureFormat format, bool createDepthStencilView, bool createOnlyDSV, const glm::vec4& clearColor, bool singleBuffer, UINT bindFlags, UINT cpuAccessFlags, const std::string& name, unsigned int arraySize)
+DX12RenderableTexture::DX12RenderableTexture(uint32_t width, uint32_t height, UsageFlags usage, const std::string& name, 
+	ResourceFormat::TextureFormat format, bool singleBuffer, unsigned int arraySize, const glm::vec4& clearColor)
 	: m_width(width)
 	, m_height(height)
 	, m_cpuRtvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers())
 	, m_cpuDsvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers())
-	, m_hasDepthTextures(createDepthStencilView)
 	, m_arraySize(arraySize)
 	, m_clearColor(clearColor)
+	, m_usageFlags(usage)
 {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
@@ -25,7 +26,7 @@ DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width,
 	context = Application::getInstance()->getAPI<DX12API>();
 
 	m_name = name;
-
+	m_isDepthStencil = (format == ResourceFormat::DEPTH);
 	m_format = DX12Texture::ConvertToDXGIFormat(format);
 
 	m_numSwapBuffers = context->getNumGPUBuffers();
@@ -37,14 +38,15 @@ DX12RenderableTexture::DX12RenderableTexture(UINT aaSamples, unsigned int width,
 
 	m_rtvHeapCDHs.resize(m_numSwapBuffers);
 	m_dsvHeapCDHs.resize(m_numSwapBuffers);
-	if (m_hasDepthTextures) {
-		m_depthStencilBuffers.resize(m_numSwapBuffers);
-	}
 	for (unsigned int i = 0; i < m_numSwapBuffers; i++) {
 		m_rtvHeapCDHs[i] = m_cpuRtvDescHeap.getCPUDescriptorHandleForIndex(i);
 		m_dsvHeapCDHs[i] = m_cpuDsvDescHeap.getCPUDescriptorHandleForIndex(i);
 	}
-	createTextures();
+	if (m_isDepthStencil) {
+		createDepthTextures();
+	} else {
+		createTextures();
+	}
 }
 
 DX12RenderableTexture::~DX12RenderableTexture() {
@@ -58,7 +60,7 @@ void DX12RenderableTexture::begin(void* cmdList) {
 
 	//transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE* dsvCdh = (m_hasDepthTextures) ? &m_dsvHeapCDHs[getSwapIndex()] : &context->getDsvCDH();
+	const D3D12_CPU_DESCRIPTOR_HANDLE* dsvCdh = (m_isDepthStencil) ? &m_dsvHeapCDHs[getSwapIndex()] : &context->getDsvCDH();
 	dxCmdList->OMSetRenderTargets(1, &m_rtvHeapCDHs[getSwapIndex()], true, dsvCdh);
 
 	dxCmdList->RSSetViewports(1, context->getViewport());
@@ -82,9 +84,10 @@ void DX12RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
 
 	// Resource state must be set to render target before clearing
 	transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	dxCmdList->ClearRenderTargetView(m_rtvHeapCDHs[getSwapIndex()], clearColor, 0, nullptr);
-	if (m_hasDepthTextures) {
+	if (m_isDepthStencil) {
 		dxCmdList->ClearDepthStencilView(m_dsvHeapCDHs[getSwapIndex()], D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	} else {
+		dxCmdList->ClearRenderTargetView(m_rtvHeapCDHs[getSwapIndex()], clearColor, 0, nullptr);
 	}
 }
 
@@ -111,16 +114,6 @@ ID3D12Resource* DX12RenderableTexture::getResource(int frameIndex) const {
 	return textureDefaultBuffers[i].Get();
 }
 
-ID3D12Resource* DX12RenderableTexture::getDepthResource() const {
-	return m_depthStencilBuffers[getSwapIndex()].Get();
-}
-
-D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDepthSrvCDH(int frameIndex) const {
-	assert(m_hasDepthTextures); // Tried to get depth srv without a valid depth stencil resource
-	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
-	return depthSrvHeapCDHs[i];
-}
-
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getRtvCDH(int frameIndex) const {
 	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
 	return m_rtvHeapCDHs[i];
@@ -145,7 +138,10 @@ void DX12RenderableTexture::createTextures() {
 		textureDesc.SampleDesc.Count = 1;
 		textureDesc.SampleDesc.Quality = 0;
 		textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		if (m_usageFlags & UsageFlags::USAGE_UNORDERED_ACCESS) {
+			textureDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		}
 		textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 
 		D3D12_CLEAR_VALUE clearValue = { textureDesc.Format, {m_clearColor.x, m_clearColor.y, m_clearColor.z, m_clearColor.a} };
@@ -185,10 +181,6 @@ void DX12RenderableTexture::createTextures() {
 		// Create a render target view
 		context->getDevice()->CreateRenderTargetView(textureDefaultBuffers[i].Get(), nullptr, m_rtvHeapCDHs[i]);
 	}
-
-	if (m_hasDepthTextures) {
-		createDepthTextures();
-	}
 }
 
 void DX12RenderableTexture::createDepthTextures() {
@@ -218,16 +210,16 @@ void DX12RenderableTexture::createDepthTextures() {
 			&bufferDesc,
 			D3D12_RESOURCE_STATE_DEPTH_WRITE,
 			&depthOptimizedClearValue,
-			IID_PPV_ARGS(&m_depthStencilBuffers[i])
+			IID_PPV_ARGS(&textureDefaultBuffers[i])
 		);
-		m_depthStencilBuffers[i]->SetName(L"Depth/Stencil Resource Buffer");
+		textureDefaultBuffers[i]->SetName(L"Depth/Stencil Resource Buffer");
 
 		// Create DSV
 		D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
 		depthStencilDesc.Format = bufferDesc.Format;
 		depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 		depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
-		context->getDevice()->CreateDepthStencilView(m_depthStencilBuffers[i].Get(), &depthStencilDesc, m_dsvHeapCDHs[i]);
+		context->getDevice()->CreateDepthStencilView(textureDefaultBuffers[i].Get(), &depthStencilDesc, m_dsvHeapCDHs[i]);
 
 		// Create a shader resource view for the depth stencil
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -235,7 +227,7 @@ void DX12RenderableTexture::createDepthTextures() {
 		srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = 1;
-		context->getDevice()->CreateShaderResourceView(m_depthStencilBuffers[i].Get(), &srvDesc, depthSrvHeapCDHs[i]);
+		context->getDevice()->CreateShaderResourceView(textureDefaultBuffers[i].Get(), &srvDesc, srvHeapCDHs[i]);
 	}
 }
 

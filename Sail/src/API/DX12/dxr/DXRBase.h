@@ -21,7 +21,7 @@ public:
 	DXRBase(const std::string& shaderFilename, Settings settings);
 	virtual ~DXRBase();
 
-	void updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
+	void updateAccelerationStructures(const std::unordered_map<PipelineStateObject*, std::vector<Renderer::RenderCommand>>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList);
 	void dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList);
 
 	void recreateResources();

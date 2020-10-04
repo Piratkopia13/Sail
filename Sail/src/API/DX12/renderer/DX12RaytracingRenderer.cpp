@@ -25,7 +25,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer() {
 
 	auto width = Application::getInstance()->getWindow()->getWindowWidth();
 	auto height = Application::getInstance()->getWindow()->getWindowHeight();
-	sRTOutputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(width, height, "Raytracing output texture", ResourceFormat::R16G16B16A16_FLOAT)));
+	sRTOutputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(width, height, RenderableTexture::USAGE_GENERAL, "Raytracing output texture", ResourceFormat::R16G16B16A16_FLOAT)));
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {

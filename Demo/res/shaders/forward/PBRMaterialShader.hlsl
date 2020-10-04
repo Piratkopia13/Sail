@@ -17,6 +17,9 @@ struct PSIn {
 	float3x3 tbn : TBN;
 };
 
+#ifdef _SAIL_VK
+// VK ONLY
+
 [[vk::push_constant]]
 struct {
 	matrix sys_mWorld;
@@ -36,11 +39,32 @@ cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
 	PBRMaterial sys_materials[1024];
 }
 
+#else
+// NOT VK
+
+cbuffer VSPSSystemCBuffer : register(b0) {
+	matrix sys_mWorld;
+    matrix sys_mVP;
+	PBRMaterial sys_material;
+    float3 sys_cameraPos;
+	float padding;
+    float4 sys_clippingPlane;
+	DirectionalLight dirLight;
+	PointLight pointLights[8];
+}
+
+#endif
+
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
+#ifdef _SAIL_VK
 	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 	matrix mWorld = VSPSConsts.sys_mWorld;
+#else
+	PBRMaterial mat = sys_material;
+	matrix mWorld = sys_mWorld;
+#endif
 
 	input.position.w = 1.f;
 	output.position = mul(mWorld, input.position);
@@ -74,15 +98,7 @@ PSIn VSMain(VSIn input) {
 }
 
 
-// Texture2D sys_texBrdfLUT : register(t0);
-// TextureCube irradianceMap : register(t1);
-// TextureCube radianceMap : register(t2);
-
-// Texture2D sys_texAlbedo : register(t3);
-// Texture2D sys_texNormal : register(t4);
-// Texture2D sys_texMRAO : register(t5);
-// SamplerState PSss : register(s0);
-
+#ifdef _SAIL_VK
 SamplerState PSssPoint : register(s5) : SAIL_SAMPLER_POINT_CLAMP;
 SamplerState PSss : register(s6) : SAIL_SAMPLER_ANIS_WRAP;
 
@@ -92,6 +108,18 @@ TextureCube texCubeArr[] : register(t8) : SAIL_BIND_ALL_TEXTURECUBES;
 float4 sampleTexture(uint index, float2 texCoords) {
 	return texArr[index].Sample(PSss, texCoords);
 }
+#else
+SamplerState PSssPoint : SAIL_SAMPLER_POINT_CLAMP;
+SamplerState PSss : SAIL_SAMPLER_ANIS_WRAP;
+
+Texture2D sys_texBrdfLUT : register(t0);
+TextureCube irradianceMap : register(t1);
+TextureCube radianceMap : register(t2);
+
+Texture2D sys_texAlbedo : register(t3);
+Texture2D sys_texNormal : register(t4);
+Texture2D sys_texMRAO : register(t5);
+#endif
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
@@ -102,7 +130,11 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// return irradianceMap.SampleLevel(PSss, viewDir, 0);
 	// return radianceMap.SampleLevel(PSss, viewDir, 0);
 
+#ifdef _SAIL_VK
 	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+#else
+	PBRMaterial mat = sys_material;
+#endif
 
 	// float3 camToFrag = normalize(input.worldPos - sys_cameraPos);
 	// return texCubeArr[mat.irradianceMapTexIndex].Sample(PSss, camToFrag);

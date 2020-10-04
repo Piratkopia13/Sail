@@ -30,14 +30,14 @@ DX12PipelineStateObject::DX12PipelineStateObject(Shader* shader, unsigned int at
 	}
 }
 
-bool DX12PipelineStateObject::bind(void* cmdList, uint32_t frameIndex) {
+bool DX12PipelineStateObject::bind(void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	if (!m_pipelineState)
 		Logger::Error("Tried to bind DX12PipelineState before the DirectX PipelineStateObject has been created!");
 	
 	// TODO: This returns false if pipeline is already bound, maybe do something with that
-	bindInternal(cmdList, true, frameIndex);
+	bindInternal(cmdList, true);
 	
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 	dxCmdList->SetPipelineState(m_pipelineState.Get());

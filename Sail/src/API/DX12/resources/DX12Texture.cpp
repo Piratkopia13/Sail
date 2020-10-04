@@ -73,8 +73,7 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 		textureDefaultBuffers[0]->SetName((std::wstring(L"Texture default buffer for ") + std::wstring(filename.begin(), filename.end())).c_str());
 
 		auto& textureData = m_subresources.emplace_back();
-		// Texture data will either be in HDR (float values) or not, get the correct one
-		textureData.pData = (texData->getTextureData8bit()) ? (void*)texData->getTextureData8bit() : (void*)texData->getTextureDataFloat();
+		textureData.pData = texData->getData();
 		textureData.RowPitch = texData->getWidth() * texData->getBytesPerPixel();
 		textureData.SlicePitch = textureData.RowPitch * texData->getHeight();
 
