@@ -60,6 +60,8 @@ public:
 	virtual void setFaceCulling(Culling setting) override;
 	virtual void setBlending(Blending setting) override;
 	virtual void waitForGPU() override;
+	virtual uint32_t getNumSwapBuffers() const override;
+	virtual uint32_t getSwapIndex() const override; // It is only valid to call this between beginPresent() and present(), otherwise it will return -1
 	
 	virtual void beginPresent() override;
 	virtual void present(bool vsync = false) override;
@@ -73,8 +75,6 @@ public:
 	const VkViewport& getViewport() const;
 	const VkRect2D& getScissorRect() const;
 	const VkRenderPass& getRenderPass() const;
-	uint32_t getSwapImageIndex() const; // It is only valid to call this between beginPresent() and present(), otherwise it will return -1
-	size_t getNumSwapchainImages() const;
 	VkRenderPassBeginInfo getRenderPassInfo() const; // TODO: maybe renderers should handle their own render passes?
 	const VkDescriptorPool& getDescriptorPool() const;
 	const VmaAllocator& getVmaAllocator() const;

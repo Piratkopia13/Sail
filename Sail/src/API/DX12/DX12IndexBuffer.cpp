@@ -18,7 +18,7 @@ DX12IndexBuffer::DX12IndexBuffer(Mesh::Data& modelData)
 	m_context = Application::getInstance()->getAPI<DX12API>();
 
 	unsigned long* indices = getIndexData(modelData);
-	auto numSwapBuffers = m_context->getNumGPUBuffers();
+	auto numSwapBuffers = m_context->getNumSwapBuffers();
 
 	m_byteSize = getIndexDataSize();
 

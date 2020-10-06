@@ -14,7 +14,6 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	: Texture(filename)
 	, SVkATexture(true)
 	, m_filename(filename)
-	, m_isCubeMap(false)
 	, m_generateMips(false)
 {
 	auto& allocator = context->getVmaAllocator();
@@ -41,7 +40,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 		texHeight = data.getHeight();
 		vkImageFormat = SVkATexture::ConvertToVkFormat(data.getFormat(), data.isSRGB());
 		imageType = VK_IMAGE_TYPE_2D;
-		m_isCubeMap = data.isCubeMap();
+		texIsCubeMap = data.isCubeMap();
 
 		mipLevels = data.getMipLevels();
 		for (auto& extent : data.getMipExtents()) {
@@ -84,7 +83,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	imageInfo.extent.height = static_cast<uint32_t>(texHeight);
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = mipLevels;
-	imageInfo.arrayLayers = (m_isCubeMap) ? 6 : 1;
+	imageInfo.arrayLayers = (texIsCubeMap) ? 6 : 1;
 	imageInfo.format = vkImageFormat;
 	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -96,7 +95,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	imageInfo.queueFamilyIndexCount = 2;
 	imageInfo.pQueueFamilyIndices = context->getGraphicsAndCopyQueueFamilyIndices();;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imageInfo.flags = (m_isCubeMap) ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+	imageInfo.flags = (texIsCubeMap) ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -137,13 +136,13 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = textureImages[0].image;
-	viewInfo.viewType = (m_isCubeMap) ? VK_IMAGE_VIEW_TYPE_CUBE : (imageType == VK_IMAGE_TYPE_3D) ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.viewType = (texIsCubeMap) ? VK_IMAGE_VIEW_TYPE_CUBE : (imageType == VK_IMAGE_TYPE_3D) ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D;
 	viewInfo.format = vkImageFormat;
 	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	viewInfo.subresourceRange.baseMipLevel = 0;
 	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
-	viewInfo.subresourceRange.layerCount = (m_isCubeMap) ? 6 : 1;
+	viewInfo.subresourceRange.layerCount = (texIsCubeMap) ? 6 : 1;
 	VK_CHECK_RESULT(vkCreateImageView(context->getDevice(), &viewInfo, nullptr, &imageViews[0]));
 	
 }
@@ -151,12 +150,8 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 SVkTexture::~SVkTexture() {
 }
 
-bool SVkTexture::isCubeMap() const {
-	return m_isCubeMap;
-}
-
 void SVkTexture::copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t mipLevels, const std::vector<VkExtent3D>& mipExtents, const std::vector<unsigned int>& mipOffsets) {
-	unsigned int layerCount = (m_isCubeMap) ? 6 : 1;
+	unsigned int layerCount = (texIsCubeMap) ? 6 : 1;
 	// Transition image to copy destination
 	SVkUtils::TransitionImageLayout(cmd, textureImages[0].image, vkImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layerCount, mipLevels);
 
@@ -279,7 +274,7 @@ void SVkTexture::generateMipmaps(const VkCommandBuffer& cmd, int32_t texWidth, i
 		// Mip maps are read from the file and not generated
 
 		// Transition image for shader usage (has to be done on the graphics queue)
-		SVkUtils::TransitionImageLayout(cmd, textureImages[0].image, vkImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, (m_isCubeMap) ? 6 : 1, mipLevels);
+		SVkUtils::TransitionImageLayout(cmd, textureImages[0].image, vkImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, (texIsCubeMap) ? 6 : 1, mipLevels);
 	}
 
 }

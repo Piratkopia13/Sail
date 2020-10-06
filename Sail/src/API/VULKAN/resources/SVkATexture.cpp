@@ -3,7 +3,6 @@
 
 SVkATexture::SVkATexture(bool singleBuffer)
 	: singleBuffer(singleBuffer)
-	, readyToUse(false)
 {
 	context = Application::getInstance()->getAPI<SVkAPI>();
 }
@@ -12,10 +11,6 @@ SVkATexture::~SVkATexture() {
 	for (auto& iv : imageViews) {
 		vkDestroyImageView(context->getDevice(), iv, nullptr);
 	}
-}
-
-bool SVkATexture::isReadyToUse() const {
-	return readyToUse;
 }
 
 const VkImage& SVkATexture::getImage(unsigned int swapImageIndex) const {

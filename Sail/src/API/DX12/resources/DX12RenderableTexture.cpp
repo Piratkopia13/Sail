@@ -14,8 +14,8 @@ DX12RenderableTexture::DX12RenderableTexture(uint32_t width, uint32_t height, Us
 	ResourceFormat::TextureFormat format, bool singleBuffer, unsigned int arraySize, const glm::vec4& clearColor)
 	: m_width(width)
 	, m_height(height)
-	, m_cpuRtvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers())
-	, m_cpuDsvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers())
+	, m_cpuRtvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, Application::getInstance()->getAPI<DX12API>()->getNumSwapBuffers())
+	, m_cpuDsvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, Application::getInstance()->getAPI<DX12API>()->getNumSwapBuffers())
 	, m_arraySize(arraySize)
 	, m_clearColor(clearColor)
 	, m_usageFlags(usage)
@@ -29,7 +29,7 @@ DX12RenderableTexture::DX12RenderableTexture(uint32_t width, uint32_t height, Us
 	m_isDepthStencil = (format == ResourceFormat::DEPTH);
 	m_format = DX12Texture::ConvertToDXGIFormat(format);
 
-	m_numSwapBuffers = context->getNumGPUBuffers();
+	m_numSwapBuffers = context->getNumSwapBuffers();
 	if (singleBuffer) {
 		// RenderableTextures are not multi-buffered, consecutive frames will use the same render textures.
 		useOneResource = true;

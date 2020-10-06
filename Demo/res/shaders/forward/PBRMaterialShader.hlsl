@@ -19,12 +19,18 @@ struct PSIn {
 
 #ifdef _SAIL_VK
 // VK ONLY
-
 [[vk::push_constant]]
 struct {
 	matrix sys_mWorld;
 	uint sys_materialIndex;
 } VSPSConsts;
+#else
+// NOT VK
+cbuffer VSPSConsts : SAIL_CONSTANT {
+	matrix sys_mWorld;
+	uint sys_materialIndex;
+}
+#endif
 
 cbuffer VSPSSystemCBuffer : register(b0) {
     matrix sys_mVP;
@@ -39,21 +45,6 @@ cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
 	PBRMaterial sys_materials[1024];
 }
 
-#else
-// NOT VK
-
-cbuffer VSPSSystemCBuffer : register(b0) {
-	matrix sys_mWorld;
-    matrix sys_mVP;
-	PBRMaterial sys_material;
-    float3 sys_cameraPos;
-	float padding;
-    float4 sys_clippingPlane;
-	DirectionalLight dirLight;
-	PointLight pointLights[8];
-}
-
-#endif
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
@@ -62,7 +53,7 @@ PSIn VSMain(VSIn input) {
 	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 	matrix mWorld = VSPSConsts.sys_mWorld;
 #else
-	PBRMaterial mat = sys_material;
+	PBRMaterial mat = sys_materials[sys_materialIndex];
 	matrix mWorld = sys_mWorld;
 #endif
 
@@ -97,29 +88,21 @@ PSIn VSMain(VSIn input) {
 	return output;
 }
 
-
 #ifdef _SAIL_VK
 SamplerState PSssPoint : register(s5) : SAIL_SAMPLER_POINT_CLAMP;
 SamplerState PSss : register(s6) : SAIL_SAMPLER_ANIS_WRAP;
 
-Texture2D texArr[] : register(t7) : SAIL_BIND_ALL_TEXTURES;
-TextureCube texCubeArr[] : register(t8) : SAIL_BIND_ALL_TEXTURECUBES;
+#else
+SamplerState PSssPoint : SAIL_SAMPLER_POINT_CLAMP;
+SamplerState PSss : SAIL_SAMPLER_ANIS_WRAP;
+#endif
+
+Texture2D texArr[] : SAIL_BIND_ALL_TEXTURES : register(t7);
+TextureCube texCubeArr[] : SAIL_BIND_ALL_TEXTURECUBES : register(t8);
 
 float4 sampleTexture(uint index, float2 texCoords) {
 	return texArr[index].Sample(PSss, texCoords);
 }
-#else
-SamplerState PSssPoint : SAIL_SAMPLER_POINT_CLAMP;
-SamplerState PSss : SAIL_SAMPLER_ANIS_WRAP;
-
-Texture2D sys_texBrdfLUT : register(t0);
-TextureCube irradianceMap : register(t1);
-TextureCube radianceMap : register(t2);
-
-Texture2D sys_texAlbedo : register(t3);
-Texture2D sys_texNormal : register(t4);
-Texture2D sys_texMRAO : register(t5);
-#endif
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
@@ -133,13 +116,13 @@ float4 PSMain(PSIn input) : SV_Target0 {
 #ifdef _SAIL_VK
 	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 #else
-	PBRMaterial mat = sys_material;
+	PBRMaterial mat = sys_materials[sys_materialIndex];
 #endif
 
-	// float3 camToFrag = normalize(input.worldPos - sys_cameraPos);
+	float3 camToFrag = normalize(input.worldPos - sys_cameraPos);
 	// return texCubeArr[mat.irradianceMapTexIndex].Sample(PSss, camToFrag);
+	// return texArr[mat.albedoTexIndex].Sample(PSss, input.texCoords);
 	// return texCubeArr[mat.radianceMapTexIndex].Sample(PSss, camToFrag);
-	// return sampleTexture(mat.brdfLutTexIndex, input.texCoords);
 	
 	PBRScene scene;
 	
@@ -198,13 +181,15 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// Shade
 	float3 shadedColor = pbrShade(scene, pixel);
 
+#if GAMMA_CORRECT
 	// Gamma correction
-    // float3 output = shadedColor / (shadedColor + 1.0f);
+    float3 output = shadedColor / (shadedColor + 1.0f);
     // Tone mapping using the Reinhard operator
-    // output = pow(output, 1.0f / 2.2f);
-	// return float4(output, 1.0);
-
+    output = pow(output, 1.0f / 2.2f);
+	return float4(output, alpha);
+#else
 	return float4(shadedColor, alpha);
 	// return float4(input.worldPos, 1.0);
+#endif
 }
 

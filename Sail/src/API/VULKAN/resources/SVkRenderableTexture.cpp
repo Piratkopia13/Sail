@@ -17,7 +17,6 @@ SVkRenderableTexture::SVkRenderableTexture(uint32_t width, uint32_t height, Usag
 	, m_usageFlags(usage)
 	, m_arraySize(arraySize)
 {
-	readyToUse = true;
 	m_format = SVkTexture::ConvertToVkFormat(format, false);
 	m_isDepthStencil = (format == ResourceFormat::DEPTH);
 
@@ -65,7 +64,7 @@ VkFormat SVkRenderableTexture::getFormat() const {
 }
 
 void SVkRenderableTexture::createTextures() {
-	auto numBuffers = context->getNumSwapchainImages();	// NOTE: num swap chain images could change after swap chain recreate / window resize, maybe handle this?
+	auto numBuffers = context->getNumSwapBuffers();	// NOTE: num swap chain images could change after swap chain recreate / window resize, maybe handle this?
 	numBuffers = (singleBuffer) ? 1 : numBuffers;
 
 	textureImages.resize(numBuffers);

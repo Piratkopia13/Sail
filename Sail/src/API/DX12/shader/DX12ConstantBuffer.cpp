@@ -11,16 +11,15 @@ namespace ShaderComponent {
 
 	DX12ConstantBuffer::DX12ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot, bool inComputeShader)
 		: ConstantBuffer(slot)
-		, m_inComputeShader(inComputeShader)
-	{
+		, m_inComputeShader(inComputeShader) {
 		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 		m_context = Application::getInstance()->getAPI<DX12API>();
-		auto numSwapBuffers = m_context->getNumGPUBuffers();
+		auto numSwapBuffers = m_context->getNumSwapBuffers();
 
 		// Store offset size for each mesh
 		m_byteAlignedSize = (size + 255) & ~255;
-		
+
 		m_resourceHeapSizes.resize(numSwapBuffers);
 		m_constantBufferUploadHeap.resize(numSwapBuffers);
 		m_cbGPUAddress.resize(numSwapBuffers);
@@ -40,24 +39,24 @@ namespace ShaderComponent {
 		//delete[] m_needsUpdate;
 	}
 
-	void DX12ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int meshIndex, unsigned int offset) {
+	void DX12ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int offset) {
 		// This method needs to be run every frame to make sure the buffer for all framebuffers are kept updated
 		auto frameIndex = m_context->getSwapIndex();
-		memcpy(m_cbGPUAddress[frameIndex] + m_byteAlignedSize * meshIndex + offset, newData, bufferSize);
+		memcpy(m_cbGPUAddress[frameIndex] + offset, newData, bufferSize);
 	}
 
-	void DX12ConstantBuffer::bind(unsigned int meshIndex, void* cmdList) const {
+	void DX12ConstantBuffer::bind(void* cmdList) const {
 		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 		auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
 		auto frameIndex = m_context->getSwapIndex();
-		
+
 		UINT rootIndex = m_context->getRootSignEntryFromRegister("b" + std::to_string(slot)).rootSigIndex;
 
 		if (m_inComputeShader) {
-			dxCmdList->SetComputeRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);
+			dxCmdList->SetComputeRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress());
 		} else {
-			dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress() + m_byteAlignedSize * meshIndex);
+			dxCmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[frameIndex]->GetGPUVirtualAddress());
 		}
 	}
 
@@ -78,34 +77,4 @@ namespace ShaderComponent {
 
 		// TODO: copy upload heap to a default heap when the data is not often changed
 	}
-
-	void DX12ConstantBuffer::reserve(unsigned int meshIndexMax) {
-		SAIL_PROFILE_API_SPECIFIC_FUNCTION();
-		
-		auto numSwapBuffers = m_context->getNumGPUBuffers();
-		auto frameIndex = m_context->getSwapIndex();
-		// Expand resource heap if index is out of range
-		// TODO: add mutex lock to this to make it thread safe
-		if ((meshIndexMax + 1) * m_byteAlignedSize >= m_resourceHeapSizes[frameIndex]) {
-			SAIL_PROFILE_API_SPECIFIC_SCOPE("CBuffer expansion");
-
-			const unsigned int oldSize = m_resourceHeapSizes[frameIndex];
-			// Resize buffers to fit meshIndexMax number of meshes
-			const unsigned int size = (meshIndexMax + 1) * m_byteAlignedSize;
-			// Align new size to a multiple of 64KB as required for cbuffers
-			m_resourceHeapSizes[frameIndex] = (unsigned int)((glm::floor(size / (1024.0 * 64.0)) + 1) * (1024.0 * 64.0));
-
-			Logger::Log("Expanding cbuffer from " + std::to_string(oldSize) + " to " + std::to_string(m_resourceHeapSizes[frameIndex]) + " Bytes.");
-
-			// Copy gpu memory to ram before recreating buffers
-			void* data = malloc(oldSize);
-			memcpy(data, m_cbGPUAddress[frameIndex], oldSize);
-
-			createBuffer(frameIndex);
-			// Place the original data in the buffer
-			memcpy(m_cbGPUAddress[frameIndex], data, oldSize);
-			free(data);
-		}
-	}
-
 }

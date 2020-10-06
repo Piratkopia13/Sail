@@ -16,7 +16,7 @@ public:
 		DX12API* m_context;
 
 		// Map root signature slot to entries
-		// Entires map type to a function which copies a descriptor to the given cpuHandle
+		// Entries map type to a function which copies a descriptor to the given cpuHandle
 		std::map<unsigned int, std::map<unsigned int, std::function<void(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)>>> m_entries;
 	};
 
@@ -34,8 +34,8 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE getNextGPUDescriptorHandle();
 	D3D12_GPU_DESCRIPTOR_HANDLE getGPUDescriptorHandleForIndex(unsigned int index) const;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE	getCurentCPUDescriptorHandle() const;
-	D3D12_GPU_DESCRIPTOR_HANDLE	getCurentGPUDescriptorHandle() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE	getCurrentCPUDescriptorHandle() const;
+	D3D12_GPU_DESCRIPTOR_HANDLE	getCurrentGPUDescriptorHandle() const;
 	unsigned int getDescriptorIncrementSize() const;
 
 	void setIndex(unsigned int index);

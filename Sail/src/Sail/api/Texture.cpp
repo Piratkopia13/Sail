@@ -4,10 +4,20 @@
 
 Texture::Texture(const std::string& filename)
 	: m_name(filename)
+	, texIsCubeMap(false)
+	, readyToUse(false)
 { }
 
 const std::string& Texture::getName() const {
 	return m_name;
+}
+
+bool Texture::isCubeMap() const {
+	return texIsCubeMap;
+}
+
+bool Texture::isReadyToUse() const {
+	return readyToUse;
 }
 
 TextureData& Texture::getTextureData(const std::string& filename, bool useAbsolutePath) const {

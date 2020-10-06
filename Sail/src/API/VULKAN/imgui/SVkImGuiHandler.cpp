@@ -188,7 +188,7 @@ void SVkImGuiHandler::init() {
 	initInfo.DescriptorPool = m_descriptorPool;
 	initInfo.Allocator = VK_NULL_HANDLE;
 	initInfo.MinImageCount = 2;
-	initInfo.ImageCount = m_context->getNumSwapchainImages();
+	initInfo.ImageCount = m_context->getNumSwapBuffers();
 	initInfo.CheckVkResultFn = checkVkResult;
 	initInfo.MSAASamples = m_context->m_msaaSamples;
 	ImGui_ImplVulkan_Init(&initInfo, m_renderPass);
@@ -220,7 +220,7 @@ void SVkImGuiHandler::end() {
 			VkRenderPassBeginInfo renderPassInfo{};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			renderPassInfo.renderPass = m_renderPass;
-			renderPassInfo.framebuffer = m_context->m_swapchainFramebuffers[m_context->getSwapImageIndex()];
+			renderPassInfo.framebuffer = m_context->m_swapchainFramebuffers[m_context->getSwapIndex()];
 			renderPassInfo.renderArea.offset = { 0, 0 };
 			renderPassInfo.renderArea.extent = m_context->m_swapchainExtent;
 

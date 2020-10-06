@@ -29,7 +29,7 @@ SVkMesh::~SVkMesh() {
 	static_cast<SVkAPI*>(Application::getInstance()->getAPI())->waitForGPU();
 }
 
-void SVkMesh::draw(const Renderer& renderer, Material* material, Shader* shader, Environment* environment, void* cmdList) {
+void SVkMesh::draw(const Renderer& renderer, Material* material, Shader* shader, void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	if (!shader) {
@@ -44,12 +44,6 @@ void SVkMesh::draw(const Renderer& renderer, Material* material, Shader* shader,
 
 	auto vkCmd = static_cast<VkCommandBuffer>(cmdList);
 
-	material->setEnvironment(environment);
-	// Materials in Vulkan are bound in shader->prepareToRender()
-	/*if (material) {
-		material->bind(shader, environment, cmdList);
-	}*/
-	
 	vertexBuffer->bind(cmdList);
 	if (indexBuffer)
 		indexBuffer->bind(cmdList);

@@ -372,6 +372,15 @@ void SVkAPI::waitForGPU() {
 	VK_CHECK_RESULT(vkDeviceWaitIdle(m_device));
 }
 
+uint32_t SVkAPI::getNumSwapBuffers() const {
+	return m_swapchainImages.size();
+}
+
+uint32_t SVkAPI::getSwapIndex() const {
+	assert(m_presentImageIndex != -1 && "getSwapImageIndex() has to be called between beginPresent() and present()");
+	return m_presentImageIndex;
+}
+
 void SVkAPI::beginPresent() {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
@@ -617,20 +626,11 @@ const VkRenderPass& SVkAPI::getRenderPass() const {
 	return m_renderPass;
 }
 
-uint32_t SVkAPI::getSwapImageIndex() const {
-	assert(m_presentImageIndex != -1 && "getSwapImageIndex() has to be called between beginPresent() and present()");
-	return m_presentImageIndex;
-}
-
-size_t SVkAPI::getNumSwapchainImages() const {
-	return m_swapchainImages.size();
-}
-
 VkRenderPassBeginInfo SVkAPI::getRenderPassInfo() const {
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = m_renderPass;
-	renderPassInfo.framebuffer = m_swapchainFramebuffers[getSwapImageIndex()];
+	renderPassInfo.framebuffer = m_swapchainFramebuffers[getSwapIndex()];
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = m_swapchainExtent;
 	

@@ -11,13 +11,13 @@ TexturesMaterial::TexturesMaterial()
 
 TexturesMaterial::~TexturesMaterial() { }
 
-void TexturesMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
-	unsigned int i = 0;
-	for (auto& texture : textures) {
-		shader->setTexture("sys_tex"+std::to_string(i), texture, cmdList);
-		i++;
-	}
-}
+//void TexturesMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
+//	unsigned int i = 0;
+//	for (auto& texture : textures) {
+//		shader->setTexture("sys_tex"+std::to_string(i), texture, cmdList);
+//		i++;
+//	}
+//}
 
 void* TexturesMaterial::getData() {
 	assert(false && "Not implemented");

@@ -4,14 +4,14 @@
 #include "Sail/Application.h"
 
 DX12ATexture::DX12ATexture()
-	: cpuDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, Application::getInstance()->getAPI<DX12API>()->getNumGPUBuffers() * 3)
+	: cpuDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, Application::getInstance()->getAPI<DX12API>()->getNumSwapBuffers() * 3)
 	, isRenderableTex(false)
 	, useOneResource(false)
 {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	context = Application::getInstance()->getAPI<DX12API>();
-	const auto& numSwapBuffers = context->getNumGPUBuffers();
+	const auto& numSwapBuffers = context->getNumSwapBuffers();
 
 	state.resize(numSwapBuffers);
 	srvHeapCDHs.resize(numSwapBuffers);
@@ -57,7 +57,7 @@ bool DX12ATexture::isRenderable() const {
 void DX12ATexture::renameBuffer(const std::string& name) const {
 	std::wstring stemp = std::wstring(name.begin(), name.end());
 	LPCWSTR sw = stemp.c_str();
-	for (unsigned int i = 0; i < context->getNumGPUBuffers(); i++) {
+	for (unsigned int i = 0; i < context->getNumSwapBuffers(); i++) {
 		if (textureDefaultBuffers[i]) {
 			textureDefaultBuffers[i]->SetName(sw);
 		}

@@ -24,7 +24,6 @@ public:
 	PhongMaterial();
 	~PhongMaterial();
 
-	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
 	virtual void setTextureIndex(unsigned int textureID, int index) override;
 	virtual void* getData() override;
 	virtual unsigned int getDataSize() const override;

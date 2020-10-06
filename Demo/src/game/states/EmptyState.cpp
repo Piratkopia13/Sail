@@ -54,6 +54,7 @@ EmptyState::EmptyState(StateStack& stack)
 		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
 		mat->get()->setRoughnessScale(0.f);
 		mat->get()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+		mat->get()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
 		m_scene.addEntity(e);
 	}
 

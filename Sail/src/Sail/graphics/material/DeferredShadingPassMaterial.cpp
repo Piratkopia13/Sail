@@ -8,9 +8,9 @@ DeferredShadingPassMaterial::DeferredShadingPassMaterial()
 
 DeferredShadingPassMaterial::~DeferredShadingPassMaterial() { }
 
-void DeferredShadingPassMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
-	m_bindFunc(shader, environment, cmdList);
-}
+//void DeferredShadingPassMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
+//	m_bindFunc(shader, environment, cmdList);
+//}
 
 void* DeferredShadingPassMaterial::getData() {
 	return nullptr;

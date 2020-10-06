@@ -45,6 +45,8 @@ public:
 		unsigned int materialIndex = 0;
 	};
 
+	typedef std::vector<Renderer::RenderCommand>& RenderCommandList;
+
 public:
 	static Renderer* Create(Renderer::Type type);
 	Renderer();

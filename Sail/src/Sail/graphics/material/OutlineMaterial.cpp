@@ -13,10 +13,10 @@ OutlineMaterial::OutlineMaterial()
 
 OutlineMaterial::~OutlineMaterial() { }
 
-void OutlineMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
-	shader->setCBufferVar("mat_color", &m_settings.color, sizeof(glm::vec3), cmdList);
-	shader->setCBufferVar("mat_thickness", &m_settings.thickness, sizeof(float), cmdList);
-}
+//void OutlineMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
+//	shader->setCBufferVar("mat_color", &m_settings.color, sizeof(glm::vec3), cmdList);
+//	shader->setCBufferVar("mat_thickness", &m_settings.thickness, sizeof(float), cmdList);
+//}
 
 void* OutlineMaterial::getData() {
 	return static_cast<void*>(&m_settings);

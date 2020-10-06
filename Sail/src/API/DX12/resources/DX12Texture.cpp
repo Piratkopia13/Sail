@@ -12,10 +12,11 @@ Texture* Texture::Create(const std::string& filename, bool useAbsolutePath) {
 	return SAIL_NEW DX12Texture(filename, useAbsolutePath);
 }
 
+uint32_t DX12Texture::s_mipGenCBufferIndex = 0;
+
 DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 	: Texture(filename)
 	, m_isUploaded(false)
-	, m_isInitialized(false)
 	, m_initFenceVal(UINT64_MAX)
 	, m_filename(filename)
 {
@@ -31,8 +32,7 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 		std::string path = (useAbsolutePath) ? filename : TextureData::DEFAULT_TEXTURE_LOCATION + filename;
 		std::wstring wideFilename = std::wstring(path.begin(), path.end());
 	
-		bool isCubeMap;
-		HRESULT hr = DirectX::LoadDDSTextureFromFile(m_context->getDevice(), wideFilename.c_str(), &textureDefaultBuffers[0], m_ddsData, m_subresources, 0, nullptr, &isCubeMap);
+		HRESULT hr = DirectX::LoadDDSTextureFromFile(m_context->getDevice(), wideFilename.c_str(), &textureDefaultBuffers[0], m_ddsData, m_subresources, 0, nullptr, &texIsCubeMap);
 		if (FAILED(hr)) {
 			assert(false && "DDS texture loading failed");
 		}
@@ -117,7 +117,7 @@ bool DX12Texture::initBuffers(ID3D12GraphicsCommandList4* cmdList) {
 			m_ddsData.reset();
 
 			// Fully initialized
-			m_isInitialized = true;
+			readyToUse = true;
 			return true;
 		}
 		// Uploaded but not fully initialized with mip maps
@@ -157,9 +157,7 @@ void DX12Texture::createSRV(bool nullDescriptor) {
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = m_textureDesc.Format;
 
-	bool isCubeMap = m_textureDesc.DepthOrArraySize == 6;
-
-	if (isCubeMap) {
+	if (texIsCubeMap) {
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 		srvDesc.TextureCube.MipLevels = m_textureDesc.MipLevels;
 	} else {
@@ -172,9 +170,6 @@ void DX12Texture::createSRV(bool nullDescriptor) {
 	uavHeapCDHs[0] = { 0 };
 }
 
-bool DX12Texture::hasBeenInitialized() const {
-	return m_isInitialized;
-}
 bool DX12Texture::hasBeenUploaded() const {
 	return m_isUploaded;
 }
@@ -223,17 +218,29 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 
 	auto& mipsShader = Application::getInstance()->getResourceManager().getShaderSet(Shaders::GenerateMipsComputeShader);
 	auto& settings = mipsShader.getSettings().computeShaderSettings;
+	bool isSRGB = false; // TODO: read this from texture data
+
+	// The same cbuffer is used for every texture
+	// If mip gen shader runs multiple times on the same frame, cbuffer data for all runs need to be kept in the cbuffer
+	// The max amount of shader executions possible for one frame is defined by the dataArr size in the shader
+	auto* cbuffer = mipsShader.getParsedData().cBuffers[0].cBuffer.get(); // Mip gen shader only has one cbuffer
+	// This must match struct in shader
+	struct MipsCB {
+		uint32_t SrcMipLevel;
+		uint32_t NumMipLevels;
+		uint32_t SrcDimension;
+		uint32_t IsSRGB;
+		glm::vec2 TexelSize;
+		glm::vec2 padding;
+	};
+	
 	DX12ComputeShaderDispatcher csDispatcher;
 	csDispatcher.begin(cmdList);
 
-	// TODO: read this from texture data
-	bool isSRGB = false;
-
 	uint32_t srcMip = 0;
-
-	//assert(m_textureDesc.MipLevels <= 5 && "No more than 5 mip levels can currently be generated, see commented line below to add that functionality");
 	for (uint32_t srcMip = 0; srcMip < m_textureDesc.MipLevels - 1u;) {
-		mipsShader.setCBufferVar("IsSRGB", &isSRGB, sizeof(bool), cmdList);
+		MipsCB mipData;
+		mipData.IsSRGB = isSRGB;
 
 		uint64_t srcWidth = m_textureDesc.Width >> srcMip;
 		uint32_t srcHeight = m_textureDesc.Height >> srcMip;
@@ -245,7 +252,7 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 		// 0b10(2): Width is even, height is odd.
 		// 0b11(3): Both width and height are odd.
 		unsigned int srcDimension = (srcHeight & 1) << 1 | (srcWidth & 1);
-		mipsShader.setCBufferVar("SrcDimension", &srcDimension, sizeof(unsigned int), cmdList);
+		mipData.SrcDimension = srcDimension;
 
 		// How many mipmap levels to compute this pass (max 4 mips per pass)
 		DWORD mipCount;
@@ -268,9 +275,16 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 
 		glm::vec2 texelSize = glm::vec2(1.0f / (float)dstWidth, 1.0f / (float)dstHeight);
 
-		mipsShader.setCBufferVar("SrcMipLevel", &srcMip, sizeof(unsigned int), cmdList);
-		mipsShader.setCBufferVar("NumMipLevels", &mipCount, sizeof(unsigned int), cmdList);
-		mipsShader.setCBufferVar("TexelSize", &texelSize, sizeof(glm::vec2), cmdList);
+		mipData.SrcMipLevel = srcMip;
+		mipData.NumMipLevels = mipCount;
+		mipData.TexelSize = texelSize;
+
+		// Write mipData to cbuffer
+		cbuffer->updateData(&mipData, sizeof(mipData), sizeof(mipData)* s_mipGenCBufferIndex);
+
+		// Pass index to shader using a constant
+		mipsShader.setConstantVar("sys_cbIndex", &s_mipGenCBufferIndex, sizeof(s_mipGenCBufferIndex), cmdList);
+		s_mipGenCBufferIndex++;
 
 		const auto& heap = m_context->getMainGPUDescriptorHeap();
 		DescriptorHeap::DescriptorTableInstanceBuilder instance;
@@ -289,26 +303,27 @@ void DX12Texture::generateMips(ID3D12GraphicsCommandList4* cmdList) {
 		});
 
 		// Bind output mips to u10+
-		for (uint32_t mip = 0; mip < mipCount; mip++) {
+		for (uint32_t mip = 0; mip < 4; mip++) {
 			instance.add("u1" + std::to_string(mip), [&, mip](auto cpuHandle) {
+
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 				uavDesc.Format = m_textureDesc.Format;
 				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-				uavDesc.Texture2D.MipSlice = srcMip + mip + 1;
-				m_context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffers[0].Get(), nullptr, &uavDesc, cpuHandle);
+				if (mip < mipCount) {
+					uavDesc.Texture2D.MipSlice = srcMip + mip + 1;
+					m_context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffers[0].Get(), nullptr, &uavDesc, cpuHandle);
 
-				DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffers[0].Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, srcMip + mip + 1);
+					DX12Utils::SetResourceTransitionBarrier(cmdList, textureDefaultBuffers[0].Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, srcMip + mip + 1);
+				} else {
+					// Pad the rest with null descriptors to keep dx12 happy
+					m_context->getDevice()->CreateUnorderedAccessView(nullptr, nullptr, &uavDesc, cpuHandle);
+				}
 			});
 		}
-
+		
 		// Add the instance to the heap
 		// This binds resource views in the right places in the heap according to the root signature
 		heap->addAndBind(instance, cmdList, true);
-
-		// TODO: Pad any unused mip levels with a default UAV. Doing this keeps the DX12 runtime happy.
-		/*if (mipCount < 4) {
-			m_DynamicDescriptorHeap[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]->StageDescriptors(GenerateMips::OutMip, mipCount, 4 - mipCount, m_GenerateMipsPSO->GetDefaultUAV());
-		}*/
 
 		// Dispatch compute shader to generate mip levels
 		unsigned int x = (unsigned int)glm::ceil(dstWidth * settings.threadGroupXScale);

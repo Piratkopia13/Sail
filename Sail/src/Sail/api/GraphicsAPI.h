@@ -43,6 +43,8 @@ public:
 	virtual unsigned int getMemoryBudget() const = 0;
 	virtual void toggleFullscreen() { /* All APIs might not need to implement this */ };
 	virtual void waitForGPU() { /* All APIs might not need to implement this */ };
+	virtual uint32_t getNumSwapBuffers() const = 0;
+	virtual uint32_t getSwapIndex() const = 0;
 
 	virtual bool onResize(WindowResizeEvent& event) = 0;
 	virtual bool onEvent(Event& event) override;

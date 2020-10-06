@@ -12,7 +12,6 @@ public:
 	TexturesMaterial();
 	~TexturesMaterial();
 
-	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
 	virtual void* getData() override;
 	virtual unsigned int getDataSize() const override;
 	Shader* getShader(Renderer::Type rendererType) const override;
@@ -24,7 +23,6 @@ public:
 	void clearTextures();
 
 private:
-	unsigned int m_numTextures;
 	Shader* m_forwardShader;
 
 };

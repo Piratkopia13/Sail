@@ -49,7 +49,7 @@ bool SVkPipelineStateObject::bind(void* cmdList) {
 }
 
 const VkDescriptorSet& SVkPipelineStateObject::getDescriptorSet() const {
-	auto imageIndex = m_context->getSwapImageIndex();
+	auto imageIndex = m_context->getSwapIndex();
 	return m_descriptorSets[imageIndex];
 }
 

@@ -25,9 +25,15 @@ public:
 	virtual ~Texture() {}
 
 	const std::string& getName() const;
+	bool isCubeMap() const;
+	bool isReadyToUse() const; // Returns true when texture is ready for usage
 
 protected:
 	TextureData& getTextureData(const std::string& filename, bool useAbsolutePath) const;
+
+protected:
+	bool readyToUse;
+	bool texIsCubeMap;
 
 private:
 	std::string m_name;

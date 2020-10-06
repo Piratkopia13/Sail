@@ -65,8 +65,8 @@ public:
 		ShaderResource res;
 		std::unique_ptr<RenderableTexture> renderableTexture;
 	};
-	struct ShaderPushConstant {
-		ShaderPushConstant(std::vector<ShaderCBuffer::CBufferVariable>& vars, unsigned int size, ShaderComponent::BIND_SHADER bindShader) 
+	struct ShaderConstant {
+		ShaderConstant(std::vector<ShaderCBuffer::CBufferVariable>& vars, unsigned int size, ShaderComponent::BIND_SHADER bindShader) 
 			: vars(vars)
 			, size(size)
 			, bindShader(bindShader)
@@ -82,7 +82,7 @@ public:
 		std::vector<ShaderSampler> samplers;
 		std::vector<ShaderResource> textures;
 		std::vector<ShaderRenderableTexture> renderableTextures;
-		std::vector<ShaderPushConstant> pushConstants; // Called root constants in DX12
+		std::vector<ShaderConstant> constants; // Called root constants in DX12
 		void clear() {
 			attributesHash = 0;
 			hasVS = false; hasPS = false; hasGS = false; hasDS = false; hasHS = false, hasCS = false;
@@ -90,7 +90,7 @@ public:
 			samplers.clear();
 			textures.clear();
 			renderableTextures.clear();
-			pushConstants.clear();
+			constants.clear();
 		}
 	};
 public:
@@ -104,7 +104,7 @@ public:
 
 private:
 	void parseConstantBuffer(const std::string& source); // Parses the first way cbuffers can be defined
-	void parseCBuffer(const std::string& source, bool storeAsPushConstant = false); // Parses the second way cbuffers can be defined
+	void parseCBuffer(const std::string& source, bool storeAsConstant = false); // Parses the second way cbuffers can be defined
 	void parseSampler(const char* sourceChar); // This method is allowed to change m_cleanSource!
 	void parseTexture(const char* source);
 	void parseRWTexture(const char* source);

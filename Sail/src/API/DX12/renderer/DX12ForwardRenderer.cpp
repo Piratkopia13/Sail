@@ -110,8 +110,10 @@ void DX12ForwardRenderer::runRenderingPass(ID3D12GraphicsCommandList4* cmdList) 
 		DX12Shader* shader = static_cast<DX12Shader*>(pso->getShader());
 		unsigned int totalInstances = renderCommands.size();
 
-		// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
-		shader->reserve(totalInstances);
+		// Set offset in SRV heap for this mesh 
+		cmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurrentGPUDescriptorHandle());
+
+		shader->updateDescriptorsAndMaterialIndices(renderCommands, *environment, pso, cmdList);
 
 		pso->bind(cmdList);
 
@@ -128,9 +130,19 @@ void DX12ForwardRenderer::runRenderingPass(ID3D12GraphicsCommandList4* cmdList) 
 			shader->trySetCBufferVar("pointLights", plData, plDataByteSize, cmdList);
 		}
 
+		// Sort based on distance to draw back to front (for transparency)
+		// TODO: Only sort meshes that have transparency
+		// TODO: Fix ordering between different PSO's
+		std::sort(renderCommands.begin(), renderCommands.end(), [&](Renderer::RenderCommand& a, Renderer::RenderCommand& b) {
+			float dstA = glm::distance2(glm::vec3(glm::transpose(a.transform)[3]), camera->getPosition());
+			float dstB = glm::distance2(glm::vec3(glm::transpose(b.transform)[3]), camera->getPosition());
+			return dstA > dstB;
+		});
+
 		for (RenderCommand& command : renderCommands) {
-			shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
-			command.mesh->draw(*this, command.material, shader, environment, cmdList);
+			shader->trySetConstantVar("sys_materialIndex", &command.materialIndex, sizeof(unsigned int), cmdList);
+			shader->trySetConstantVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
+			command.mesh->draw(*this, command.material, shader, cmdList);
 		}
 	}
 }

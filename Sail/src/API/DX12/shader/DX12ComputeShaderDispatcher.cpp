@@ -64,7 +64,5 @@ void DX12ComputeShaderDispatcher::dispatch(Shader& computeShader, const glm::vec
 
 	dxCmdList->Dispatch(threadGroupCount.x, threadGroupCount.y, threadGroupCount.z);
 
-	static_cast<DX12Shader&>(computeShader).instanceFinished();
-
 	//return *computeShader.getComputeOutput();
 }

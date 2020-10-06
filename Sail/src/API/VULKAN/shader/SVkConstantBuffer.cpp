@@ -14,8 +14,8 @@ namespace ShaderComponent {
 		, m_bufferSize(size)
 	{
 		m_context = Application::getInstance()->getAPI<SVkAPI>();
-		auto numBuffers = m_context->getNumSwapchainImages();	// Num swap chain images could change after swap chain recreate / window resize
-																// TODO: recreate buffers after swap chain recreation
+		auto numBuffers = m_context->getNumSwapBuffers();	// Num swap chain images could change after swap chain recreate / window resize
+															// TODO: recreate buffers after swap chain recreation
 		auto allocator = m_context->getVmaAllocator();
 
 		if (size > 65536) Logger::Warning("Created UBO larger than 64k. Make sure this is supported on the device!");
@@ -47,15 +47,15 @@ namespace ShaderComponent {
 
 	SVkConstantBuffer::~SVkConstantBuffer() { }
 
-	void SVkConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int meshIndex, unsigned int offset) {
+	void SVkConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int offset) {
 		// TODO: only call this method when an update is required, and NOT every frame for every cbuffer in use
-		auto currentImage = m_context->getSwapImageIndex();
+		auto currentImage = m_context->getSwapIndex();
 		assert(offset + bufferSize <= m_bufferSize && "Tried to write outside buffer range");
 
 		memcpy(m_mappedData[currentImage] + offset, newData, bufferSize);
 	}
 
-	void SVkConstantBuffer::bind(unsigned int meshIndex, void* cmdList) const {
+	void SVkConstantBuffer::bind(void* cmdList) const {
 		// Already bound through vkCmdBindDescriptorSets call done in SVkShader::bind()
 	}
 

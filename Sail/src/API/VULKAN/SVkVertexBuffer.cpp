@@ -15,7 +15,7 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 	, m_allowUpdates(allowUpdates)
 {
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
-	auto numImages = m_context->getNumSwapchainImages();
+	auto numImages = m_context->getNumSwapBuffers();
 	auto bufferSize = getVertexBufferSize();
 	auto allocator = m_context->getVmaAllocator();
 
@@ -74,12 +74,17 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 		}
 
 		auto uploadCompleteCallback = [&] {
+			if (m_vertexBuffers.empty()) return; // Quick fix for when this is called after the instance is deleted (it was destroyed on the same frame that is was created on)
+												 // TODO: figure out a way to unregister the schedule from the destructor
+
 			// Clean up staging buffer after copy is completed
 			m_stagingBuffer.destroy();
 		};
 
 		// Copy from staging to gpu local memory
 		m_context->scheduleOnCopyQueue([&, bufferSize](const VkCommandBuffer& cmd) {
+			if (m_vertexBuffers.empty()) return; // Quick fix for when this is called after the instance is deleted (it was destroyed on the same frame that is was created on)
+												 // TODO: figure out a way to unregister the schedule from the destructor
 			VkBufferCopy copyRegion{};
 			copyRegion.srcOffset = 0; // Optional
 			copyRegion.dstOffset = 0; // Optional
@@ -99,7 +104,7 @@ SVkVertexBuffer::~SVkVertexBuffer() {
 void SVkVertexBuffer::bind(void* cmdList) {
 	// The first frame or so will bind the buffer before it has any valid data, this might still be fine(?)
 
-	auto imageIndex = (m_allowUpdates) ? m_context->getSwapImageIndex() : 0;
+	auto imageIndex = (m_allowUpdates) ? m_context->getSwapIndex() : 0;
 	VkBuffer vertexBuffers[] = { m_vertexBuffers[imageIndex].buffer, m_vertexBuffers[imageIndex].buffer, m_vertexBuffers[imageIndex].buffer, m_vertexBuffers[imageIndex].buffer, m_vertexBuffers[imageIndex].buffer };
 	VkDeviceSize offsets[5];
 	// Set offsets in the buffer

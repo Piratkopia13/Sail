@@ -10,8 +10,6 @@ public:
 	SVkTexture(const std::string& filename, bool useAbsolutePath = false);
 	~SVkTexture();
 
-	bool isCubeMap() const;
-
 private:
 	void copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t mipLevels, const std::vector<VkExtent3D>& mipExtents, const std::vector<unsigned int>& mipOffsets);
 	void generateMipmaps(const VkCommandBuffer& cmd, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, VkFormat vkImageFormat);
@@ -22,6 +20,5 @@ private:
 
 	SVkAPI::BufferAllocation m_stagingBuffer;
 	
-	bool m_isCubeMap;
 	bool m_generateMips;
 };

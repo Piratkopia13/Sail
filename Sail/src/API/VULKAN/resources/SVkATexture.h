@@ -6,7 +6,6 @@ public:
 	SVkATexture(bool singleBuffer = true);
 	virtual ~SVkATexture();
 
-	bool isReadyToUse() const; // Returns true when texture is ready for usage
 	const VkImage& getImage(unsigned int swapImageIndex = 0) const;
 	const VkImageView& getView(unsigned int swapImageIndex = 0) const;
 	uint32_t getNumBuffers() const;
@@ -20,5 +19,4 @@ protected:
 	std::vector<VkImageView> imageViews;
 
 	bool singleBuffer;
-	bool readyToUse;
 };

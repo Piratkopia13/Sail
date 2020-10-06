@@ -154,9 +154,9 @@ void SVkForwardRenderer::createRenderPass() {
 const VkCommandBuffer& SVkForwardRenderer::runFramePreparation() {
 	// Fetch the swap image index to use this frame
 	// It may be out of order and has to be passed on to certain bind methods
-	auto imageIndex = m_context->getSwapImageIndex();
+	auto swapIndex = m_context->getSwapIndex();
 
-	auto& cmd = m_command.buffers[imageIndex];
+	auto& cmd = m_command.buffers[swapIndex];
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -203,7 +203,7 @@ void SVkForwardRenderer::runRenderingPass(const VkCommandBuffer& cmd, const VkRe
 		auto& renderCommands = it.second;
 
 		SVkShader* shader = static_cast<SVkShader*>(pso->getShader());
-		shader->updateDescriptorsAndMaterialIndices(renderCommands, pso);
+		shader->updateDescriptorsAndMaterialIndices(renderCommands, *environment, pso);
 
 		if (camera) {
 			// Transpose all matrices to convert them to row-major which is required in order for the hlsl->spir-v multiplication order
@@ -232,10 +232,10 @@ void SVkForwardRenderer::runRenderingPass(const VkCommandBuffer& cmd, const VkRe
 
 		// Iterate render commands
 		for (auto& command : renderCommands) {
-			shader->trySetCBufferVar("sys_materialIndex", &command.materialIndex, sizeof(unsigned int), cmd);
-			shader->trySetCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
+			shader->trySetConstantVar("sys_materialIndex", &command.materialIndex, sizeof(unsigned int), cmd);
+			shader->trySetConstantVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
 
-			command.mesh->draw(*this, command.material, shader, environment, cmd);
+			command.mesh->draw(*this, command.material, shader, cmd);
 		}
 	}
 

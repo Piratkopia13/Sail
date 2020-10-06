@@ -9,11 +9,14 @@
 
 class DX12Texture : public Texture, public virtual DX12ATexture {
 public:
+	// NOTE: this is used during mip generation, but is very thread UN-safe. Consider using atomic
+	// This var i reset to 0 at the beginning of every frame, in DX12API::newFrame()
+	static uint32_t s_mipGenCBufferIndex;
+
+public:
 	DX12Texture(const std::string& filename, bool useAbsolutePath = false);
 	~DX12Texture();
 
-	// Returns true when mip maps have been generated and the texture is ready for usage
-	bool hasBeenInitialized() const;
 	// Returns true when the texture is uploaded to a default buffer
 	bool hasBeenUploaded() const;
 
@@ -43,8 +46,8 @@ private:
 
 	std::mutex m_initializeMutex;
 	bool m_isUploaded;
-	bool m_isInitialized;
 
 	// dds data only used for dds textures and released after upload to gpu
 	std::unique_ptr<uint8_t[]> m_ddsData;
+
 };

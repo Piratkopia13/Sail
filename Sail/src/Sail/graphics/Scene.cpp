@@ -11,6 +11,7 @@
 #include "../KeyCodes.h"
 
 #define USE_DEFERRED 0
+#define ENABLE_SKYBOX 1
 
 Scene::Scene()  {
 #if USE_DEFERRED
@@ -66,6 +67,17 @@ void Scene::draw(Camera& camera) {
 #if USE_DEFERRED
 	m_deferredRenderer->begin(&camera, m_environment.get());
 #endif
+#if ENABLE_SKYBOX
+	// Draw skybox first for transparency to work with it
+	{
+		auto e = m_environment->getSkyboxEntity();
+		auto model = e->getComponent<ModelComponent>();
+		auto transform = e->getComponent<TransformComponent>();
+		auto material = e->getComponent<MaterialComponent<>>();
+		m_forwardRenderer->submit(model->getModel().get(), material->get()->getShader(Renderer::FORWARD), material->get(), transform->getMatrix());
+	}
+#endif
+
 	auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
 	// Drawing of meshes
 	{
@@ -115,14 +127,6 @@ void Scene::draw(Camera& camera) {
 				entity->setIsBeingRendered(false);
 			}
 		}
-	}
-	// Draw skybox last
-	{
-		auto e = m_environment->getSkyboxEntity();
-		auto model = e->getComponent<ModelComponent>();
-		auto transform = e->getComponent<TransformComponent>();
-		auto material = e->getComponent<MaterialComponent<>>();
-		m_forwardRenderer->submit(model->getModel().get(), material->get()->getShader(Renderer::FORWARD), material->get(), transform->getMatrix());
 	}
 #if USE_DEFERRED
 	m_deferredRenderer->end();

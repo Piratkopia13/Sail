@@ -373,9 +373,9 @@ void SVkDeferredRenderer::createSSAOFramebuffers() {
 
 const VkCommandBuffer& SVkDeferredRenderer::runFramePreparation() {
 	// Fetch the swap image index to use this frame
-	auto imageIndex = m_context->getSwapImageIndex();
+	auto swapIndex = m_context->getSwapIndex();
 
-	auto& cmd = m_command.buffers[imageIndex];
+	auto& cmd = m_command.buffers[swapIndex];
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -392,7 +392,7 @@ const VkCommandBuffer& SVkDeferredRenderer::runFramePreparation() {
 
 void SVkDeferredRenderer::runGeometryPass(const VkCommandBuffer& cmd) {
 	// Fetch the swap image index to use this frame
-	auto imageIndex = m_context->getSwapImageIndex();
+	auto swapIndex = m_context->getSwapIndex();
 
 	{
 		// Clear values for all attachments written in the fragment shader
@@ -405,7 +405,7 @@ void SVkDeferredRenderer::runGeometryPass(const VkCommandBuffer& cmd) {
 
 		VkRenderPassBeginInfo renderPassBeginInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
 		renderPassBeginInfo.renderPass = m_geometryRenderPass;
-		renderPassBeginInfo.framebuffer = m_geometryFramebuffers[(m_geometryFramebuffers.size() == 1) ? 0 : imageIndex];
+		renderPassBeginInfo.framebuffer = m_geometryFramebuffers[(m_geometryFramebuffers.size() == 1) ? 0 : swapIndex];
 		renderPassBeginInfo.renderArea.extent.width = m_width;
 		renderPassBeginInfo.renderArea.extent.height = m_height;
 		renderPassBeginInfo.clearValueCount = clearValues.size();
@@ -424,7 +424,7 @@ void SVkDeferredRenderer::runGeometryPass(const VkCommandBuffer& cmd) {
 		auto& renderCommands = it.second;
 
 		SVkShader* shader = static_cast<SVkShader*>(pso->getShader());
-		shader->updateDescriptorsAndMaterialIndices(renderCommands, pso);
+		shader->updateDescriptorsAndMaterialIndices(renderCommands, *environment, pso);
 
 		if (camera) {
 			// Transpose all matrices to convert them to row-major which is required in order for the hlsl->spir-v multiplication order
@@ -437,10 +437,10 @@ void SVkDeferredRenderer::runGeometryPass(const VkCommandBuffer& cmd) {
 
 		// Iterate render commands
 		for (auto& command : renderCommands) {
-			shader->trySetCBufferVar("sys_materialIndex", &command.materialIndex, sizeof(unsigned int), cmd);
-			shader->trySetCBufferVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
+			shader->trySetConstantVar("sys_materialIndex", &command.materialIndex, sizeof(unsigned int), cmd);
+			shader->trySetConstantVar("sys_mWorld", &command.transform, sizeof(glm::mat4), cmd);
 
-			command.mesh->draw(*this, command.material, shader, environment, cmd);
+			command.mesh->draw(*this, command.material, shader, cmd);
 		}
 	}
 
@@ -450,7 +450,7 @@ void SVkDeferredRenderer::runGeometryPass(const VkCommandBuffer& cmd) {
 void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION("SSAO");
 	auto& resman = Application::getInstance()->getResourceManager();
-	auto imageIndex = m_context->getSwapImageIndex();
+	auto swapIndex = m_context->getSwapIndex();
 
 	auto* ssaoRenderTarget = static_cast<SVkRenderableTexture*>(m_ssao->getRenderTargetTexture());
 	float ssaoWidth = m_ssao->getRenderTargetWidth();
@@ -463,7 +463,7 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 
 		VkRenderPassBeginInfo renderPassBeginInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
 		renderPassBeginInfo.renderPass = m_ssaoRenderPass;
-		renderPassBeginInfo.framebuffer = m_ssaoFramebuffers[(m_ssaoFramebuffers.size() == 1) ? 0 : imageIndex];
+		renderPassBeginInfo.framebuffer = m_ssaoFramebuffers[(m_ssaoFramebuffers.size() == 1) ? 0 : swapIndex];
 		renderPassBeginInfo.renderArea.extent.width = ssaoWidth;
 		renderPassBeginInfo.renderArea.extent.height = ssaoHeight;
 		renderPassBeginInfo.clearValueCount = clearValues.size();
@@ -503,14 +503,14 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 			auto& desc = descriptors.images.emplace_back();
 			desc.name = "def_positions";
 			auto& imageInfo = desc.infos.emplace_back();
-			imageInfo.imageView = m_gbuffers.positions->getView(imageIndex);
+			imageInfo.imageView = m_gbuffers.positions->getView(swapIndex);
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		}
 		{
 			auto& desc = descriptors.images.emplace_back();
 			desc.name = "def_worldNormals";
 			auto& imageInfo = desc.infos.emplace_back();
-			imageInfo.imageView = m_gbuffers.normals->getView(imageIndex);
+			imageInfo.imageView = m_gbuffers.normals->getView(swapIndex);
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		}
 		shader->updateDescriptors(descriptors, &pso);
@@ -531,7 +531,7 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 
 		pso.bind(cmd); // Binds the pipeline and descriptor sets
 
-		mesh->draw(*this, &m_shadingPassMaterial, shader, environment, cmd);
+		mesh->draw(*this, &m_shadingPassMaterial, shader, cmd);
 	}
 
 	vkCmdEndRenderPass(cmd);
@@ -561,7 +561,7 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 			auto& desc = descriptors.images.emplace_back();
 			desc.name = "inoutput";
 			auto& imageInfo = desc.infos.emplace_back();
-			imageInfo.imageView = ssaoRenderTarget->getView(imageIndex);
+			imageInfo.imageView = ssaoRenderTarget->getView(swapIndex);
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 			blurHorizontalShader.updateDescriptors(descriptors, &pso);
@@ -613,14 +613,14 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 				auto& desc = descriptors.images.emplace_back();
 				desc.name = "input";
 				auto& imageInfo = desc.infos.emplace_back();
-				imageInfo.imageView = ssaoRenderTarget->getView(imageIndex);
+				imageInfo.imageView = ssaoRenderTarget->getView(swapIndex);
 				imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 			}
 			{
 				auto& desc = descriptors.images.emplace_back();
 				desc.name = "output";
 				auto& imageInfo = desc.infos.emplace_back();
-				imageInfo.imageView = m_ssaoShadingTexture->getView(imageIndex);
+				imageInfo.imageView = m_ssaoShadingTexture->getView(swapIndex);
 				imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 			}
 
@@ -645,9 +645,6 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 }
 
 void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
-	// Fetch the swap image index to use this frame
-	auto imageIndex = m_context->getSwapImageIndex();
-
 	auto& resman = Application::getInstance()->getResourceManager();
 	bool useSSAO = Application::getInstance()->getSettings().getBool(Settings::Graphics_SSAO);
 	
@@ -702,7 +699,7 @@ void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 	fakeRenderCmd.material = &m_shadingPassMaterial;
 	std::vector< Renderer::RenderCommand> fakeVec = { fakeRenderCmd };
 	// TODO: Replace this with a call to updateDescriptors()
-	shader->updateDescriptorsAndMaterialIndices(fakeVec, &pso);
+	shader->updateDescriptorsAndMaterialIndices(fakeVec, *environment, &pso);
 
 	int useSSAOInt = (int)useSSAO;
 	shader->trySetCBufferVar("useSSAO", &useSSAOInt, sizeof(int), cmd);
@@ -724,7 +721,7 @@ void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 	pso.bind(cmd); // Binds the pipeline and descriptor sets
 
 	// Draw 
-	mesh->draw(*this, &m_shadingPassMaterial, shader, environment, cmd);
+	mesh->draw(*this, &m_shadingPassMaterial, shader, cmd);
 
 	vkCmdEndRenderPass(cmd);
 }

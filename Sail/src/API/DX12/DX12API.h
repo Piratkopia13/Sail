@@ -30,7 +30,10 @@ namespace GlobalRootParam {
 		CBV_0 = 0,
 		CBV_1,
 		CBV_2,
+		CONSTANTS_3,
 		DT_SRV_0TO9_UAV_10TO20,
+		DT_SRV_0TO100K_SPACE1,
+		DT_SRV_0TO100K_SPACE2,
 		SRV_10,
 		SRV_11,
 		UAV_0,
@@ -109,14 +112,14 @@ public:
 	virtual void toggleFullscreen() override;
 	virtual bool onResize(WindowResizeEvent& event) override;
 	virtual void waitForGPU() override;
-
+	virtual uint32_t getNumSwapBuffers() const override; // Always returns 2 - as no more than two buffers are needed for any gpu based resource
+	virtual uint32_t getSwapIndex() const override;  // Returns 0 or 1
 
 	ID3D12Device5* getDevice() const;
 	ID3D12RootSignature* getGlobalRootSignature() const;
 	RootSignEntry getRootSignEntryFromRegister(const std::string& reg) const;
-	UINT getSwapIndex() const; // Returns 0 or 1
+	const std::string& getRootSignRegisterFromSlot(GlobalRootParam::Slot slot) const;
 	UINT getFrameIndex() const; // Returns 0, 1, ... NUM_SWAP_BUFFERS
-	UINT getNumGPUBuffers() const; // Always returns 2 - as no more than two buffers are needed for any gpu based resource
 	const SupportedFeatures& getSupportedFeatures() const;
 
 	DescriptorHeap* const getMainGPUDescriptorHeap() const;
@@ -181,7 +184,7 @@ private:
 	wComPtr<IDXGraphicsAnalysis> m_pixGa;
 #endif
 	// Only used for initialization
-	IDXGIFactory7* m_factory;
+	IDXGIFactory4* m_factory;
 	IDXGIAdapter3* m_adapter3;
 
 	std::vector<std::function<bool(ID3D12GraphicsCommandList4*)>> m_resourcesScheduledForInit;

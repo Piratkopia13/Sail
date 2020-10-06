@@ -147,7 +147,7 @@ void DX12DeferredRenderer::runGeometryPass(ID3D12GraphicsCommandList4* cmdList) 
 		unsigned int totalInstances = renderCommands.size();
 
 		// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
-		shader->reserve(totalInstances);
+		//shader->reserve(totalInstances);
 
 		pso->bind(cmdList);
 
@@ -157,7 +157,7 @@ void DX12DeferredRenderer::runGeometryPass(ID3D12GraphicsCommandList4* cmdList) 
 
 		for (RenderCommand& command : renderCommands) {
 			shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
-			command.mesh->draw(*this, command.material, shader, environment, cmdList);
+			command.mesh->draw(*this, command.material, shader, cmdList);
 		}
 	}
 }
@@ -205,12 +205,13 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 
 	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {
 		// Bind GBuffer textures
-		shader->setRenderableTexture("def_positions", sGBufferTextures[0].get(), cmdList);
-		shader->setRenderableTexture("def_worldNormals", sGBufferTextures[1].get(), cmdList);
+		/*shader->setRenderableTexture("def_positions", sGBufferTextures[0].get(), cmdList);
+		shader->setRenderableTexture("def_worldNormals", sGBufferTextures[1].get(), cmdList);*/
 	};
+	assert(false && "fix");
 	m_shadingPassMaterial.setBindFunc(materialFunc);
 
-	mesh->draw(*this, &m_shadingPassMaterial, shader, environment, cmdList);
+	mesh->draw(*this, &m_shadingPassMaterial, shader, cmdList);
 
 	// Blur ssao output
 	auto& blurHorizontalShader = Application::getInstance()->getResourceManager().getShaderSet(Shaders::GaussianBlurHorizontalComputeShader);
@@ -317,37 +318,38 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	}
 
 	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {
-		auto* brdfLutTexture = &Application::getInstance()->getResourceManager().getTexture("pbr/brdfLUT.tga");
-		// Bind environment textures
-		shader->setTexture("sys_texBrdfLUT", brdfLutTexture, cmdList);
-		shader->setTexture("irradianceMap", environment->getIrradianceTexture(), cmdList);
-		shader->setTexture("radianceMap", environment->getRadianceTexture(), cmdList);
+		//auto* brdfLutTexture = &Application::getInstance()->getResourceManager().getTexture("pbr/brdfLUT.tga");
+		//// Bind environment textures
+		//shader->setTexture("sys_texBrdfLUT", brdfLutTexture, cmdList);
+		//shader->setTexture("irradianceMap", environment->getIrradianceTexture(), cmdList);
+		//shader->setTexture("radianceMap", environment->getRadianceTexture(), cmdList);
 
-		// Bind GBuffer textures
-		shader->setRenderableTexture("def_positions", sGBufferTextures[0].get(), cmdList);
-		shader->setRenderableTexture("def_worldNormals", sGBufferTextures[1].get(), cmdList);
-		shader->setRenderableTexture("def_albedo", sGBufferTextures[2].get(), cmdList);
-		shader->setRenderableTexture("def_mrao", sGBufferTextures[3].get(), cmdList);
-		if (useSSAO)
-			shader->setRenderableTexture("tex_ssao", m_ssaoShadingTexture, cmdList);
-		else 
-			shader->setRenderableTexture("tex_ssao", nullptr, cmdList);
-		if (useDXRHardShadows)
-			shader->setRenderableTexture("tex_shadows", DX12RaytracingRenderer::GetOutputTexture()->get(), cmdList);
-		else 
-			shader->setRenderableTexture("tex_shadows", nullptr, cmdList);
+		//// Bind GBuffer textures
+		//shader->setRenderableTexture("def_positions", sGBufferTextures[0].get(), cmdList);
+		//shader->setRenderableTexture("def_worldNormals", sGBufferTextures[1].get(), cmdList);
+		//shader->setRenderableTexture("def_albedo", sGBufferTextures[2].get(), cmdList);
+		//shader->setRenderableTexture("def_mrao", sGBufferTextures[3].get(), cmdList);
+		//if (useSSAO)
+		//	shader->setRenderableTexture("tex_ssao", m_ssaoShadingTexture, cmdList);
+		//else 
+		//	shader->setRenderableTexture("tex_ssao", nullptr, cmdList);
+		//if (useDXRHardShadows)
+		//	shader->setRenderableTexture("tex_shadows", DX12RaytracingRenderer::GetOutputTexture()->get(), cmdList);
+		//else 
+		//	shader->setRenderableTexture("tex_shadows", nullptr, cmdList);
 		
-		//// Inline raytracing test - bind AS
-		//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		//srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		//srvDesc.RaytracingAccelerationStructure.Location = DXRBase::GetTLASAddress();
-		//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-		//m_context->getDevice()->CreateShaderResourceView(nullptr, &srvDesc, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle());
+		////// Inline raytracing test - bind AS
+		////D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		////srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		////srvDesc.RaytracingAccelerationStructure.Location = DXRBase::GetTLASAddress();
+		////srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+		////m_context->getDevice()->CreateShaderResourceView(nullptr, &srvDesc, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle());
 
 	};
+	assert(false && "fix");
 	m_shadingPassMaterial.setBindFunc(materialFunc);
 
-	mesh->draw(*this, &m_shadingPassMaterial, shader, environment, cmdList);
+	mesh->draw(*this, &m_shadingPassMaterial, shader, cmdList);
 }
 
 void DX12DeferredRenderer::runFrameExecution(ID3D12GraphicsCommandList4* cmdList) {

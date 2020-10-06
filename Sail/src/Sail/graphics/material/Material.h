@@ -26,9 +26,7 @@ public:
 	Material(Type type);
 	~Material();
 
-	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) = 0;
-	
-	virtual void setEnvironment(Environment* environment) { };
+	virtual void setEnvironment(const Environment& environment) { };
 	virtual void setTextureIndex(unsigned int textureID, int index) { };
 
 	virtual void* getData() = 0;

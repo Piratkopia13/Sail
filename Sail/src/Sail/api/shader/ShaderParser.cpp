@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "ShaderParser.h"
 #include "Sampler.h"
+#include "Sail/Application.h"
+#include "API/DX12/DX12API.h"
 
 using namespace Utils::String;
 
@@ -145,6 +147,7 @@ std::string ShaderParser::parse(const std::string& source) {
 		}
 	}
 
+#ifdef _SAIL_VK
 	// Process all push constants
 	src = m_cleanSource.c_str();
 	while (src = findToken("vk::push_constant", src, false, true)) {
@@ -154,6 +157,7 @@ std::string ShaderParser::parse(const std::string& source) {
 		pushTokenSource += std::string(src, end-src);
 		parseCBuffer(pushTokenSource, true);
 	}
+#endif
 
 	// Process all samplers
 	src = m_cleanSource.c_str();
@@ -211,16 +215,16 @@ void ShaderParser::parseConstantBuffer(const std::string& source) {
 	free(initData);
 }
 
-void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConstant) {
+void ShaderParser::parseCBuffer(const std::string& source, bool storeAsConstant) {
 	const char* src = source.c_str();
-	const char* end = (storeAsPushConstant) ? findToken("}", src) - 1 : source.c_str() + source.size();
+	const char* end = (storeAsConstant) ? findToken("}", src) - 1 : source.c_str() + source.size();
 
 	std::string bufferName = "Unspecified";
-	if (storeAsPushConstant) {
+	if (storeAsConstant) {
 		// Name is stored right after the block
 		const char* start = findToken("}", src);
 		if (strlen(start) <= 1) {
-			Logger::Error("A push constant struct was specified without a name.");
+			Logger::Error("A shader constant struct was specified without a name.");
 		}
 		UINT size;
 		bufferName = nextTokenAsName(start, size);
@@ -228,6 +232,22 @@ void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConst
 		// Name is stored in the next token
 		bufferName = nextToken(src);
 	}
+
+#ifdef _SAIL_DX12
+	if (!storeAsConstant) {
+		// Check if this should be used as a dx12 shader constant
+		// Look for "SAIL_CONSTANT"
+		const char* macro = findToken("SAIL_CONSTANT", src, true);
+		storeAsConstant = (macro != nullptr);
+		if (storeAsConstant) {
+			// Replace token with register slot taken from the root signature
+			std::string newReg = "register(";
+			newReg += Application::getInstance()->getAPI<DX12API>()->getRootSignRegisterFromSlot(GlobalRootParam::CONSTANTS_3);
+			newReg += ") /* SLOT REPLACED BY SAIL SHADERPARSER! */";
+			m_cleanSource.replace(m_cleanSource.find("SAIL_CONSTANT"), 13, newReg);
+		}
+	}
+#endif
 	
 	auto bindShader = getBindShaderFromName(bufferName);
 	int registerSlot = findNextIntOnLine(src);
@@ -261,8 +281,8 @@ void ShaderParser::parseCBuffer(const std::string& source, bool storeAsPushConst
 	if (size % 16 != 0)
 		size = size - (size % 16) + 16;
 
-	if (storeAsPushConstant) {
-		m_parsedData.pushConstants.emplace_back(vars, size, bindShader);
+	if (storeAsConstant) {
+		m_parsedData.constants.emplace_back(vars, size, bindShader);
 	} else {
 		void* initData = malloc(size);
 		memset(initData, 0, size);
@@ -347,6 +367,23 @@ void ShaderParser::parseTexture(const char* source) {
 	auto line = getLineStartingFrom(source);
 	bool isTexturesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURES") != nullptr);
 	bool isTextureCubesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURECUBES") != nullptr);
+
+#ifdef _SAIL_DX12
+	if (isTexturesArray) {
+		// Replace token with register slot taken from the root signature
+		std::string newReg = "register(";
+		newReg += Application::getInstance()->getAPI<DX12API>()->getRootSignRegisterFromSlot(GlobalRootParam::DT_SRV_0TO100K_SPACE1);
+		newReg += "); // SLOT REPLACED BY SAIL SHADERPARSER!";
+		m_cleanSource.replace(m_cleanSource.find("SAIL_BIND_ALL_TEXTURES"), 22, newReg);
+	}
+	if (isTextureCubesArray) {
+		// Replace token with register slot taken from the root signature
+		std::string newReg = "register(";
+		newReg += Application::getInstance()->getAPI<DX12API>()->getRootSignRegisterFromSlot(GlobalRootParam::DT_SRV_0TO100K_SPACE2);
+		newReg += "); // SLOT REPLACED BY SAIL SHADERPARSER!";
+		m_cleanSource.replace(m_cleanSource.find("SAIL_BIND_ALL_TEXTURECUBES"), 26, newReg);
+	}
+#endif
 
 	unsigned int vkBinding = static_cast<unsigned int>(slot);
 	getVkBinding(lineStart, vkBinding);
@@ -501,6 +538,7 @@ UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "float4x4" ||
 		typeName == "matrix")							return 4 * 4 * 4;
 
+	if (typeName == "MipsData")							return 32;
 	if (typeName == "PhongMaterial")					return 4 * 12;
 	if (typeName == "PBRMaterial")						return 4 * 16;
 	if (typeName == "OutlineMaterial")					return 4 * 4;
