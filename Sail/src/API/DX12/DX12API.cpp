@@ -647,15 +647,15 @@ void DX12API::resizeBuffers(UINT width, UINT height) {
 
 	// Recreate the dsv
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 	D3D12_RESOURCE_DESC bufferDesc{};
-	bufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	bufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	bufferDesc.Width = width;
 	bufferDesc.Height = height;
 	bufferDesc.DepthOrArraySize = 1;
