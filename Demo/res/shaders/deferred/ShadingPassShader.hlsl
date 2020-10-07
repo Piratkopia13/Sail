@@ -37,25 +37,13 @@ PSIn VSMain(VSIn input) {
 	return output;
 }
 
-
-// Texture2D sys_texBrdfLUT : register(t0);
-// TextureCube irradianceMap : register(t1);
-// TextureCube radianceMap : register(t2);
-
-// Texture2D def_positions     : register(t3);
-// Texture2D def_worldNormals  : register(t4);
-// Texture2D def_albedo        : register(t5);
-// Texture2D def_mrao          : register(t6);
-// Texture2D tex_ssao          : register(t7);
-// Texture2D tex_shadows       : register(t8);
-
 // RaytracingAccelerationStructure rtScene : register(t8);
-SamplerState PSss 		: register(s1) : SAIL_SAMPLER_ANIS_WRAP;
-SamplerState PSssPoint 	: register(s2) : SAIL_SAMPLER_POINT_CLAMP;
-SamplerState PSssLinear : register(s3) : SAIL_SAMPLER_LINEAR_CLAMP;
+SamplerState PSss 		: SAIL_SAMPLER_ANIS_WRAP 	: register(s1);
+SamplerState PSssPoint 	: SAIL_SAMPLER_POINT_CLAMP 	: register(s2);
+SamplerState PSssLinear : SAIL_SAMPLER_LINEAR_CLAMP : register(s3);
 
-Texture2D texArr[] 		 : register(t4) : SAIL_BIND_ALL_TEXTURES;
-TextureCube texCubeArr[] : register(t5) : SAIL_BIND_ALL_TEXTURECUBES;
+Texture2D   texArr[]	 : SAIL_BIND_ALL_TEXTURES 	  : register(t4);
+TextureCube texCubeArr[] : SAIL_BIND_ALL_TEXTURECUBES : register(t5);
 
 float4 PSMain(PSIn input) : SV_Target0 {
 	// return sys_texBrdfLUT.Sample(PSss, input.texCoord);
@@ -150,13 +138,15 @@ float4 PSMain(PSIn input) : SV_Target0 {
     // Shade
 	float3 shadedColor = pbrShade(scene, pixel);
 
+#if GAMMA_CORRECT
 	// Gamma correction
-    // float3 output = shadedColor / (shadedColor + 1.0f);
+    float3 output = shadedColor / (shadedColor + 1.0f);
     // Tone mapping using the Reinhard operator
-    // output = pow(output, 1.0f / 2.2f);
-	// return float4(output, 1.0);
-
+    output = pow(output, 1.0f / 2.2f);
+	return float4(output, 1.0);
+#else
 	return float4(shadedColor, 1.0);
+#endif
 	// return float4(worldPos, 1.0);
 }
 

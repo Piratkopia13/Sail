@@ -17,11 +17,20 @@ struct PSIn {
 	float3x3 tbn : TBN;
 };
 
+#ifdef _SAIL_VK
+// VK ONLY
 [[vk::push_constant]]
 struct {
 	matrix sys_mWorld;
 	uint sys_materialIndex;
 } VSPSConsts;
+#else
+// NOT VK
+cbuffer VSPSConsts : SAIL_CONSTANT {
+	matrix sys_mWorld;
+	uint sys_materialIndex;
+}
+#endif
 
 cbuffer VSPSSystemCBuffer : register(b0) {
 	matrix sys_mView;
@@ -36,8 +45,13 @@ cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
+#ifdef _SAIL_VK
 	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 	matrix mWorld = VSPSConsts.sys_mWorld;
+#else
+	PBRMaterial mat = sys_materials[sys_materialIndex];
+	matrix mWorld = sys_mWorld;
+#endif
 
 	input.position.w = 1.f;
 	output.position = mul(mWorld, input.position);
@@ -73,8 +87,8 @@ PSIn VSMain(VSIn input) {
 	return output;
 }
 
-Texture2D texArr[] : register(t2) : SAIL_BIND_ALL_TEXTURES;
-SamplerState PSss : register(s3) : SAIL_SAMPLER_ANIS_WRAP;
+Texture2D 	 texArr[] : SAIL_BIND_ALL_TEXTURES : register(t2);
+SamplerState PSss 	  : SAIL_SAMPLER_ANIS_WRAP : register(s3);
 
 struct GBuffers {
 	float4 positions    : SV_Target0;
@@ -88,7 +102,11 @@ float4 sampleTexture(uint index, float2 texCoords) {
 }
 
 GBuffers PSMain(PSIn input) {
+#ifdef _SAIL_VK
 	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+#else
+	PBRMaterial mat = sys_materials[sys_materialIndex];
+#endif
 
 	GBuffers gbuffers;
     gbuffers.positions = float4(input.vsPos, 1.f);

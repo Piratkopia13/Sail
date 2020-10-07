@@ -10,7 +10,7 @@
 #include "material/OutlineMaterial.h"
 #include "../KeyCodes.h"
 
-#define USE_DEFERRED 0
+#define USE_DEFERRED 1
 #define ENABLE_SKYBOX 1
 
 Scene::Scene()  {
@@ -38,7 +38,8 @@ void Scene::draw(Camera& camera) {
 	SAIL_PROFILE_FUNCTION();
 
 #if USE_DEFERRED
-	bool doDXR = Application::getInstance()->getSettings().getBool(Settings::Graphics_DXR);
+	//bool doDXR = Application::getInstance()->getSettings().getBool(Settings::Graphics_DXR);
+	bool doDXR = false; // TODO: fix
 	if (!m_raytracingRenderer && doDXR) {
 		// Handle enabling of DXR in runtime
 		m_raytracingRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));

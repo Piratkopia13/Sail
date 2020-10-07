@@ -14,7 +14,7 @@
 #include "../shader/DX12ComputeShaderDispatcher.h"
 #include "DX12RaytracingRenderer.h"
 
-std::unique_ptr<DX12RenderableTexture> DX12DeferredRenderer::sGBufferTextures[NUM_GBUFFERS + 1]; // +1 for depth
+DX12DeferredRenderer::GBufferTextures DX12DeferredRenderer::sGBufferTextures;
 
 DX12DeferredRenderer::DX12DeferredRenderer() {
 	EventSystem::getInstance()->subscribeToEvent(Event::WINDOW_RESIZE, this);
@@ -24,15 +24,15 @@ DX12DeferredRenderer::DX12DeferredRenderer() {
 	m_context->initCommand(m_command);
 	m_command.list->SetName(L"Deferred Renderer main command list");
 
-	auto windowWidth = app->getWindow()->getWindowWidth();
-	auto windowHeight = app->getWindow()->getWindowHeight();
+	auto width = app->getWindow()->getWindowWidth();
+	auto height = app->getWindow()->getWindowHeight();
 
-	for (int i = 0; i < NUM_GBUFFERS + 1; i++) {
-		//glm::vec4 clearColor(0.f);
-		//clearColor.z = (i == 0) ? FLT_MAX : 0.f; // Position texture z needs this for ssao to work with skybox in background
-		sGBufferTextures[i] = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(
-			RenderableTexture::Create(windowWidth, windowHeight, RenderableTexture::USAGE_SAMPLING_ACCESS, "GBuffer renderer output " + std::to_string(i), (i < 2) ? ResourceFormat::R16G16B16A16_FLOAT : (i == NUM_GBUFFERS) ? ResourceFormat::DEPTH : ResourceFormat::R8G8B8A8)));
-	}
+	m_clearColor = glm::vec4(0.2f);
+	sGBufferTextures.positions = std::unique_ptr<DX12RenderableTexture>(SAIL_NEW DX12RenderableTexture(width, height, RenderableTexture::USAGE_SAMPLING_ACCESS, "GBuffer positions", ResourceFormat::R16G16B16A16_FLOAT, m_clearColor));
+	sGBufferTextures.normals = std::unique_ptr<DX12RenderableTexture>(SAIL_NEW DX12RenderableTexture(width, height, RenderableTexture::USAGE_SAMPLING_ACCESS, "GBuffer normals", ResourceFormat::R16G16B16A16_FLOAT, m_clearColor));
+	sGBufferTextures.albedo = std::unique_ptr<DX12RenderableTexture>(SAIL_NEW DX12RenderableTexture(width, height, RenderableTexture::USAGE_SAMPLING_ACCESS, "GBuffer albedo", ResourceFormat::R8G8B8A8, m_clearColor));
+	sGBufferTextures.mrao = std::unique_ptr<DX12RenderableTexture>(SAIL_NEW DX12RenderableTexture(width, height, RenderableTexture::USAGE_SAMPLING_ACCESS, "GBuffer mrao", ResourceFormat::R8G8B8A8, m_clearColor));
+	sGBufferTextures.depth = std::unique_ptr<DX12RenderableTexture>(SAIL_NEW DX12RenderableTexture(width, height, RenderableTexture::USAGE_SAMPLING_ACCESS, "GBuffer depth", ResourceFormat::DEPTH));
 
 	m_screenQuadModel = ModelFactory::ScreenQuadModel::Create();
 
@@ -44,9 +44,11 @@ DX12DeferredRenderer::DX12DeferredRenderer() {
 
 DX12DeferredRenderer::~DX12DeferredRenderer() {
 	EventSystem::getInstance()->unsubscribeFromEvent(Event::WINDOW_RESIZE, this);
-	for (unsigned int i = 0; i < NUM_GBUFFERS; i++) {
-		sGBufferTextures[i].reset();
-	}
+	sGBufferTextures.positions.reset();
+	sGBufferTextures.normals.reset();
+	sGBufferTextures.albedo.reset();
+	sGBufferTextures.mrao.reset();
+	sGBufferTextures.depth.reset();
 }
 
 void* DX12DeferredRenderer::present(Renderer::PresentFlag flags, void* skippedPrepCmdList) {
@@ -96,7 +98,6 @@ ID3D12GraphicsCommandList4* DX12DeferredRenderer::runFramePreparation() {
 	auto& allocator = m_command.allocators[frameIndex];
 	auto& cmdList = m_command.list;
 
-
 	// Reset allocators and lists for this frame
 	allocator->Reset();
 	cmdList->Reset(allocator.Get(), nullptr);
@@ -108,29 +109,41 @@ ID3D12GraphicsCommandList4* DX12DeferredRenderer::runFramePreparation() {
 	// This executes texture mip generation
 	m_context->initResources(cmdList.Get());
 
-	//m_context->renderToBackBuffer(cmdList.Get());
 	// Bind gbuffer RTV and DSV
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[NUM_GBUFFERS];
-	for (int i = 0; i < NUM_GBUFFERS; i++) {
-		rtvHandles[i] = sGBufferTextures[i]->getRtvCDH();
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[NUM_GBUFFERS];
+		rtvHandles[0] = sGBufferTextures.positions->getRtvCDH();
+		rtvHandles[1] = sGBufferTextures.normals->getRtvCDH();
+		rtvHandles[2] = sGBufferTextures.albedo->getRtvCDH();
+		rtvHandles[3] = sGBufferTextures.mrao->getRtvCDH();
+
+		cmdList->OMSetRenderTargets(NUM_GBUFFERS, rtvHandles, false, &getGeometryPassDsv());
 	}
-	cmdList->OMSetRenderTargets(NUM_GBUFFERS, rtvHandles, false, &getGeometryPassDsv());
-	// Transition gbuffers to render target
-	for (int i = 0; i < NUM_GBUFFERS; i++) {
-		// TODO: transition in batch
-		sGBufferTextures[i]->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-		float z = (i == 0) ? FLT_MAX : 0.f;
-		sGBufferTextures[i]->clear({ 0.0f, 0.0f, z, 0.0f }, cmdList.Get());
+	// Transition gbuffers to render target in a batch
+	{
+		std::vector<DX12ATexture*> textures = {
+			sGBufferTextures.positions.get(),
+			sGBufferTextures.normals.get(),
+			sGBufferTextures.albedo.get(),
+			sGBufferTextures.mrao.get(),
+		};
+		
+		std::vector<D3D12_RESOURCE_STATES> statesAfter(textures.size(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+		DX12Utils::SetResourceTransitionBarriers(cmdList.Get(), textures, statesAfter);
+	}
+	// Clear gbuffers
+	{
+		sGBufferTextures.positions->clear(m_clearColor, cmdList.Get());
+		sGBufferTextures.normals->clear(m_clearColor, cmdList.Get());
+		sGBufferTextures.albedo->clear(m_clearColor, cmdList.Get());
+		sGBufferTextures.mrao->clear(m_clearColor, cmdList.Get());
+		sGBufferTextures.depth->clear({}, cmdList.Get());
 	}
 	cmdList->RSSetViewports(1, m_context->getViewport());
 	cmdList->RSSetScissorRects(1, m_context->getScissorRect());
 
 	cmdList->SetGraphicsRootSignature(m_context->getGlobalRootSignature());
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Bind mesh-common constant buffers (camera)
-	// TODO: bind camera cbuffer here
-	//cmdList->SetGraphicsRootConstantBufferView(GlobalRootParam::CBV_CAMERA, asdf);
 
 	return cmdList.Get();
 }
@@ -144,10 +157,11 @@ void DX12DeferredRenderer::runGeometryPass(ID3D12GraphicsCommandList4* cmdList) 
 		PipelineStateObject* pso = it.first;
 		auto& renderCommands = it.second;
 		DX12Shader* shader = static_cast<DX12Shader*>(pso->getShader());
-		unsigned int totalInstances = renderCommands.size();
 
-		// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
-		//shader->reserve(totalInstances);
+		// Set offset in SRV heap for this mesh 
+		cmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurrentGPUDescriptorHandle());
+
+		shader->updateDescriptorsAndMaterialIndices(renderCommands, *environment, pso, cmdList);
 
 		pso->bind(cmdList);
 
@@ -156,7 +170,8 @@ void DX12DeferredRenderer::runGeometryPass(ID3D12GraphicsCommandList4* cmdList) 
 		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), cmdList);
 
 		for (RenderCommand& command : renderCommands) {
-			shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
+			shader->trySetConstantVar("sys_materialIndex", &command.materialIndex, sizeof(unsigned int), cmdList);
+			shader->trySetConstantVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
 			command.mesh->draw(*this, command.material, shader, cmdList);
 		}
 	}
@@ -184,8 +199,11 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 
 
 	// Transition gbuffers to pixel shader resources
-	sGBufferTextures[0]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	sGBufferTextures[1]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	sGBufferTextures.positions->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	sGBufferTextures.normals->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	// Set offset in SRV heap for this mesh 
+	cmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurrentGPUDescriptorHandle());
 
 	auto* shader = &resman.getShaderSet(Shaders::SSAOShader);
 	auto* mesh = m_screenQuadModel->getMesh(0);
@@ -202,14 +220,15 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 	shader->trySetCBufferVar("noise", noiseData, noiseDataSize, cmdList);
 	glm::vec2 ssaoSize(m_ssao->getRenderTargetWidth(), m_ssao->getRenderTargetHeight());
 	shader->trySetCBufferVar("windowSize", &ssaoSize, sizeof(glm::vec2), cmdList);
+	
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	m_context->getDevice()->CreateShaderResourceView(nullptr, &srvDesc, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle()); // t0
+	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), sGBufferTextures.positions->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV); // t1
+	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), sGBufferTextures.normals->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV); // t2
 
-	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {
-		// Bind GBuffer textures
-		/*shader->setRenderableTexture("def_positions", sGBufferTextures[0].get(), cmdList);
-		shader->setRenderableTexture("def_worldNormals", sGBufferTextures[1].get(), cmdList);*/
-	};
-	assert(false && "fix");
-	m_shadingPassMaterial.setBindFunc(materialFunc);
 
 	mesh->draw(*this, &m_shadingPassMaterial, shader, cmdList);
 
@@ -227,7 +246,7 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 
 	// Dispatch horizontal blur pass
 	{
-		blurHorizontalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmdList);
+		blurHorizontalShader.setConstantVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmdList);
 
 		DescriptorHeap::DescriptorTableInstanceBuilder instance;
 
@@ -249,7 +268,7 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 
 	// Dispatch vertical blur pass
 	{
-		blurVerticalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmdList);
+		blurVerticalShader.setConstantVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmdList);
 
 		DescriptorHeap::DescriptorTableInstanceBuilder instance;
 
@@ -284,15 +303,25 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 
 	// Set back buffer as render target
 	m_context->renderToBackBuffer(cmdList);
-	//m_context->clearBackBuffer(cmdList);
+	m_context->clearBackBuffer(cmdList); // Not really necessary since the shading pass writes every pixel on the screen
 	// Bind the heap
 	m_context->getMainGPUDescriptorHeap()->bind(cmdList);
 
 	// Transition gbuffers to pixel shader resources
-	for (int i = 0; i < NUM_GBUFFERS; i++)
-		sGBufferTextures[i]->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE); // TODO: transition in batch
-	if (useSSAO)
-		m_ssaoShadingTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	{
+		std::vector<DX12ATexture*> textures = {
+			sGBufferTextures.positions.get(),
+			sGBufferTextures.normals.get(),
+			sGBufferTextures.albedo.get(),
+			sGBufferTextures.mrao.get()
+		};
+
+		std::vector<D3D12_RESOURCE_STATES> statesAfter(textures.size(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		DX12Utils::SetResourceTransitionBarriers(cmdList, textures, statesAfter);
+
+		if (useSSAO)
+			m_ssaoShadingTexture->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	}
 
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::DeferredShadingPassShader);
 	auto* mesh = m_screenQuadModel->getMesh(0);
@@ -317,37 +346,41 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 		shader->trySetCBufferVar("sys_numPLights", &numPLs, sizeof(unsigned int), cmdList);
 	}
 
-	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {
-		//auto* brdfLutTexture = &Application::getInstance()->getResourceManager().getTexture("pbr/brdfLUT.tga");
-		//// Bind environment textures
-		//shader->setTexture("sys_texBrdfLUT", brdfLutTexture, cmdList);
-		//shader->setTexture("irradianceMap", environment->getIrradianceTexture(), cmdList);
-		//shader->setTexture("radianceMap", environment->getRadianceTexture(), cmdList);
+	// Set up material
+	{
+		m_shadingPassMaterial.clearTextures();
+		// This order needs to match the indexing used in the shader
+		m_shadingPassMaterial.addTexture(sGBufferTextures.positions.get());
+		m_shadingPassMaterial.addTexture(sGBufferTextures.normals.get());
+		m_shadingPassMaterial.addTexture(sGBufferTextures.albedo.get());
+		m_shadingPassMaterial.addTexture(sGBufferTextures.mrao.get());
 
-		//// Bind GBuffer textures
-		//shader->setRenderableTexture("def_positions", sGBufferTextures[0].get(), cmdList);
-		//shader->setRenderableTexture("def_worldNormals", sGBufferTextures[1].get(), cmdList);
-		//shader->setRenderableTexture("def_albedo", sGBufferTextures[2].get(), cmdList);
-		//shader->setRenderableTexture("def_mrao", sGBufferTextures[3].get(), cmdList);
-		//if (useSSAO)
-		//	shader->setRenderableTexture("tex_ssao", m_ssaoShadingTexture, cmdList);
-		//else 
-		//	shader->setRenderableTexture("tex_ssao", nullptr, cmdList);
-		//if (useDXRHardShadows)
-		//	shader->setRenderableTexture("tex_shadows", DX12RaytracingRenderer::GetOutputTexture()->get(), cmdList);
-		//else 
-		//	shader->setRenderableTexture("tex_shadows", nullptr, cmdList);
+		if (m_ssao)
+			m_shadingPassMaterial.addTexture(m_ssaoShadingTexture);
+
+		if (useDXRHardShadows)
+			m_shadingPassMaterial.addTexture(DX12RaytracingRenderer::GetOutputTexture()->get());
+
+		auto* brdfLutTexture = &Application::getInstance()->getResourceManager().getTexture("pbr/brdfLUT.tga");
+
+		m_shadingPassMaterial.addTexture(brdfLutTexture);
+		m_shadingPassMaterial.addTexture(environment->getRadianceTexture());
+		m_shadingPassMaterial.addTexture(environment->getIrradianceTexture());
+	}
+
+	Renderer::RenderCommand fakeRenderCmd;
+	fakeRenderCmd.material = &m_shadingPassMaterial;
+	std::vector< Renderer::RenderCommand> fakeVec = { fakeRenderCmd };
+	// TODO: Replace this with a call to updateDescriptors()
+	shader->updateDescriptorsAndMaterialIndices(fakeVec, *environment, &pso, cmdList);
+
 		
-		////// Inline raytracing test - bind AS
-		////D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		////srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		////srvDesc.RaytracingAccelerationStructure.Location = DXRBase::GetTLASAddress();
-		////srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-		////m_context->getDevice()->CreateShaderResourceView(nullptr, &srvDesc, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle());
-
-	};
-	assert(false && "fix");
-	m_shadingPassMaterial.setBindFunc(materialFunc);
+	//// Inline raytracing test - bind AS
+	//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	//srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	//srvDesc.RaytracingAccelerationStructure.Location = DXRBase::GetTLASAddress();
+	//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+	//m_context->getDevice()->CreateShaderResourceView(nullptr, &srvDesc, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle());
 
 	mesh->draw(*this, &m_shadingPassMaterial, shader, cmdList);
 }
@@ -364,20 +397,24 @@ void DX12DeferredRenderer::runFrameExecution(ID3D12GraphicsCommandList4* cmdList
 
 bool DX12DeferredRenderer::onEvent(Event& event) {
 	auto resizeEvent = [&](WindowResizeEvent& event) {
-		for (unsigned i = 0; i < NUM_GBUFFERS; i++) {
-			sGBufferTextures[i]->resize(event.getWidth(), event.getHeight());
-		}
-		m_ssao->resize(event.getWidth(), event.getHeight());
+		sGBufferTextures.positions->resize(event.getWidth(), event.getHeight());
+		sGBufferTextures.normals->resize(event.getWidth(), event.getHeight());
+		sGBufferTextures.albedo->resize(event.getWidth(), event.getHeight());
+		sGBufferTextures.mrao->resize(event.getWidth(), event.getHeight());
+		sGBufferTextures.depth->resize(event.getWidth(), event.getHeight());
+
+		if (m_ssao)
+			m_ssao->resize(event.getWidth(), event.getHeight());
 		return true;
 	};
 	EventHandler::HandleType<WindowResizeEvent>(event, resizeEvent);
 	return true;
 }
 
-const std::unique_ptr<DX12RenderableTexture>* DX12DeferredRenderer::GetGBuffers() {
+const DX12DeferredRenderer::GBufferTextures& DX12DeferredRenderer::GetGBuffers() {
 	return sGBufferTextures;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12DeferredRenderer::getGeometryPassDsv() {
-	return sGBufferTextures[0]->getDsvCDH();
+	return sGBufferTextures.depth->getDsvCDH();
 }

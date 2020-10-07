@@ -9,7 +9,7 @@ class DX12RenderableTexture : public RenderableTexture, public virtual DX12AText
 
 public:
 	DX12RenderableTexture(uint32_t width, uint32_t height, UsageFlags usage, const std::string& name, ResourceFormat::TextureFormat format,
-		bool singleBuffer = true, unsigned int arraySize = 1, const glm::vec4& clearColor = glm::vec4(1.0f));
+		const glm::vec4& clearColor = glm::vec4(1.0f), bool singleBuffer = true, unsigned int arraySize = 1);
 	~DX12RenderableTexture();
 
 	virtual void begin(void* cmdList = nullptr) override;
@@ -18,8 +18,6 @@ public:
 	virtual void changeFormat(ResourceFormat::TextureFormat newFormat) override;
 	virtual void resize(int width, int height) override;
 
-	ID3D12Resource* getResource(int frameIndex = -1) const;
-	D3D12_CPU_DESCRIPTOR_HANDLE getDepthSrvCDH(int frameIndex = -1) const;
 	D3D12_CPU_DESCRIPTOR_HANDLE getRtvCDH(int frameIndex = -1) const;
 	D3D12_CPU_DESCRIPTOR_HANDLE getDsvCDH(int frameIndex = -1) const;
 

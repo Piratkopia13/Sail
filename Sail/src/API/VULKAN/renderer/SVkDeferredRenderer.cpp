@@ -20,7 +20,6 @@ SVkDeferredRenderer::SVkDeferredRenderer()
 	m_width = app->getWindow()->getWindowWidth();
 	m_height = app->getWindow()->getWindowHeight();
 
-	glm::vec4 clearColor(0.f);
 	m_gbuffers.positions = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R16G16B16A16_FLOAT));
 	m_gbuffers.normals	 = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R16G16B16A16_FLOAT));
 	m_gbuffers.albedo	 = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R8G8B8A8));

@@ -6,12 +6,14 @@
 
 // TODO: fix compilation error
 // Depth texture is now handled separately, see VK implementation for details
-RenderableTexture* RenderableTexture::Create(uint32_t width, uint32_t height, UsageFlags usage, const std::string& name, ResourceFormat::TextureFormat format, bool singleBuffer, uint32_t arraySize, const glm::vec4& clearColor) {
-	return SAIL_NEW DX12RenderableTexture(width, height, usage, name, format, singleBuffer, arraySize, clearColor);
+RenderableTexture* RenderableTexture::Create(uint32_t width, uint32_t height, UsageFlags usage, const std::string& name, 
+	ResourceFormat::TextureFormat format, bool singleBuffer, uint32_t arraySize, const glm::vec4& clearColor) 
+{
+	return SAIL_NEW DX12RenderableTexture(width, height, usage, name, format, clearColor, singleBuffer, arraySize);
 }
 
 DX12RenderableTexture::DX12RenderableTexture(uint32_t width, uint32_t height, UsageFlags usage, const std::string& name, 
-	ResourceFormat::TextureFormat format, bool singleBuffer, unsigned int arraySize, const glm::vec4& clearColor)
+	ResourceFormat::TextureFormat format, const glm::vec4& clearColor, bool singleBuffer, unsigned int arraySize)
 	: m_width(width)
 	, m_height(height)
 	, m_cpuRtvDescHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, Application::getInstance()->getAPI<DX12API>()->getNumSwapBuffers())
@@ -49,9 +51,7 @@ DX12RenderableTexture::DX12RenderableTexture(uint32_t width, uint32_t height, Us
 	}
 }
 
-DX12RenderableTexture::~DX12RenderableTexture() {
-
-}
+DX12RenderableTexture::~DX12RenderableTexture() { }
 
 void DX12RenderableTexture::begin(void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
@@ -82,11 +82,15 @@ void DX12RenderableTexture::clear(const glm::vec4& color, void* cmdList) {
 	clearColor[2] = color.b;
 	clearColor[3] = color.a;
 
-	// Resource state must be set to render target before clearing
-	transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	if (m_isDepthStencil) {
+		// Resource state must be set to render target before clearing
+		transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+
 		dxCmdList->ClearDepthStencilView(m_dsvHeapCDHs[getSwapIndex()], D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	} else {
+		// Resource state must be set to render target before clearing
+		transitionStateTo(dxCmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
 		dxCmdList->ClearRenderTargetView(m_rtvHeapCDHs[getSwapIndex()], clearColor, 0, nullptr);
 	}
 }
@@ -97,7 +101,13 @@ void DX12RenderableTexture::changeFormat(ResourceFormat::TextureFormat newFormat
 		return;
 	}
 	m_format = newDxgiFormat;
-	createTextures();
+	m_isDepthStencil = (newFormat == ResourceFormat::DEPTH);
+
+	if (m_isDepthStencil) {
+		createDepthTextures();
+	} else {
+		createTextures();
+	}
 }
 
 void DX12RenderableTexture::resize(int width, int height) {
@@ -106,21 +116,21 @@ void DX12RenderableTexture::resize(int width, int height) {
 	}
 	m_width = width;
 	m_height = height;
-	createTextures();
-}
 
-ID3D12Resource* DX12RenderableTexture::getResource(int frameIndex) const {
-	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
-	return textureDefaultBuffers[i].Get();
+	if (m_isDepthStencil) {
+		createDepthTextures();
+	} else {
+		createTextures();
+	}
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getRtvCDH(int frameIndex) const {
-	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
+	unsigned int i = (frameIndex == -1 || useOneResource) ? getSwapIndex() : frameIndex;
 	return m_rtvHeapCDHs[i];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderableTexture::getDsvCDH(int frameIndex) const {
-	unsigned int i = (frameIndex == -1 || m_numSwapBuffers == 1) ? getSwapIndex() : frameIndex;
+	unsigned int i = (frameIndex == -1 || useOneResource) ? getSwapIndex() : frameIndex;
 	return m_dsvHeapCDHs[i];
 }
 
@@ -139,7 +149,7 @@ void DX12RenderableTexture::createTextures() {
 		textureDesc.SampleDesc.Quality = 0;
 		textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		if (m_usageFlags & UsageFlags::USAGE_UNORDERED_ACCESS) {
+		if (m_usageFlags & USAGE_UNORDERED_ACCESS) {
 			textureDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		}
 		textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -168,15 +178,17 @@ void DX12RenderableTexture::createTextures() {
 		context->getDevice()->CreateShaderResourceView(textureDefaultBuffers[i].Get(), &srvDesc, srvHeapCDHs[i]);
 
 		// Create a unordered access view
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		if (m_arraySize > 1) {
-			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
-			uavDesc.Texture2DArray.ArraySize = m_arraySize;
-		} else {
-			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		if (m_usageFlags & USAGE_UNORDERED_ACCESS) {
+			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+			if (m_arraySize > 1) {
+				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+				uavDesc.Texture2DArray.ArraySize = m_arraySize;
+			} else {
+				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+			}
+			uavDesc.Format = textureDesc.Format;
+			context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffers[i].Get(), nullptr, &uavDesc, uavHeapCDHs[i]);
 		}
-		uavDesc.Format = textureDesc.Format;
-		context->getDevice()->CreateUnorderedAccessView(textureDefaultBuffers[i].Get(), nullptr, &uavDesc, uavHeapCDHs[i]);
 
 		// Create a render target view
 		context->getDevice()->CreateRenderTargetView(textureDefaultBuffers[i].Get(), nullptr, m_rtvHeapCDHs[i]);
@@ -204,11 +216,13 @@ void DX12RenderableTexture::createDepthTextures() {
 		bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 		bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
+		state[i] = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+
 		context->getDevice()->CreateCommittedResource(
 			&DX12Utils::sDefaultHeapProps,
 			D3D12_HEAP_FLAG_NONE,
 			&bufferDesc,
-			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			state[i],
 			&depthOptimizedClearValue,
 			IID_PPV_ARGS(&textureDefaultBuffers[i])
 		);
@@ -232,5 +246,5 @@ void DX12RenderableTexture::createDepthTextures() {
 }
 
 unsigned int DX12RenderableTexture::getSwapIndex() const {
-	return (m_numSwapBuffers == 1) ? 0 : context->getSwapIndex();
+	return (useOneResource) ? 0 : context->getSwapIndex();
 }

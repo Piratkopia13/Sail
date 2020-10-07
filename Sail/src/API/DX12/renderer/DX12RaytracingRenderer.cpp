@@ -91,9 +91,11 @@ bool DX12RaytracingRenderer::onEvent(Event& event) {
 		// Calling resize on a texture which already has the given dimensions
 		// will return without doing anything, making this safe.
 		const auto& gbuffers = DX12DeferredRenderer::GetGBuffers();
-		for (unsigned i = 0; i < DX12DeferredRenderer::NUM_GBUFFERS; i++) {
-			gbuffers[i]->resize(event.getWidth(), event.getHeight());
-		}
+		gbuffers.positions->resize(event.getWidth(), event.getHeight());
+		gbuffers.normals->resize(event.getWidth(), event.getHeight());
+		gbuffers.albedo->resize(event.getWidth(), event.getHeight());
+		gbuffers.mrao->resize(event.getWidth(), event.getHeight());
+		gbuffers.depth->resize(event.getWidth(), event.getHeight());
 
 		// Tell dxrBase to update any references held to textures that how have resized (gbuffer inputs and rt output etc)
 		m_dxrBase->recreateResources();

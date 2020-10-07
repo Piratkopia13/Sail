@@ -21,7 +21,6 @@ public:
 	bool hasBeenUploaded() const;
 
 	const std::string& getFilename() const;
-	ID3D12Resource* getResource() const;
 
 	static DXGI_FORMAT ConvertToDXGIFormat(ResourceFormat::TextureFormat format);
 

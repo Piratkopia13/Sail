@@ -108,7 +108,6 @@ void DX12ForwardRenderer::runRenderingPass(ID3D12GraphicsCommandList4* cmdList) 
 		PipelineStateObject* pso = it.first;
 		auto& renderCommands = it.second;
 		DX12Shader* shader = static_cast<DX12Shader*>(pso->getShader());
-		unsigned int totalInstances = renderCommands.size();
 
 		// Set offset in SRV heap for this mesh 
 		cmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurrentGPUDescriptorHandle());

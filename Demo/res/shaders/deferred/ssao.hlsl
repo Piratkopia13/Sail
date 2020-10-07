@@ -28,7 +28,7 @@ PSIn VSMain(VSIn input) {
 
 Texture2D def_positions       : register(t1);
 Texture2D def_worldNormals    : register(t2);
-SamplerState PSssNearestClamp : register(s3) : SAIL_SAMPLER_POINT_CLAMP; // Use to sample positions (s3)
+SamplerState PSssNearestClamp : SAIL_SAMPLER_POINT_CLAMP : register(s3); // Use to sample positions (s3)
 
 float PSMain(PSIn input) : SV_Target0 {
     float3 fragPos      = def_positions.Sample(PSssNearestClamp, input.texCoord).xyz;

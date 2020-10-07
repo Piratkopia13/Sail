@@ -3,6 +3,7 @@
 #include "Sail/utils/Utils.h"
 
 #include <comdef.h>
+#include "resources/DX12ATexture.h"
 
 void DX12Utils::checkDeviceRemovalReason(ID3D12Device5* device, HRESULT hr) {
 #ifdef DEVELOPMENT
@@ -91,16 +92,52 @@ ID3D12Resource* DX12Utils::CreateBuffer(ID3D12Device* device, UINT64 size, D3D12
 	return pBuffer;
 }
 
-void DX12Utils::SetResourceTransitionBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES StateBefore, D3D12_RESOURCE_STATES StateAfter, UINT subResource) {
+void DX12Utils::SetResourceTransitionBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter, UINT subResource) {
 	D3D12_RESOURCE_BARRIER barrierDesc = {};
 
 	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrierDesc.Transition.pResource = resource;
 	barrierDesc.Transition.Subresource = subResource;
-	barrierDesc.Transition.StateBefore = StateBefore;
-	barrierDesc.Transition.StateAfter = StateAfter;
+	barrierDesc.Transition.StateBefore = stateBefore;
+	barrierDesc.Transition.StateAfter = stateAfter;
 
 	commandList->ResourceBarrier(1, &barrierDesc);
+}
+
+void DX12Utils::SetResourceTransitionBarriers(ID3D12GraphicsCommandList* commandList, std::vector<ID3D12Resource*> resources, std::vector<D3D12_RESOURCE_STATES> statesBefore, std::vector<D3D12_RESOURCE_STATES> statesAfter, std::vector<UINT> subResources) {
+	auto numBarriers = resources.size();
+	std::vector<D3D12_RESOURCE_BARRIER> barrierDescs(numBarriers);
+
+	for (auto i = 0; i < numBarriers; i++) {
+		barrierDescs[i].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrierDescs[i].Transition.pResource = resources[i];
+		barrierDescs[i].Transition.Subresource = subResources[i];
+		barrierDescs[i].Transition.StateBefore = statesBefore[i];
+		barrierDescs[i].Transition.StateAfter = statesAfter[i];
+	}
+
+	commandList->ResourceBarrier(barrierDescs.size(), barrierDescs.data());
+}
+
+void DX12Utils::SetResourceTransitionBarriers(ID3D12GraphicsCommandList* commandList, std::vector<DX12ATexture*> textures, std::vector<D3D12_RESOURCE_STATES> statesAfter) {
+	auto numBarriers = textures.size();
+	std::vector<D3D12_RESOURCE_BARRIER> barrierDescs;
+	barrierDescs.reserve(numBarriers);
+
+	for (auto i = 0; i < numBarriers; i++) {
+		if (textures[i]->getState() == statesAfter[i]) continue;
+
+		auto& desc = barrierDescs.emplace_back();
+		desc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		desc.Transition.pResource = textures[i]->getResource();
+		desc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		desc.Transition.StateBefore = textures[i]->getState();
+		desc.Transition.StateAfter = statesAfter[i];
+
+		textures[i]->setState(statesAfter[i]);
+	}
+
+	commandList->ResourceBarrier(barrierDescs.size(), barrierDescs.data());
 }
 
 void DX12Utils::SetResourceUAVBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource) {

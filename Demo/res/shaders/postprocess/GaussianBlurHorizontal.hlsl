@@ -7,10 +7,19 @@
 
 RWTexture2D<unorm float4> inoutput : register(u10) : SAIL_NO_RESOURCE;
 
+#ifdef _SAIL_VK
+// VK ONLY
 [[vk::push_constant]]
 struct {
 	float textureSizeDifference;
 } CSData;
+#else
+// NOT VK
+cbuffer VSPSConsts : SAIL_CONSTANT {
+	float textureSizeDifference;
+}
+#endif
+
 // cbuffer CSData : register(b0) {
 //     float textureSizeDifference;
 // }
@@ -25,6 +34,12 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID,
 	// due to the blur radius.
 	//
 
+#ifdef _SAIL_VK
+	float texSizeDiff = CSData.textureSizeDifference;
+#else
+	float texSizeDiff = textureSizeDifference;
+#endif
+
 	float2 inputSize;
 	inoutput.GetDimensions(inputSize.x, inputSize.y);
 
@@ -33,18 +48,18 @@ void CSMain(int3 groupThreadID : SV_GroupThreadID,
 	if(groupThreadID.x < blurRadius) {
 		// Clamp out of bound samples that occur at image borders.
 		int x = max(dispatchThreadID.x - blurRadius, 0);
-		cache[groupThreadID.x] = inoutput[int2(x, dispatchThreadID.y) * CSData.textureSizeDifference];
+		cache[groupThreadID.x] = inoutput[int2(x, dispatchThreadID.y) * texSizeDiff];
 		// cache[groupThreadID.x] = float4(0, 0.5, 0, 1);
 	}
 	if(groupThreadID.x >= N-blurRadius) {
 		// Clamp out of bound samples that occur at image borders.
 		int x = min(dispatchThreadID.x + blurRadius, inputSize.x-1);
-		cache[groupThreadID.x+2*blurRadius] = inoutput[int2(x, dispatchThreadID.y) * CSData.textureSizeDifference];
+		cache[groupThreadID.x+2*blurRadius] = inoutput[int2(x, dispatchThreadID.y) * texSizeDiff];
 		// cache[groupThreadID.x] = float4(0, 0.5, 0, 1);
 	}
 
 	// Clamp out of bound samples that occur at image borders.
-	cache[groupThreadID.x+blurRadius] = inoutput[min(dispatchThreadID.xy, inputSize.xy-1) * CSData.textureSizeDifference];
+	cache[groupThreadID.x+blurRadius] = inoutput[min(dispatchThreadID.xy, inputSize.xy-1) * texSizeDiff];
 
 	// Wait for all threads to finish.
 	GroupMemoryBarrierWithGroupSync();

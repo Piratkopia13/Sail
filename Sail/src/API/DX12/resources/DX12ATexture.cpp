@@ -26,6 +26,12 @@ DX12ATexture::DX12ATexture()
 
 DX12ATexture::~DX12ATexture() { }
 
+ID3D12Resource* DX12ATexture::getResource(int swapBuffer) const {
+	int i = (swapBuffer == -1) ? context->getSwapIndex() : swapBuffer;
+	if (useOneResource) { i = 0; }
+	return textureDefaultBuffers[i].Get();
+}
+
 D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getSrvCDH(int swapBuffer) const {
 	int i = (swapBuffer == -1) ? context->getSwapIndex() : swapBuffer;
 	if (useOneResource) { i = 0; }
@@ -38,10 +44,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE DX12ATexture::getUavCDH(int swapBuffer) const {
 	return uavHeapCDHs[i];
 }
 
-void DX12ATexture::transitionStateTo(ID3D12GraphicsCommandList4* cmdList, D3D12_RESOURCE_STATES newState, int frameIndex) {
+void DX12ATexture::transitionStateTo(ID3D12GraphicsCommandList4* cmdList, D3D12_RESOURCE_STATES newState, int swapBuffer) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-	int i = (frameIndex == -1) ? context->getSwapIndex() : frameIndex;
+	int i = (swapBuffer == -1) ? context->getSwapIndex() : swapBuffer;
 	auto index = (useOneResource) ? 0 : i;
 
 	if (state[index] == newState) return;
@@ -62,4 +68,18 @@ void DX12ATexture::renameBuffer(const std::string& name) const {
 			textureDefaultBuffers[i]->SetName(sw);
 		}
 	}
+}
+
+D3D12_RESOURCE_STATES DX12ATexture::getState(int swapBuffer) const {
+	int i = (swapBuffer == -1) ? context->getSwapIndex() : swapBuffer;
+	if (useOneResource) { i = 0; }
+
+	return state[i];
+}
+
+void DX12ATexture::setState(D3D12_RESOURCE_STATES newState, int swapBuffer) {
+	int i = (swapBuffer == -1) ? context->getSwapIndex() : swapBuffer;
+	if (useOneResource) { i = 0; }
+
+	state[i] = newState;
 }
