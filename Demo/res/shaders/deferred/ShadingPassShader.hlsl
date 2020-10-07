@@ -56,7 +56,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	Texture2D texAlbedo 	= texArr[3];
 	Texture2D texMrao 		= texArr[4];
 	Texture2D texSsao 		= texArr[5];
-	Texture2D texShadows 	= texArr[6]; // NOT USED
+	Texture2D texShadows 	= texArr[6];
 	
 	Texture2D texBrdfLut		 = texArr[0];
 	TextureCube texRadianceMap 	 = texCubeArr[0];

@@ -346,35 +346,48 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 		shader->trySetCBufferVar("sys_numPLights", &numPLs, sizeof(unsigned int), cmdList);
 	}
 
-	// Set up material
+	// Bind shader resources
 	{
-		m_shadingPassMaterial.clearTextures();
+		auto heap = m_context->getMainGPUDescriptorHeap();
+		auto dev = m_context->getDevice();
+
+		// Set offset in SRV heap for the 2D texture array
+		cmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0, space1").rootSigIndex, heap->getCurrentGPUDescriptorHandle());
+
 		// This order needs to match the indexing used in the shader
-		m_shadingPassMaterial.addTexture(sGBufferTextures.positions.get());
-		m_shadingPassMaterial.addTexture(sGBufferTextures.normals.get());
-		m_shadingPassMaterial.addTexture(sGBufferTextures.albedo.get());
-		m_shadingPassMaterial.addTexture(sGBufferTextures.mrao.get());
-
-		if (m_ssao)
-			m_shadingPassMaterial.addTexture(m_ssaoShadingTexture);
-
-		if (useDXRHardShadows)
-			m_shadingPassMaterial.addTexture(DX12RaytracingRenderer::GetOutputTexture()->get());
-
 		auto* brdfLutTexture = &Application::getInstance()->getResourceManager().getTexture("pbr/brdfLUT.tga");
+		dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), static_cast<DX12Texture*>(brdfLutTexture)->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		m_shadingPassMaterial.addTexture(brdfLutTexture);
-		m_shadingPassMaterial.addTexture(environment->getRadianceTexture());
-		m_shadingPassMaterial.addTexture(environment->getIrradianceTexture());
+		dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), sGBufferTextures.positions->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), sGBufferTextures.normals->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), sGBufferTextures.albedo->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), sGBufferTextures.mrao->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		if (m_ssao) {
+			dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), m_ssaoShadingTexture->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		} else {
+			// Skip this slot in the heap
+			heap->getAndStepIndex(1);
+		}
+
+		if (useDXRHardShadows) {
+			dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), DX12RaytracingRenderer::GetOutputTexture()->get()->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		} else {
+			// Skip this slot in the heap
+			heap->getAndStepIndex(1);
+		}
+
+		// Set offset in SRV heap for the texture cube array
+		cmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0, space2").rootSigIndex, heap->getCurrentGPUDescriptorHandle());
+
+		auto radiance = static_cast<DX12Texture*>(environment->getRadianceTexture());
+		radiance->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), radiance->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		auto irradiance = static_cast<DX12Texture*>(environment->getIrradianceTexture());
+		irradiance->transitionStateTo(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), irradiance->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
-	Renderer::RenderCommand fakeRenderCmd;
-	fakeRenderCmd.material = &m_shadingPassMaterial;
-	std::vector< Renderer::RenderCommand> fakeVec = { fakeRenderCmd };
-	// TODO: Replace this with a call to updateDescriptors()
-	shader->updateDescriptorsAndMaterialIndices(fakeVec, *environment, &pso, cmdList);
-
-		
 	//// Inline raytracing test - bind AS
 	//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	//srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -382,7 +395,7 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
 	//m_context->getDevice()->CreateShaderResourceView(nullptr, &srvDesc, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle());
 
-	mesh->draw(*this, &m_shadingPassMaterial, shader, cmdList);
+	mesh->draw(*this, nullptr, shader, cmdList);
 }
 
 void DX12DeferredRenderer::runFrameExecution(ID3D12GraphicsCommandList4* cmdList) {

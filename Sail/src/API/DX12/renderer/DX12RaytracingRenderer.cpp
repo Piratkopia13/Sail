@@ -63,7 +63,7 @@ void* DX12RaytracingRenderer::present(Renderer::PresentFlag flags, void* skipped
 		// dispatch n stuff
 		m_dxrBase->updateSceneData(camera, lightSetup);
 		//if (Input::IsKeyPressed(SAIL_KEY_L))
-		m_dxrBase->updateAccelerationStructures(commandQueue, cmdList);
+		m_dxrBase->updateAccelerationStructures(commandQueueCustom, cmdList);
 		//if (Input::IsKeyPressed(SAIL_KEY_K))
 		m_dxrBase->dispatch(sRTOutputTexture.get(), cmdList);
 	}

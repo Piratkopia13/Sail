@@ -63,6 +63,7 @@ public:
 
 protected:
 	std::unordered_map<PipelineStateObject*, std::vector<RenderCommand>> commandQueue; // Sorted by PSOs
+	std::vector<RenderCommand> commandQueueCustom; // Unsorted, without PSOs
 	Camera* camera = nullptr;
 	Environment* environment = nullptr;
 	LightSetup* lightSetup = nullptr;
