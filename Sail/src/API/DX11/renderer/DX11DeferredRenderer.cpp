@@ -19,7 +19,7 @@ DX11DeferredRenderer::DX11DeferredRenderer() {
 
 	for (int i = 0; i < NUM_GBUFFERS; i++) {
 		m_gbufferTextures[i] = std::unique_ptr<DX11RenderableTexture>(static_cast<DX11RenderableTexture*>(
-			RenderableTexture::Create(windowWidth, windowHeight, "GBuffer renderer output " + std::to_string(i), (i < 2) ? ResourceFormat::R16G16B16A16_FLOAT : ResourceFormat::R8G8B8A8, (i == 0))));
+			RenderableTexture::Create(windowWidth, windowHeight, RenderableTexture::USAGE_SAMPLING_ACCESS, "GBuffer renderer output " + std::to_string(i), (i < 2) ? ResourceFormat::R16G16B16A16_FLOAT : ResourceFormat::R8G8B8A8, (i == 0))));
 	}
 
 	m_screenQuadModel = ModelFactory::ScreenQuadModel::Create();
@@ -56,7 +56,7 @@ void* DX11DeferredRenderer::present(Renderer::PresentFlag flags, void* skippedPr
 }
 
 void* DX11DeferredRenderer::getDepthBuffer() {
-	return *m_gbufferTextures[0]->getDepthStencilView();
+	return m_gbufferTextures[0]->getDSV();
 }
 
 void DX11DeferredRenderer::runFramePreparation() {
@@ -65,38 +65,39 @@ void DX11DeferredRenderer::runFramePreparation() {
 	// Bind gbuffers as render targets and clear them
 	ID3D11RenderTargetView* rtvs[NUM_GBUFFERS];
 	for (unsigned int i = 0; i < NUM_GBUFFERS; i++) {
-		rtvs[i] = *m_gbufferTextures[i]->getRenderTargetView();
+		rtvs[i] = m_gbufferTextures[i]->getRTV();
 		m_gbufferTextures[i]->clear(glm::vec4(0.f, 0.f, (i == 0) ? FLT_MAX : 0.f, 0.0f)); // The position buffer z is cleared to FLT_MAX to fix ssao issue on skybox background
 	}
-	devCon->OMSetRenderTargets(NUM_GBUFFERS, rtvs, *m_gbufferTextures[0]->getDepthStencilView());
+	devCon->OMSetRenderTargets(NUM_GBUFFERS, rtvs, m_gbufferTextures[0]->getDSV());
 	devCon->RSSetViewports(1, m_context->getViewport());
 }
 
 void DX11DeferredRenderer::runGeometryPass() {
 	auto& resman = Application::getInstance()->getResourceManager();
 
-	for (RenderCommand& command : commandQueue) {
-		Shader* shader = command.shader;
+	assert(false && "Deprecated");
+	//for (RenderCommand& command : commandQueue) {
+	//	Shader* shader = command.shader;
 
-		// Find a matching pipelineStateObject and bind it
-		auto& pso = resman.getPSO(shader, command.mesh);
-		pso.bind();
+	//	// Find a matching pipelineStateObject and bind it
+	//	auto& pso = resman.getPSO(shader, command.mesh);
+	//	pso.bind();
 
-		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+	//	shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
+	//	shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
+	//	shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
+	//	shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
+	//	shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
 
-		if (lightSetup) {
-			auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
-			auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
-			shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
-			shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
-		}
+	//	if (lightSetup) {
+	//		auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
+	//		auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
+	//		shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
+	//		shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
+	//	}
 
-		command.mesh->draw(*this, command.material, shader, environment);
-	}
+	//	command.mesh->draw(*this, command.material, shader, environment);
+	//}
 }
 
 void DX11DeferredRenderer::runSSAO() {
@@ -105,8 +106,8 @@ void DX11DeferredRenderer::runSSAO() {
 
 	auto* ssaoRenderTarget = static_cast<DX11RenderableTexture*>(m_ssao->getRenderTargetTexture());
 	ssaoRenderTarget->clear({ 0.0f, 0.0f, 0.0f, 0.0f });
-
-	devCon->OMSetRenderTargets(1, ssaoRenderTarget->getRenderTargetView(), nullptr);
+	auto rtv = ssaoRenderTarget->getRTV();
+	devCon->OMSetRenderTargets(1, &rtv, nullptr);
 	D3D11_VIEWPORT viewport = { 0 };
 	viewport.Width = m_ssao->getRenderTargetWidth();
 	viewport.Height = m_ssao->getRenderTargetHeight();
@@ -121,19 +122,20 @@ void DX11DeferredRenderer::runSSAO() {
 	auto& pso = resman.getPSO(shader, mesh);
 	pso.bind();
 
-	shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-	shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
+	shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), nullptr);
+	shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4), nullptr);
 	auto& [kernelData, kernelDataSize] = m_ssao->getKernel();
-	shader->trySetCBufferVar("kernel", kernelData, kernelDataSize);
+	shader->trySetCBufferVar("kernel", kernelData, kernelDataSize, nullptr);
 	auto& [noiseData, noiseDataSize] = m_ssao->getNoise();
-	shader->trySetCBufferVar("noise", noiseData, noiseDataSize);
+	shader->trySetCBufferVar("noise", noiseData, noiseDataSize, nullptr);
 	glm::vec2 ssaoSize(m_ssao->getRenderTargetWidth(), m_ssao->getRenderTargetHeight());
-	shader->trySetCBufferVar("windowSize", &ssaoSize, sizeof(glm::vec2));
+	shader->trySetCBufferVar("windowSize", &ssaoSize, sizeof(glm::vec2), nullptr);
 
 	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {
 		// Bind GBuffer textures
-		shader->setRenderableTexture("def_positions", m_gbufferTextures[0].get(), cmdList);
-		shader->setRenderableTexture("def_worldNormals", m_gbufferTextures[1].get(), cmdList);
+		assert(false && "Deprecated");
+		//shader->setRenderableTexture("def_positions", m_gbufferTextures[0].get(), cmdList);
+		//shader->setRenderableTexture("def_worldNormals", m_gbufferTextures[1].get(), cmdList);
 	};
 	m_shadingPassMaterial.setBindFunc(materialFunc);
 
@@ -153,7 +155,7 @@ void DX11DeferredRenderer::runSSAO() {
 
 	// Dispatch horizontal blur pass
 	{
-		blurHorizontalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float));
+		blurHorizontalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float), nullptr);
 
 		blurHorizontalShader.setRenderableTextureUAV("inoutput", ssaoRenderTarget);
 		
@@ -174,8 +176,9 @@ void DX11DeferredRenderer::runSSAO() {
 		m_ssaoShadingTexture = static_cast<DX11RenderableTexture*>(blurVerticalShader.getRenderableTexture("output"));
 		m_ssaoShadingTexture->resize(m_ssao->getRenderTargetWidth(), m_ssao->getRenderTargetHeight());
 
-		blurVerticalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float));
-		blurVerticalShader.setRenderableTexture("input", ssaoRenderTarget);
+		blurVerticalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float), nullptr);
+		assert(false && "Deprecated");
+		//blurVerticalShader.setRenderableTexture("input", ssaoRenderTarget);
 		blurVerticalShader.setRenderableTextureUAV("output", m_ssaoShadingTexture);
 
 		auto& pso = Application::getInstance()->getResourceManager().getPSO(&blurVerticalShader);
@@ -187,7 +190,8 @@ void DX11DeferredRenderer::runSSAO() {
 		devCon->Dispatch(x, y, z);
 
 		// Unbind
-		blurVerticalShader.setRenderableTexture("input", nullptr);
+		assert(false && "Deprecated");
+		//blurVerticalShader.setRenderableTexture("input", nullptr);
 		blurVerticalShader.setRenderableTextureUAV("output", nullptr);
 	}
 
@@ -207,36 +211,38 @@ void DX11DeferredRenderer::runShadingPass() {
 	auto& pso = resman.getPSO(shader, mesh);
 	pso.bind();
 
-	shader->trySetCBufferVar("sys_mViewInv", &glm::inverse(camera->getViewMatrix()), sizeof(glm::mat4));
-	shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+	shader->trySetCBufferVar("sys_mViewInv", &glm::inverse(camera->getViewMatrix()), sizeof(glm::mat4), nullptr);
+	shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), nullptr);
 	int useSSAOInt = (int)useSSAO;
-	shader->trySetCBufferVar("useSSAO", &useSSAOInt, sizeof(int));
+	shader->trySetCBufferVar("useSSAO", &useSSAOInt, sizeof(int), nullptr);
 	int useShadowTextureInt = 0;
-	shader->trySetCBufferVar("useShadowTexture", &useShadowTextureInt, sizeof(int));
+	shader->trySetCBufferVar("useShadowTexture", &useShadowTextureInt, sizeof(int), nullptr);
 
 	if (lightSetup) {
 		auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
 		auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
 		unsigned int numPLs = lightSetup->getNumPLs();
-		shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
-		shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
-		shader->trySetCBufferVar("sys_numPLights", &numPLs, sizeof(unsigned int));
+		shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize, nullptr);
+		shader->trySetCBufferVar("pointLights", plData, plDataByteSize, nullptr);
+		shader->trySetCBufferVar("sys_numPLights", &numPLs, sizeof(unsigned int), nullptr);
 	}
 
 	auto materialFunc = [&](Shader* shader, Environment* environment, void* cmdList) {
 		auto* brdfLutTexture = &Application::getInstance()->getResourceManager().getTexture("pbr/brdfLUT.tga");
 		// Bind environment textures
-		shader->setTexture("sys_texBrdfLUT", brdfLutTexture, cmdList);
-		shader->setTexture("irradianceMap", environment->getIrradianceTexture(), cmdList);
-		shader->setTexture("radianceMap", environment->getRadianceTexture(), cmdList);
+		assert(false && "Deprecated");
 
-		// Bind GBuffer textures
-		shader->setRenderableTexture("def_positions", m_gbufferTextures[0].get(), cmdList);
-		shader->setRenderableTexture("def_worldNormals", m_gbufferTextures[1].get(), cmdList);
-		shader->setRenderableTexture("def_albedo", m_gbufferTextures[2].get(), cmdList);
-		shader->setRenderableTexture("def_mrao", m_gbufferTextures[3].get(), cmdList);
-		if (useSSAO)
-			shader->setRenderableTexture("tex_ssao", m_ssaoShadingTexture, cmdList);
+		//shader->setTexture("sys_texBrdfLUT", brdfLutTexture, cmdList);
+		//shader->setTexture("irradianceMap", environment->getIrradianceTexture(), cmdList);
+		//shader->setTexture("radianceMap", environment->getRadianceTexture(), cmdList);
+
+		//// Bind GBuffer textures
+		//shader->setRenderableTexture("def_positions", m_gbufferTextures[0].get(), cmdList);
+		//shader->setRenderableTexture("def_worldNormals", m_gbufferTextures[1].get(), cmdList);
+		//shader->setRenderableTexture("def_albedo", m_gbufferTextures[2].get(), cmdList);
+		//shader->setRenderableTexture("def_mrao", m_gbufferTextures[3].get(), cmdList);
+		//if (useSSAO)
+		//	shader->setRenderableTexture("tex_ssao", m_ssaoShadingTexture, cmdList);
 	};
 	m_shadingPassMaterial.setBindFunc(materialFunc);
 

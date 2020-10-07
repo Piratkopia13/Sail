@@ -144,11 +144,9 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = (texIsCubeMap) ? 6 : 1;
 	VK_CHECK_RESULT(vkCreateImageView(context->getDevice(), &viewInfo, nullptr, &imageViews[0]));
-	
 }
 
-SVkTexture::~SVkTexture() {
-}
+SVkTexture::~SVkTexture() { }
 
 void SVkTexture::copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat, uint32_t mipLevels, const std::vector<VkExtent3D>& mipExtents, const std::vector<unsigned int>& mipOffsets) {
 	unsigned int layerCount = (texIsCubeMap) ? 6 : 1;
@@ -184,7 +182,6 @@ void SVkTexture::copyToImage(const VkCommandBuffer& cmd, VkFormat vkImageFormat,
 // Has to be submitted on a queue with graphics capability (since it uses blit)
 void SVkTexture::generateMipmaps(const VkCommandBuffer& cmd, int32_t texWidth, int32_t texHeight, uint32_t mipLevels, VkFormat vkImageFormat) {
 	if (m_generateMips) {
-
 		static bool checkSupport = true;
 		if (checkSupport) {
 			// Check if image format supports linear blitting
@@ -276,7 +273,6 @@ void SVkTexture::generateMipmaps(const VkCommandBuffer& cmd, int32_t texWidth, i
 		// Transition image for shader usage (has to be done on the graphics queue)
 		SVkUtils::TransitionImageLayout(cmd, textureImages[0].image, vkImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, (texIsCubeMap) ? 6 : 1, mipLevels);
 	}
-
 }
 
 void SVkTexture::readyForUseCallback() {
@@ -285,5 +281,4 @@ void SVkTexture::readyForUseCallback() {
 	m_stagingBuffer.destroy();
 
 	readyToUse = true;
-	Logger::Log("Texture ready for use :)");
 }

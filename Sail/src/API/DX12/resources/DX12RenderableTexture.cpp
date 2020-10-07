@@ -4,8 +4,6 @@
 #include "Sail/api/Window.h"
 #include "../DX12Utils.h"
 
-// TODO: fix compilation error
-// Depth texture is now handled separately, see VK implementation for details
 RenderableTexture* RenderableTexture::Create(uint32_t width, uint32_t height, UsageFlags usage, const std::string& name, 
 	ResourceFormat::TextureFormat format, bool singleBuffer, uint32_t arraySize, const glm::vec4& clearColor) 
 {

@@ -7,5 +7,5 @@ public:
 	DX11Mesh(Data& buildData);
 	~DX11Mesh();
 
-	virtual void draw(const Renderer& renderer, Material* material, Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	virtual void draw(const Renderer& renderer, Material* material, Shader* shader, void* cmdList = nullptr) override;
 };

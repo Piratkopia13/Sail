@@ -23,7 +23,7 @@ DX11Mesh::DX11Mesh(Data& buildData)
 DX11Mesh::~DX11Mesh() {
 }
 
-void DX11Mesh::draw(const Renderer& renderer, Material* material, Shader* shader, Environment* environment, void* cmdList) {
+void DX11Mesh::draw(const Renderer& renderer, Material* material, Shader* shader, void* cmdList) {
 	if (!shader) {
 		Logger::Warning("Tried to draw mesh with no shader");
 		return;
@@ -34,7 +34,6 @@ void DX11Mesh::draw(const Renderer& renderer, Material* material, Shader* shader
 			Logger::Warning("Shader requires a different material from the one given");
 			return;
 		}
-		material->bind(shader, environment);
 	}
 
 	vertexBuffer->bind();

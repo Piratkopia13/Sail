@@ -1,5 +1,6 @@
 -- premake5.lua
 
+local EnableDX11 = false
 local VulkankSDKPath = os.getenv("VULKAN_SDK")
 if not VulkankSDKPath then
 	print('VULKAN_SDK environment var not set -> not adding Vulkan as a platform!')
@@ -8,8 +9,10 @@ end
 workspace "Sail"
 	configurations { "Debug", "Release" }
 
-	platforms { "DX11 x64", "DX11 x86",
-				"DX12 x64", "DX12 x86" }
+	platforms { "DX12 x64", "DX12 x86" }
+	if EnableDX11 then
+		platforms { "DX11 x64", "DX11 x86" }
+	end
 	if VulkankSDKPath then
 		platforms { "pVulkan x64", "pVulkan x86" } -- starting a platform name with 'V' changes the platform toolset in VS. Bug in premake?
 	end
