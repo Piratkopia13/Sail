@@ -43,6 +43,7 @@ DX12DeferredRenderer::DX12DeferredRenderer() {
 }
 
 DX12DeferredRenderer::~DX12DeferredRenderer() {
+	m_context->waitForGPU();
 	EventSystem::getInstance()->unsubscribeFromEvent(Event::WINDOW_RESIZE, this);
 	sGBufferTextures.positions.reset();
 	sGBufferTextures.normals.reset();

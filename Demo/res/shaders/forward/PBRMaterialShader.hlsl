@@ -88,14 +88,8 @@ PSIn VSMain(VSIn input) {
 	return output;
 }
 
-#ifdef _SAIL_VK
-SamplerState PSssPoint : register(s5) : SAIL_SAMPLER_POINT_CLAMP;
-SamplerState PSss 	   : register(s6) : SAIL_SAMPLER_ANIS_WRAP;
-
-#else
-SamplerState PSssPoint : SAIL_SAMPLER_POINT_CLAMP;
-SamplerState PSss 	   : SAIL_SAMPLER_ANIS_WRAP;
-#endif
+SamplerState PSssPoint : SAIL_SAMPLER_POINT_CLAMP : register(s5);
+SamplerState PSss 	   : SAIL_SAMPLER_ANIS_WRAP	  : register(s6);
 
 Texture2D texArr[]		 : SAIL_BIND_ALL_TEXTURES 	  : register(t7);
 TextureCube texCubeArr[] : SAIL_BIND_ALL_TEXTURECUBES : register(t8);

@@ -18,12 +18,20 @@ struct PSIn {
 	float3x3 TBN : TBN;
 };
 
-// Fast as frick data through the pipeline itself
+#ifdef _SAIL_VK
+// VK ONLY
 [[vk::push_constant]]
 struct {
 	matrix sys_mWorld;
 	uint sys_materialIndex;
 } VSPSConsts;
+#else
+// NOT VK
+cbuffer VSPSConsts : SAIL_CONSTANT {
+	matrix sys_mWorld;
+	uint sys_materialIndex;
+}
+#endif
 
 // These cbuffers are shared between all draw calls
 cbuffer VSSystemCBuffer : register(b0) {
@@ -42,8 +50,13 @@ cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
+#ifdef _SAIL_VK
 	PhongMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 	matrix mWorld = VSPSConsts.sys_mWorld;
+#else
+	PhongMaterial mat = sys_materials[sys_materialIndex];
+	matrix mWorld = sys_mWorld;
+#endif
 
 	input.position.w = 1.f;
 	output.position = mul(mWorld, input.position);
@@ -80,9 +93,8 @@ PSIn VSMain(VSIn input) {
 
 }
 
-SamplerState PSss : register(s2) : SAIL_SAMPLER_ANIS_WRAP;
-
-Texture2D texArr[] : register(t3) : SAIL_BIND_ALL_TEXTURES;
+SamplerState PSss  : SAIL_SAMPLER_ANIS_WRAP : register(s2);
+Texture2D texArr[] : SAIL_BIND_ALL_TEXTURES : register(t3);
 
 float4 sampleTexture(uint index, float2 texCoords) {
 	return texArr[index].Sample(PSss, texCoords);
@@ -90,7 +102,11 @@ float4 sampleTexture(uint index, float2 texCoords) {
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
+#ifdef _SAIL_VK
 	PhongMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+#else
+	PhongMaterial mat = sys_materials[sys_materialIndex];
+#endif
 
 	PointLight myPointLights[NUM_POINT_LIGHTS] = pointLights;
 	for (int i = 0; i < NUM_POINT_LIGHTS; i++)

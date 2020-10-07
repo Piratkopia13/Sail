@@ -36,7 +36,9 @@ DX12ForwardRenderer::DX12ForwardRenderer() {
 	m_command.list->SetName(L"Forward Renderer main command list");
 }
 
-DX12ForwardRenderer::~DX12ForwardRenderer() { }
+DX12ForwardRenderer::~DX12ForwardRenderer() {
+	m_context->waitForGPU();
+}
 
 void DX12ForwardRenderer::begin(Camera* camera, Environment* environment) {
 	Renderer::begin(camera, environment);

@@ -15,31 +15,25 @@ struct OutlineMaterial {
 
 #ifdef _SAIL_VK
 // VK ONLY
-
 [[vk::push_constant]]
 struct {
 	matrix sys_mWorld;
 	uint sys_materialIndex;
 } VSPSConsts;
+#else
+// NOT VK
+cbuffer VSPSConsts : SAIL_CONSTANT {
+	matrix sys_mWorld;
+	uint sys_materialIndex;
+}
+#endif
 
 cbuffer VSSystemCBuffer : register(b0) {
 	matrix sys_mVP;
 }
-
 cbuffer VSMaterialsBuffer : register(b1) : SAIL_BIND_ALL_MATERIALS {
 	OutlineMaterial sys_materials[1024];
 }
-
-#else
-// NOT VK
-
-cbuffer VSSystemCBuffer : register(b0) {
-	matrix sys_mVP;
-	matrix sys_mWorld;
-	float3 mat_color;
-    float mat_thickness;
-}
-#endif
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
@@ -48,9 +42,7 @@ PSIn VSMain(VSIn input) {
 	OutlineMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
     matrix mWorld = VSPSConsts.sys_mWorld;
 #else
-	OutlineMaterial mat;
-	mat.color = mat_color;
-	mat.thickness = mat_thickness;
+	OutlineMaterial mat = sys_materials[sys_materialIndex];
     matrix mWorld = sys_mWorld;
 #endif
 	output.color = mat.color;
