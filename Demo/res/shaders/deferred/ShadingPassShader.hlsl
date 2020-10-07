@@ -23,7 +23,7 @@ cbuffer PSSystemCBuffer : register(b0) {
     int useShadowTexture;
 	float3 padding;
 	DirectionalLight dirLight;
-    PointLightInput pointLights[8];
+    PointLight pointLights[8];
 }
 
 PSIn VSMain(VSIn input) {
@@ -110,7 +110,14 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	
 	// Lights
 	scene.dirLight = dirLight;
-	scene.pointLights = pointLights;
+	[unroll]
+	for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
+		scene.pointLights[i].color = pointLights[i].color;
+		scene.pointLights[i].attRadius = pointLights[i].attRadius;
+		scene.pointLights[i].intensity = pointLights[i].intensity;
+		// World space vector poiting from the vertex position to the point light
+		scene.pointLights[i].fragToLight = pointLights[i].fragToLight - worldPos;
+	}
 
 	scene.brdfLUT = texBrdfLut;
 	scene.prefilterMap = texRadianceMap;
