@@ -7,7 +7,8 @@
 class DX11RenderableTexture : public RenderableTexture {
 
 public:
-	DX11RenderableTexture(UINT aaSamples = 1, unsigned int width = 320, unsigned int height = 180, ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8, bool createDepthStencilView = true, bool createOnlyDSV = false, const glm::vec4& clearColor = { 0.f, 0.f, 0.f, 0.f }, UINT bindFlags = 0, UINT cpuAccessFlags = 0);
+	DX11RenderableTexture(uint32_t width, uint32_t height, UsageFlags usage, ResourceFormat::TextureFormat format,
+		bool singleBuffer, bool arraySize, const glm::vec4& clearColor);
 	~DX11RenderableTexture();
 	
 	virtual void begin(void* cmdList = nullptr) override;
@@ -15,14 +16,12 @@ public:
 	virtual void clear(const glm::vec4& color, void* cmdList = nullptr) override;
 	virtual void resize(int width, int height) override;
 
-	ID3D11ShaderResourceView** getColorSRV();
-	ID3D11UnorderedAccessView** getColorUAV();
-	ID3D11ShaderResourceView** getDepthSRV();
-	ID3D11RenderTargetView** getRenderTargetView();
-	ID3D11DepthStencilView** getDepthStencilView();
+	ID3D11ShaderResourceView* getSRV();
+	ID3D11UnorderedAccessView* getUAV();
+	ID3D11RenderTargetView* getRTV();
+	ID3D11DepthStencilView* getDSV();
 	D3D11_VIEWPORT* getViewPort();
 	ID3D11Texture2D* getTexture2D();
-	ID3D11Texture2D* getDepthTexture2D();
 
 	void changeFormat(ResourceFormat::TextureFormat newFormat) override;
 
@@ -33,19 +32,26 @@ private:
 	UINT m_width, m_height;
 	DXGI_FORMAT m_format;
 	D3D11_VIEWPORT m_viewport;
-	DX11Texture* m_dxColorTexture;
-	DX11Texture* m_dxDepthTexture;
-	ID3D11RenderTargetView* m_renderTargetView;
+	DX11Texture* m_texture;
 	UINT m_aaSamples;
-	ID3D11DepthStencilView* m_depthStencilView;
-	bool m_hasDepthStencilView;
-	bool m_onlyDSV;
-	UINT m_bindFlags;
-	UINT m_cpuAccessFlags;
 
-	ID3D11Texture2D* m_nonMSAAColorTexture2D;
+	ID3D11RenderTargetView* m_rtv;
+	ID3D11DepthStencilView* m_dsv;
+	ID3D11ShaderResourceView* m_srv;
+	ID3D11UnorderedAccessView* m_uav;
+
+	UsageFlags m_usageFlags;
+
+	bool m_isDepthStencil;
+	unsigned int m_arraySize;
+
+	//bool m_onlyDSV;
+	//UINT m_bindFlags;
+	//UINT m_cpuAccessFlags;
+
+	/*ID3D11Texture2D* m_nonMSAAColorTexture2D;
 	ID3D11ShaderResourceView* m_nonMSAAColorSRV;
 	ID3D11UnorderedAccessView* m_uav;
-	ID3D11ShaderResourceView* m_nonMSAADepthSRV;
+	ID3D11ShaderResourceView* m_nonMSAADepthSRV;*/
 
 };

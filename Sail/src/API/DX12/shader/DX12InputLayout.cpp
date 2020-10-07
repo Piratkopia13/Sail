@@ -30,7 +30,7 @@ void DX12InputLayout::pushVec3(InputType inputType, const char* semanticName, un
 }
 
 void DX12InputLayout::pushVec4(InputType inputType, const char* semanticName, unsigned int semanticIndex, unsigned int inputSlot, int alignedByteOffset, InputClassification inputSlotClass, unsigned int instanceDataStepRate) {
-	push(DXGI_FORMAT_R32G32B32A32_FLOAT, sizeof(float), semanticName, semanticIndex, inputSlot, alignedByteOffset, inputSlotClass, instanceDataStepRate);
+	push(DXGI_FORMAT_R32G32B32A32_FLOAT, sizeof(glm::vec4), semanticName, semanticIndex, inputSlot, alignedByteOffset, inputSlotClass, instanceDataStepRate);
 	InputLayout::pushVec4(inputType, semanticName, semanticIndex, inputSlot, alignedByteOffset, inputSlotClass, instanceDataStepRate);
 }
 
@@ -66,7 +66,7 @@ int DX12InputLayout::convertInputClassification(InputClassification inputSlotCla
 void DX12InputLayout::push(DXGI_FORMAT format, unsigned int typeSize, const char* semanticName, unsigned int semanticIndex, unsigned int inputSlot, int alignedByteOffset, InputClassification inputSlotClass, unsigned int instanceDataStepRate) {
 	alignedByteOffset = (alignedByteOffset == -1) ? (m_inputElementDescs.empty()) ? 0 : D3D12_APPEND_ALIGNED_ELEMENT : alignedByteOffset;
 	auto convertedInputClass = (D3D12_INPUT_CLASSIFICATION)convertInputClassification(inputSlotClass);
-	m_inputElementDescs.push_back({ semanticName, semanticIndex, format, inputSlot, (UINT)alignedByteOffset,	convertedInputClass, instanceDataStepRate });
+	m_inputElementDescs.push_back({ semanticName, semanticIndex, format, inputSlot, (UINT)alignedByteOffset, convertedInputClass, instanceDataStepRate });
 
 	if (convertedInputClass == D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA)
 		InstanceSize += typeSize;

@@ -44,7 +44,7 @@ DXRBase::~DXRBase() {
 	}
 }
 
-void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCommand>& sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::updateAccelerationStructures(Renderer::RenderCommandList sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	unsigned int frameIndex = context->getSwapIndex();
@@ -92,7 +92,7 @@ void DXRBase::updateAccelerationStructures(const std::vector<Renderer::RenderCom
 	for (auto& renderCommand : sceneGeometry) {
 		if (renderCommand.dxrFlags & Renderer::MESH_DYNAMIC) {
 			Mesh* mesh = renderCommand.mesh;
-		
+
 			auto& searchResult = m_bottomBuffers[frameIndex].find(mesh);
 			auto flags = flagNone;
 			if (renderCommand.dxrFlags & Renderer::MESH_HERO) {
@@ -393,7 +393,7 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		unsigned int uploadBufferByteSize = 1024 * 10;
 		unsigned int defaultBufferUAByteSize = 1024 * 20;
 		unsigned int defaultBufferRTASByteSize = 1024 * 20;
-		for (unsigned int i = 0; i < context->getNumGPUBuffers(); i++) {
+		for (unsigned int i = 0; i < context->getNumSwapBuffers(); i++) {
 			m_defaultBufferUA.emplace_back(new DX12Utils::GPUOnlyBuffer(context->getDevice(), defaultBufferUAByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 			m_defaultBufferRTAS.emplace_back(new DX12Utils::GPUOnlyBuffer(context->getDevice(), defaultBufferRTASByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE));
 			m_uploadBuffer.emplace_back(new DX12Utils::CPUSharedBuffer(context->getDevice(), uploadBufferByteSize));

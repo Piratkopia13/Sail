@@ -7,30 +7,45 @@
 PhongMaterial::PhongMaterial()
 	: Material(Material::PHONG)
 	, m_numTextures(3)
-	, m_textures {nullptr}
 {
+	textures.resize(m_numTextures);
+
 	m_phongSettings.ka = 1.f;
 	m_phongSettings.kd = 1.f;
 	m_phongSettings.ks = 1.f;
 	m_phongSettings.shininess = 10.f;
 	m_phongSettings.modelColor = glm::vec4(1.0f);
-	m_phongSettings.hasDiffuseTexture = 0;
-	m_phongSettings.hasNormalTexture = 0;
-	m_phongSettings.hasSpecularTexture = 0;
+	m_phongSettings.diffuseTexIndex = -1;
+	m_phongSettings.normalTexIndex = -1;
+	m_phongSettings.specularTexIndex = -1;
 
 }
 PhongMaterial::~PhongMaterial() { }
 
-void PhongMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
-	shader->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings));
+//void PhongMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
+//	shader->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings), cmdList);
+//
+//	// TODO: check if this causes a problem in DX12
+//	// when a normal or specular texture is bound but not a diffuse one, the order will probably be wrong in dx12 shaders
+//
+//	// Will pass nullptrs for unused textures, it is up to the pipeline to handle that
+//	shader->setTexture("sys_texDiffuse", textures[0], cmdList);
+//	shader->setTexture("sys_texNormal", textures[1], cmdList);
+//	shader->setTexture("sys_texSpecular", textures[2], cmdList);
+//}
 
-	// TODO: check if this causes a problem in DX12
-	// when a normal or specular texture is bound but not a diffuse one, the order will probably be wrong in dx12 shaders
+void PhongMaterial::setTextureIndex(unsigned int textureID, int index) {
+	if (textureID == 0) m_phongSettings.diffuseTexIndex = index;
+	else if (textureID == 1) m_phongSettings.normalTexIndex = index;
+	else if (textureID == 2) m_phongSettings.specularTexIndex = index;
+}
 
-	// Will pass nullptrs for unused textures, it is up to the pipeline to handle that
-	shader->setTexture("sys_texDiffuse", m_textures[0], cmdList);
-	shader->setTexture("sys_texNormal", m_textures[1], cmdList);
-	shader->setTexture("sys_texSpecular", m_textures[2], cmdList);
+void* PhongMaterial::getData() {
+	return static_cast<void*>(&getPhongSettings());
+}
+
+unsigned int PhongMaterial::getDataSize() const {
+	return sizeof(PhongSettings);
 }
 
 Shader* PhongMaterial::getShader(Renderer::Type rendererType) const {
@@ -63,36 +78,30 @@ void PhongMaterial::setColor(const glm::vec4& color) {
 
 
 void PhongMaterial::setDiffuseTexture(const std::string& filename, bool useAbsolutePath) {
-	m_textures[0] = loadTexture(filename, useAbsolutePath);
-	m_phongSettings.hasDiffuseTexture = (filename.empty()) ? 0 : 1;
+	textures[0] = loadTexture(filename, useAbsolutePath);
 }
 void PhongMaterial::setDiffuseTextureFromHandle(Texture* srv) {
-	m_textures[0] = srv;
-	m_phongSettings.hasDiffuseTexture = 1;
+	textures[0] = srv;
 }
 
 
 void PhongMaterial::setNormalTexture(const std::string& filename, bool useAbsolutePath) {
-	m_textures[1] = loadTexture(filename, useAbsolutePath);
-	m_phongSettings.hasNormalTexture = (filename.empty()) ? 0 : 1;
+	textures[1] = loadTexture(filename, useAbsolutePath);
 }
 void PhongMaterial::setNormalTextureFromHandle(Texture* srv) {
-	m_textures[1] = srv;
-	m_phongSettings.hasNormalTexture = 1;
+	textures[1] = srv;
 }
 
 
 void PhongMaterial::setSpecularTexture(const std::string& filename, bool useAbsolutePath) {
-	m_textures[2] = loadTexture(filename, useAbsolutePath);
-	m_phongSettings.hasSpecularTexture = (filename.empty()) ? 0 : 1;
+	textures[2] = loadTexture(filename, useAbsolutePath);
 }
 void PhongMaterial::setSpecularTextureFromHandle(Texture* srv) {
-	m_textures[2] = srv;
-	m_phongSettings.hasSpecularTexture = 1;
+	textures[2] = srv;
 }
 
 Texture* PhongMaterial::getTexture(unsigned int id) const {
-	return m_textures[id];
+	return textures[id];
 }
 
 PhongMaterial::PhongSettings& PhongMaterial::getPhongSettings() {

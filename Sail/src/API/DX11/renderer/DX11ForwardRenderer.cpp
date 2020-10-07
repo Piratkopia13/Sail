@@ -5,14 +5,15 @@
 #include "Sail/api/shader/Shader.h"
 #include "Sail/Application.h"
 #include "../DX11API.h"
-#include "DX11DeferredRenderer.h"
+//#include "DX11DeferredRenderer.h"
+#include "../shader/DX11Shader.h"
 
 Renderer* Renderer::Create(Renderer::Type type) {
 	switch (type) {
 	case FORWARD:
 		return new DX11ForwardRenderer();
-	case DEFERRED:
-		return new DX11DeferredRenderer();
+	//case DEFERRED:
+		//return new DX11DeferredRenderer();
 	default:
 		Logger::Error("Tried to create a renderer of unknown or unimplemented type: " + std::to_string(type));
 	}
@@ -34,27 +35,44 @@ void* DX11ForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPre
 		m_context->clear({ 0.1f, 0.2f, 0.3f, 1.0f });
 	}
 	if (!(flags & Renderer::PresentFlag::SkipRendering)) {
-		for (RenderCommand& command : commandQueue) {
-			Shader* shader = command.shader;
+		// Iterate unique PSO's
+		for (auto it : commandQueue) {
+			PipelineStateObject* pso = it.first;
+			auto& renderCommands = it.second;
+			DX11Shader* shader = static_cast<DX11Shader*>(pso->getShader());
 
-			// Find a matching pipelineStateObject and bind it
-			auto& pso = resman.getPSO(shader, command.mesh);
-			pso.bind();
+			shader->updateDescriptorsAndMaterialIndices(renderCommands, *environment, pso, skippedPrepCmdList);
 
-			shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
-			shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+			pso->bind();
+
+			if (camera) {
+				shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), skippedPrepCmdList);
+				shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4), skippedPrepCmdList);
+				shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), skippedPrepCmdList);
+				shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), skippedPrepCmdList);
+			}
 
 			if (lightSetup) {
 				auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
 				auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
-				shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
-				shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
+				shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize, skippedPrepCmdList);
+				shader->trySetCBufferVar("pointLights", plData, plDataByteSize, skippedPrepCmdList);
 			}
 
-			command.mesh->draw(*this, command.material, shader, environment);
+			// Sort based on distance to draw back to front (for transparency)
+			// TODO: Only sort meshes that have transparency
+			// TODO: Fix ordering between different PSO's
+			std::sort(renderCommands.begin(), renderCommands.end(), [&](Renderer::RenderCommand& a, Renderer::RenderCommand& b) {
+				float dstA = glm::distance2(glm::vec3(glm::transpose(a.transform)[3]), camera->getPosition());
+				float dstB = glm::distance2(glm::vec3(glm::transpose(b.transform)[3]), camera->getPosition());
+				return dstA > dstB;
+			});
+
+			for (RenderCommand& command : renderCommands) {
+				shader->trySetConstantVar("sys_materialIndex", &command.materialIndex, sizeof(unsigned int), skippedPrepCmdList);
+				shader->trySetConstantVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), skippedPrepCmdList);
+				command.mesh->draw(*this, command.material, shader, environment);
+			}
 		}
 	}
 	return nullptr;

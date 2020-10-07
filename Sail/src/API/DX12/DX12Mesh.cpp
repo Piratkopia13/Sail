@@ -30,7 +30,7 @@ DX12Mesh::~DX12Mesh() {
 	static_cast<DX12API*>(Application::getInstance()->getAPI())->waitForGPU();
 }
 
-void DX12Mesh::draw(const Renderer& renderer, Material* material, Shader* shader, Environment* environment, void* cmdList) {
+void DX12Mesh::draw(const Renderer& renderer, Material* material, Shader* shader, void* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	if (!shader) {
@@ -44,12 +44,6 @@ void DX12Mesh::draw(const Renderer& renderer, Material* material, Shader* shader
 	}
 
 	auto* dxCmdList = static_cast<ID3D12GraphicsCommandList4*>(cmdList);
-	// Set offset in SRV heap for this mesh 
-	dxCmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurentGPUDescriptorHandle());
-
-	if (material) {
-		material->bind(shader, environment, cmdList);
-	}
 
 	vertexBuffer->bind(cmdList);
 	if (indexBuffer)
@@ -65,6 +59,4 @@ void DX12Mesh::draw(const Renderer& renderer, Material* material, Shader* shader
 			dxCmdList->DrawInstanced(getNumVertices(), 1, 0, 0);
 	}
 
-	// Update pipeline mesh index to not overwrite this instance cbuffer data
-	static_cast<DX12Shader*>(shader)->instanceFinished();
 }

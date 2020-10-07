@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <unordered_map>
 
 class Mesh;
 class Material;
@@ -10,6 +11,8 @@ class Model;
 class LightSetup;
 class Environment;
 class Shader;
+class ResourceManager;
+class PipelineStateObject;
 
 class Renderer {
 public:
@@ -19,6 +22,7 @@ public:
 		RAYTRACED,
 		//TILED
 	};
+	// TODO: some of these flags are explicitly used for only one renderer, consider changing how flags work to make it more general
 	enum PresentFlag {
 		Default = 1 << 0,
 		SkipPreparation = 1 << 1,
@@ -36,13 +40,16 @@ public:
 	struct RenderCommand {
 		DXRRenderFlag dxrFlags;
 		Mesh* mesh;
-		Shader* shader;
 		glm::mat4 transform;
 		Material* material;
+		unsigned int materialIndex = 0;
 	};
+
+	typedef std::vector<Renderer::RenderCommand>& RenderCommandList;
 
 public:
 	static Renderer* Create(Renderer::Type type);
+	Renderer();
 	virtual ~Renderer() {}
 
 	virtual void begin(Camera* camera, Environment* environment);
@@ -55,10 +62,14 @@ public:
 	virtual void* present(PresentFlag flags, void* skippedPrepCmdList = nullptr) = 0;
 
 protected:
-	std::vector<RenderCommand> commandQueue;
-	Camera* camera;
-	Environment* environment;
-	LightSetup* lightSetup;
+	std::unordered_map<PipelineStateObject*, std::vector<RenderCommand>> commandQueue; // Sorted by PSOs
+	std::vector<RenderCommand> commandQueueCustom; // Unsorted, without PSOs
+	Camera* camera = nullptr;
+	Environment* environment = nullptr;
+	LightSetup* lightSetup = nullptr;
+
+private:
+	ResourceManager* m_resman;
 
 };
 

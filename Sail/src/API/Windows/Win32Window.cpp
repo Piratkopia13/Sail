@@ -130,11 +130,14 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	case WM_SIZE:
 	{
 		if (wParam == SIZE_MINIMIZED) {
+			windowWidth = 1;
+			windowHeight = 1;
 			isWindowMinimized = true;
 			m_resized = true;
 		} else if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED) {
 			int width = LOWORD(lParam);
 			int height = HIWORD(lParam);
+			isWindowMinimized = false;
 			if (width != windowWidth || height != windowHeight) {
 				windowWidth = width;
 				windowHeight = height;

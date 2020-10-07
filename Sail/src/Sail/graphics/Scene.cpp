@@ -10,15 +10,19 @@
 #include "material/OutlineMaterial.h"
 #include "../KeyCodes.h"
 
+#define USE_DEFERRED 0
+#define ENABLE_SKYBOX 1
 
 Scene::Scene()  {
+#if USE_DEFERRED
 	m_deferredRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::DEFERRED));
-	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
-
 	if (Application::getInstance()->getSettings().getBool(Settings::Graphics_DXR)) {
 		// Raytracing renderer has to be created after the deferred renderer since it uses resources created by the deferred renderers constructor
 		m_raytracingRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::RAYTRACED));
 	}
+#endif
+	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
+
 
 	// Set up the environment
 	m_environment = std::make_unique<Environment>();
@@ -33,6 +37,7 @@ void Scene::addEntity(Entity::SPtr entity) {
 void Scene::draw(Camera& camera) {
 	SAIL_PROFILE_FUNCTION();
 
+#if USE_DEFERRED
 	bool doDXR = Application::getInstance()->getSettings().getBool(Settings::Graphics_DXR);
 	if (!m_raytracingRenderer && doDXR) {
 		// Handle enabling of DXR in runtime
@@ -42,19 +47,37 @@ void Scene::draw(Camera& camera) {
 		Application::getInstance()->getAPI()->waitForGPU();
 		m_raytracingRenderer.reset();
 	}
+#endif
 
 
 	LightSetup lightSetup;
 	m_forwardRenderer->setLightSetup(&lightSetup);
+#if USE_DEFERRED
 	m_deferredRenderer->setLightSetup(&lightSetup);
 	if (doDXR)
 		m_raytracingRenderer->setLightSetup(&lightSetup);
+#endif
 	
 	// Begin default pass
+#if USE_DEFERRED
 	if (doDXR)
 		m_raytracingRenderer->begin(&camera, m_environment.get());
+#endif
 	m_forwardRenderer->begin(&camera, m_environment.get());
+#if USE_DEFERRED
 	m_deferredRenderer->begin(&camera, m_environment.get());
+#endif
+#if ENABLE_SKYBOX
+	// Draw skybox first for transparency to work with it
+	{
+		auto e = m_environment->getSkyboxEntity();
+		auto model = e->getComponent<ModelComponent>();
+		auto transform = e->getComponent<TransformComponent>();
+		auto material = e->getComponent<MaterialComponent<>>();
+		m_forwardRenderer->submit(model->getModel().get(), material->get()->getShader(Renderer::FORWARD), material->get(), transform->getMatrix());
+	}
+#endif
+
 	auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
 	// Drawing of meshes
 	{
@@ -79,17 +102,24 @@ void Scene::draw(Camera& camera) {
 				material = materialComp->get();
 
 			if (model && model->getModel() && transform && material) {
+#if USE_DEFERRED
 				if (doDXR) {
 					// Submit all to the raytracer
 					m_raytracingRenderer->submit(model->getModel().get(), nullptr, material, transform->getMatrix());
 				}
+#endif 
 
 				// Submit to deferred or forward depending on the material
 				Shader* shader = nullptr;
+#if USE_DEFERRED
 				if (shader = material->getShader(Renderer::DEFERRED))
 					m_deferredRenderer->submit(model->getModel().get(), shader, material, transform->getMatrix());
-				else if (shader = material->getShader(Renderer::FORWARD))
-					m_forwardRenderer->submit(model->getModel().get(), shader, material, transform->getMatrix());
+				else
+#endif 
+				{
+					if (shader = material->getShader(Renderer::FORWARD))
+						m_forwardRenderer->submit(model->getModel().get(), shader, material, transform->getMatrix());
+				}
 				
 				entity->setIsBeingRendered(true);
 			} else {
@@ -98,17 +128,11 @@ void Scene::draw(Camera& camera) {
 			}
 		}
 	}
-	// Draw skybox last
-	{
-		auto e = m_environment->getSkyboxEntity();
-		auto model = e->getComponent<ModelComponent>();
-		auto transform = e->getComponent<TransformComponent>();
-		auto material = e->getComponent<MaterialComponent<>>();
-		m_forwardRenderer->submit(model->getModel().get(), material->get()->getShader(Renderer::FORWARD), material->get(), transform->getMatrix());
-	}
-
+#if USE_DEFERRED
 	m_deferredRenderer->end();
+#endif
 	m_forwardRenderer->end();
+#if USE_DEFERRED
 	if (doDXR)
 		m_raytracingRenderer->end();
 
@@ -124,11 +148,16 @@ void Scene::draw(Camera& camera) {
 	// Run forward pass and execute everything
 	m_forwardRenderer->useDepthBuffer(m_deferredRenderer->getDepthBuffer(), cmdList);
 	m_forwardRenderer->present(Renderer::SkipPreparation, cmdList); // Execute deferred and forward default pass
+#else
+	m_forwardRenderer->present(Renderer::Default);
+#endif
 
+#if USE_DEFERRED
 	m_deferredRenderer->setLightSetup(nullptr);
-	m_forwardRenderer->setLightSetup(nullptr);
 	if (doDXR)
 		m_raytracingRenderer->setLightSetup(nullptr);
+#endif
+	m_forwardRenderer->setLightSetup(nullptr);
 }
 
 std::vector<Entity::SPtr>& Scene::getEntites() {

@@ -8,9 +8,18 @@ DeferredShadingPassMaterial::DeferredShadingPassMaterial()
 
 DeferredShadingPassMaterial::~DeferredShadingPassMaterial() { }
 
-void DeferredShadingPassMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
-	m_bindFunc(shader, environment, cmdList);
+//void DeferredShadingPassMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
+//	m_bindFunc(shader, environment, cmdList);
+//}
+
+void* DeferredShadingPassMaterial::getData() {
+	return nullptr;
 }
+
+unsigned int DeferredShadingPassMaterial::getDataSize() const {
+	return 0;
+}
+
 
 Shader* DeferredShadingPassMaterial::getShader(Renderer::Type rendererType) const {
 	auto& resman = Application::getInstance()->getResourceManager();

@@ -28,14 +28,22 @@ struct ComputeShaderInput
     uint  GroupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
-cbuffer CSGenerateMipsCB : register( b0 )
-{
+struct MipsData {
     uint SrcMipLevel;	// Texture level of source mip
     uint NumMipLevels;	// Number of OutMips to write: [1-4]
     uint SrcDimension;  // Width and height of the source texture are even or odd.
     bool IsSRGB;        // Must apply gamma correction to sRGB textures.
     float2 TexelSize;	// 1.0 / OutMip1.Dimensions
+    float2 padding;
     // bool DoPBRPrefiltering;
+};
+
+cbuffer CSGenerateMipsCB : register( b0 ) {
+    MipsData dataArr[256]; // The array size is the maxium possible executions of this shader on a single frame
+}
+
+cbuffer VSPSConsts : SAIL_CONSTANT {
+	uint sys_cbIndex;
 }
 
 // Source mip map.
@@ -49,7 +57,7 @@ RWTexture2D<float4> OutMip3 : register( u12 ) : SAIL_IGNORE;
 RWTexture2D<float4> OutMip4 : register( u13 ) : SAIL_IGNORE;
 
 // Samplers
-SamplerState CSLinearClampSampler : register( s2 );
+SamplerState CSLinearClampSampler : SAIL_SAMPLER_LINEAR_CLAMP;
 // SamplerState CSLinearWrapSampler : register( s3 );
 
 // The reason for separating channels is to reduce bank conflicts in the
@@ -87,9 +95,9 @@ float3 ConvertToSRGB( float3 x )
 
 // Convert linear color to sRGB before storing if the original source is 
 // an sRGB texture.
-float4 PackColor(float4 x)
+float4 PackColor(float4 x, bool isSRGB)
 {
-    if (IsSRGB)
+    if (isSRGB)
     {
         return float4(ConvertToSRGB(x.rgb), x.a);
     }
@@ -102,6 +110,8 @@ float4 PackColor(float4 x)
 [numthreads( BLOCK_SIZE, BLOCK_SIZE, 1 )]
 void CSMain( ComputeShaderInput IN )
 {
+    MipsData data = dataArr[sys_cbIndex];
+
     float4 Src1 = (float4)0;
 
     // One bilinear sample is insufficient when scaling down by more than 2x.
@@ -117,13 +127,13 @@ void CSMain( ComputeShaderInput IN )
     // 0b01(1): Width is odd, height is even.
     // 0b10(2): Width is even, height is odd.
     // 0b11(3): Both width and height are odd.
-    switch ( SrcDimension )
+    switch ( data.SrcDimension )
     {
         case WIDTH_HEIGHT_EVEN:
         {
-            float2 UV = TexelSize * ( IN.DispatchThreadID.xy + 0.5 );
+            float2 UV = data.TexelSize * ( IN.DispatchThreadID.xy + 0.5 );
 
-            Src1 = SrcMip.SampleLevel( CSLinearClampSampler, UV, SrcMipLevel );
+            Src1 = SrcMip.SampleLevel( CSLinearClampSampler, UV, data.SrcMipLevel );
         }
         break;
         case WIDTH_ODD_HEIGHT_EVEN:
@@ -131,11 +141,11 @@ void CSMain( ComputeShaderInput IN )
             // > 2:1 in X dimension
             // Use 2 bilinear samples to guarantee we don't undersample when downsizing by more than 2x
             // horizontally.
-            float2 UV1 = TexelSize * ( IN.DispatchThreadID.xy + float2( 0.25, 0.5 ) );
-            float2 Off = TexelSize * float2( 0.5, 0.0 );
+            float2 UV1 = data.TexelSize * ( IN.DispatchThreadID.xy + float2( 0.25, 0.5 ) );
+            float2 Off = data.TexelSize * float2( 0.5, 0.0 );
 
-            Src1 = 0.5 * ( SrcMip.SampleLevel( CSLinearClampSampler, UV1, SrcMipLevel ) +
-                           SrcMip.SampleLevel( CSLinearClampSampler, UV1 + Off, SrcMipLevel ) );
+            Src1 = 0.5 * ( SrcMip.SampleLevel( CSLinearClampSampler, UV1, data.SrcMipLevel ) +
+                           SrcMip.SampleLevel( CSLinearClampSampler, UV1 + Off, data.SrcMipLevel ) );
         }
         break;
         case WIDTH_EVEN_HEIGHT_ODD:
@@ -143,11 +153,11 @@ void CSMain( ComputeShaderInput IN )
             // > 2:1 in Y dimension
             // Use 2 bilinear samples to guarantee we don't undersample when downsizing by more than 2x
             // vertically.
-            float2 UV1 = TexelSize * ( IN.DispatchThreadID.xy + float2( 0.5, 0.25 ) );
-            float2 Off = TexelSize * float2( 0.0, 0.5 );
+            float2 UV1 = data.TexelSize * ( IN.DispatchThreadID.xy + float2( 0.5, 0.25 ) );
+            float2 Off = data.TexelSize * float2( 0.0, 0.5 );
 
-            Src1 = 0.5 * ( SrcMip.SampleLevel( CSLinearClampSampler, UV1, SrcMipLevel ) +
-                           SrcMip.SampleLevel( CSLinearClampSampler, UV1 + Off, SrcMipLevel ) );
+            Src1 = 0.5 * ( SrcMip.SampleLevel( CSLinearClampSampler, UV1, data.SrcMipLevel ) +
+                           SrcMip.SampleLevel( CSLinearClampSampler, UV1 + Off, data.SrcMipLevel ) );
         }
         break;
         case WIDTH_HEIGHT_ODD:
@@ -155,22 +165,22 @@ void CSMain( ComputeShaderInput IN )
             // > 2:1 in in both dimensions
             // Use 4 bilinear samples to guarantee we don't undersample when downsizing by more than 2x
             // in both directions.
-            float2 UV1 = TexelSize * ( IN.DispatchThreadID.xy + float2( 0.25, 0.25 ) );
-            float2 Off = TexelSize * 0.5;
+            float2 UV1 = data.TexelSize * ( IN.DispatchThreadID.xy + float2( 0.25, 0.25 ) );
+            float2 Off = data.TexelSize * 0.5;
 
-            Src1 =  SrcMip.SampleLevel( CSLinearClampSampler, UV1, SrcMipLevel );
-            Src1 += SrcMip.SampleLevel( CSLinearClampSampler, UV1 + float2( Off.x, 0.0   ), SrcMipLevel );
-            Src1 += SrcMip.SampleLevel( CSLinearClampSampler, UV1 + float2( 0.0,   Off.y ), SrcMipLevel );
-            Src1 += SrcMip.SampleLevel( CSLinearClampSampler, UV1 + float2( Off.x, Off.y ), SrcMipLevel );
+            Src1 =  SrcMip.SampleLevel( CSLinearClampSampler, UV1, data.SrcMipLevel );
+            Src1 += SrcMip.SampleLevel( CSLinearClampSampler, UV1 + float2( Off.x, 0.0   ), data.SrcMipLevel );
+            Src1 += SrcMip.SampleLevel( CSLinearClampSampler, UV1 + float2( 0.0,   Off.y ), data.SrcMipLevel );
+            Src1 += SrcMip.SampleLevel( CSLinearClampSampler, UV1 + float2( Off.x, Off.y ), data.SrcMipLevel );
             Src1 *= 0.25;
         }
         break;
     }
 
-    OutMip1[IN.DispatchThreadID.xy] = PackColor( Src1 );
+    OutMip1[IN.DispatchThreadID.xy] = PackColor( Src1, data.IsSRGB );
 
     // A scalar (constant) branch can exit all threads coherently.
-    if ( NumMipLevels == 1 )
+    if ( data.NumMipLevels == 1 )
         return;
 
     // Without lane swizzle operations, the only way to share data with other
@@ -191,11 +201,11 @@ void CSMain( ComputeShaderInput IN )
         float4 Src4 = LoadColor( IN.GroupIndex + 0x09 );
         Src1 = 0.25 * ( Src1 + Src2 + Src3 + Src4 );
 
-        OutMip2[IN.DispatchThreadID.xy / 2] = PackColor( Src1 );
+        OutMip2[IN.DispatchThreadID.xy / 2] = PackColor( Src1, data.IsSRGB );
         StoreColor( IN.GroupIndex, Src1 );
     }
 
-    if ( NumMipLevels == 2 )
+    if ( data.NumMipLevels == 2 )
         return;
 
     GroupMemoryBarrierWithGroupSync();
@@ -208,11 +218,11 @@ void CSMain( ComputeShaderInput IN )
         float4 Src4 = LoadColor( IN.GroupIndex + 0x12 );
         Src1 = 0.25 * ( Src1 + Src2 + Src3 + Src4 );
 
-        OutMip3[IN.DispatchThreadID.xy / 4] = PackColor( Src1 );
+        OutMip3[IN.DispatchThreadID.xy / 4] = PackColor( Src1, data.IsSRGB );
         StoreColor( IN.GroupIndex, Src1 );
     }
 
-    if ( NumMipLevels == 3 )
+    if ( data.NumMipLevels == 3 )
         return;
 
     GroupMemoryBarrierWithGroupSync();
@@ -226,6 +236,6 @@ void CSMain( ComputeShaderInput IN )
         float4 Src4 = LoadColor( IN.GroupIndex + 0x24 );
         Src1 = 0.25 * ( Src1 + Src2 + Src3 + Src4 );
 
-        OutMip4[IN.DispatchThreadID.xy / 8] = PackColor( Src1 );
+        OutMip4[IN.DispatchThreadID.xy / 8] = PackColor( Src1, data.IsSRGB );
     }
 }

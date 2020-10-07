@@ -4,7 +4,6 @@
 #pragma comment(lib, "D3D11.lib")
 #pragma comment(lib,"d3dcompiler.lib")
 
-#include <d3d11.h>
 #include <d3d11_3.h>
 #include <dxgi1_4.h>
 #include <d3dcompiler.h>
@@ -36,6 +35,9 @@ public:
 	void renderToBackBuffer() const;
 
 	virtual bool onResize(WindowResizeEvent& event) override;
+
+	uint32_t getNumSwapBuffers() const override; // Always 1
+	uint32_t getSwapIndex() const override;  // Always 0
 
 private:
 	void createDepthStencilBufferAndBind(UINT windowWidth, UINT windowHeight);

@@ -25,7 +25,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer() {
 
 	auto width = Application::getInstance()->getWindow()->getWindowWidth();
 	auto height = Application::getInstance()->getWindow()->getWindowHeight();
-	sRTOutputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(width, height, "Raytracing output texture", ResourceFormat::R16G16B16A16_FLOAT)));
+	sRTOutputTexture = std::unique_ptr<DX12RenderableTexture>(static_cast<DX12RenderableTexture*>(RenderableTexture::Create(width, height, RenderableTexture::USAGE_GENERAL, "Raytracing output texture", ResourceFormat::R16G16B16A16_FLOAT)));
 }
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
@@ -63,7 +63,7 @@ void* DX12RaytracingRenderer::present(Renderer::PresentFlag flags, void* skipped
 		// dispatch n stuff
 		m_dxrBase->updateSceneData(camera, lightSetup);
 		//if (Input::IsKeyPressed(SAIL_KEY_L))
-		m_dxrBase->updateAccelerationStructures(commandQueue, cmdList);
+		m_dxrBase->updateAccelerationStructures(commandQueueCustom, cmdList);
 		//if (Input::IsKeyPressed(SAIL_KEY_K))
 		m_dxrBase->dispatch(sRTOutputTexture.get(), cmdList);
 	}
@@ -91,9 +91,11 @@ bool DX12RaytracingRenderer::onEvent(Event& event) {
 		// Calling resize on a texture which already has the given dimensions
 		// will return without doing anything, making this safe.
 		const auto& gbuffers = DX12DeferredRenderer::GetGBuffers();
-		for (unsigned i = 0; i < DX12DeferredRenderer::NUM_GBUFFERS; i++) {
-			gbuffers[i]->resize(event.getWidth(), event.getHeight());
-		}
+		gbuffers.positions->resize(event.getWidth(), event.getHeight());
+		gbuffers.normals->resize(event.getWidth(), event.getHeight());
+		gbuffers.albedo->resize(event.getWidth(), event.getHeight());
+		gbuffers.mrao->resize(event.getWidth(), event.getHeight());
+		gbuffers.depth->resize(event.getWidth(), event.getHeight());
 
 		// Tell dxrBase to update any references held to textures that how have resized (gbuffer inputs and rt output etc)
 		m_dxrBase->recreateResources();

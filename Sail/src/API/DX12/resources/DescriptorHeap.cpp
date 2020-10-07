@@ -64,11 +64,11 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getNextGPUDescriptorHandle() {
 	return getGPUDescriptorHandleForIndex(getAndStepIndex());
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getCurentGPUDescriptorHandle() const {
+D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::getCurrentGPUDescriptorHandle() const {
 	return getGPUDescriptorHandleForIndex(m_index);
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::getCurentCPUDescriptorHandle() const {
+D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::getCurrentCPUDescriptorHandle() const {
 	return getCPUDescriptorHandleForIndex(m_index);
 }
 

@@ -18,7 +18,7 @@ DXRHardShadows::DXRHardShadows()
 		})
 {
 	// Temporary, this static getter should probably be removed
-	m_gbuffers = DX12DeferredRenderer::GetGBuffers();
+	m_gbuffers = &DX12DeferredRenderer::GetGBuffers();
 	assert(m_gbuffers);
 
 	// Add gbuffer inputs
@@ -80,11 +80,11 @@ void DXRHardShadows::addInitialShaderResources(DescriptorHeap* heap) {
 		auto index = heap->getAndStepIndex();
 		m_gbufferPositionsResource.cpuHandle[i] = heap->getCPUDescriptorHandleForIndex(index);
 		m_gbufferPositionsResource.gpuHandle[i] = heap->getGPUDescriptorHandleForIndex(index);
-		context->getDevice()->CopyDescriptorsSimple(1, m_gbufferPositionsResource.cpuHandle[i], m_gbuffers[0]->getSrvCDH(i), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		context->getDevice()->CopyDescriptorsSimple(1, m_gbufferPositionsResource.cpuHandle[i], m_gbuffers->positions->getSrvCDH(i), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		index = heap->getAndStepIndex();
 		m_gbufferNormalsResource.cpuHandle[i] = heap->getCPUDescriptorHandleForIndex(index);
 		m_gbufferNormalsResource.gpuHandle[i] = heap->getGPUDescriptorHandleForIndex(index);
-		context->getDevice()->CopyDescriptorsSimple(1, m_gbufferNormalsResource.cpuHandle[i], m_gbuffers[1]->getSrvCDH(i), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		context->getDevice()->CopyDescriptorsSimple(1, m_gbufferNormalsResource.cpuHandle[i], m_gbuffers->normals->getSrvCDH(i), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 }

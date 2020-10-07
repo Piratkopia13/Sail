@@ -14,11 +14,9 @@ namespace ModelFactory {
 				Mesh::vec3(-halfSizes.x, 0.f, -halfSizes.y),
 				Mesh::vec3(-halfSizes.x, 0.f, halfSizes.y),
 				Mesh::vec3(halfSizes.x, 0.f, -halfSizes.y),
-				//Mesh::vec3(halfSizes.x, 0.f, -halfSizes.y),
-				//Mesh::vec3(-halfSizes.x, 0.f, halfSizes.y),
 				Mesh::vec3(halfSizes.x, 0.f, halfSizes.y),
 			};
-
+			
 			const int numIndices = 6;
 			ULONG* indices = SAIL_NEW ULONG[numIndices]{
 				0, 1, 2, 2, 1, 3
@@ -43,7 +41,6 @@ namespace ModelFactory {
 				Mesh::vec3(0.f, 0.f, 1.f),
 				Mesh::vec3(0.f, 0.f, 1.f),
 				Mesh::vec3(0.f, 0.f, 1.f)
-
 			};
 
 			Mesh::vec3* bitangents = SAIL_NEW Mesh::vec3[numVerts]{

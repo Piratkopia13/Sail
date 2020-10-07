@@ -7,7 +7,8 @@ namespace States {
 	enum ID {
 		None,
 		Game,
-		Editor
+		Editor,
+		Empty
 	};
 
 }

@@ -5,6 +5,8 @@
 #include <functional>
 #include <map>
 
+class DX12ATexture;
+
 namespace DX12Utils {
 
 	void checkDeviceRemovalReason(ID3D12Device5* device, HRESULT hr);
@@ -28,7 +30,9 @@ namespace DX12Utils {
 
 	void UpdateDefaultBufferData(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const void* data, UINT64 byteSize, UINT64 offset, ID3D12Resource* defaultBuffer, ID3D12Resource** uploadBuffer);
 	ID3D12Resource* CreateBuffer(ID3D12Device* device, UINT64 size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps, D3D12_RESOURCE_DESC* bufDesc = nullptr);
-	void SetResourceTransitionBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES StateBefore, D3D12_RESOURCE_STATES StateAfter, UINT subResource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+	void SetResourceTransitionBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter, UINT subResource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+	void SetResourceTransitionBarriers(ID3D12GraphicsCommandList* commandList, std::vector<ID3D12Resource*> resources, std::vector<D3D12_RESOURCE_STATES> statesBefore, std::vector<D3D12_RESOURCE_STATES> statesAfter, std::vector<UINT> subResources);
+	void SetResourceTransitionBarriers(ID3D12GraphicsCommandList* commandList, std::vector<DX12ATexture*> textures, std::vector<D3D12_RESOURCE_STATES> statesAfter);
 	void SetResourceUAVBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource);
 
 	// Align location to the next multiple of alignment

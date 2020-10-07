@@ -454,3 +454,11 @@ bool DX11API::onResize(WindowResizeEvent& event) {
 	Logger::Log("dx11 resize ran");
 	return true;
 }
+
+uint32_t DX11API::getNumSwapBuffers() const {
+	return 1;
+}
+
+uint32_t DX11API::getSwapIndex() const {
+	return 0;
+}

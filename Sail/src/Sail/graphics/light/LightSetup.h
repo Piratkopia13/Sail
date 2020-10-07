@@ -7,7 +7,7 @@ class PointLightComponent;
 
 class LightSetup {
 public:
-	static const UINT MAX_POINTLIGHTS_FORWARD_RENDERING = 128;  // Max number of lights as set in shader
+	static const UINT MAX_POINTLIGHTS_FORWARD_RENDERING = 8;  // Max number of lights as set in shader
 
 	struct PointLightStruct {
 		PointLightStruct() { }
@@ -21,7 +21,7 @@ public:
 		glm::vec3 color = glm::vec3(0.f);
 		float intensity = 1.f;
 		glm::vec3 direction = glm::vec3(0.f);
-		float padding2;
+		float padding2 = 0.f;
 	};
 
 public:

@@ -21,21 +21,24 @@ PSIn VSMain(VSIn input) {
 	output.position = mul(sys_mView, input.position);
 	output.position.w = 1.f;
 	output.position = mul(sys_mProjection, output.position);
-	output.position.z = 1.0f; // Draw at the back of the depth range
-	
+	output.position.z = output.position.w; // Draw at the back of the depth range
+
 	return output;
 }
 
-TextureCube sys_tex0 : register(t0);
-SamplerState PSss : register(s2); // Linear sampler
+TextureCube sys_tex0[] : SAIL_BIND_ALL_TEXTURECUBES : register(t1);
+SamplerState PSss : SAIL_SAMPLER_ANIS_WRAP : register(s2);
 
 float4 PSMain(PSIn input) : SV_TARGET {
-	float3 color = sys_tex0.SampleLevel(PSss, input.texCoord, 0).rgb;
+	float3 color = sys_tex0[0].SampleLevel(PSss, input.texCoord, 0).rgb;
 
+#if GAMMA_CORRECT
 	// Gamma correction
     float3 output = color / (color + 1.0f);
     // Tone mapping using the Reinhard operator
     output = pow(output, 1.0f / 2.2f);
 	return float4(output, 1.0);
-
+#else
+	return float4(color, 1.0f);
+#endif
 }

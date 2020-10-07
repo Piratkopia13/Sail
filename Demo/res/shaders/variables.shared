@@ -1,7 +1,7 @@
 #define PI 3.14159265359
 #define M_1_PI 0.318309886183790671538
 
-#define NUM_POINT_LIGHTS 128
+#define NUM_POINT_LIGHTS 8
 
 struct PointLight {
 	float3 color;
@@ -24,14 +24,19 @@ struct LightList {
 
 struct PBRMaterial {
 	float4 modelColor;
+	
 	float metalnessScale;
 	float roughnessScale;
 	float aoIntensity;
-	float padding1;
-	bool hasAlbedoTexture;
-	bool hasNormalTexture;
-	bool hasMRAOTexture;
-    float padding2;
+	int albedoTexIndex;
+	
+	int normalTexIndex;
+	int mraoTexIndex; // R/G/B = Metalness/Roughness/Ambient occlusion
+	int radianceMapTexIndex;
+	int irradianceMapTexIndex;
+	
+	int brdfLutTexIndex;
+	float3 padding;
 };
 
 struct PhongMaterial {
@@ -40,9 +45,10 @@ struct PhongMaterial {
 	float kd;
 	float ks;
 	float shininess;
-	bool hasDiffuseTexture; // TODO : Pack flags
-	bool hasNormalTexture;
-	bool hasSpecularTexture;
+	int diffuseTexIndex;
+	int normalTexIndex;
+	int specularTexIndex;
+	float padding;
 };
 
 struct PhongInput {
@@ -51,5 +57,7 @@ struct PhongInput {
 	float3 normal;
 	float3 specMap;
 	float3 fragToCam;
-	LightList lights;
+	
+	DirectionalLight dirLight;
+    PointLight pointLights[NUM_POINT_LIGHTS];
 };

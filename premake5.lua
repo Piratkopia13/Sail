@@ -1,10 +1,21 @@
 -- premake5.lua
+
+local EnableDX11 = false
+local VulkankSDKPath = os.getenv("VULKAN_SDK")
+if not VulkankSDKPath then
+	print('VULKAN_SDK environment var not set -> not adding Vulkan as a platform!')
+end
+
 workspace "Sail"
 	configurations { "Debug", "Release" }
-	platforms { "DX11 x64", "DX11 x86",
-				"DX12 x64", "DX12 x86"
-				-- "Vulkan x64", "Vulkan x86",
-			  }
+
+	platforms { "DX12 x64", "DX12 x86" }
+	if EnableDX11 then
+		platforms { "DX11 x64", "DX11 x86" }
+	end
+	if VulkankSDKPath then
+		platforms { "pVulkan x64", "pVulkan x86" } -- starting a platform name with 'V' changes the platform toolset in VS. Bug in premake?
+	end
 
 	filter "platforms:*86"
 		architecture "x86"
@@ -19,6 +30,9 @@ IncludeDir = {}
 IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
 IncludeDir["ImGui"] = "libraries/imgui"
+if VulkankSDKPath then
+	IncludeDir["vulkan"] = VulkankSDKPath.."/Include"
+end
 
 group "Libraries"
 include "libraries/glfw"
@@ -60,6 +74,12 @@ project "Demo"
 		"%{IncludeDir.ImGui}"
 	}
 
+	if VulkankSDKPath then
+		includedirs {
+			"%{IncludeDir.vulkan}"
+		}
+	end
+
 	links {
 		"Sail"
 	}
@@ -75,6 +95,10 @@ project "Demo"
 	filter { "platforms:DX12*" }
 		defines {
 			"_SAIL_DX12"
+		}
+	filter { "platforms:*Vulkan*" }
+		defines {
+			"_SAIL_VK"
 		}
 
 	filter "system:windows"
@@ -140,11 +164,17 @@ project "Sail"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.ImGui}"
 	}
+	if VulkankSDKPath then
+		includedirs {
+			"%{IncludeDir.vulkan}"
+		}
+	end
 
 	links {
 		"libfbxsdk",
 		"GLFW",
-		"ImGui"
+		"ImGui",
+		"vulkan-1"
 	}
 
 	flags { "MultiProcessorCompile" }
@@ -171,15 +201,33 @@ project "Sail"
 			"%{prj.name}/src/API/DX12/**",
 			"%{prj.name}/src/API/Windows/**"
 		}
+	filter { "platforms:*Vulkan*" }
+		defines {
+			"_SAIL_VK"
+		}
+		files {
+			"%{prj.name}/src/API/VULKAN/**",
+			"%{prj.name}/src/API/Windows/**"
+		}
 
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
 			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
 		}
+		if VulkankSDKPath then
+			libdirs {
+				VulkankSDKPath.."/Lib"
+			}
+		end
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
 			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
 		}
+		if VulkankSDKPath then
+			libdirs {
+				VulkankSDKPath.."/Lib32"
+			}
+		end
 
 	filter "system:windows"
 		systemversion "latest"

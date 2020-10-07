@@ -25,6 +25,7 @@ void StateStack::processInput(float dt) {
 	// Toggle imgui rendering on key
 	if (Input::WasKeyJustPressed(SAIL_KEY_F10))
 		m_renderImgui = !m_renderImgui;
+
 	// Ignore game mouse input when imgui uses the mouse
 	Input::SetMouseInput(!ImGui::GetIO().WantCaptureMouse || Input::IsCursorHidden());
 	// Ignore game key input when imgui uses the key input
@@ -68,6 +69,9 @@ void StateStack::update(float dt) {
 }
 
 void StateStack::render(float dt) {
+	auto* api = Application::getInstance()->getAPI();
+
+	api->beginPresent();
 
 	// Loop through the states and draw them all
 	/*for (int i = m_stack.size() - 1; i >= 0; i--) {
@@ -83,7 +87,7 @@ void StateStack::render(float dt) {
 		Application::getInstance()->getImGuiHandler()->end();
 	}
 
-	Application::getInstance()->getAPI()->present(false);
+	api->present(false);
 }
 
 void StateStack::pushState(States::ID stateID) {

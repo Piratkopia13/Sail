@@ -103,33 +103,46 @@ void DX12ForwardRenderer::runRenderingPass(ID3D12GraphicsCommandList4* cmdList) 
 
 	auto& resman = Application::getInstance()->getResourceManager();
 
-	// TODO: Sort meshes according to shaderPipeline
-	unsigned int totalInstances = commandQueue.size();
-	for (RenderCommand& command : commandQueue) {
-		DX12Shader* shader = static_cast<DX12Shader*>(command.shader);
-		//uniqueShaderPipelines.insert(shaderPipeline);
+	// Iterate unique PSO's
+	for (auto it : commandQueue) {
+		PipelineStateObject* pso = it.first;
+		auto& renderCommands = it.second;
+		DX12Shader* shader = static_cast<DX12Shader*>(pso->getShader());
 
-		// Make sure that constant buffers have a size that can allow the amount of meshes that will be rendered this frame
-		shader->reserve(totalInstances);
+		// Set offset in SRV heap for this mesh 
+		cmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurrentGPUDescriptorHandle());
 
-		// Find a matching pipelineStateObject and bind it
-		auto& pso = resman.getPSO(shader, command.mesh);
-		pso.bind(cmdList);
+		shader->updateDescriptorsAndMaterialIndices(renderCommands, *environment, pso, cmdList);
 
-		shader->trySetCBufferVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4));
-		shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3));
+		pso->bind(cmdList);
 
+		if (camera) {
+			shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), cmdList);
+			shader->trySetCBufferVar("sys_mProjection", &camera->getProjMatrix(), sizeof(glm::mat4), cmdList);
+			shader->trySetCBufferVar("sys_mVP", &camera->getViewProjection(), sizeof(glm::mat4), cmdList);
+			shader->trySetCBufferVar("sys_cameraPos", &camera->getPosition(), sizeof(glm::vec3), cmdList);
+		}
 		if (lightSetup) {
 			auto& [dlData, dlDataByteSize] = lightSetup->getDirLightData();
 			auto& [plData, plDataByteSize] = lightSetup->getPointLightsData();
-			shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize);
-			shader->trySetCBufferVar("pointLights", plData, plDataByteSize);
+			shader->trySetCBufferVar("dirLight", dlData, dlDataByteSize, cmdList);
+			shader->trySetCBufferVar("pointLights", plData, plDataByteSize, cmdList);
 		}
 
-		command.mesh->draw(*this, command.material, shader, environment, cmdList);
+		// Sort based on distance to draw back to front (for transparency)
+		// TODO: Only sort meshes that have transparency
+		// TODO: Fix ordering between different PSO's
+		std::sort(renderCommands.begin(), renderCommands.end(), [&](Renderer::RenderCommand& a, Renderer::RenderCommand& b) {
+			float dstA = glm::distance2(glm::vec3(glm::transpose(a.transform)[3]), camera->getPosition());
+			float dstB = glm::distance2(glm::vec3(glm::transpose(b.transform)[3]), camera->getPosition());
+			return dstA > dstB;
+		});
+
+		for (RenderCommand& command : renderCommands) {
+			shader->trySetConstantVar("sys_materialIndex", &command.materialIndex, sizeof(unsigned int), cmdList);
+			shader->trySetConstantVar("sys_mWorld", &glm::transpose(command.transform), sizeof(glm::mat4), cmdList);
+			command.mesh->draw(*this, command.material, shader, cmdList);
+		}
 	}
 }
 

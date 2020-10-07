@@ -14,16 +14,19 @@ public:
 		float kd;
 		float ks;
 		float shininess;
-		int hasDiffuseTexture;
-		int hasNormalTexture;
-		int hasSpecularTexture;
+		int diffuseTexIndex;
+		int normalTexIndex;
+		int specularTexIndex;
+		float padding;
 	};
 
 public:
 	PhongMaterial();
 	~PhongMaterial();
 
-	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	virtual void setTextureIndex(unsigned int textureID, int index) override;
+	virtual void* getData() override;
+	virtual unsigned int getDataSize() const override;
 	Shader* getShader(Renderer::Type rendererType) const override;
 
 	void setKa(float ka);
@@ -44,8 +47,6 @@ public:
 	void setSpecularTexture(const std::string& filename, bool useAbsolutePath = false);
 	void setSpecularTextureFromHandle(Texture* srv);
 
-	//void setTextures(ID3D11ShaderResourceView** srvs, UINT numTextures);
-
 	/*	Returns a texture
 		Default texture id is as follows
 		0 - Diffuse texture
@@ -58,7 +59,6 @@ public:
 
 private:
 	PhongSettings m_phongSettings;
-	Texture* m_textures[3];
 
 	unsigned int m_numTextures;
 

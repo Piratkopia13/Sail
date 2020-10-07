@@ -9,6 +9,28 @@ std::string Utils::readFile(const std::string& filepath) {
 	return str;
 }
 
+std::vector<std::byte> Utils::readFileBinary(const std::string& filepath) {
+	std::ifstream ifs(filepath, std::ios::binary | std::ios::ate);
+
+	if (!ifs)
+		Logger::Error(filepath + ": " + std::strerror(errno));
+
+	auto end = ifs.tellg();
+	ifs.seekg(0, std::ios::beg);
+
+	auto size = std::size_t(end - ifs.tellg());
+
+	if (size == 0) // avoid undefined behavior 
+		return {};
+
+	std::vector<std::byte> buffer(size);
+
+	if (!ifs.read((char*)buffer.data(), buffer.size()))
+		Logger::Error(filepath + ": " + std::strerror(errno));
+
+	return buffer;
+}
+
 std::wstring Utils::toWStr(const glm::vec3& vec) {
 	std::wstringstream ss;
 	ss.precision(2);
@@ -65,27 +87,60 @@ glm::vec4 Utils::getRandomColor() {
 }
 
 
+std::string Utils::String::getLineStartingFrom(const char* source) { 
+	const char* end = strstr(source, "\n");
+	if (!end)
+		return std::string(source); // Null terminator found on line - return whole source
+	return std::string(source, strnlen(source, end - source));
+}
 
 std::string Utils::String::getBlockStartingFrom(const char* source) {
 	const char* end = strstr(source, "}");
 	if (!end)
 		return std::string(source);
-	std::string str(source, strnlen(source, end - source));
-	return str;
+	return std::string(source, strnlen(source, end - source));
 }
 
-const char* Utils::String::findToken(const std::string& token, const char* source) {
+const char* Utils::String::findToken(const std::string& token, const char* source, bool onFirstLine, bool ignoreBlocks) {
 	const char* match;
 	size_t offset = 0;
+	const char* lineEnd = strstr(source, "\n");
 	while (true) {
 		if (match = strstr(source + offset, token.c_str())) {
-			bool left = match == source || isspace((match - 1)[0]);
+			//bool left = match == source || isspace((match - 1)[0]);
 			match += token.size();
-			bool right = match != '\0' || isspace(match[0]); // might need to be match + 1
+			//bool right = match != '\0' || isspace(match[0]); // might need to be match + 1
+			// Ignore match if onFirstLine is true and match is not on the first line
+			if (onFirstLine && lineEnd && match > lineEnd) {
+				return nullptr;
+			}
+
+			// Ignore match if ignoreBlocks == true and match is within brackets
+			if (ignoreBlocks) {
+				bool skip = false;
+				int numClosingBrackets = 0;
+				const char* walker = match;
+				while (walker != source) {
+					walker--;
+					if (walker[0] == '{') {
+						if (numClosingBrackets == 0) {
+							skip = true;
+							break;
+						} else {
+							numClosingBrackets--;
+						}
+					}
+					if (walker[0] == '}') numClosingBrackets++;
+				}
+				if (skip) {
+					offset += match - source;
+					continue;
+				}
+			}
 
 			// Ignore match if line contains "SAIL_IGNORE"
 			const char* newLine = strchr(match, '\n');
-			size_t lineLength = newLine - match;
+			size_t lineLength = (newLine) ? newLine - match : strlen(match);
 			char* lineCopy = (char*)malloc(lineLength + 1);
 			memset(lineCopy, '\0', lineLength + 1);
 			strncpy_s(lineCopy, lineLength + 1, match, lineLength);
@@ -134,7 +189,7 @@ std::string Utils::String::nextToken(const char* source) {
 	const char* start = source;
 	while (isspace(*start)) start++;
 	int size = 0;
-	while (!isspace(start[size])) size++;
+	while (!isspace(start[size]) && start[size] != '\0') size++;
 	return std::string(start, strnlen(start, size));
 }
 
@@ -163,6 +218,18 @@ std::string Utils::String::removeComments(const std::string& source) {
 
 bool Utils::String::startsWith(const char* source, const std::string& prefix) {
 	return strncmp(source, prefix.c_str(), prefix.size()) == 0;
+}
+
+const char* Utils::String::getStartOfCurrentLine(const char* source, const char* sourceStart) {
+	const char* lineStart = source;
+	while (true) {
+		if (lineStart == sourceStart || // Out of bounds check
+			lineStart[-1] == '\n') { // if the "next" character is a new line, we have found the line start
+			break;
+		}
+		lineStart--;
+	}
+	return lineStart;
 }
 
 void Logger::Log(const std::string& msg) {

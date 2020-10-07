@@ -7,6 +7,7 @@
 #include "Sail/events/Events.h"
 #include <iomanip>
 #include "Sail/api/shader/Sampler.h"
+#include "resources/DX12Texture.h"
 
 const UINT DX12API::NUM_SWAP_BUFFERS = 3;
 const UINT DX12API::NUM_GPU_BUFFERS = 2;
@@ -18,7 +19,7 @@ GraphicsAPI* GraphicsAPI::Create() {
 DX12API::DX12API()
 	: m_backBufferIndex(0)
 	, m_swapIndex(0)
-	, m_clearColor{0.8f, 0.2f, 0.2f, 1.0f}
+	, m_clearColor{0.2f, 0.2f, 0.2f, 1.0f}
 	, m_tearingSupport(true)
 	, m_windowedMode(true)
 	, m_directQueueFenceValues()
@@ -293,6 +294,19 @@ void DX12API::createGlobalRootSignature() {
 		rootParam[GlobalRootParam::CBV_2].Descriptor = rootDescCBV_2;
 		rootParam[GlobalRootParam::CBV_2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	}
+	D3D12_ROOT_CONSTANTS rootDescConstants = {};
+	{
+		// Constants
+		m_globalRootSignatureRegisters["b3"] = { GlobalRootParam::CONSTANTS_3, 0 };
+
+		rootDescConstants.ShaderRegister = 3;
+		rootDescConstants.RegisterSpace = 0;
+		rootDescConstants.Num32BitValues = 17; // Usually used for world matrix + material index
+
+		rootParam[GlobalRootParam::CONSTANTS_3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+		rootParam[GlobalRootParam::CONSTANTS_3].Constants = rootDescConstants;
+		rootParam[GlobalRootParam::CONSTANTS_3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	}
 	D3D12_DESCRIPTOR_RANGE descRangeSRV_UAV[2];
 	{
 		// DT_SRV_0TO9_UAV_10TO20
@@ -322,6 +336,44 @@ void DX12API::createGlobalRootSignature() {
 		rootParam[GlobalRootParam::DT_SRV_0TO9_UAV_10TO20].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 		rootParam[GlobalRootParam::DT_SRV_0TO9_UAV_10TO20].DescriptorTable = dtSrv;
 		rootParam[GlobalRootParam::DT_SRV_0TO9_UAV_10TO20].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	}
+	D3D12_DESCRIPTOR_RANGE descRangeSRV_array_space1 = {};
+	{
+		// DT_SRV_0TO100K_SPACE1
+		m_globalRootSignatureRegisters["t0, space1"] = { GlobalRootParam::DT_SRV_0TO100K_SPACE1, 0 };
+
+		descRangeSRV_array_space1.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		descRangeSRV_array_space1.NumDescriptors = 10000;
+		descRangeSRV_array_space1.BaseShaderRegister = 0;
+		descRangeSRV_array_space1.RegisterSpace = 1;
+		descRangeSRV_array_space1.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+		D3D12_ROOT_DESCRIPTOR_TABLE dtSrv;
+		dtSrv.NumDescriptorRanges = 1;
+		dtSrv.pDescriptorRanges = &descRangeSRV_array_space1;
+
+		rootParam[GlobalRootParam::DT_SRV_0TO100K_SPACE1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		rootParam[GlobalRootParam::DT_SRV_0TO100K_SPACE1].DescriptorTable = dtSrv;
+		rootParam[GlobalRootParam::DT_SRV_0TO100K_SPACE1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	}
+	D3D12_DESCRIPTOR_RANGE descRangeSRV_array_space2 = {};
+	{
+		// DT_SRV_0TO100K_SPACE2
+		m_globalRootSignatureRegisters["t0, space2"] = { GlobalRootParam::DT_SRV_0TO100K_SPACE2, 0 };
+
+		descRangeSRV_array_space2.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		descRangeSRV_array_space2.NumDescriptors = 10000;
+		descRangeSRV_array_space2.BaseShaderRegister = 0;
+		descRangeSRV_array_space2.RegisterSpace = 2;
+		descRangeSRV_array_space2.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+		D3D12_ROOT_DESCRIPTOR_TABLE dtSrv;
+		dtSrv.NumDescriptorRanges = 1;
+		dtSrv.pDescriptorRanges = &descRangeSRV_array_space2;
+
+		rootParam[GlobalRootParam::DT_SRV_0TO100K_SPACE2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		rootParam[GlobalRootParam::DT_SRV_0TO100K_SPACE2].DescriptorTable = dtSrv;
+		rootParam[GlobalRootParam::DT_SRV_0TO100K_SPACE2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	}
 	D3D12_ROOT_DESCRIPTOR rootDescSRV_10 = {};
 	{
@@ -553,6 +605,9 @@ void DX12API::nextFrame() {
 	if (m_swapIndex == 0) {
 		getMainGPUDescriptorHeap()->setIndex(0);
 	}
+	// Reset texture mip gen cbuffer index back to 0
+	DX12Texture::s_mipGenCBufferIndex = 0;
+
 	// New frame!
 	EventSystem::getInstance()->dispatchEvent(NewFrameEvent());
 	m_frameCount++;
@@ -593,15 +648,15 @@ void DX12API::resizeBuffers(UINT width, UINT height) {
 
 	// Recreate the dsv
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 	D3D12_RESOURCE_DESC bufferDesc{};
-	bufferDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	bufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	bufferDesc.Width = width;
 	bufferDesc.Height = height;
 	bufferDesc.DepthOrArraySize = 1;
@@ -689,16 +744,22 @@ DX12API::RootSignEntry DX12API::getRootSignEntryFromRegister(const std::string& 
 	return {0, 0};
 }
 
-UINT DX12API::getSwapIndex() const {
+const std::string& DX12API::getRootSignRegisterFromSlot(GlobalRootParam::Slot slot) const {
+	for (auto& it : m_globalRootSignatureRegisters) {
+		if (it.second.rootSigIndex == slot) {
+			return it.first;
+		}
+	}
+	Logger::Error("Tried to get register from a slot that is not bound in the global root signature!");
+	return "potato error";
+}
+
+uint32_t DX12API::getSwapIndex() const {
 	return m_swapIndex;
 }
 
 UINT DX12API::getFrameIndex() const {
 	return m_backBufferIndex;
-}
-
-UINT DX12API::getNumGPUBuffers() const {
-	return NUM_GPU_BUFFERS;
 }
 
 const DX12API::SupportedFeatures& DX12API::getSupportedFeatures() const {
@@ -908,6 +969,10 @@ void DX12API::waitForGPU() {
 	// Waits for the GPU to finish all current tasks in all queues
 	// Schedule signals and wait for them
 	m_directCommandQueue->waitOnCPU(m_directCommandQueue->signal(), m_eventHandle);
+}
+
+uint32_t DX12API::getNumSwapBuffers() const {
+	return NUM_GPU_BUFFERS;
 }
 
 UINT64 DX12API::CommandQueue::sFenceValue = 0;

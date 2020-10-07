@@ -40,7 +40,7 @@ DX11Texture::DX11Texture(const std::string& filename, bool useAbsolutePath)
 		ThrowIfFailed(api->getDevice()->CreateTexture2D(&texDesc, nullptr, &m_texture));
 		// Fill the texture with data
 		UINT rowPitch = sizeof(unsigned char) * data.getWidth() * 4;
-		api->getDeviceContext()->UpdateSubresource(m_texture, 0, nullptr, data.getTextureData8bit(), rowPitch, 0);
+		api->getDeviceContext()->UpdateSubresource(m_texture, 0, nullptr, data.getData(), rowPitch, 0);
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 		ZeroMemory(&srvDesc, sizeof(srvDesc));

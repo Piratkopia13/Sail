@@ -11,11 +11,12 @@ public:
 	void begin(Camera* camera, Environment* environment) override;
 	void* present(Renderer::PresentFlag flags, void* skippedPrepCmdList = nullptr) override;
 
+	void useDepthBuffer(void* buffer, void* cmdList) override;
+
+private:
 	ID3D12GraphicsCommandList4* runFramePreparation();
 	void runRenderingPass(ID3D12GraphicsCommandList4* cmdList);
 	void runFrameExecution(ID3D12GraphicsCommandList4* cmdList);
-
-	void useDepthBuffer(void* buffer, void* cmdList) override;
 
 private:
 	DX12API* m_context;

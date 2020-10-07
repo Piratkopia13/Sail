@@ -105,7 +105,7 @@ void DX12ImGuiHandler::end() {
 	// Transition all used textures to pixel shader resource
 	for (auto* texture : m_texturesUsedThisFrame) {
 		//texture->initBuffers(cmdList.Get()); // Init shoud have happened in the renderer already (?)
-		if (texture->hasBeenInitialized())
+		if (texture->isReadyToUse())
 			texture->transitionStateTo(cmdList.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
 	m_texturesUsedThisFrame.clear();

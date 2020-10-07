@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "states/GameState.h"
 #include "states/ModelViewerState.h"
+#include "states/EmptyState.h"
 
 Game::Game(HINSTANCE hInstance)
 	: Application(1600, 900, "Sail | Game Engine Demo", hInstance)
@@ -28,6 +29,7 @@ void Game::registerStates() {
 	// Register all of the different states
 	m_stateStack.registerState<GameState>(States::Game);
 	m_stateStack.registerState<ModelViewerState>(States::Editor);
+	m_stateStack.registerState<EmptyState>(States::Empty);
 }
 
 void Game::processInput(float dt) {

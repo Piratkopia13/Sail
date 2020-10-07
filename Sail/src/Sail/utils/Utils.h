@@ -89,6 +89,7 @@ public:
 
 namespace Utils {
 	std::string readFile(const std::string& filepath);
+	std::vector<std::byte> readFileBinary(const std::string& filepath);
 	std::wstring toWStr(const glm::vec3& vec);
 	std::string toStr(const glm::vec4& vec);
 	std::string toStr(const glm::vec3& vec);
@@ -104,14 +105,16 @@ namespace Utils {
 	static std::uniform_real_distribution<float> dis(0.f, 1.f);
 
 	namespace String {
+		std::string getLineStartingFrom(const char* source);
 		std::string getBlockStartingFrom(const char* source);
-		const char* findToken(const std::string& token, const char* source);
+		const char* findToken(const std::string& token, const char* source, bool onFirstLine = false, bool ignoreBlocks = false); // ignoreBlocks: ignores characters enclosed in brackets "{..}"
 		int findNextIntOnLine(const char* source);
 		const char* nextLine(const char* source);
 		std::string nextToken(const char* source);
 		const char* removeBeginningWhitespaces(const char* source);
 		std::string removeComments(const std::string& source);
 		bool startsWith(const char* source, const std::string& prefix);
+		const char* getStartOfCurrentLine(const char* source, const char* sourceStart); // SourceStart is used for out of bounds checks
 	};
 
 	template < typename T>

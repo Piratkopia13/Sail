@@ -63,7 +63,7 @@ public:
 	Mesh(Data& buildData);
 	virtual ~Mesh();
 
-	virtual void draw(const Renderer& renderer, Material* material, Shader* shader, Environment* environment, void* cmdList = nullptr) = 0;
+	virtual void draw(const Renderer& renderer, Material* material, Shader* shader, void* cmdList = nullptr) = 0;
 
 	// Returns a unique hash for the combination of vertex data used in the mesh (positions, normals, etc)
 	unsigned int getAttributesHash();

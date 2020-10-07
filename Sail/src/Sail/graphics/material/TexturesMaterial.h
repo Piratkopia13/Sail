@@ -12,17 +12,17 @@ public:
 	TexturesMaterial();
 	~TexturesMaterial();
 
-	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	virtual void* getData() override;
+	virtual unsigned int getDataSize() const override;
 	Shader* getShader(Renderer::Type rendererType) const override;
 	void setForwardShader(Shaders::ShaderIdentifier shaderId);
 
-	// An empty filename will remove the texture
-	void addTexture(const std::string& filename, bool useAbsolutePath = false);
+	void addTexture(RenderableTexture* texture);
+	void addTexture(Texture* texture);
+	void addTexture(const std::string& filename, bool useAbsolutePath = false); // An empty filename will remove the texture
 	void clearTextures();
 
 private:
-	std::vector<Texture*> m_textures;
-	unsigned int m_numTextures;
 	Shader* m_forwardShader;
 
 };

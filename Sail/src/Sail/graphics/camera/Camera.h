@@ -9,6 +9,10 @@ class Camera {
 public:
 	Camera() {
 		viewMatrix = glm::mat4(1.0f); // Identity matrix
+		vpMatrix = glm::mat4(1.0f);
+		nearZDst = 0.f;
+		farZDst = 0.f;
+		m_frustum = {};
 
 		m_pos = glm::vec3(0.f, 0.f, 0.f);
 		m_direction = glm::vec3(0.f, 0.f, -1.f);

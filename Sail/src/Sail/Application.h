@@ -35,6 +35,7 @@ public:
 	// Schedule a function to execute at the beginning of the next frame
 	// Should be used when modifying resources that may be in flight
 	void scheduleForNextFrame(std::function<void()> func);
+	void pauseRendering(bool pause);
 
 	static std::string getPlatformName();
 	static Application* getInstance();
@@ -50,6 +51,7 @@ private:
 	std::unique_ptr<ImGuiHandler> m_imguiHandler;
 	ResourceManager m_resourceManager;
 	Settings m_settings;
+	bool m_pauseRendering;
 
 	Timer m_timer;
 	UINT m_fps;

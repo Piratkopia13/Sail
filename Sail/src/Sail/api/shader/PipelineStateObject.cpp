@@ -55,6 +55,10 @@ PipelineStateObject::PipelineStateObject(Shader* shader, unsigned int attributes
 
 PipelineStateObject::~PipelineStateObject() { }
 
+Shader* PipelineStateObject::getShader() const {
+	return shader;
+}
+
 bool PipelineStateObject::bindInternal(void* cmdList, bool forceIfBound) {
 	// Don't bind if already bound
 	// This is to cut down on shader state changes

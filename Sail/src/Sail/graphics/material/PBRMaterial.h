@@ -16,24 +16,30 @@ public:
 		float metalnessScale;
 		float roughnessScale;
 		float aoIntensity;
-		float padding1;
-		int hasAlbedoTexture;
-		int hasNormalTexture;
-		int hasMetalnessRoughnessAOTexture;
-		float padding2;
+		int albedoTexIndex;
+		int normalTexIndex;
+		int mraoTexIndex; // R/G/B = Metalness/Roughness/Ambient occlusion
+		int radianceMapTexIndex;
+		int irradianceMapTexIndex;
+		int brdfLutTexIndex;
+		glm::vec3 padding;
 	};
 
 public:
 	PBRMaterial();
 	~PBRMaterial();
 
-	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	virtual void setEnvironment(const Environment& environment) override;
+	virtual void setTextureIndex(unsigned int textureID, int index) override;
+	virtual void* getData() override;
+	virtual unsigned int getDataSize() const override;
 	Shader* getShader(Renderer::Type rendererType) const override;
 
 	void setMetalnessScale(float metalness);
 	void setRoughnessScale(float roughness);
 	void setAOIntensity(float intensity);
 	void setColor(const glm::vec4& color);
+	void enableTransparency(bool enable); // If set to true - meshes will be drawn with alpha blending enabled in a forward pass
 
 	// An empty filename will remove the texture
 	void setAlbedoTexture(const std::string& filename, bool useAbsolutePath = false);
@@ -53,8 +59,6 @@ public:
 private:
 	PBRSettings m_pbrSettings;
 	Texture* m_brdfLutTexture;
-	
-	Texture* m_textures[3];
-
+	bool m_hasTransparency;	
 	UINT m_numTextures;
 };

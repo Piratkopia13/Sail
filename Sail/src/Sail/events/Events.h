@@ -8,3 +8,4 @@
 #include "WindowResizeEvent.h"
 #include "WindowFocusChangedEvent.h"
 #include "NewFrameEvent.h"
+#include "SwapchainRecreatedEvent.h"

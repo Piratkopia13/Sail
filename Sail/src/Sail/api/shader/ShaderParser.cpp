@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "ShaderParser.h"
 #include "Sampler.h"
+#include "Sail/Application.h"
+#include "API/DX12/DX12API.h"
 
 using namespace Utils::String;
 
@@ -10,6 +12,10 @@ ShaderParser::ShaderParser(const std::string& filename)
 
 const ShaderParser::ParsedData& ShaderParser::getParsedData() const {
 	return m_parsedData;
+}
+
+void ShaderParser::clearParsedData() {
+	m_parsedData.clear();
 }
 
 std::string ShaderParser::parse(const std::string& source) {
@@ -33,15 +39,51 @@ std::string ShaderParser::parse(const std::string& source) {
 	}
 
 	// Remove comments from source
-	std::string cleanSource = removeComments(source);
+	m_cleanSource = removeComments(source);
+
+	// Remove platform specific shader code
+	{
+		std::string::size_type start;
+#ifdef _SAIL_VK
+		while ((start = m_cleanSource.find("#ifdef _SAIL_VK")) != std::string::npos) {
+			size_t elseStart = start + m_cleanSource.substr(start).find("#else");
+			size_t endifStart = start + m_cleanSource.substr(start).find("#endif");
+			if (elseStart < endifStart) {
+				// Remove everything starting from the #else to the #endif
+				size_t size = endifStart - elseStart;
+				m_cleanSource.erase(elseStart, size+6);
+				// Remove the #ifdef
+				m_cleanSource.erase(start, 15);
+			} else {
+				// No else found inside this if, do nothing
+			}
+		}
+#else
+		while ((start = m_cleanSource.find("#ifdef _SAIL_VK")) != std::string::npos) {
+			size_t elseStart = start + m_cleanSource.substr(start).find("#else");
+			size_t endifStart = start + m_cleanSource.substr(start).find("#endif");
+			if (elseStart < endifStart) {
+				// Remove everything starting from the #ifdef to the #else
+				size_t size = elseStart - start + 5;
+				m_cleanSource.erase(start, size);
+				// Remove the #endif
+				m_cleanSource.erase(endifStart - size, 6);
+			} else {
+				// Remove everything starting from the #ifdef to the #endif
+				size_t size = endifStart - start + 6;
+				m_cleanSource.erase(start, size);
+			}
+		}
+#endif
+	}
 
 	const char* src;
 
 	// Store used vertex data attributes and their order
 	{
-		src = cleanSource.c_str();
+		src = m_cleanSource.c_str();
 		if (m_parsedData.hasVS) {
-			if (src = findToken("VSIn", src)) {
+			if (src = findToken("VSIn", src, false, true)) {
 				unsigned int mul = 1;
 				while (src && nextToken(src) != "};") {
 					src = findToken(":", src);
@@ -81,55 +123,136 @@ std::string ShaderParser::parse(const std::string& source) {
 	// This is needed to avoid copying/destructor calling
 	{
 		int numCBuffers = 0;
-		src = cleanSource.c_str();
-		while (src = findToken("cbuffer", src))	numCBuffers++;
+		src = m_cleanSource.c_str(); while (src = findToken("cbuffer", src, false, true)) numCBuffers++;
+		src = m_cleanSource.c_str(); while (src = findToken("ConstantBuffer", src, false, true)) numCBuffers++;
 		m_parsedData.cBuffers.reserve(numCBuffers);
 	}
 	{
 		int numSamplers = 0;
-		src = cleanSource.c_str();
-		while (src = findToken("SamplerState", src)) numSamplers++;
+		src = m_cleanSource.c_str();
+		while (src = findToken("SamplerState", src, false, true)) numSamplers++;
 		m_parsedData.samplers.reserve(numSamplers);
 	}
 
 	// Process all CBuffers
-	src = cleanSource.c_str();
-	while (src = findToken("cbuffer", src)) {
-		parseCBuffer(getBlockStartingFrom(src));
+	{
+		// Constant buffers can be defined in two ways
+		src = m_cleanSource.c_str();
+		while (src = findToken("cbuffer", src, false, true)) {
+			parseCBuffer(getBlockStartingFrom(src));
+		}
+		src = m_cleanSource.c_str();
+		while (src = findToken("ConstantBuffer", src, false, true)) {
+			parseConstantBuffer(getLineStartingFrom(src));
+		}
 	}
 
+#ifdef _SAIL_VK
+	// Process all push constants
+	src = m_cleanSource.c_str();
+	while (src = findToken("vk::push_constant", src, false, true)) {
+		std::string pushTokenSource = getBlockStartingFrom(src);
+		src += pushTokenSource.size();
+		const char* end = Utils::String::findToken(";", src);
+		pushTokenSource += std::string(src, end-src);
+		parseCBuffer(pushTokenSource, true);
+	}
+#endif
+
 	// Process all samplers
-	src = cleanSource.c_str();
+	src = m_cleanSource.c_str();
 	while (src = findToken("SamplerState", src)) {
-		parseSampler(src, cleanSource);
+		parseSampler(src);
 	}
 
 	// Process all textures
 	// RWTextures needs to be handled first!
-	src = cleanSource.c_str();
-	while (src = findToken("RWTexture2D", src)) {
+	src = m_cleanSource.c_str();
+	while (src = findToken("RWTexture2D", src, false, true)) {
 		parseRWTexture(src);
 	}
-	src = cleanSource.c_str();
-	while (src = findToken("Texture2D", src)) {
+	src = m_cleanSource.c_str();
+	while (src = findToken("Texture2D", src, false, true)) {
 		parseTexture(src);
 	}
-	src = cleanSource.c_str();
-	while (src = findToken("TextureCube", src)) {
+	src = m_cleanSource.c_str();
+	while (src = findToken("TextureCube", src, false, true)) {
 		parseTexture(src);
 	}
 
-	return cleanSource;
+	return m_cleanSource;
 }
 
-void ShaderParser::parseCBuffer(const std::string& source) {
+void ShaderParser::parseConstantBuffer(const std::string& source) {
 	const char* src = source.c_str();
+	UINT tokenSize;
+	auto type = nextTokenAsType(src, tokenSize);
+	src += tokenSize;
+	auto typeSize = getSizeOfType(type);
 
-	std::string bufferName = nextToken(src);
-	auto bindShader = getBindShaderFromName(bufferName);
-
-
+	int elementsInArray = 1;
+	std::string name = nextTokenAsName(src, tokenSize, &elementsInArray);
+	src += tokenSize;
+	if (elementsInArray == -1) {
+		// Array is sizeless - allocate for as many elements as possible
+		static const unsigned int CBUFFER_MAX_SIZE = 65536;
+		elementsInArray = glm::floor(CBUFFER_MAX_SIZE / (double)typeSize);
+	}
+	
+	UINT size = typeSize * elementsInArray;
+	auto bindShader = getBindShaderFromName(name);
 	int registerSlot = findNextIntOnLine(src);
+	bool isMaterialArray = (strstr(src, "SAIL_BIND_ALL_MATERIALS") != nullptr);
+
+	// Memory align to 16 bytes
+	if (size % 16 != 0)
+		size = size - (size % 16) + 16;
+
+	void* initData = malloc(size);
+	memset(initData, 0, size);
+	std::vector<ShaderCBuffer::CBufferVariable> vars; // No vars
+	m_parsedData.cBuffers.emplace_back(name, vars, initData, size, bindShader, registerSlot, isMaterialArray, m_parsedData.hasCS);
+	free(initData);
+}
+
+void ShaderParser::parseCBuffer(const std::string& source, bool storeAsConstant) {
+	const char* src = source.c_str();
+	const char* end = (storeAsConstant) ? findToken("}", src) - 1 : source.c_str() + source.size();
+
+	std::string bufferName = "Unspecified";
+	if (storeAsConstant) {
+		// Name is stored right after the block
+		const char* start = findToken("}", src);
+		if (strlen(start) <= 1) {
+			Logger::Error("A shader constant struct was specified without a name.");
+		}
+		UINT size;
+		bufferName = nextTokenAsName(start, size);
+	} else {
+		// Name is stored in the next token
+		bufferName = nextToken(src);
+	}
+
+#ifdef _SAIL_DX12
+	if (!storeAsConstant) {
+		// Check if this should be used as a dx12 shader constant
+		// Look for "SAIL_CONSTANT"
+		const char* macro = findToken("SAIL_CONSTANT", src, true);
+		storeAsConstant = (macro != nullptr);
+		if (storeAsConstant) {
+			// Replace token with register slot taken from the root signature
+			std::string newReg = "register(";
+			newReg += Application::getInstance()->getAPI<DX12API>()->getRootSignRegisterFromSlot(GlobalRootParam::CONSTANTS_3);
+			newReg += ") /* SLOT REPLACED BY SAIL SHADERPARSER! */";
+			m_cleanSource.replace(m_cleanSource.find("SAIL_CONSTANT"), 13, newReg);
+		}
+	}
+#endif
+	
+	auto bindShader = getBindShaderFromName(bufferName);
+	int registerSlot = findNextIntOnLine(src);
+	bool isMaterialArray = (strstr(src, "SAIL_BIND_ALL_MATERIALS") != nullptr);
+	
 	src = findToken("{", src); // Place ptr on same line as starting bracket
 	src = nextLine(src);
 
@@ -138,7 +261,7 @@ void ShaderParser::parseCBuffer(const std::string& source) {
 	UINT size = 0;
 	std::vector<ShaderCBuffer::CBufferVariable> vars;
 
-	while (src < source.c_str() + source.size()) {
+	while (src < end) {
 		std::string type = nextToken(src);
 		src += type.size();
 		UINT tokenSize;
@@ -158,24 +281,30 @@ void ShaderParser::parseCBuffer(const std::string& source) {
 	if (size % 16 != 0)
 		size = size - (size % 16) + 16;
 
-	void* initData = malloc(size);
-	memset(initData, 0, size);
-	m_parsedData.cBuffers.emplace_back(vars, initData, size, bindShader, registerSlot, m_parsedData.hasCS);
-	free(initData);
+	if (storeAsConstant) {
+		m_parsedData.constants.emplace_back(vars, size, bindShader);
+	} else {
+		void* initData = malloc(size);
+		memset(initData, 0, size);
+		m_parsedData.cBuffers.emplace_back(bufferName, vars, initData, size, bindShader, registerSlot, isMaterialArray, m_parsedData.hasCS);
+		free(initData);
+	}
 
 	//Logger::Log(src);
 }
 
-void ShaderParser::parseSampler(const char* sourceChar, std::string& source) {
-	UINT tokenSize = 0;
-	std::string name = nextTokenAsName(sourceChar, tokenSize);
-	sourceChar += tokenSize;
+void ShaderParser::parseSampler(const char* src) {
+	const char* lineStart = getStartOfCurrentLine(src, m_cleanSource.c_str());
 
-	const char* newLine = strchr(sourceChar, '\n');
-	size_t lineLength = newLine - sourceChar;
+	UINT tokenSize = 0;
+	std::string name = nextTokenAsName(src, tokenSize);
+	src += tokenSize;
+
+	const char* newLine = strchr(src, '\n');
+	size_t lineLength = newLine - src;
 	char* lineCopy = (char*)malloc(lineLength + 1);
 	memset(lineCopy, '\0', lineLength + 1);
-	strncpy_s(lineCopy, lineLength + 1, sourceChar, lineLength);
+	strncpy_s(lineCopy, lineLength + 1, src, lineLength);
 
 	// Parse "SAIL_X" macros in source and replace register slot if found
 	bool replaceRegisterSlot = false;
@@ -185,12 +314,16 @@ void ShaderParser::parseSampler(const char* sourceChar, std::string& source) {
 	for (auto& it : samplerMap) {
 		if (strstr(lineCopy, it.first.c_str())) {
 			samplerInfo = it.second;
+#ifdef _SAIL_DX12 // DX12 implementation has specific slots for samplers and requires us to correct the slot in the shader source code
 			replaceRegisterSlot = true;
+#endif
 			macro = it.first;
 			break;
 		}
 	}
+#ifdef _SAIL_DX12
 	assert(!(!replaceRegisterSlot && strstr(lineCopy, "SAIL_")) && "Unrecognized macro found on sampler");
+#endif
 	free(lineCopy);
 	
 	int slot = 0;
@@ -199,18 +332,24 @@ void ShaderParser::parseSampler(const char* sourceChar, std::string& source) {
 		std::string newReg = "register(s";
 		newReg += std::to_string(slot);
 		newReg += "); // SLOT REPLACED BY SAIL SHADERPARSER!";
-		source.replace(source.find(macro), macro.length()+1, newReg); // +1 to include the ending semicolon
+		m_cleanSource.replace(m_cleanSource.find(macro), macro.length()+1, newReg); // +1 to include the ending semicolon
 	} else {
-		slot = findNextIntOnLine(sourceChar);
+		slot = findNextIntOnLine(src);
 		if (slot == -1) slot = 0; // No slot specified, use 0 as default
 	}
 
 	auto bindShader = getBindShaderFromName(name);
-	ShaderResource res(name, static_cast<UINT>(slot));
+	auto uslot = static_cast<unsigned int>(slot);
+	unsigned int vkBinding = uslot;
+	getVkBinding(lineStart, vkBinding);
+
+	ShaderResource res(name, uslot, 1, vkBinding);
 	m_parsedData.samplers.emplace_back(res, samplerInfo.addressMode, samplerInfo.filter, bindShader, slot);
 }
 
 void ShaderParser::parseTexture(const char* source) {
+	const char* lineStart = getStartOfCurrentLine(source, m_cleanSource.c_str());
+
 	if (source[0] == '<') {
 		// A type was found in the place of a name
 		// This probably means that it is a RWTexture2D and has already been handled
@@ -219,22 +358,49 @@ void ShaderParser::parseTexture(const char* source) {
 	}
 
 	UINT tokenSize = 0;
-	std::string name = nextTokenAsName(source, tokenSize);
+	int arrSize = 1;
+	std::string name = nextTokenAsName(source, tokenSize, &arrSize);
 	source += tokenSize;
 
 	int slot = findNextIntOnLine(source);
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
+	auto line = getLineStartingFrom(source);
+	bool isTexturesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURES") != nullptr);
+	bool isTextureCubesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURECUBES") != nullptr);
 
-	m_parsedData.textures.emplace_back(name, slot);
+#ifdef _SAIL_DX12
+	if (isTexturesArray) {
+		// Replace token with register slot taken from the root signature
+		std::string newReg = "register(";
+		newReg += Application::getInstance()->getAPI<DX12API>()->getRootSignRegisterFromSlot(GlobalRootParam::DT_SRV_0TO100K_SPACE1);
+		newReg += "); // SLOT REPLACED BY SAIL SHADERPARSER!";
+		m_cleanSource.replace(m_cleanSource.find("SAIL_BIND_ALL_TEXTURES"), 22, newReg);
+	}
+	if (isTextureCubesArray) {
+		// Replace token with register slot taken from the root signature
+		std::string newReg = "register(";
+		newReg += Application::getInstance()->getAPI<DX12API>()->getRootSignRegisterFromSlot(GlobalRootParam::DT_SRV_0TO100K_SPACE2);
+		newReg += "); // SLOT REPLACED BY SAIL SHADERPARSER!";
+		m_cleanSource.replace(m_cleanSource.find("SAIL_BIND_ALL_TEXTURECUBES"), 26, newReg);
+	}
+#endif
+
+	unsigned int vkBinding = static_cast<unsigned int>(slot);
+	getVkBinding(lineStart, vkBinding);
+
+	m_parsedData.textures.emplace_back(name, slot, arrSize, vkBinding, isTexturesArray, isTextureCubesArray);
 }
 
 void ShaderParser::parseRWTexture(const char* source) {
+	const char* lineStart = getStartOfCurrentLine(source, m_cleanSource.c_str());
+	
 	UINT tokenSize = 0;
 	std::string type = nextTokenAsType(source, tokenSize);
 	source += tokenSize;
 
 	tokenSize = 0;
-	std::string name = nextTokenAsName(source, tokenSize);
+	int arrSize = 1;
+	std::string name = nextTokenAsName(source, tokenSize, &arrSize);
 	source += tokenSize;
 
 	tokenSize = 0;
@@ -242,9 +408,16 @@ void ShaderParser::parseRWTexture(const char* source) {
 	if (slot == -1) {
 		slot = 0; // No slot specified, use 0 as default
 	}
+	auto line = getLineStartingFrom(source);
+	bool isTexturesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURES") != nullptr);
+	bool isTextureCubesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURECUBES") != nullptr);
+
+	unsigned int vkBinding = static_cast<unsigned int>(slot);
+	getVkBinding(lineStart, vkBinding);
 
 	// Store name and slot as a texture to allow shader to manually bind this slot
-	m_parsedData.textures.emplace_back(name, slot);
+	auto uslot = static_cast<unsigned int>(slot);
+	m_parsedData.textures.emplace_back(name, uslot, arrSize, vkBinding, isTexturesArray, isTextureCubesArray, true);
 
 	// Get texture format from source, if specified
 	ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8;
@@ -271,7 +444,31 @@ void ShaderParser::parseRWTexture(const char* source) {
 	free(lineCopy);
 
 	std::string nameSuffix(" File: " + m_filename + " slot " + std::to_string(slot));
-	m_parsedData.renderableTextures.emplace_back(ShaderResource(name, slot), format, nameSuffix);
+	m_parsedData.renderableTextures.emplace_back(ShaderResource(name, uslot, 1, uslot), format, nameSuffix);
+}
+
+bool ShaderParser::getVkBinding(const char* lineStart, unsigned int& outVkBinding) const {
+	// if vk::binding is used, use that as the vk slot. 
+	// vk::binding is allowed on the previous line or at the start of the current line.
+	auto matchOnCurrentLine = findToken("vk::binding", lineStart, true);
+	if (matchOnCurrentLine) {
+		outVkBinding = findNextIntOnLine(matchOnCurrentLine);
+		return true;
+	} else {
+		int newLines = 0;
+		while (newLines < 2) {
+			if (lineStart == m_cleanSource.c_str()) break; // Out of bounds check
+			if (lineStart[0] == '\n') newLines++;
+			lineStart--;
+		}
+		lineStart += 2;
+		auto matchOnPrevLine = findToken("vk::binding", lineStart, true);
+		if (matchOnPrevLine) {
+			outVkBinding = findNextIntOnLine(matchOnPrevLine);
+			return true;
+		}
+	}
+	return false;
 }
 
 std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize, int* arrayElements) const {
@@ -289,9 +486,14 @@ std::string ShaderParser::nextTokenAsName(const char* source, UINT& outTokenSize
 		size_t start = 0;
 		while ((start = name.find("[")) != name.npos) {
 			auto size = name.substr(start).find(']') + 1;
+			if (size == 2) { // Sizeless / boundless array
+				*arrayElements = -1;
+			}
 			// Add array size as long as the size is defined numerically and not with a macro
-			if (isdigit(*name.substr(start+1).c_str()))
-				*arrayElements *= std::stoi(name.substr(start+1, size-2));
+			if (isdigit(*name.substr(start + 1).c_str()))
+				*arrayElements *= std::stoi(name.substr(start + 1, size - 2));
+			else if (*arrayElements != -1) // Missing array size is fine for boundless arrays
+				Logger::Error("Array size not defined using constant: "+name);
 			name.erase(start, size);
 		}
 	}
@@ -321,7 +523,7 @@ ShaderComponent::BIND_SHADER ShaderParser::getBindShaderFromName(const std::stri
 	return ShaderComponent::VS; // Default to binding to VertexShader
 }
 
-// TODO: registerTypeSize(typeName, size)
+// TODO: Parse this from the shader structs. or (but probably not) registerTypeSize(typeName, size)
 UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "uint" ||
 		typeName == "int"  ||
@@ -336,10 +538,12 @@ UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "float4x4" ||
 		typeName == "matrix")							return 4 * 4 * 4;
 
-	if (typeName == "PhongMaterial")					return 48;
-	if (typeName == "PBRMaterial")						return 4 * 12;
-	if (typeName == "DirectionalLight")					return 32;
-	if (typeName == "PointLight")						return 32;
+	if (typeName == "MipsData")							return 32;
+	if (typeName == "PhongMaterial")					return 4 * 12;
+	if (typeName == "PBRMaterial")						return 4 * 16;
+	if (typeName == "OutlineMaterial")					return 4 * 4;
+	if (typeName == "DirectionalLight")					return 4 * 8;
+	if (typeName == "PointLight")						return 4 * 8;
 	if (typeName == "PointLightInput")					return 4 * 8 * 128; // last 128 is NUM_POINT_LIGHTS
 	if (typeName == "DeferredPointLightData")			return 48;
 	if (typeName == "DeferredDirLightData")				return 32;

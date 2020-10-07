@@ -18,7 +18,7 @@ DX12VertexBuffer::DX12VertexBuffer(const Mesh::Data& modelData, bool allowUpdate
 	void* vertices = mallocVertexData(modelData);
 	
 	m_context = Application::getInstance()->getAPI<DX12API>();
-	auto numSwapBuffers = (m_allowUpdates) ? m_context->getNumGPUBuffers() : 1;
+	auto numSwapBuffers = (m_allowUpdates) ? m_context->getNumSwapBuffers() : 1;
 
 	//Logger::Warning("Created upload vbuffer " + std::to_string(modelData.numVertices));
 
@@ -146,7 +146,7 @@ bool DX12VertexBuffer::init(ID3D12GraphicsCommandList4* cmdList) {
 	// This method is called at least once every frame that this vertex buffer is used
 
 	auto frameIndex = (m_allowUpdates) ? m_context->getSwapIndex() : 0;
-	auto numSwapBuffers = (m_allowUpdates) ? m_context->getNumGPUBuffers() : 1;
+	auto numSwapBuffers = (m_allowUpdates) ? m_context->getNumSwapBuffers() : 1;
 	for (unsigned int i = 0; i < numSwapBuffers; i++) {
 		if (m_hasBeenInitialized[i]) {
 			// Release the upload heap as soon as the texture has been uploaded to the GPU, but make sure it doesn't happen on the same frame as the upload

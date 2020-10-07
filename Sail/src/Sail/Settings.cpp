@@ -4,6 +4,9 @@
 #include "Application.h"
 
 Settings::Settings() {
+	//set(Settings::Graphics_MSAA, 2); // 2x MSAA as default
+	set(Settings::Graphics_MSAA, 1); // NOTE: Using deferred renderer in Vulkan and MSAA simultaneously is currently not supported
+
 	m_requirementsMap[Graphics_DXR] = [] { return Application::getInstance()->getAPI()->supportsFeature(GraphicsAPI::RAYTRACING); };
 }
 

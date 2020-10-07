@@ -10,7 +10,8 @@ public:
 	OutlineMaterial();
 	~OutlineMaterial();
 
-	virtual void bind(Shader* shader, Environment* environment, void* cmdList = nullptr) override;
+	virtual void* getData() override;
+	virtual unsigned int getDataSize() const override;
 	Shader* getShader(Renderer::Type rendererType) const override;
 
 	void setColor(const glm::vec3& color);
@@ -19,7 +20,12 @@ public:
 	float getThickness() const;
 
 private:
-	glm::vec3 m_color;
-	float m_thickness;
+	// Matching shader struct
+	struct OutlineSettings {
+		glm::vec3 color;
+		float thickness;
+	};
+
+	OutlineSettings m_settings;
 
 };

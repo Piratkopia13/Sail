@@ -10,48 +10,46 @@ struct VSIn {
 
 struct PSIn {
 	float4 position : SV_Position;
-	float3 normal : NORMAL0;
+	float3 normalWorldSpace : NORMAL0;
 	float2 texCoords : TEXCOORD0;
 	float clip : SV_ClipDistance0;
+	float3 worldPosition : WORLDPOS;
 	float3 toCam : TOCAM;
-	//Material material : MAT;
-	LightList lights : LIGHTS;
+	float3x3 TBN : TBN;
 };
 
-cbuffer VSPSSystemCBuffer : register(b0) {
+// Fast as frick data through the pipeline itself
+[[vk::push_constant]]
+struct {
 	matrix sys_mWorld;
+	uint sys_materialIndex;
+} VSPSConsts;
+
+// These cbuffers are shared between all draw calls
+cbuffer VSSystemCBuffer : register(b0) {
     matrix sys_mVP;
-    PhongMaterial sys_material;
-    //float padding;
     float4 sys_clippingPlane;
     float3 sys_cameraPos;
+	float padding;
+	DirectionalLight dirLight;
+	PointLight pointLights[8];
 }
 
-struct PointLightInput {
-	float3 color;
-    float attRadius;
-	float3 position;
-	float intensity;
-};
-cbuffer VSLights : register(b1) {
-	DirectionalLight dirLight;
-    PointLightInput pointLights[NUM_POINT_LIGHTS];
+cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
+	PhongMaterial sys_materials[1024];
 }
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
-	// Copy over the directional light
-	output.lights.dirLight = dirLight;
-	// Copy over point lights
-    for (uint i = 0; i < NUM_POINT_LIGHTS; i++) {
-        output.lights.pointLights[i].attRadius = pointLights[i].attRadius;
-        output.lights.pointLights[i].color = pointLights[i].color;
-        output.lights.pointLights[i].intensity = pointLights[i].intensity;
-    }
+	PhongMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+	matrix mWorld = VSPSConsts.sys_mWorld;
 
 	input.position.w = 1.f;
-	output.position = mul(sys_mWorld, input.position);
+	output.position = mul(mWorld, input.position);
+	// output.position = mul(input.position, mWorld);
+
+	output.worldPosition = output.position.xyz;
 
 	// Calculate the distance from the vertex to the clipping plane
 	// This needs to be done with world coordinates
@@ -60,31 +58,21 @@ PSIn VSMain(VSIn input) {
 	// World space vector pointing from the vertex position to the camera
     output.toCam = sys_cameraPos - output.position.xyz;
 
-    for (uint j = 0; j < NUM_POINT_LIGHTS; j++) {
-		// World space vector poiting from the vertex position to the point light
-        output.lights.pointLights[j].fragToLight = pointLights[j].position - output.position.xyz;
-    }
-
-
     output.position = mul(sys_mVP, output.position);
 
-	if (sys_material.hasNormalTexture) {
-	    // Convert to tangent space
-		float3x3 TBN = {
-			mul((float3x3) sys_mWorld, normalize(input.tangent)),
-			mul((float3x3) sys_mWorld, normalize(input.bitangent)),
-			mul((float3x3) sys_mWorld, normalize(input.normal))
-		};
-		TBN = transpose(TBN);
-
-		output.toCam = mul(output.toCam, TBN);
-		output.lights.dirLight.direction = mul(output.lights.dirLight.direction, TBN);
-        for (int i = 0; i < NUM_POINT_LIGHTS; i++)
-            output.lights.pointLights[i].fragToLight = mul(output.lights.pointLights[i].fragToLight, TBN);
-    }
-
-	output.normal = mul((float3x3) sys_mWorld, input.normal);
-	output.normal = normalize(output.normal);
+	float3 tangentWorldSpace = normalize(mul(mWorld, float4(input.tangent, 0.f)).xyz);
+	float3 bitangentWorldSpace = normalize(mul(mWorld, float4(input.bitangent, 0.f)).xyz);
+	output.normalWorldSpace = normalize(mul(mWorld, float4(input.normal, 0.f)).xyz);
+	
+	if (mat.normalTexIndex != -1) {
+	    // TBN matrix to go from tangent space to world space
+		output.TBN = float3x3(
+			tangentWorldSpace,
+			bitangentWorldSpace,
+			output.normalWorldSpace
+		);
+		// output.TBN = transpose(output.TBN);
+	}
 
 	output.texCoords = input.texCoords;
 
@@ -92,38 +80,57 @@ PSIn VSMain(VSIn input) {
 
 }
 
+SamplerState PSss : register(s2) : SAIL_SAMPLER_ANIS_WRAP;
 
-Texture2D sys_texDiffuse : register(t0);
-Texture2D sys_texNormal : register(t1);
-Texture2D sys_texSpecular : register(t2);
-SamplerState PSss : register(s0);
+Texture2D texArr[] : register(t3) : SAIL_BIND_ALL_TEXTURES;
+
+float4 sampleTexture(uint index, float2 texCoords) {
+	return texArr[index].Sample(PSss, texCoords);
+}
 
 float4 PSMain(PSIn input) : SV_Target0 {
 
+	PhongMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+
+	PointLight myPointLights[NUM_POINT_LIGHTS] = pointLights;
+	for (int i = 0; i < NUM_POINT_LIGHTS; i++)
+		myPointLights[i].fragToLight = myPointLights[i].fragToLight - input.worldPosition;
+
 	PhongInput phongInput;
-	phongInput.mat = sys_material;
+	phongInput.mat = mat;
 	phongInput.fragToCam = input.toCam;
-	phongInput.lights = input.lights;
+	phongInput.dirLight = dirLight;
+	phongInput.pointLights = myPointLights;
 
-	phongInput.diffuseColor = sys_material.modelColor;
-	if (sys_material.hasDiffuseTexture)
-		phongInput.diffuseColor *= sys_texDiffuse.Sample(PSss, input.texCoords);
+	phongInput.diffuseColor = mat.modelColor;
+	if (mat.diffuseTexIndex != -1)
+		phongInput.diffuseColor *= sampleTexture(mat.diffuseTexIndex, input.texCoords);
 
-	phongInput.normal = input.normal;
-	if (sys_material.hasNormalTexture)
-		phongInput.normal = sys_texNormal.Sample(PSss, input.texCoords).rgb * 2.f - 1.f;
+	phongInput.normal = input.normalWorldSpace;
+	if (mat.normalTexIndex != -1) {
+		// Sample tangent space normal from texture
+		float3 normalSample = sampleTexture(mat.normalTexIndex, input.texCoords).rgb;
+		// normalSample.y = 1.0f - normalSample.y;
+		normalSample.x = 1.0f - normalSample.x;
+		phongInput.normal = normalize(normalSample * 2.f - 1.f);
+
+		// Convert to world space
+		phongInput.normal = mul(phongInput.normal, input.TBN);
+	}
 
 	phongInput.specMap = float3(1.f, 1.f, 1.f);
-	if (sys_material.hasSpecularTexture)
-		phongInput.specMap = sys_texSpecular.Sample(PSss, input.texCoords).rgb;
+	if (mat.specularTexIndex != -1)
+		phongInput.specMap = sampleTexture(mat.specularTexIndex, input.texCoords).rgb;
 
 
-    //return sys_texDiffuse.Sample(PSss, input.texCoords);
+	// return float4(myPointLights[0].fragToLight, 1.0);
+    // //return sys_texDiffuse.Sample(PSss, input.texCoords);
 	// return float4(phongInput.normal * 0.5f + 0.5, 1.f);
+	// return float4(toCam * 0.5f + 0.5, 1.f);
     return phongShade(phongInput);
-    //return float4(phongInput.lights.dirLight.direction, 1.f);
-    //return float4(phongInput.diffuseColor.rgb, 1.f);
-    //return float4(0.f, 1.f, 0.f, 1.f);
+    // //return float4(phongInput.lights.dirLight.direction, 1.f);
+    // return float4(phongInput.diffuseColor.rgb, 1.f);
+    // return float4(0.f, 1.f, 0.f, 1.f);
 
 }
 

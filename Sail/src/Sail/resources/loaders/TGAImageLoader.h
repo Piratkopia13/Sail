@@ -6,11 +6,11 @@
 
 namespace FileLoader {
 
-	class TGALoader {
+	class TGAImageLoader {
 
 	public:
-		TGALoader(const std::string& filename, ResourceFormat::TextureData& textureData);
-		~TGALoader();
+		TGAImageLoader(const std::string& filename, ResourceFormat::TextureData& textureData);
+		~TGAImageLoader();
 
 
 	private:

@@ -41,6 +41,15 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 		mat->get()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
 		m_scene.addEntity(e);
 	}
+	{
+		auto e = Entity::Create("Window");
+		e->addComponent<ModelComponent>(ModelFactory::CubeModel::Create({1.f, 1.f, 1.f}));
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 4.f, 4.f), glm::vec3(0.f), glm::vec3(1.f, 1.f, 0.05f));
+		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
+		mat->get()->enableTransparency(true);
+		mat->get()->setAlbedoTexture("colored_glass_rgba.png");
+		m_scene.addEntity(e);
+	}
 	// Lights
 	{
 		// Add a directional light

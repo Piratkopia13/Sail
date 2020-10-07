@@ -11,14 +11,16 @@ public:
 	virtual void bind(void* cmdList) const override;
 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) override;
+	void recompile() override;
 
-	virtual bool setTexture(const std::string& name, Texture* texture, void* cmdList = nullptr) override;
-	virtual void setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList = nullptr) override;
-	
 	void setRenderableTextureUAV(const std::string& name, RenderableTexture* texture);
+
+	void updateDescriptorsAndMaterialIndices(Renderer::RenderCommandList renderCommands, const Environment& environment, const PipelineStateObject* pso, void* cmdList) override;
 
 protected:
 	void compile() override;
+
+	bool setConstantDerived(const std::string& name, const void* data, uint32_t size, ShaderComponent::BIND_SHADER bindShader, uint32_t byteOffset, void* cmdList = nullptr) override;
 
 private:
 	ID3D11VertexShader* m_vs;

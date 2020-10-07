@@ -38,11 +38,11 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-inline float3 shadeWithLight(PointLightInput light, float3 N, float3 V, float3 F0, float3 worldPos, float3 albedo, float metalness, float roughness) {
-    float3 L = normalize(light.position - worldPos);
+inline float3 shadeWithLight(PointLight light, float3 N, float3 V, float3 F0, float3 albedo, float metalness, float roughness) {
+    float3 L = normalize(light.fragToLight);
     float3 H = normalize(V + L);
 
-    float distance = length(light.position - worldPos);
+    float distance = length(light.fragToLight);
     // UE4 attenuation
     float attenuation = pow(saturate(1.f - pow(distance/light.attRadius, 4.f)), 2.f) / (distance * distance + 1.f);
     // An intensity of anything else than 1 will not be physically accurate, this is up to the artist
@@ -76,12 +76,12 @@ inline float3 shadeWithLight(PointLightInput light, float3 N, float3 V, float3 F
 // PBR input structs
 struct PBRScene {
     DirectionalLight dirLight;
-    PointLightInput pointLights[NUM_POINT_LIGHTS];
-    unsigned int numPLs;
+    PointLight pointLights[NUM_POINT_LIGHTS];
     Texture2D<float4> brdfLUT;
     TextureCube<float4> irradianceMap;
     TextureCube<float4> prefilterMap;
     SamplerState linearSampler;
+    SamplerState pointSampler;
 };
 struct PBRPixel {
     float3 camPos;
@@ -111,28 +111,28 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel) {
         // Ignore light if color is black or pixel is in shadow
         if (!(all(dl.color == 0.0f) || pixel.inShadow)) {
             // Set up a point light that emulate a directional light
-            PointLightInput pl;
+            PointLight pl;
             pl.color = dl.color;
             pl.intensity = dl.intensity;
-            pl.position = pixel.worldPos - dl.direction;
+            pl.fragToLight = -dl.direction;
             pl.attRadius = 1e10f;
-            Lo += shadeWithLight(pl, N, V, F0, pixel.worldPos, pixel.albedo, pixel.metalness, pixel.roughness);
+            Lo += shadeWithLight(pl, N, V, F0, pixel.albedo, pixel.metalness, pixel.roughness);
         }
 
         // Point lights
-        PointLightInput p;
-        for(unsigned int i = 0; i < scene.numPLs; i++) {
+        PointLight p;
+        for(unsigned int i = 0; i < NUM_POINT_LIGHTS; i++) {
             p = scene.pointLights[i];
             // Ignore point light if color is black or intensity is zero
             if (p.intensity == 0.f || all(p.color == 0.0f)) {
                 continue;
             }
             // Ignore lights that are too far away
-            if (length(p.position - pixel.worldPos) > p.attRadius) {
+            if (length(p.fragToLight) > p.attRadius) {
                 continue;
             }
 
-            Lo += shadeWithLight(p, N, V, F0, pixel.worldPos, pixel.albedo, pixel.metalness, pixel.roughness);
+            Lo += shadeWithLight(p, N, V, F0, pixel.albedo, pixel.metalness, pixel.roughness);
         }
     }
 
@@ -151,7 +151,7 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel) {
     // Reflection
     const float MAX_REFLECTION_LOD = 4.0;
     float3 prefilteredColor = scene.prefilterMap.SampleLevel(scene.linearSampler, R, pixel.roughness * MAX_REFLECTION_LOD).rgb;
-    float2 envBRDF  = scene.brdfLUT.SampleLevel(scene.linearSampler, float2(max(dot(N, V), 0.0f), pixel.roughness), 0).rg;
+    float2 envBRDF  = scene.brdfLUT.SampleLevel(scene.pointSampler, float2(max(dot(N, V), 0.0f), pixel.roughness), 0).rg;
     float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
     float3 ambient = (kD * diffuse + specular) * pixel.ao;

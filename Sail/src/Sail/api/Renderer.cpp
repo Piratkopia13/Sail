@@ -1,11 +1,17 @@
 #include "pch.h"
 #include "Renderer.h"
 #include "Sail/graphics/geometry/Model.h"
+#include "../Application.h"
+
+Renderer::Renderer()
+	: m_resman(&Application::getInstance()->getResourceManager())
+{}
 
 void Renderer::begin(Camera* camera, Environment* environment) {
 	this->camera = camera;
 	this->environment = environment;
 	commandQueue.clear();
+	commandQueueCustom.clear();
 }
 
 void Renderer::submit(Model* model, Shader* shader, Material* material, const glm::mat4& modelMatrix) {
@@ -15,9 +21,27 @@ void Renderer::submit(Model* model, Shader* shader, Material* material, const gl
 }
 
 void Renderer::submit(Mesh* mesh, Shader* shader, Material* material, const glm::mat4& modelMatrix) {
-	auto& cmd = commandQueue.emplace_back();
+
+	std::vector<RenderCommand>* cmdVector;
+	
+	if (shader) {
+		// Find a matching pipelineStateObject used here to sort render commands
+		PipelineStateObject* pso = &m_resman->getPSO(shader, mesh);
+		auto it = commandQueue.find(pso);
+		if (it == commandQueue.end()) {
+			// PSO not already queued, do it
+			cmdVector = &commandQueue.insert({ pso, {} }).first->second;
+		} else {
+			cmdVector = &it->second;
+		}
+	} else {
+		// No shader was specified, this is valid for custom renderers, such as raytracing, that only use the geometry in the render commands
+		// Use a separate unsorted vector for these
+		cmdVector = &commandQueueCustom;
+	}
+
+	auto& cmd = cmdVector->emplace_back();
 	cmd.mesh = mesh;
-	cmd.shader = shader;
 	cmd.material = material;
 	cmd.transform = glm::transpose(modelMatrix);
 	cmd.dxrFlags = MESH_STATIC;

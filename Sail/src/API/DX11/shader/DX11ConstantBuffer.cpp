@@ -10,7 +10,8 @@ namespace ShaderComponent {
 	}
 
 	DX11ConstantBuffer::DX11ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot)
-		: m_bindShader(bindShader)
+		: ConstantBuffer(slot)
+		, m_bindShader(bindShader)
 		, m_slot(slot)
 		, m_bufferSize(size)
 	{
@@ -40,7 +41,7 @@ namespace ShaderComponent {
 		free(m_data);
 	}
 
-	void DX11ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int meshIndex, unsigned int offset) {
+	void DX11ConstantBuffer::updateData(const void* newData, unsigned int bufferSize, unsigned int offset) {
 		// Overwrite part of the locally stored data
 		memcpy((char*)m_data + offset, newData, bufferSize);
 
@@ -51,7 +52,7 @@ namespace ShaderComponent {
 
 	}
 
-	void DX11ConstantBuffer::bind(unsigned int meshIndex, void* cmdList) const {
+	void DX11ConstantBuffer::bind(void* cmdList) const {
 		if (m_bindShader & ShaderComponent::VS)
 			Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->VSSetConstantBuffers(m_slot, 1, &m_buffer);
 		if (m_bindShader & ShaderComponent::HS)

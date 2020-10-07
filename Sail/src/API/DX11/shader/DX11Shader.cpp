@@ -35,7 +35,7 @@ DX11Shader::~DX11Shader() {
 }
 
 void DX11Shader::bind(void* cmdList) const {
-	bindInternal(0U, cmdList);
+	bindInternal(cmdList);
 
 	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
 
@@ -50,8 +50,8 @@ void DX11Shader::bind(void* cmdList) const {
 }
 
 void* DX11Shader::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
-	std::string entryPoint = "VSMain";
-	std::string shaderVersion = "vs_5_0";
+	std::string entryPoint;
+	std::string shaderVersion;
 	switch (shaderType) {
 	case ShaderComponent::VS:
 		entryPoint = "VSMain";
@@ -81,7 +81,11 @@ void* DX11Shader::compileShader(const std::string& source, const std::string& fi
 
 	ID3D10Blob* shader = nullptr;
 	ID3D10Blob* errorMsg;
-	if (FAILED(D3DCompile(source.c_str(), source.size(), filepath.c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), shaderVersion.c_str(), D3DCOMPILE_DEBUG, 0, &shader, &errorMsg))) {
+	UINT flags = D3DCOMPILE_ENABLE_UNBOUNDED_DESCRIPTOR_TABLES;
+#ifdef _DEBUG
+	flags |= D3DCOMPILE_DEBUG;
+#endif
+	if (FAILED(D3DCompile(source.c_str(), source.size(), filepath.c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), shaderVersion.c_str(), flags, 0, &shader, &errorMsg))) {
 		OutputDebugString(L"\n Failed to compile shader\n\n");
 
 		char* msg = (char*)(errorMsg->GetBufferPointer());
@@ -98,49 +102,69 @@ void* DX11Shader::compileShader(const std::string& source, const std::string& fi
 	return shader;
 }
 
-bool DX11Shader::setTexture(const std::string& name, Texture* texture, void* cmdList) {
-	int slot = parser.findSlotFromName(name, parser.getParsedData().textures);
-	if (slot == -1) return false; // Texture doesn't exist in shader
-
-	ID3D11ShaderResourceView* srv[1] = { nullptr }; // Default to a null srv (unbinds the slot)
-	if (texture) {
-		srv[0] = ((DX11Texture*)texture)->getSRV();
-	}
-	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
-	if (isComputeShader())
-		devCon->CSSetShaderResources(slot, 1, srv);
-	else
-		devCon->PSSetShaderResources(slot, 1, srv);
-	return true;
-}
-
-void DX11Shader::setRenderableTexture(const std::string& name, RenderableTexture* texture, void* cmdList) {
-	int slot = parser.findSlotFromName(name, parser.getParsedData().textures);
-
-	ID3D11ShaderResourceView* srv[1] = { nullptr }; // Default to a null srv (unbinds the slot)
-	if (texture) {
-		srv[0] = *((DX11RenderableTexture*)texture)->getColorSRV();
-	}
-	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
-	if (isComputeShader())
-		devCon->CSSetShaderResources(slot, 1, srv);
-	else
-		devCon->PSSetShaderResources(slot, 1, srv);
-}
-
 void DX11Shader::setRenderableTextureUAV(const std::string& name, RenderableTexture* texture) {
 	int slot = parser.findSlotFromName(name, parser.getParsedData().textures);
 
 	UINT counts[1] = { 1 };
 	ID3D11UnorderedAccessView* uav[1] = { nullptr }; // Default to a null srv (unbinds the slot)
 	if (texture) {
-		uav[0] = *((DX11RenderableTexture*)texture)->getColorUAV();
+		uav[0] = ((DX11RenderableTexture*)texture)->getUAV();
 	}
 	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
 	if (isComputeShader())
 		devCon->CSSetUnorderedAccessViews(slot, 1, uav, counts);
 	else
 		assert(false && "Non compute shader SRVs have to be set via OMSetRenderTargetsAndUAVs method, this is currently not supported. Maybe fix?");
+}
+
+void DX11Shader::recompile() {
+	throw std::logic_error("The method or operation is not implemented.");
+}
+
+void DX11Shader::updateDescriptorsAndMaterialIndices(Renderer::RenderCommandList renderCommands, const Environment& environment, const PipelineStateObject* pso, void* cmdList) {
+	DescriptorUpdateInfo updateInfo = {};
+	getDescriptorUpdateInfoAndUpdateMaterialIndices(renderCommands, environment, &updateInfo);
+
+	auto* devCon = Application::getInstance()->getAPI<DX11API>()->getDeviceContext();
+
+	// Create descriptors for the 2D texture array
+	if (updateInfo.bindTextureArray) {
+		std::vector<ID3D11ShaderResourceView*> resourceViews(updateInfo.uniqueTextures.size() + updateInfo.uniqueRenderableTextures.size());
+		unsigned int i = 0;
+
+		for (auto* texture : updateInfo.uniqueTextures) {
+			auto* dxTexture = static_cast<DX11Texture*>(texture);
+			if (texture->isReadyToUse()) {
+				resourceViews[i++] = dxTexture->getSRV();
+			} else {
+				resourceViews[i++] = nullptr; // Default to a null srv (unbinds the slot)
+			}
+		}
+		for (auto* rendTexture : updateInfo.uniqueRenderableTextures) {
+			// Renderable textures are always ready to use
+			auto* dxTexture = static_cast<DX11RenderableTexture*>(rendTexture);
+			resourceViews[i++] = dxTexture->getSRV();
+		}
+
+		devCon->PSSetShaderResources(updateInfo.textureArrayBinding, i, resourceViews.data());
+	}
+
+	// Create descriptors for the texture cube array
+	if (updateInfo.bindTextureCubeArray) {
+		std::vector<ID3D11ShaderResourceView*> resourceViews(updateInfo.uniqueTextures.size() + updateInfo.uniqueRenderableTextures.size());
+		unsigned int i = 0;
+
+		for (auto* texture : updateInfo.uniqueTextureCubes) {
+			auto* dxTexture = static_cast<DX11Texture*>(texture);
+			if (texture->isReadyToUse()) {
+				resourceViews[i++] = dxTexture->getSRV();
+			} else {
+				resourceViews[i++] = nullptr; // Default to a null srv (unbinds the slot)
+			}
+		}
+
+		devCon->PSSetShaderResources(updateInfo.textureArrayBinding, i, resourceViews.data());
+	}
 }
 
 void DX11Shader::compile() {
@@ -178,5 +202,9 @@ void DX11Shader::compile() {
 		ThrowIfFailed(device->CreateComputeShader(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), NULL, &m_cs));
 		Memory::SafeRelease(compiledShader);
 	}
+}
+
+bool DX11Shader::setConstantDerived(const std::string& name, const void* data, uint32_t size, ShaderComponent::BIND_SHADER bindShader, uint32_t byteOffset, void* cmdList) {
+	throw std::logic_error("The method or operation is not implemented.");
 }
 
