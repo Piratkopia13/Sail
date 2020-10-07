@@ -547,7 +547,7 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 
 	// Dispatch horizontal blur pass
 	{
-		blurHorizontalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmd);
+		blurHorizontalShader.setConstantVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmd);
 
 		unsigned int x = (unsigned int)glm::ceil(ssaoWidth * settingsHorizontal.threadGroupXScale);
 		unsigned int y = (unsigned int)glm::ceil(ssaoHeight * settingsHorizontal.threadGroupYScale);
@@ -585,7 +585,7 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 
 	// Dispatch vertical blur pass
 	{
-		blurVerticalShader.setCBufferVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmd);
+		blurVerticalShader.setConstantVar("textureSizeDifference", &textureSizeDiff, sizeof(float), cmd);
 
 		m_ssaoShadingTexture = static_cast<SVkRenderableTexture*>(blurVerticalShader.getRenderableTexture("output"));
 		m_ssaoShadingTexture->resize(ssaoWidth, ssaoHeight);
