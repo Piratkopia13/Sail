@@ -2,7 +2,7 @@
 
 #include <fbxsdk.h>
 #include <string>
-#include "../../graphics/geometry/Model.h"
+#include "sail/api/Mesh.h"
 
 class PhongMaterial;
 
@@ -11,7 +11,7 @@ public:
 	FBXLoader(const std::string& filepath);
 	~FBXLoader();
 
-	std::shared_ptr<Model>& getModel();
+	std::shared_ptr<Mesh>& getMesh();
 
 private:
 	FbxScene* parseFBX(const std::string& filename);
@@ -27,7 +27,7 @@ private:
 	FbxScene* m_scene;
 
 	std::string m_filepath;
-	std::shared_ptr<Model> m_model;
+	std::shared_ptr<Mesh> m_mesh;
 
 
 };

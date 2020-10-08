@@ -16,9 +16,9 @@ EmptyState::EmptyState(StateStack& stack)
 
 	m_forwardRenderer = std::unique_ptr<Renderer>(Renderer::Create(Renderer::FORWARD));
 
-	m_model = ModelFactory::PlaneModel::Create(glm::vec2(10.0f), glm::vec2(5.0f));
+	m_mesh = MeshFactory::Plane::Create(glm::vec2(10.0f), glm::vec2(5.0f));
 	//m_model2 = ModelFactory::PlaneModel::Create(glm::vec2(0.5f), glm::vec2(50.0f));
-	m_model2 = m_app->getResourceManager().getModel("box.fbx");
+	//m_model2 = m_app->getResourceManager().getModel("box.fbx");
 
 	//m_material.setColor({0.8f, 0.2f, 0.2f, 1.0f});
 	/*m_material2.setDiffuseTexture("pbr/pavingStones/albedo.tga");
@@ -49,7 +49,7 @@ EmptyState::EmptyState(StateStack& stack)
 
 	{
 		auto e = Entity::Create("Static cube");
-		e->addComponent<ModelComponent>(m_model2);
+		e->addComponent<MeshComponent>(m_mesh2);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
 		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
 		mat->get()->setRoughnessScale(0.f);
@@ -60,7 +60,7 @@ EmptyState::EmptyState(StateStack& stack)
 
 	{
 		auto e = Entity::Create("Static cube");
-		e->addComponent<ModelComponent>(m_model2);
+		e->addComponent<MeshComponent>(m_mesh2);
 		e->addComponent<TransformComponent>(glm::vec3(0.f, -2.f, 0.f));
 		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
 		mat->get()->setRoughnessScale(0.f);

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ModelLoader.h"
 #include "Sail/utils/Utils.h"
+#include "Sail/api/Mesh.h"
 
 #include <assimp/Importer.hpp> // C++ importer interface
 #include <assimp/scene.h> // Output data structure
@@ -30,7 +31,6 @@ ModelLoader::ModelLoader(const std::string& filepath) {
 	if (!m_scene) {
 		Logger::Error(importer.GetErrorString());
 	}
-	m_model = std::make_unique<Model>(filepath);
 
 	ParseNodesWithMeshes(m_scene->mRootNode, nullptr, glm::mat4(1.0f));
 
@@ -40,8 +40,12 @@ ModelLoader::~ModelLoader() {
 
 }
 
-std::shared_ptr<Model>& ModelLoader::getModel() {
-	return m_model;
+std::shared_ptr<Mesh> ModelLoader::getMesh() {
+	return m_mesh;
+}
+
+Entity::SPtr ModelLoader::getEntity() {
+	return m_entity;
 }
 
 void ModelLoader::ParseNodesWithMeshes(const aiNode* node, SceneObject targetParent, const glm::mat4& accTransform) {
@@ -63,7 +67,8 @@ void ModelLoader::ParseNodesWithMeshes(const aiNode* node, SceneObject targetPar
 		transform = mat4_cast(node->mTransformation) * accTransform;
 	}
 	// continue for all child nodes
-	for (uint32_t i = 0; i < node->mNumChildren; i++) {
+	for (uint32_t i = 0; i < glm::min<int>(node->mNumChildren, 1); i++) {
+		//for (uint32_t i = 0; i < node->mNumChildren; i++) {
 		auto& child = node->mChildren[i];
 		ParseNodesWithMeshes(child, parent, transform);
 	}
@@ -100,8 +105,6 @@ void ModelLoader::ParseMeshes(const aiNode* node, SceneObject newObject) {
 		}
 	}
 
-	auto mesh = std::unique_ptr<Mesh>(Mesh::Create(buildData));
-	m_model->addMesh(std::move(mesh));
+	m_mesh = std::shared_ptr<Mesh>(Mesh::Create(buildData));
 
 }
-

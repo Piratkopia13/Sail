@@ -2,7 +2,7 @@
 #include "FBXLoader.h"
 
 #include "../../utils/Utils.h"
-#include "../../graphics/geometry/factory/CubeModel.h"
+#include "../../graphics/geometry/factory/Cube.h"
 #include "Sail/Application.h"
 #include "Sail/graphics/material/PhongMaterial.h"
 
@@ -14,7 +14,6 @@ FBXLoader::FBXLoader(const std::string& filepath)
 {
 	s_manager->SetIOSettings(s_ios);
 
-	m_model = std::make_unique<Model>(filepath);
 	m_scene = parseFBX(filepath);
 	
 	// Triangulate all meshes in the scene
@@ -38,7 +37,7 @@ FBXLoader::FBXLoader(const std::string& filepath)
 	} else {
 		Logger::Warning("Failed to load fbx file '" + filepath + "', using default cube.");
 		glm::vec3 halfSizes = glm::vec3(0.5, 0.5, 0.5);
-		m_model = ModelFactory::CubeModel::Create(halfSizes);
+		m_mesh = MeshFactory::Cube::Create(halfSizes);
 	}
 }
 
@@ -47,8 +46,8 @@ FBXLoader::~FBXLoader() {
 		m_scene->Destroy();
 }
 
-std::shared_ptr<Model>& FBXLoader::getModel() {
-	return m_model;
+std::shared_ptr<Mesh>& FBXLoader::getMesh() {
+	return m_mesh;
 }
 
 FbxScene* FBXLoader::parseFBX(const std::string& filename) {
@@ -80,15 +79,13 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 
 			Mesh::Data meshData;
 			getGeometry(mesh, meshData);
-			auto mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData));
+			m_mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData));
 
 			/*if (auto* material = dynamic_cast<PhongMaterial*>(mesh->getMaterial())) {
 				getMaterial(pNode, material);
 			} else {
 				Logger::Warning("Unknown material type found for fbx parsing. Only PhongMaterial can be read from files.");
 			}*/
-
-			m_model->addMesh(std::move(mesh));
 
 		}
 

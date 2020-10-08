@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include "../../graphics/geometry/Model.h"
+#include "Sail/entities/Entity.h"
 
+class Mesh;
 struct aiScene;
 struct aiNode;
 
@@ -11,7 +12,8 @@ public:
 	ModelLoader(const std::string& filepath);
 	~ModelLoader();
 
-	std::shared_ptr<Model>& getModel();
+	std::shared_ptr<Mesh> getMesh();
+	Entity::SPtr getEntity();
 
 private:
 	typedef void* SceneObject; // TODO: change
@@ -20,7 +22,8 @@ private:
 
 private:
 	std::string m_filepath;
-	std::shared_ptr<Model> m_model;
+	std::shared_ptr<Mesh> m_mesh;
+	Entity::SPtr m_entity;
 	const aiScene* m_scene;
 
 };

@@ -51,7 +51,7 @@ private:
 	std::vector<VkFramebuffer> m_geometryFramebuffers;
 
 	VkRenderPass m_shadingRenderPass;
-	std::unique_ptr<Model> m_screenQuadModel;
+	std::shared_ptr<Mesh> m_screenQuadMesh;
 	TexturesMaterial m_shadingPassMaterial;
 	Texture* m_brdfLutTexture;
 

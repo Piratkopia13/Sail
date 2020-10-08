@@ -1,8 +1,8 @@
 #pragma once
 #include "../entities/Entity.h"
+#include "sail/api/Mesh.h"
 
 class Texture;
-class Model;
 
 // The environment holds the skybox, radiance and irradiance cubemap textures
 class Environment {
@@ -20,7 +20,7 @@ private:
 	void init(const std::string& folderName);
 
 private:
-	std::shared_ptr<Model> m_skyboxModel;
+	std::shared_ptr<Mesh> m_skyboxMesh;
 	Entity::SPtr m_skyboxEntity;
 
 	Texture* m_irradianceMapTexture;

@@ -9,7 +9,7 @@
 #include "../resources/DescriptorHeap.h"
 #include <unordered_set>
 #include "../shader/DX12Shader.h"
-#include "Sail/graphics/geometry/factory/ScreenQuadModel.h"
+#include "Sail/graphics/geometry/factory/ScreenQuad.h"
 #include "Sail/graphics/Environment.h"
 #include "../shader/DX12ComputeShaderDispatcher.h"
 #include "DX12RaytracingRenderer.h"
@@ -34,7 +34,7 @@ DX12DeferredRenderer::DX12DeferredRenderer() {
 	sGBufferTextures.mrao = std::unique_ptr<DX12RenderableTexture>(SAIL_NEW DX12RenderableTexture(width, height, RenderableTexture::USAGE_SAMPLING_ACCESS, "GBuffer mrao", ResourceFormat::R8G8B8A8, m_clearColor));
 	sGBufferTextures.depth = std::unique_ptr<DX12RenderableTexture>(SAIL_NEW DX12RenderableTexture(width, height, RenderableTexture::USAGE_SAMPLING_ACCESS, "GBuffer depth", ResourceFormat::DEPTH));
 
-	m_screenQuadModel = ModelFactory::ScreenQuadModel::Create();
+	m_screenQuadMesh = MeshFactory::ScreenQuad::Create();
 
 	// SSAO
 	if (app->getSettings().getBool(Settings::Graphics_SSAO)) {
@@ -207,10 +207,9 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 	cmdList->SetGraphicsRootDescriptorTable(m_context->getRootSignEntryFromRegister("t0").rootSigIndex, m_context->getMainGPUDescriptorHeap()->getCurrentGPUDescriptorHandle());
 
 	auto* shader = &resman.getShaderSet(Shaders::SSAOShader);
-	auto* mesh = m_screenQuadModel->getMesh(0);
 
 	// Find a matching pipelineStateObject and bind it
-	auto& pso = resman.getPSO(shader, mesh);
+	auto& pso = resman.getPSO(shader, m_screenQuadMesh.get());
 	pso.bind(cmdList);
 
 	shader->trySetCBufferVar("sys_mView", &camera->getViewMatrix(), sizeof(glm::mat4), cmdList);
@@ -231,7 +230,7 @@ void DX12DeferredRenderer::runSSAO(ID3D12GraphicsCommandList4* cmdList) {
 	m_context->getDevice()->CopyDescriptorsSimple(1, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle(), sGBufferTextures.normals->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV); // t2
 
 
-	mesh->draw(*this, &m_shadingPassMaterial, shader, cmdList);
+	m_screenQuadMesh->draw(*this, &m_shadingPassMaterial, shader, cmdList);
 
 	// Blur ssao output
 	auto& blurHorizontalShader = Application::getInstance()->getResourceManager().getShaderSet(Shaders::GaussianBlurHorizontalComputeShader);
@@ -325,10 +324,9 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	}
 
 	auto* shader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::DeferredShadingPassShader);
-	auto* mesh = m_screenQuadModel->getMesh(0);
 
 	// Find a matching pipelineStateObject and bind it
-	auto& pso = resman.getPSO(shader, mesh);
+	auto& pso = resman.getPSO(shader, m_screenQuadMesh.get());
 	pso.bind(cmdList);
 
 	shader->trySetCBufferVar("sys_mViewInv", &glm::inverse(camera->getViewMatrix()), sizeof(glm::mat4), cmdList);
@@ -396,7 +394,7 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 	//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
 	//m_context->getDevice()->CreateShaderResourceView(nullptr, &srvDesc, m_context->getMainGPUDescriptorHeap()->getNextCPUDescriptorHandle());
 
-	mesh->draw(*this, nullptr, shader, cmdList);
+	m_screenQuadMesh->draw(*this, nullptr, shader, cmdList);
 }
 
 void DX12DeferredRenderer::runFrameExecution(ID3D12GraphicsCommandList4* cmdList) {

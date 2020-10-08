@@ -239,8 +239,8 @@ void EntitiesGui::selectEntity(Entity::SPtr entity) {
 void EntitiesGui::addComponent(AddableComponent::Type comp) {
 
 	switch (comp) {
-	case AddableComponent::ModelComponent:
-		m_selectedEntity->addComponent<ModelComponent>(ModelFactory::CubeModel::Create(glm::vec3(0.5f)));
+	case AddableComponent::MeshComponent:
+		m_selectedEntity->addComponent<MeshComponent>(MeshFactory::Cube::Create(glm::vec3(0.5f)));
 		break;
 	case AddableComponent::TransformComponent:
 		m_selectedEntity->addComponent<TransformComponent>();

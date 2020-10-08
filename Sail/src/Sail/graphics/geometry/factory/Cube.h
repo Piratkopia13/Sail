@@ -1,13 +1,13 @@
 #pragma once
 
 #include <memory>
-#include "../Model.h"
+#include "sail/api/Mesh.h"
 
-namespace ModelFactory {
+namespace MeshFactory {
 
-	class CubeModel {
+	class Cube {
 	public:
-		static std::shared_ptr<Model> Create(const glm::vec3& halfSizes) {
+		static std::shared_ptr<Mesh> Create(const glm::vec3& halfSizes) {
 
 			const int numVerts = 36;
 
@@ -161,7 +161,7 @@ namespace ModelFactory {
 			buildData.texCoords = texCoords;
 			buildData.normals = normals;
 
-			return std::make_shared<Model>(buildData, "CubeModel from factory");
+			return std::shared_ptr<Mesh>(Mesh::Create(buildData));
 
 		}
 	};

@@ -1,13 +1,12 @@
 #pragma once
 
 #include <memory>
-#include "../Model.h"
 
-namespace ModelFactory {
+namespace MeshFactory {
 
-	class ConeModel {
+	class Cone {
 	public:
-		static std::unique_ptr<Model> Create(const glm::vec3& halfSizes) {
+		static std::unique_ptr<Mesh> Create(const glm::vec3& halfSizes) {
 
 			const int numVerts = 36;
 
@@ -161,9 +160,7 @@ namespace ModelFactory {
 			buildData.texCoords = texCoords;
 			buildData.normals = normals;
 
-			std::unique_ptr<Model> model = std::make_unique<Model>(buildData, "ConeModel from factory");
-
-			return model;
+			return std::unique_ptr<Mesh>(Mesh::Create(buildData));
 
 		}
 	};

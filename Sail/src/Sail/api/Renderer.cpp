@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Renderer.h"
-#include "Sail/graphics/geometry/Model.h"
 #include "../Application.h"
 
 Renderer::Renderer()
@@ -12,12 +11,6 @@ void Renderer::begin(Camera* camera, Environment* environment) {
 	this->environment = environment;
 	commandQueue.clear();
 	commandQueueCustom.clear();
-}
-
-void Renderer::submit(Model* model, Shader* shader, Material* material, const glm::mat4& modelMatrix) {
-	for (unsigned int i = 0; i < model->getNumberOfMeshes(); i++) {
-		submit(model->getMesh(i), shader, material, modelMatrix);
-	}
 }
 
 void Renderer::submit(Mesh* mesh, Shader* shader, Material* material, const glm::mat4& modelMatrix) {

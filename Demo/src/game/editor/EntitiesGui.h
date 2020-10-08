@@ -5,7 +5,7 @@
 
 namespace AddableComponent {
     enum Type {
-        ModelComponent = 0,
+        MeshComponent = 0,
         TransformComponent,
         MaterialComponent,
         PointLightComponent,
@@ -29,7 +29,7 @@ public:
 
 private:
     // Should match order of AddableComponent
-	const char* m_componentNames[AddableComponent::NUM_COMPONENTS] = { "ModelComponent", "TransformComponent", "MaterialComponent", "PointLightComponent", "DirectionalLightComponent" };
+	const char* m_componentNames[AddableComponent::NUM_COMPONENTS] = { "MeshComponent", "TransformComponent", "MaterialComponent", "PointLightComponent", "DirectionalLightComponent" };
 	const char* m_materialNames[AddableMaterial::NUM_MATERIALS] = { "PBR", "Phong", "Textures", "Outline" };
 
 private:

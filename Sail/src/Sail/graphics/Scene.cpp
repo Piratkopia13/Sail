@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Scene.h"
 #include "../entities/components/Components.h"
-#include "geometry/Model.h"
 #include "light/LightSetup.h"
 #include "../utils/Utils.h"
 #include "Sail/Application.h"
@@ -71,10 +70,10 @@ void Scene::draw(Camera& camera) {
 	// Draw skybox first for transparency to work with it
 	{
 		auto e = m_environment->getSkyboxEntity();
-		auto model = e->getComponent<ModelComponent>();
+		auto mesh = e->getComponent<MeshComponent>();
 		auto transform = e->getComponent<TransformComponent>();
 		auto material = e->getComponent<MaterialComponent<>>();
-		m_forwardRenderer->submit(model->getModel().get(), material->get()->getShader(Renderer::FORWARD), material->get(), transform->getMatrix());
+		m_forwardRenderer->submit(mesh->get(), material->get()->getShader(Renderer::FORWARD), material->get(), transform->getMatrix());
 	}
 #endif
 
@@ -90,22 +89,22 @@ void Scene::draw(Camera& camera) {
 			auto dlComp = entity->getComponent<DirectionalLightComponent>();
 			if (dlComp) lightSetup.setDirectionalLight(dlComp.get());
 
-			auto model = entity->getComponent<ModelComponent>();
+			auto mesh = entity->getComponent<MeshComponent>();
 			auto transform = entity->getComponent<TransformComponent>();
 
 			// Submit a copy for rendering as outline if selected in gui
-			if (entity->isSelectedInGui() && model && model->getModel() && transform)
-				m_forwardRenderer->submit(model->getModel().get(), outlineShader, &m_outlineMaterial, transform->getMatrix());
+			if (entity->isSelectedInGui() && mesh && mesh->get() && transform)
+				m_forwardRenderer->submit(mesh->get(), outlineShader, &m_outlineMaterial, transform->getMatrix());
 
 			Material* material = nullptr;
 			if (auto materialComp = entity->getComponent<MaterialComponent<>>())
 				material = materialComp->get();
 
-			if (model && model->getModel() && transform && material) {
+			if (mesh && mesh->get() && transform && material) {
 #if USE_DEFERRED
 				if (doDXR) {
 					// Submit all to the raytracer
-					m_raytracingRenderer->submit(model->getModel().get(), nullptr, material, transform->getMatrix());
+					m_raytracingRenderer->submit(mesh->get(), nullptr, material, transform->getMatrix());
 				}
 #endif 
 
@@ -113,12 +112,12 @@ void Scene::draw(Camera& camera) {
 				Shader* shader = nullptr;
 #if USE_DEFERRED
 				if (shader = material->getShader(Renderer::DEFERRED))
-					m_deferredRenderer->submit(model->getModel().get(), shader, material, transform->getMatrix());
+					m_deferredRenderer->submit(mesh->get(), shader, material, transform->getMatrix());
 				else
 #endif 
 				{
 					if (shader = material->getShader(Renderer::FORWARD))
-						m_forwardRenderer->submit(model->getModel().get(), shader, material, transform->getMatrix());
+						m_forwardRenderer->submit(mesh->get(), shader, material, transform->getMatrix());
 				}
 				
 				entity->setIsBeingRendered(true);

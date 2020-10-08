@@ -29,13 +29,13 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
 	// Create/load models
-	auto planeModel = ModelFactory::PlaneModel::Create(glm::vec2(50.f), glm::vec2(30.0f));
+	auto planeMesh = MeshFactory::Plane::Create(glm::vec2(50.f), glm::vec2(30.0f));
 	//auto cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f));
 
 	// Create entities
 	{
 		auto e = Entity::Create("Floor");
-		e->addComponent<ModelComponent>(planeModel);
+		e->addComponent<MeshComponent>(planeMesh);
 		e->addComponent<TransformComponent>();
 		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
 		mat->get()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
@@ -45,7 +45,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	}
 	{
 		auto e = Entity::Create("Window");
-		e->addComponent<ModelComponent>(ModelFactory::CubeModel::Create({1.f, 1.f, 1.f}));
+		e->addComponent<MeshComponent>(MeshFactory::Cube::Create({1.f, 1.f, 1.f}));
 		e->addComponent<TransformComponent>(glm::vec3(0.f, 4.f, 4.f), glm::vec3(0.f), glm::vec3(1.f, 1.f, 0.05f));
 		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
 		mat->get()->enableTransparency(true);
@@ -56,7 +56,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	ModelLoader testLoader("res/models/sponza.fbx");
 	{
 		auto e = Entity::Create("Test Model");
-		e->addComponent<ModelComponent>(testLoader.getModel());
+		e->addComponent<MeshComponent>(testLoader.getMesh());
 		e->addComponent<TransformComponent>();
 		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
 		m_scene.addEntity(e);
@@ -108,27 +108,27 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 		}*/
 	}
 	// PBR spheres
-	{
-		auto sphereModel = m_app->getResourceManager().getModel("sphere.fbx");
-		const unsigned int gridSize = 7;
-		const float cellSize = 1.3f;
-		for (unsigned int x = 0; x < gridSize; x++) {
-			for (unsigned int y = 0; y < gridSize; y++) {
-				auto e = Entity::Create("Sphere " + std::to_string(x * gridSize + y + 1));
-				auto model = e->addComponent<ModelComponent>(sphereModel);
-				auto transform = e->addComponent<TransformComponent>(glm::vec3(x * cellSize - (cellSize * (gridSize - 1.0f) * 0.5f), y * cellSize + 1.0f, 0.f));
-				transform->setScale(0.5f);
+	//{
+	//	auto sphereModel = m_app->getResourceManager().getModel("sphere.fbx");
+	//	const unsigned int gridSize = 7;
+	//	const float cellSize = 1.3f;
+	//	for (unsigned int x = 0; x < gridSize; x++) {
+	//		for (unsigned int y = 0; y < gridSize; y++) {
+	//			auto e = Entity::Create("Sphere " + std::to_string(x * gridSize + y + 1));
+	//			auto model = e->addComponent<ModelComponent>(sphereModel);
+	//			auto transform = e->addComponent<TransformComponent>(glm::vec3(x * cellSize - (cellSize * (gridSize - 1.0f) * 0.5f), y * cellSize + 1.0f, 0.f));
+	//			transform->setScale(0.5f);
 
-				PBRMaterial* material = e->addComponent<MaterialComponent<PBRMaterial>>()->get();
-				material->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-				// Vary metalness and roughness with cell location
-				material->setRoughnessScale(1.f - (x / (float)gridSize));
-				material->setMetalnessScale(y / (float)gridSize);
+	//			PBRMaterial* material = e->addComponent<MaterialComponent<PBRMaterial>>()->get();
+	//			material->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	//			// Vary metalness and roughness with cell location
+	//			material->setRoughnessScale(1.f - (x / (float)gridSize));
+	//			material->setMetalnessScale(y / (float)gridSize);
 
-				m_scene.addEntity(e);
-			}
-		}
-	}
+	//			m_scene.addEntity(e);
+	//		}
+	//	}
+	//}
 }
 
 ModelViewerState::~ModelViewerState() {

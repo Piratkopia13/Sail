@@ -2,7 +2,6 @@
 
 #include "loaders/FBXLoader.h"
 #include "ParsedScene.h"
-#include "../graphics/geometry/Model.h"
 #include "../utils/Utils.h"
 
 const std::string ParsedScene::DEFAULT_MODEL_LOCATION = "res/models/";
@@ -17,12 +16,12 @@ ParsedScene::ParsedScene(const std::string& filename, bool useAbsolutePath) {
 
 	std::string filepath = (useAbsolutePath) ? filename : DEFAULT_MODEL_LOCATION + filename;
 	FBXLoader loader(filepath);
-	m_model = loader.getModel();
+	m_mesh = loader.getMesh();
 }
 
 ParsedScene::~ParsedScene() {
 }
 
-std::shared_ptr<Model> ParsedScene::getModel() {
-	return m_model;
+std::shared_ptr<Mesh> ParsedScene::getMesh() {
+	return m_mesh;
 }

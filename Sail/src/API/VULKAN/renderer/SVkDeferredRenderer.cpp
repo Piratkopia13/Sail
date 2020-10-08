@@ -2,7 +2,7 @@
 #include "SVkDeferredRenderer.h"
 #include "Sail/graphics/light/LightSetup.h"
 #include "Sail/graphics/Environment.h"
-#include "Sail/graphics/geometry/factory/ScreenQuadModel.h"
+#include "Sail/graphics/geometry/factory/ScreenQuad.h"
 #include "../shader/SVkShader.h"
 #include "../SVkUtils.h"
 
@@ -35,7 +35,7 @@ SVkDeferredRenderer::SVkDeferredRenderer()
 	Application::getInstance()->getResourceManager().loadTexture("pbr/brdfLUT.tga");
 	m_brdfLutTexture = &Application::getInstance()->getResourceManager().getTexture("pbr/brdfLUT.tga");
 
-	m_screenQuadModel = ModelFactory::ScreenQuadModel::Create();
+	m_screenQuadMesh = MeshFactory::ScreenQuad::Create();
 
 	// SSAO
 	if (app->getSettings().getBool(Settings::Graphics_SSAO)) {
@@ -490,10 +490,9 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 	}
 
 	auto* shader = static_cast<SVkShader*>(&resman.getShaderSet(Shaders::SSAOShader));
-	auto* mesh = m_screenQuadModel->getMesh(0);
 
 	// Find a matching pipelineStateObject
-	auto& pso = static_cast<SVkPipelineStateObject&>(resman.getPSO(shader, mesh));
+	auto& pso = static_cast<SVkPipelineStateObject&>(resman.getPSO(shader, m_screenQuadMesh.get()));
 
 	// Bind images to slots in shader with specific names
 	{
@@ -530,7 +529,7 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 
 		pso.bind(cmd); // Binds the pipeline and descriptor sets
 
-		mesh->draw(*this, &m_shadingPassMaterial, shader, cmd);
+		m_screenQuadMesh->draw(*this, &m_shadingPassMaterial, shader, cmd);
 	}
 
 	vkCmdEndRenderPass(cmd);
@@ -671,10 +670,9 @@ void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 
 
 	auto* shader = static_cast<SVkShader*>(&resman.getShaderSet(Shaders::DeferredShadingPassShader));
-	auto* mesh = m_screenQuadModel->getMesh(0);
 
 	// Find a matching pipelineStateObject
-	auto& pso = static_cast<SVkPipelineStateObject&>(resman.getPSO(shader, mesh));
+	auto& pso = static_cast<SVkPipelineStateObject&>(resman.getPSO(shader, m_screenQuadMesh.get()));
 
 	// Set up material
 	{
@@ -720,7 +718,7 @@ void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 	pso.bind(cmd); // Binds the pipeline and descriptor sets
 
 	// Draw 
-	mesh->draw(*this, &m_shadingPassMaterial, shader, cmd);
+	m_screenQuadMesh->draw(*this, &m_shadingPassMaterial, shader, cmd);
 
 	vkCmdEndRenderPass(cmd);
 }

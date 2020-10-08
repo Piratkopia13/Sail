@@ -1,13 +1,13 @@
 #pragma once
 
 #include <memory>
-#include "../Model.h"
+#include "sail/api/Mesh.h"
 
-namespace ModelFactory {
+namespace MeshFactory {
 
-	class PlaneModel {
+	class Plane {
 	public:
-		static std::shared_ptr<Model> Create(const glm::vec2& halfSizes, const glm::vec2& texCoordScale = glm::vec2(1.f)) {
+		static std::shared_ptr<Mesh> Create(const glm::vec2& halfSizes, const glm::vec2& texCoordScale = glm::vec2(1.f)) {
 
 			const int numVerts = 4;
 			Mesh::vec3* positions = SAIL_NEW Mesh::vec3[numVerts]{
@@ -60,7 +60,7 @@ namespace ModelFactory {
 			buildData.numIndices = numIndices;
 			buildData.indices = indices;
 
-			return std::make_shared<Model>(buildData, "PlaneModel from factory");
+			return std::shared_ptr<Mesh>(Mesh::Create(buildData));
 
 		}
 	};

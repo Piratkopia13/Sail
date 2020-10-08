@@ -1,13 +1,12 @@
 #pragma once
 
 #include <memory>
-#include "../Model.h"
 
-namespace ModelFactory {
+namespace MeshFactory {
 
-	class ScreenQuadModel {
+	class ScreenQuad {
 	public:
-		static std::unique_ptr<Model> Create() {
+		static std::unique_ptr<Mesh> Create() {
 			glm::vec2 halfSizes(1.f, 1.f);
 
 			const int numVerts = 4;
@@ -37,7 +36,7 @@ namespace ModelFactory {
 			data.indices = indices;
 			data.texCoords = texCoords;
 
-			return std::make_unique<Model>(data, "ScreenQuadModel from factory");
+			return std::unique_ptr<Mesh>(Mesh::Create(data));
 		}
 	};
 	

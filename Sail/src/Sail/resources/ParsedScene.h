@@ -1,6 +1,6 @@
 #pragma once
 
-class Model;
+class Mesh;
 
 class ParsedScene {
 public:
@@ -10,9 +10,9 @@ public:
 	ParsedScene(const std::string& filename, bool useAbsolutePath = false);
 
 	~ParsedScene();
-	std::shared_ptr<Model> getModel();
+	std::shared_ptr<Mesh> getMesh();
 
 private:
-	std::shared_ptr<Model> m_model;
+	std::shared_ptr<Mesh> m_mesh;
 
 };

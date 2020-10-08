@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Sail/api/GraphicsAPI.h"
-#include "Sail/graphics/geometry/Model.h"
 #include "Sail/graphics/camera/Camera.h"
 #include "Sail/graphics/shader/BindShader.h"
 #include "InputLayout.h"

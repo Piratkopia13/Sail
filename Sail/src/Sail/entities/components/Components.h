@@ -2,7 +2,7 @@
 
 #include "Component.h"
 #include "TransformComponent.h"
-#include "ModelComponent.h"
+#include "MeshComponent.h"
 #include "MaterialComponent.h"
 #include "PointLightComponent.h"
 #include "DirectionalLightComponent.h"

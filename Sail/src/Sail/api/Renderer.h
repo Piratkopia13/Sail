@@ -7,7 +7,6 @@
 class Mesh;
 class Material;
 class Camera;
-class Model;
 class LightSetup;
 class Environment;
 class Shader;
@@ -53,7 +52,6 @@ public:
 	virtual ~Renderer() {}
 
 	virtual void begin(Camera* camera, Environment* environment);
-	void submit(Model* model, Shader* shader, Material* material, const glm::mat4& modelMatrix);
 	virtual void submit(Mesh* mesh, Shader* shader, Material* material, const glm::mat4& modelMatrix);
 	virtual void setLightSetup(LightSetup* lightSetup);
 	virtual void useDepthBuffer(void* buffer, void* cmdList);

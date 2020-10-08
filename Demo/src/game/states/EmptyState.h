@@ -24,8 +24,8 @@ public:
 private:
 	Application* m_app;
 	std::unique_ptr<Renderer> m_forwardRenderer;
-	std::shared_ptr<Model> m_model;
-	std::shared_ptr<Model> m_model2;
+	std::shared_ptr<Mesh> m_mesh;
+	std::shared_ptr<Mesh> m_mesh2;
 	
 	//PhongMaterial m_material;
 	//PhongMaterial m_material2;

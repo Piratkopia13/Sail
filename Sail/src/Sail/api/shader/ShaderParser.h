@@ -4,7 +4,6 @@
 #include "Sail/api/shader/Sampler.h"
 #include "Sail/api/RenderableTexture.h"
 #include "Sail/api/GraphicsAPI.h"
-#include "Sail/graphics/geometry/Model.h"
 #include "Sail/graphics/camera/Camera.h"
 #include "Sail/utils/Utils.h"
 #include "InputLayout.h"

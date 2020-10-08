@@ -158,23 +158,27 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 // Model
 //
 
-void ResourceManager::loadModel(const std::string& filename, bool useAbsolutePath) {
-	// Insert the new model
-	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, useAbsolutePath) });
-}
-std::shared_ptr<Model> ResourceManager::getModel(const std::string& filename, bool useAbsolutePath) {
-	auto pos = m_fbxModels.find(filename);
-	if (pos == m_fbxModels.end()) {
-		// Model was not yet loaded, load it and return
-		loadModel(filename, useAbsolutePath);
+//void ResourceManager::loadModel(const std::string& filename, bool useAbsolutePath) {
+//	// Insert the new model
+//	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, useAbsolutePath) });
+//}
+//std::shared_ptr<Model> ResourceManager::getModel(const std::string& filename, bool useAbsolutePath) {
+//	auto pos = m_fbxModels.find(filename);
+//	if (pos == m_fbxModels.end()) {
+//		// Model was not yet loaded, load it and return
+//		loadModel(filename, useAbsolutePath);
+//
+//		return m_fbxModels.find(filename)->second->getModel();
+//	}
+//	return pos->second->getModel();
+//}
+//bool ResourceManager::hasModel(const std::string& filename) {
+//	return m_fbxModels.find(filename) != m_fbxModels.end();
+//}
 
-		return m_fbxModels.find(filename)->second->getModel();
-	}
-	return pos->second->getModel();
-}
-bool ResourceManager::hasModel(const std::string& filename) {
-	return m_fbxModels.find(filename) != m_fbxModels.end();
-}
+//
+// Shader
+//
 
 void ResourceManager::loadShaderSet(Shaders::ShaderIdentifier shaderIdentifier) {
 	m_shaders.insert({ shaderIdentifier, Shader::Create(m_shaderSettings[shaderIdentifier]) });
@@ -229,6 +233,10 @@ void ResourceManager::reloadAllShaders() {
 	m_psos.clear();
 }
 
+//
+// PipelineStateObjects (PSOs)
+//
+
 PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {
 	unsigned int hash = shader->getID() * 10e5;
 	unsigned int meshHash = 0;
@@ -250,6 +258,10 @@ PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {
 
 	return *pos->second;
 }
+
+//
+// Storage information
+//
 
 unsigned int ResourceManager::getTextureDataSize() const {
 	unsigned int total = 0;

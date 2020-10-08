@@ -5,7 +5,7 @@
 #include "Sail/api/shader/Shader.h"
 #include "Sail/Application.h"
 #include "../DX11API.h"
-#include "Sail/graphics/geometry/factory/ScreenQuadModel.h"
+#include "Sail/graphics/geometry/factory/ScreenQuad.h"
 #include "../resources/DX11RenderableTexture.h"
 #include "Sail/graphics/Environment.h"
 #include "../shader/DX11Shader.h"

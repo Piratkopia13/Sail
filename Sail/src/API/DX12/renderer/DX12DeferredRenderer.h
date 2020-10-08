@@ -48,7 +48,7 @@ private:
 
 	glm::vec4 m_clearColor;
 	static GBufferTextures sGBufferTextures;
-	std::unique_ptr<Model> m_screenQuadModel;
+	std::shared_ptr<Mesh> m_screenQuadMesh;
 	TexturesMaterial m_shadingPassMaterial;
 
 	std::unique_ptr<SSAO> m_ssao;
