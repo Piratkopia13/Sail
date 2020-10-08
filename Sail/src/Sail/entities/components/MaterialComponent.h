@@ -7,6 +7,7 @@
 #include "Sail/graphics/material/PhongMaterial.h"
 #include "Sail/graphics/material/PBRMaterial.h"
 #include "Sail/graphics/material/OutlineMaterial.h"
+#include "Sail/api/Texture.h"
 
 template <typename T = Material>
 class MaterialComponent : public Component {

@@ -53,6 +53,8 @@ Entity::SPtr ModelLoader::ParseNodesWithMeshes(const aiNode* node, Entity::SPtr 
 	// if node has meshes, create a new scene object for it
 	if (node->mNumMeshes > 0) {
 		auto newEntity = Entity::Create(node->mName.C_Str());
+		newEntity->addComponent<TransformComponent>(mat4_cast(node->mTransformation));
+		newEntity->addComponent<MaterialComponent<PBRMaterial>>();
 		//targetParent.addChild(newObject);
 		// copy the meshes
 		ParseMeshes(node, newEntity);

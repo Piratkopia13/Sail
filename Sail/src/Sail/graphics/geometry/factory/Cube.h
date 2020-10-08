@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "sail/api/Mesh.h"
+#include "Sail/api/Mesh.h"
 
 namespace MeshFactory {
 

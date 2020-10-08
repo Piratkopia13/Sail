@@ -122,31 +122,32 @@ project "Demo"
 		optimize "On"
 
 	-- Copy dlls to executable path
+	-- x64
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		postbuildcommands {
 			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
 		}
-		filter "configurations:Debug"
-			postbuildcommands {
-				"{COPY} \"../libraries/assimp/x64-"..AssimpBuildCFG.."/bin/"..AssimpLinkDebug..".dll\" \"%{cfg.targetdir}\""
-			}
-		filter "configurations:Release"
-			postbuildcommands {
-				"{COPY} \"../libraries/assimp/x64-"..AssimpBuildCFG.."/bin/"..AssimpLinkRelease.."\" \"%{cfg.targetdir}\""
-			}
-
+	filter { "platforms:*64", "configurations:Debug" }
+		postbuildcommands {
+			"{COPY} \"../libraries/assimp/x64-"..AssimpBuildCFG.."/bin/"..AssimpLinkDebug..".dll\" \"%{cfg.targetdir}\""
+		}
+	filter { "platforms:*64", "configurations:Release" }
+		postbuildcommands {
+			"{COPY} \"../libraries/assimp/x64-"..AssimpBuildCFG.."/bin/"..AssimpLinkRelease..".dll\" \"%{cfg.targetdir}\""
+		}
+	-- x86
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		postbuildcommands {
 			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
 		}
-		filter "configurations:Debug"
-			postbuildcommands {
-				"{COPY} \"../libraries/assimp/x64-"..AssimpBuildCFG.."/bin/"..AssimpLinkDebug..".dll\" \"%{cfg.targetdir}\""
-			}
-		filter "configurations:Release"
-			postbuildcommands {
-				"{COPY} \"../libraries/assimp/x64-"..AssimpBuildCFG.."/bin/"..AssimpLinkRelease.."\" \"%{cfg.targetdir}\""
-			}
+	filter { "platforms:*86", "configurations:Debug" }
+		postbuildcommands {
+			"{COPY} \"../libraries/assimp/x86-"..AssimpBuildCFG.."/bin/"..AssimpLinkDebug..".dll\" \"%{cfg.targetdir}\""
+		}
+	filter { "platforms:*86", "configurations:Release" }
+		postbuildcommands {
+			"{COPY} \"../libraries/assimp/x86-"..AssimpBuildCFG.."/bin/"..AssimpLinkRelease..".dll\" \"%{cfg.targetdir}\""
+		}
 
 -----------------------------------
 --------------  Sail --------------

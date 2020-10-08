@@ -77,54 +77,12 @@ void Scene::draw(Camera& camera) {
 	}
 #endif
 
-	auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
 	// Drawing of meshes
 	{
 		SAIL_PROFILE_SCOPE("Submit models");
 
 		for (Entity::SPtr& entity : m_entities) {
-			// Add all lights to the lightSetup
-			auto plComp = entity->getComponent<PointLightComponent>();
-			if (plComp) lightSetup.addPointLight(plComp.get());
-			auto dlComp = entity->getComponent<DirectionalLightComponent>();
-			if (dlComp) lightSetup.setDirectionalLight(dlComp.get());
-
-			auto mesh = entity->getComponent<MeshComponent>();
-			auto transform = entity->getComponent<TransformComponent>();
-
-			// Submit a copy for rendering as outline if selected in gui
-			if (entity->isSelectedInGui() && mesh && mesh->get() && transform)
-				m_forwardRenderer->submit(mesh->get(), outlineShader, &m_outlineMaterial, transform->getMatrix());
-
-			Material* material = nullptr;
-			if (auto materialComp = entity->getComponent<MaterialComponent<>>())
-				material = materialComp->get();
-
-			if (mesh && mesh->get() && transform && material) {
-#if USE_DEFERRED
-				if (doDXR) {
-					// Submit all to the raytracer
-					m_raytracingRenderer->submit(mesh->get(), nullptr, material, transform->getMatrix());
-				}
-#endif 
-
-				// Submit to deferred or forward depending on the material
-				Shader* shader = nullptr;
-#if USE_DEFERRED
-				if (shader = material->getShader(Renderer::DEFERRED))
-					m_deferredRenderer->submit(mesh->get(), shader, material, transform->getMatrix());
-				else
-#endif 
-				{
-					if (shader = material->getShader(Renderer::FORWARD))
-						m_forwardRenderer->submit(mesh->get(), shader, material, transform->getMatrix());
-				}
-				
-				entity->setIsBeingRendered(true);
-			} else {
-				// Indicate that the entity is not being rendered for some reason, this may be shown in the gui
-				entity->setIsBeingRendered(false);
-			}
+			submitEntity(entity, &lightSetup, doDXR);
 		}
 	}
 #if USE_DEFERRED
@@ -166,3 +124,63 @@ std::vector<Entity::SPtr>& Scene::getEntites() {
 Environment* Scene::getEnvironment() {
 	return m_environment.get();
 }
+
+void Scene::submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDXR) {
+	auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
+	
+	// Add all lights to the lightSetup
+	auto plComp = entity->getComponent<PointLightComponent>();
+	if (plComp) lightSetup->addPointLight(plComp.get());
+	auto dlComp = entity->getComponent<DirectionalLightComponent>();
+	if (dlComp) lightSetup->setDirectionalLight(dlComp.get());
+
+	auto mesh = entity->getComponent<MeshComponent>();
+	auto transform = entity->getComponent<TransformComponent>();
+
+	// Submit a copy for rendering as outline if selected in gui
+	if (entity->isSelectedInGui() && mesh && mesh->get() && transform)
+		m_forwardRenderer->submit(mesh->get(), outlineShader, &m_outlineMaterial, transform->getMatrix());
+
+	Material* material = nullptr;
+	if (auto materialComp = entity->getComponent<MaterialComponent<>>())
+		material = materialComp->get();
+
+	if (mesh && mesh->get() && transform && material) {
+#if USE_DEFERRED
+		if (doDXR) {
+			// Submit all to the raytracer
+			m_raytracingRenderer->submit(mesh->get(), nullptr, material, transform->getMatrix());
+		}
+#endif 
+
+		// Submit to deferred or forward depending on the material
+		Shader* shader = nullptr;
+#if USE_DEFERRED
+		if (shader = material->getShader(Renderer::DEFERRED))
+			m_deferredRenderer->submit(mesh->get(), shader, material, transform->getMatrix());
+		else
+#endif 
+		{
+			if (shader = material->getShader(Renderer::FORWARD))
+				m_forwardRenderer->submit(mesh->get(), shader, material, transform->getMatrix());
+		}
+
+		entity->setIsBeingRendered(true);
+	} else {
+		// Indicate that the entity is not being rendered for some reason, this may be shown in the gui
+		entity->setIsBeingRendered(false);
+	}
+
+
+	// Draw children recursively
+	auto& relation = entity->getComponent<RelationshipComponent>();
+	if (relation) {
+		auto curr = relation->first;
+		for (size_t i = 0; i < relation->numChildren; ++i) {
+			submitEntity(curr, lightSetup, doDXR); // Recursive call
+
+			curr = curr->getComponent<RelationshipComponent>()->next;
+		}
+	}
+}
+

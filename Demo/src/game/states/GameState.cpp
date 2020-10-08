@@ -109,30 +109,30 @@ GameState::GameState(StateStack& stack)
 	//	m_scene.addEntity(m_texturedCubeEntity);
 	//	parentEntity->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>().get());
 	//}
-	{
-		auto e = Entity::Create("CubeRoot");
-		e->addComponent<MeshComponent>(cubeMesh);
-		e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
-		e->addComponent<MaterialComponent<PhongMaterial>>();
-		m_scene.addEntity(e);
-		m_transformTestEntities.push_back(e);
-	}
-	{
-		auto e = Entity::Create("CubeChild");
-		e->addComponent<MeshComponent>(cubeMesh);
-		e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>().get());
-		e->addComponent<MaterialComponent<PhongMaterial>>();
-		m_scene.addEntity(e);
-		m_transformTestEntities.push_back(e);
-	}
-	{
-		auto e = Entity::Create("CubeChildChild");
-		e->addComponent<MeshComponent>(cubeMesh);
-		e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>().get());
-		e->addComponent<MaterialComponent<PhongMaterial>>();
-		m_scene.addEntity(e);
-		m_transformTestEntities.push_back(e);
-	}
+	//{
+	//	auto e = Entity::Create("CubeRoot");
+	//	e->addComponent<MeshComponent>(cubeMesh);
+	//	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	//	e->addComponent<MaterialComponent<PhongMaterial>>();
+	//	m_scene.addEntity(e);
+	//	m_transformTestEntities.push_back(e);
+	//}
+	//{
+	//	auto e = Entity::Create("CubeChild");
+	//	e->addComponent<MeshComponent>(cubeMesh);
+	//	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>().get());
+	//	e->addComponent<MaterialComponent<PhongMaterial>>();
+	//	m_scene.addEntity(e);
+	//	m_transformTestEntities.push_back(e);
+	//}
+	//{
+	//	auto e = Entity::Create("CubeChildChild");
+	//	e->addComponent<MeshComponent>(cubeMesh);
+	//	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>().get());
+	//	e->addComponent<MaterialComponent<PhongMaterial>>();
+	//	m_scene.addEntity(e);
+	//	m_transformTestEntities.push_back(e);
+	//}
 	
 	// Random cube maze
 	const unsigned int mazeStart = 5;
@@ -158,17 +158,6 @@ GameState::~GameState() {
 // Process input for the state
 bool GameState::processInput(float dt) {
 	SAIL_PROFILE_FUNCTION();
-
-#ifdef _DEBUG
-	if (Input::WasKeyJustPressed(SAIL_KEY_1)) {
-		Logger::Log("Setting parent");
-		m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformComponent>().get());
-	}
-	if (Input::WasKeyJustPressed(SAIL_KEY_2)) {
-		Logger::Log("Removing parent");
-		m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
-	}
-#endif
 
 	// Update the camera controller from input devices
 	m_camController.update(dt);

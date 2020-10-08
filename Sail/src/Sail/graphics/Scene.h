@@ -21,6 +21,9 @@ public:
 	Environment* getEnvironment();
 
 private:
+	void submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDXR);
+
+private:
 	std::unique_ptr<Environment> m_environment;
 	std::vector<Entity::SPtr> m_entities;
 	std::unique_ptr<Renderer> m_deferredRenderer;
