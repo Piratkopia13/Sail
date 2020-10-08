@@ -1,4 +1,6 @@
 #include "pch.h"
+
+#include "loaders/FBXLoader.h"
 #include "ParsedScene.h"
 #include "../graphics/geometry/Model.h"
 #include "../utils/Utils.h"

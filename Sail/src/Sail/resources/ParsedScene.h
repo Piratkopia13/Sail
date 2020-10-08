@@ -1,7 +1,5 @@
 #pragma once
 
-#include "loaders/FBXLoader.h"
-
 class Model;
 
 class ParsedScene {

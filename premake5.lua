@@ -71,8 +71,6 @@ project "Demo"
 	includedirs {
 		"libraries",
 		"Sail/src",
-		"%{IncludeDir.FBX_SDK}",
-		"%{IncludeDir.assimp}",
 		"%{IncludeDir.ImGui}"
 	}
 
