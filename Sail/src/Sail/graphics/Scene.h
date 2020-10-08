@@ -21,7 +21,7 @@ public:
 	Environment* getEnvironment();
 
 private:
-	void submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDXR);
+	void submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDXR, const glm::mat4& parentTransform);
 
 private:
 	std::unique_ptr<Environment> m_environment;

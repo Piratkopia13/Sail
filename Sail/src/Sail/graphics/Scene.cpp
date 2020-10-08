@@ -80,9 +80,9 @@ void Scene::draw(Camera& camera) {
 	// Drawing of meshes
 	{
 		SAIL_PROFILE_SCOPE("Submit models");
-
 		for (Entity::SPtr& entity : m_entities) {
-			submitEntity(entity, &lightSetup, doDXR);
+			glm::mat4 parentTransform(1.0f);
+			submitEntity(entity, &lightSetup, doDXR, parentTransform);
 		}
 	}
 #if USE_DEFERRED
@@ -125,7 +125,7 @@ Environment* Scene::getEnvironment() {
 	return m_environment.get();
 }
 
-void Scene::submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDXR) {
+void Scene::submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDXR, const glm::mat4& parentTransform) {
 	auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
 	
 	// Add all lights to the lightSetup
@@ -136,10 +136,14 @@ void Scene::submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDX
 
 	auto mesh = entity->getComponent<MeshComponent>();
 	auto transform = entity->getComponent<TransformComponent>();
+	glm::mat4 transformMatrix = parentTransform;
+	if (transform) {
+		transformMatrix *= transform->getMatrix();
+	}
 
 	// Submit a copy for rendering as outline if selected in gui
 	if (entity->isSelectedInGui() && mesh && mesh->get() && transform)
-		m_forwardRenderer->submit(mesh->get(), outlineShader, &m_outlineMaterial, transform->getMatrix());
+		m_forwardRenderer->submit(mesh->get(), outlineShader, &m_outlineMaterial, transformMatrix);
 
 	Material* material = nullptr;
 	if (auto materialComp = entity->getComponent<MaterialComponent<>>())
@@ -148,8 +152,8 @@ void Scene::submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDX
 	if (mesh && mesh->get() && transform && material) {
 #if USE_DEFERRED
 		if (doDXR) {
-			// Submit all to the raytracer
-			m_raytracingRenderer->submit(mesh->get(), nullptr, material, transform->getMatrix());
+			// Submit all to the ray-tracer
+			m_raytracingRenderer->submit(mesh->get(), nullptr, material, transformMatrix);
 		}
 #endif 
 
@@ -157,12 +161,12 @@ void Scene::submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDX
 		Shader* shader = nullptr;
 #if USE_DEFERRED
 		if (shader = material->getShader(Renderer::DEFERRED))
-			m_deferredRenderer->submit(mesh->get(), shader, material, transform->getMatrix());
+			m_deferredRenderer->submit(mesh->get(), shader, material, transformMatrix);
 		else
 #endif 
 		{
 			if (shader = material->getShader(Renderer::FORWARD))
-				m_forwardRenderer->submit(mesh->get(), shader, material, transform->getMatrix());
+				m_forwardRenderer->submit(mesh->get(), shader, material, transformMatrix);
 		}
 
 		entity->setIsBeingRendered(true);
@@ -177,7 +181,7 @@ void Scene::submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDX
 	if (relation) {
 		auto curr = relation->first;
 		for (size_t i = 0; i < relation->numChildren; ++i) {
-			submitEntity(curr, lightSetup, doDXR); // Recursive call
+			submitEntity(curr, lightSetup, doDXR, transformMatrix); // Recursive call
 
 			curr = curr->getComponent<RelationshipComponent>()->next;
 		}
