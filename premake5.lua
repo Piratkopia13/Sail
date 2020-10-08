@@ -29,6 +29,7 @@ local intermediatesDir = "intermediates/%{prj.name}-%{cfg.platform}-%{cfg.buildc
 IncludeDir = {}
 IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
+IncludeDir["assimp"] = "libraries/assimp/include"
 IncludeDir["ImGui"] = "libraries/imgui"
 if VulkankSDKPath then
 	IncludeDir["vulkan"] = VulkankSDKPath.."/Include"
@@ -71,6 +72,7 @@ project "Demo"
 		"libraries",
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
+		"%{IncludeDir.assimp}",
 		"%{IncludeDir.ImGui}"
 	}
 
@@ -112,15 +114,32 @@ project "Demo"
 		defines { "NDEBUG" }
 		optimize "On"
 
-	-- Copy fbxsdk dll to executable path
+	-- Copy dlls to executable path
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		postbuildcommands {
 			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
 		}
+		filter "configurations:Debug"
+			postbuildcommands {
+				"{COPY} \"../libraries/assimp/x64-%{cfg.buildcfg}/bin/assimp-vc142-mtd.dll\" \"%{cfg.targetdir}\""
+			}
+		filter "configurations:Release"
+			postbuildcommands {
+				"{COPY} \"../libraries/assimp/x64-%{cfg.buildcfg}/bin/assimp-vc142-mt.dll\" \"%{cfg.targetdir}\""
+			}
+
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		postbuildcommands {
-			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\""
+			"{COPY} \"../libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}/libfbxsdk.dll\" \"%{cfg.targetdir}\"",
 		}
+		filter "configurations:Debug"
+			postbuildcommands {
+				"{COPY} \"../libraries/assimp/x64-%{cfg.buildcfg}/bin/assimp-vc142-mtd.dll\" \"%{cfg.targetdir}\""
+			}
+		filter "configurations:Release"
+			postbuildcommands {
+				"{COPY} \"../libraries/assimp/x64-%{cfg.buildcfg}/bin/assimp-vc142-mt.dll\" \"%{cfg.targetdir}\""
+			}
 
 -----------------------------------
 --------------  Sail --------------
@@ -161,6 +180,7 @@ project "Sail"
 		"libraries",
 		"Sail/src",
 		"%{IncludeDir.FBX_SDK}",
+		"%{IncludeDir.assimp}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.ImGui}"
 	}
@@ -185,7 +205,13 @@ project "Sail"
 		"_SAIL_BREAK_ON_ERROR"
 	}
 
-	filter { "platforms:DX11*" }
+	filter "configurations:Release"
+		links {	"assimp-vc142-mt" }
+
+	filter "configurations:Debug"
+		links {	"assimp-vc142-mtd" }
+
+	filter "platforms:DX11*"
 		defines {
 			"_SAIL_DX11"
 		}
@@ -193,7 +219,7 @@ project "Sail"
 			"%{prj.name}/src/API/DX11/**",
 			"%{prj.name}/src/API/Windows/**"
 		}
-	filter { "platforms:DX12*" }
+	filter "platforms:DX12*"
 		defines {
 			"_SAIL_DX12"
 		}
@@ -201,7 +227,7 @@ project "Sail"
 			"%{prj.name}/src/API/DX12/**",
 			"%{prj.name}/src/API/Windows/**"
 		}
-	filter { "platforms:*Vulkan*" }
+	filter "platforms:*Vulkan*"
 		defines {
 			"_SAIL_VK"
 		}
@@ -212,7 +238,8 @@ project "Sail"
 
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
+			"libraries/assimp/x64-%{cfg.buildcfg}/lib"
 		}
 		if VulkankSDKPath then
 			libdirs {
@@ -221,7 +248,8 @@ project "Sail"
 		end
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
-			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}"
+			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
+			"libraries/assimp/x86-%{cfg.buildcfg}/lib"
 		}
 		if VulkankSDKPath then
 			libdirs {

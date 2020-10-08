@@ -5,6 +5,8 @@
 #include "API/DX12/DX12API.h"
 #endif
 
+#include "Sail/resources/loaders/ModelLoader.h"
+
 // Command line parsing
 #include <shellapi.h>
 #include <atlstr.h>
@@ -50,6 +52,16 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 		mat->get()->setAlbedoTexture("colored_glass_rgba.png");
 		m_scene.addEntity(e);
 	}
+
+	ModelLoader testLoader("res/models/sponza.fbx");
+	{
+		auto e = Entity::Create("Test Model");
+		e->addComponent<ModelComponent>(testLoader.getModel());
+		e->addComponent<TransformComponent>();
+		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
+		m_scene.addEntity(e);
+	}
+
 	// Lights
 	{
 		// Add a directional light
