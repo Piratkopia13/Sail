@@ -1,5 +1,6 @@
 -- premake5.lua
 
+local UseAssimpReleaseInDebug = true
 local EnableDX11 = false
 local VulkankSDKPath = os.getenv("VULKAN_SDK")
 if not VulkankSDKPath then
@@ -33,6 +34,14 @@ IncludeDir["assimp"] = "libraries/assimp/include"
 IncludeDir["ImGui"] = "libraries/imgui"
 if VulkankSDKPath then
 	IncludeDir["vulkan"] = VulkankSDKPath.."/Include"
+end
+
+local AssimpLinkRelease = "assimp-vc142-mt"
+local AssimpLinkDebug = "assimp-vc142-mtd"
+local AssimpBuildCFG = "%{cfg.buildcfg}"
+if UseAssimpReleaseInDebug then
+	AssimpLinkDebug = AssimpLinkRelease
+	AssimpBuildCFG = "Release"
 end
 
 group "Libraries"
@@ -119,11 +128,11 @@ project "Demo"
 		}
 		filter "configurations:Debug"
 			postbuildcommands {
-				"{COPY} \"../libraries/assimp/x64-%{cfg.buildcfg}/bin/assimp-vc142-mtd.dll\" \"%{cfg.targetdir}\""
+				"{COPY} \"../libraries/assimp/x64-"..AssimpBuildCFG.."/bin/"..AssimpLinkDebug..".dll\" \"%{cfg.targetdir}\""
 			}
 		filter "configurations:Release"
 			postbuildcommands {
-				"{COPY} \"../libraries/assimp/x64-%{cfg.buildcfg}/bin/assimp-vc142-mt.dll\" \"%{cfg.targetdir}\""
+				"{COPY} \"../libraries/assimp/x64-"..AssimpBuildCFG.."/bin/"..AssimpLinkRelease.."\" \"%{cfg.targetdir}\""
 			}
 
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
@@ -132,11 +141,11 @@ project "Demo"
 		}
 		filter "configurations:Debug"
 			postbuildcommands {
-				"{COPY} \"../libraries/assimp/x64-%{cfg.buildcfg}/bin/assimp-vc142-mtd.dll\" \"%{cfg.targetdir}\""
+				"{COPY} \"../libraries/assimp/x64-"..AssimpBuildCFG.."/bin/"..AssimpLinkDebug..".dll\" \"%{cfg.targetdir}\""
 			}
 		filter "configurations:Release"
 			postbuildcommands {
-				"{COPY} \"../libraries/assimp/x64-%{cfg.buildcfg}/bin/assimp-vc142-mt.dll\" \"%{cfg.targetdir}\""
+				"{COPY} \"../libraries/assimp/x64-"..AssimpBuildCFG.."/bin/"..AssimpLinkRelease.."\" \"%{cfg.targetdir}\""
 			}
 
 -----------------------------------
@@ -204,10 +213,10 @@ project "Sail"
 	}
 
 	filter "configurations:Release"
-		links {	"assimp-vc142-mt" }
+		links {	AssimpLinkRelease }
 
 	filter "configurations:Debug"
-		links {	"assimp-vc142-mtd" }
+		links {	AssimpLinkDebug }
 
 	filter "platforms:DX11*"
 		defines {
@@ -237,7 +246,7 @@ project "Sail"
 	filter { "action:vs2017 or vs2019", "platforms:*64" }
 		libdirs {
 			"libraries/FBX_SDK/lib/vs2017/x64/%{cfg.buildcfg}",
-			"libraries/assimp/x64-%{cfg.buildcfg}/lib"
+			"libraries/assimp/x64-"..AssimpBuildCFG.."/lib"
 		}
 		if VulkankSDKPath then
 			libdirs {
@@ -247,7 +256,7 @@ project "Sail"
 	filter { "action:vs2017 or vs2019", "platforms:*86" }
 		libdirs {
 			"libraries/FBX_SDK/lib/vs2017/x86/%{cfg.buildcfg}",
-			"libraries/assimp/x86-%{cfg.buildcfg}/lib"
+			"libraries/assimp/x86-"..AssimpBuildCFG.."/lib"
 		}
 		if VulkankSDKPath then
 			libdirs {

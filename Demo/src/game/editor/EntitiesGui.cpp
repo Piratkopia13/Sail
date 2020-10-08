@@ -3,12 +3,14 @@
 #include "imgui_internal.h"
 #include "Sail/graphics/material/PhongMaterial.h"
 
-EntitiesGui::EntitiesGui() { }
+EntitiesGui::EntitiesGui() {
+	m_selectedEntity = nullptr;
+}
 
 void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 	newFrame();
 	
-	static int selectedEntityIndex = -1;
+	static Entity* selectedEntity = nullptr;
 	Component* selectedComponent = nullptr;
 	float trashButtonWidth = 21.f;
 
@@ -29,54 +31,22 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 		const char* newEntityBtnText = "Add entity";
 		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(newEntityBtnText).x - ImGui::GetStyle().ItemInnerSpacing.x * 2.f - ImGui::GetStyle().ItemSpacing.x);
 		if (ImGui::Button(newEntityBtnText)) {
-			selectEntity(entities.emplace_back(Entity::Create("New entity")));
+			selectEntity(entities.emplace_back(Entity::Create("New entity")).get());
 			entityAddedThisFrame = true;
 		}
 
 
 		if (ImGui::ListBoxHeader("##hideLabel", ImVec2(ImGui::GetWindowWidth(), ImGui::GetWindowHeight() - 50.f))) {
-			for (unsigned int i = 0; i < entities.size(); i++) {
-				ImGui::PushID(i);
-				auto& item = entities[i];
-				const bool itemSelected = (i == selectedEntityIndex);
-				const char* itemText = (item->getName() != "") ? item->getName().c_str() : "Unnamed";
-				ImGui::SetCursorPosX(ImGui::GetStyle().ItemSpacing.x);
-				
-				// Draw warning icon if entity is not rendered for some reason
-				if (!item->isBeingRendered()) { 
-					ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.f), ICON_FA_EXCLAMATION_TRIANGLE);
-					if (ImGui::IsItemHovered()) {
-						ImGui::SetNextWindowSize(ImVec2(200.f, 0.f));
-						ImGui::BeginTooltip();
-						ImGui::TextWrapped("Entity is not being drawn in the scene, it might be missing required components");
-						ImGui::EndTooltip();
-					}
-					ImGui::SameLine();
-				}
-
-				if (ImGui::Selectable(itemText, itemSelected)) {
-					selectedEntityIndex = i;
-				}
-				// Always select newly added entities
-				if (entityAddedThisFrame && item == m_selectedEntity) {
-					selectedEntityIndex = i;
-					ImGui::SetScrollHere();
-				}
-				ImGui::SameLine();
-				std::string hintText = std::to_string(item->getAllComponents().size()) + " components";
-				float textWidth = ImGui::CalcTextSize(hintText.c_str()).x;
-				ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - textWidth - ImGui::GetStyle().ItemSpacing.x);
-				ImGui::TextDisabled(hintText.c_str());
-				if (itemSelected)
-					ImGui::SetItemDefaultFocus();
-				ImGui::PopID();
+			uint32_t index = 0;
+			for (auto& e : entities) {
+				listEntity(e.get(), &index, &selectedEntity, entityAddedThisFrame);
 			}
 			ImGui::ListBoxFooter();
 		}
 
 		// Select the entity from the list if valid
-		if (selectedEntityIndex < entities.size()) {
-			selectEntity(entities[selectedEntityIndex]);
+		if (selectedEntity) {
+			selectEntity(selectedEntity);
 		}
 
 		ImGui::End();
@@ -109,9 +79,25 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			}
 			ImGui::SameLine();
 			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
-				Logger::Log("Removed entity " + m_selectedEntity->getName());
-				entities.erase(std::remove(entities.begin(), entities.end(), m_selectedEntity), entities.end());
-				selectedEntityIndex = -1; // Deselect
+				std::string entityName = m_selectedEntity->getName();
+				// Remove the entity if it exists in the scene
+				auto it = std::remove_if(entities.begin(), entities.end(), [&](const auto& e) { return e.get() == m_selectedEntity; });
+				bool failed = (it == entities.end());
+				entities.erase(it, entities.end());
+				// Check if successful 
+				if (failed) {
+					Logger::Warning("Failed to removed entity " + entityName);
+				} else {
+					Logger::Log("Removed entity " + entityName);
+
+					// Deselect
+					selectEntity(nullptr);
+					selectedEntity = nullptr;
+
+					// There is no entity to render details about, just return
+					ImGui::End();
+					return;
+				}
 			}
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
@@ -153,7 +139,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 				}
 				ImGui::EndPopup();
 			}
-			
+
 		}
 
 		static int selectedComponentIndex = -1;
@@ -228,12 +214,14 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 	}
 }
 
-void EntitiesGui::selectEntity(Entity::SPtr entity) {
+void EntitiesGui::selectEntity(Entity* entity) {
 	if (m_selectedEntity) {
 		m_selectedEntity->setIsSelectedInGui(false);
 	}
 	m_selectedEntity = entity;
-	m_selectedEntity->setIsSelectedInGui(true);
+	if (m_selectedEntity) {
+		m_selectedEntity->setIsSelectedInGui(true);
+	}
 }
 
 void EntitiesGui::addComponent(AddableComponent::Type comp) {
@@ -269,4 +257,74 @@ void EntitiesGui::addMaterialComponent(AddableMaterial::Type comp) {
 		m_selectedEntity->addComponent<MaterialComponent<OutlineMaterial>>();
 		break;
 	}
+}
+
+void EntitiesGui::listEntity(Entity* e, uint32_t* index, Entity** pSelectedEntity, bool entityAddedThisFrame) {
+	ImGui::PushID(*index);
+	const bool itemSelected = (e == *pSelectedEntity);
+	const char* itemText = (e->getName() != "") ? e->getName().c_str() : "Unnamed";
+	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x);
+
+	// Always select newly added entities
+	if (entityAddedThisFrame && e == m_selectedEntity) {
+		*pSelectedEntity = e;
+		ImGui::SetScrollHere();
+	}
+
+	// Draw warning icon if entity is not rendered for some reason
+	if (!e->isBeingRendered()) {
+		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.f), ICON_FA_EXCLAMATION_TRIANGLE);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetNextWindowSize(ImVec2(200.f, 0.f));
+			ImGui::BeginTooltip();
+			ImGui::TextWrapped("Entity is not being drawn in the scene, it might be missing required components");
+			ImGui::EndTooltip();
+		}
+		ImGui::SameLine();
+	}
+
+	size_t numChildren = 0;
+	auto& relation = e->getComponent<RelationshipComponent>();
+	if (relation) {
+		numChildren = relation->numChildren;
+	}
+	bool drawChildren = false;
+
+	if (numChildren == 0) {
+		// Draw a selectable, update selected entity if clicked
+		if (ImGui::Selectable(itemText, itemSelected)) {
+			*pSelectedEntity = e;
+		}
+	} else {
+		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+		flags |= (itemSelected) ? ImGuiTreeNodeFlags_Selected : 0;
+		drawChildren = ImGui::TreeNodeEx(itemText, flags);
+		// Update selected entity if clicked
+		if (ImGui::IsItemClicked()) {
+			*pSelectedEntity = e;
+		}
+	}
+
+	ImGui::SameLine();
+	std::string hintText = std::to_string(e->getAllComponents().size()) + " components";
+	float textWidth = ImGui::CalcTextSize(hintText.c_str()).x;
+	ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - textWidth - ImGui::GetStyle().ItemSpacing.x);
+	ImGui::TextDisabled(hintText.c_str());
+
+	if (drawChildren) {
+		// Draw children recursively
+		auto curr = relation->first;
+		for (size_t i = 0; i < numChildren; ++i) {
+			listEntity(curr.get(), index, pSelectedEntity, entityAddedThisFrame); // Recursive call
+
+			curr = curr->getComponent<RelationshipComponent>()->next;
+		}
+		ImGui::TreePop();
+	}
+	
+	if (itemSelected)
+		ImGui::SetItemDefaultFocus();
+	ImGui::PopID();
+
+	(*index)++;
 }

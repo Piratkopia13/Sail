@@ -2,6 +2,7 @@
 #include "ModelLoader.h"
 #include "Sail/utils/Utils.h"
 #include "Sail/api/Mesh.h"
+#include "Sail/entities/components/Components.h"
 
 #include <assimp/Importer.hpp> // C++ importer interface
 #include <assimp/scene.h> // Output data structure
@@ -32,7 +33,8 @@ ModelLoader::ModelLoader(const std::string& filepath) {
 		Logger::Error(importer.GetErrorString());
 	}
 
-	ParseNodesWithMeshes(m_scene->mRootNode, nullptr, glm::mat4(1.0f));
+	m_rootEntity = Entity::Create(filepath);
+	ParseNodesWithMeshes(m_scene->mRootNode, m_rootEntity, glm::mat4(1.0f));
 
 }
 
@@ -40,41 +42,56 @@ ModelLoader::~ModelLoader() {
 
 }
 
-std::shared_ptr<Mesh> ModelLoader::getMesh() {
-	return m_mesh;
-}
 
 Entity::SPtr ModelLoader::getEntity() {
-	return m_entity;
+	return m_rootEntity;
 }
 
-void ModelLoader::ParseNodesWithMeshes(const aiNode* node, SceneObject targetParent, const glm::mat4& accTransform) {
-	SceneObject parent;
+Entity::SPtr ModelLoader::ParseNodesWithMeshes(const aiNode* node, Entity::SPtr parentEntity, const glm::mat4& accTransform) {
+	Entity::SPtr parent;
 	glm::mat4 transform;
 	// if node has meshes, create a new scene object for it
 	if (node->mNumMeshes > 0) {
-		//SceneObject newObject = new SceneObject;
-		SceneObject newObject = nullptr;
+		auto newEntity = Entity::Create(node->mName.C_Str());
 		//targetParent.addChild(newObject);
 		// copy the meshes
-		ParseMeshes(node, newObject);
+		ParseMeshes(node, newEntity);
 		// the new object is the parent for all child nodes
-		parent = newObject;
+		parent = newEntity;
 		//transform.SetUnity();
 	} else {
 		// if no meshes, skip the node, but keep its transformation
-		parent = targetParent;
+		parent = parentEntity;
 		transform = mat4_cast(node->mTransformation) * accTransform;
 	}
+	
+	auto& parentRelation = parent->addComponent<RelationshipComponent>();
+	if (parentEntity != parent)
+		parentRelation->parent = parentEntity;
+	Entity::SPtr newChildEntity = nullptr;
+	RelationshipComponent::SPtr lastRelation = nullptr;
+
+	parentRelation->numChildren = node->mNumChildren;
+
 	// continue for all child nodes
-	for (uint32_t i = 0; i < glm::min<int>(node->mNumChildren, 1); i++) {
-		//for (uint32_t i = 0; i < node->mNumChildren; i++) {
+	for (uint32_t i = 0; i < node->mNumChildren; i++) {
 		auto& child = node->mChildren[i];
-		ParseNodesWithMeshes(child, parent, transform);
+		auto previousChildEntity = newChildEntity;
+		newChildEntity = ParseNodesWithMeshes(child, parent, transform);
+		
+		auto newRelation = newChildEntity->getComponent<RelationshipComponent>();
+		newRelation->prev = previousChildEntity;
+		
+		if (i > 0) lastRelation->next = newChildEntity;
+
+		if (i == 0) parentRelation->first = newChildEntity;
+
+		lastRelation = newRelation;
 	}
+	return parent;
 }
 
-void ModelLoader::ParseMeshes(const aiNode* node, SceneObject newObject) {
+void ModelLoader::ParseMeshes(const aiNode* node, Entity::SPtr entity) {
 	
 	auto& aiMesh = m_scene->mMeshes[node->mMeshes[0]];
 
@@ -105,6 +122,6 @@ void ModelLoader::ParseMeshes(const aiNode* node, SceneObject newObject) {
 		}
 	}
 
-	m_mesh = std::shared_ptr<Mesh>(Mesh::Create(buildData));
+	entity->addComponent<MeshComponent>(std::shared_ptr<Mesh>(Mesh::Create(buildData)));
 
 }

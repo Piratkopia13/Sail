@@ -54,13 +54,14 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	}
 
 	ModelLoader testLoader("res/models/sponza.fbx");
-	{
+	m_scene.addEntity(testLoader.getEntity());
+	/*{
 		auto e = Entity::Create("Test Model");
 		e->addComponent<MeshComponent>(testLoader.getMesh());
 		e->addComponent<TransformComponent>();
 		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
 		m_scene.addEntity(e);
-	}
+	}*/
 
 	// Lights
 	{

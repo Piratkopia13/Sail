@@ -33,11 +33,12 @@ private:
 	const char* m_materialNames[AddableMaterial::NUM_MATERIALS] = { "PBR", "Phong", "Textures", "Outline" };
 
 private:
-    void selectEntity(Entity::SPtr entity);
+    void selectEntity(Entity* entity);
 	void addComponent(AddableComponent::Type comp);
 	void addMaterialComponent(AddableMaterial::Type comp);
 
 private:
-    Entity::SPtr m_selectedEntity;
+    Entity* m_selectedEntity;
 
+    void listEntity(Entity* e, uint32_t* index, Entity** pSelectedEntity, bool entityAddedThisFrame);
 };

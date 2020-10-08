@@ -6,3 +6,4 @@
 #include "MaterialComponent.h"
 #include "PointLightComponent.h"
 #include "DirectionalLightComponent.h"
+#include "RelationshipComponent.h"

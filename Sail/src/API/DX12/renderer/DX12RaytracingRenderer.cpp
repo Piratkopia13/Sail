@@ -30,6 +30,7 @@ DX12RaytracingRenderer::DX12RaytracingRenderer() {
 
 DX12RaytracingRenderer::~DX12RaytracingRenderer() {
 	EventSystem::getInstance()->unsubscribeFromEvent(Event::WINDOW_RESIZE, this);
+	m_context->waitForGPU();
 	sRTOutputTexture.reset();
 }
 

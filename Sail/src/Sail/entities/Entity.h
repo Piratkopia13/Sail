@@ -7,6 +7,7 @@
 class Entity {
 public:
 	typedef std::shared_ptr<Entity> SPtr;
+	typedef std::weak_ptr<Entity> WPtr;
 	static SPtr Create(const std::string& name = "");
 public:
 	Entity(const std::string& name = "");

@@ -12,18 +12,15 @@ public:
 	ModelLoader(const std::string& filepath);
 	~ModelLoader();
 
-	std::shared_ptr<Mesh> getMesh();
 	Entity::SPtr getEntity();
 
 private:
-	typedef void* SceneObject; // TODO: change
-	void ParseNodesWithMeshes(const aiNode* node, SceneObject targetParent, const glm::mat4& accTransform);
-	void ParseMeshes(const aiNode* node, SceneObject newObject);
+	Entity::SPtr ParseNodesWithMeshes(const aiNode* node, Entity::SPtr parentEntity, const glm::mat4& accTransform);
+	void ParseMeshes(const aiNode* node, Entity::SPtr newEntity);
 
 private:
 	std::string m_filepath;
-	std::shared_ptr<Mesh> m_mesh;
-	Entity::SPtr m_entity;
+	Entity::SPtr m_rootEntity;
 	const aiScene* m_scene;
 
 };
