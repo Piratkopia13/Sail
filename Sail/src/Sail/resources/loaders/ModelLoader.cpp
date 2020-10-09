@@ -9,6 +9,8 @@
 #include <assimp/postprocess.h> // Post processing flags
 
 // For converting between ASSIMP and glm
+static inline glm::vec4 vec4_cast(const aiColor3D& v) { return glm::vec4(v.r, v.g, v.b, 1.0f); }
+static inline glm::vec4 vec4_cast(const aiVector3D& v) { return glm::vec4(v.x, v.y, v.z, 1.0f); }
 static inline glm::vec3 vec3_cast(const aiVector3D& v) { return glm::vec3(v.x, v.y, v.z); }
 static inline glm::vec2 vec2_cast(const aiVector3D& v) { return glm::vec2(v.x, v.y); }
 static inline glm::quat quat_cast(const aiQuaternion& q) { return glm::quat(q.w, q.x, q.y, q.z); }
@@ -26,6 +28,7 @@ ModelLoader::ModelLoader(const std::string& filepath) {
 		aiProcess_Triangulate |
 		aiProcess_JoinIdenticalVertices |
 		aiProcess_SortByPType |
+		aiProcess_FlipUVs |
 		aiProcess_PreTransformVertices // TODO: remove this when a scenegraph exists
 	);
 	// If the import failed, report it
@@ -53,8 +56,6 @@ Entity::SPtr ModelLoader::ParseNodesWithMeshes(const aiNode* node, Entity::SPtr 
 	// if node has meshes, create a new scene object for it
 	if (node->mNumMeshes > 0) {
 		auto newEntity = Entity::Create(node->mName.C_Str());
-		newEntity->addComponent<TransformComponent>(mat4_cast(node->mTransformation));
-		newEntity->addComponent<MaterialComponent<PBRMaterial>>();
 		//targetParent.addChild(newObject);
 		// copy the meshes
 		ParseMeshes(node, newEntity);
@@ -125,5 +126,49 @@ void ModelLoader::ParseMeshes(const aiNode* node, Entity::SPtr entity) {
 	}
 
 	entity->addComponent<MeshComponent>(std::shared_ptr<Mesh>(Mesh::Create(buildData)));
+
+	entity->addComponent<TransformComponent>(mat4_cast(node->mTransformation));
+	auto pbrMat = entity->addComponent<MaterialComponent<PBRMaterial>>()->get();
+
+	auto matIndex = aiMesh->mMaterialIndex;
+	auto meshMat = m_scene->mMaterials[matIndex];
+	
+	glm::vec4 color(1.0f);
+	// Get diffuse color
+	aiColor3D diffuseColor;
+	if (meshMat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == AI_SUCCESS) {
+		color = vec4_cast(diffuseColor);
+	}
+	// Get opacity
+	float opacity;
+	if (meshMat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) {
+		color.a = opacity;
+	}
+	pbrMat->setColor(color);
+
+	// Get shininess
+	float shininess;
+	if (meshMat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS) {
+		//pbrMat->setRoughnessScale(1.f - shininess);
+	}
+
+	Logger::Log("NewMat");
+
+	// Get Textures
+	aiString texPath;
+	if (meshMat->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), texPath) == AI_SUCCESS) {
+		Logger::Log("Diffuse: " + std::string(texPath.C_Str()));
+		pbrMat->setAlbedoTexture(std::string(texPath.C_Str()));
+	}
+	if (meshMat->Get(AI_MATKEY_TEXTURE_NORMALS(0), texPath) == AI_SUCCESS) {
+		Logger::Log("Normals: " + std::string(texPath.C_Str()));
+		pbrMat->setNormalTexture(std::string(texPath.C_Str()));
+	}
+	if (meshMat->Get(AI_MATKEY_TEXTURE_SPECULAR(0), texPath) == AI_SUCCESS) {
+		Logger::Log("Specular: " + std::string(texPath.C_Str()));
+	}
+	if (meshMat->Get(AI_MATKEY_TEXTURE_OPACITY(0), texPath) == AI_SUCCESS) {
+		pbrMat->enableTransparency(true);
+	}
 
 }
