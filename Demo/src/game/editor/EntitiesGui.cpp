@@ -271,17 +271,6 @@ void EntitiesGui::listEntity(Entity* e, uint32_t* index, Entity** pSelectedEntit
 		ImGui::SetScrollHere();
 	}
 
-	// Draw warning icon if entity is not rendered for some reason
-	if (!e->isBeingRendered()) {
-		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.f), ICON_FA_EXCLAMATION_TRIANGLE);
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetNextWindowSize(ImVec2(200.f, 0.f));
-			ImGui::BeginTooltip();
-			ImGui::TextWrapped("Entity is not being drawn in the scene, it might be missing required components");
-			ImGui::EndTooltip();
-		}
-		ImGui::SameLine();
-	}
 
 	size_t numChildren = 0;
 	auto& relation = e->getComponent<RelationshipComponent>();
@@ -306,6 +295,18 @@ void EntitiesGui::listEntity(Entity* e, uint32_t* index, Entity** pSelectedEntit
 	}
 
 	ImGui::SameLine();
+	// Draw warning icon if entity is not rendered for some reason
+	if (!e->isBeingRendered()) {
+		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.f), ICON_FA_EXCLAMATION_TRIANGLE);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetNextWindowSize(ImVec2(200.f, 0.f));
+			ImGui::BeginTooltip();
+			ImGui::TextWrapped("Entity is not being drawn in the scene, it might be missing required components");
+			ImGui::EndTooltip();
+		}
+		ImGui::SameLine();
+	}
+
 	std::string hintText = std::to_string(e->getAllComponents().size()) + " components";
 	float textWidth = ImGui::CalcTextSize(hintText.c_str()).x;
 	ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - textWidth - ImGui::GetStyle().ItemSpacing.x);
