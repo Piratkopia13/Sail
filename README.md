@@ -1,8 +1,5 @@
 
 # Sail game engine :sailboat:
-
-[![Build status](https://ci.appveyor.com/api/projects/status/aqy3xsricje3cv28/branch/master?svg=true)](https://ci.appveyor.com/project/Piratkopia13/sail/branch/master)
-
 Sail is a small C++ game engine developed and maintained as a hobby project
 
 Current features include
@@ -29,6 +26,12 @@ Everything required to build should be contained in this repo. Hit me up if ther
 
  - DXR raytracing (In the works)
  - Vulkan support
+
+### Build status
+| Branch        | Status      |
+| ------------- |-------------|
+| master        | ![MSVC Build](https://github.com/Piratkopia13/Sail/workflows/MSVC%20Build/badge.svg?branch=master) |
+| dev           | ![MSVC Build](https://github.com/Piratkopia13/Sail/workflows/MSVC%20Build/badge.svg?branch=dev)    |
 
 License
 ----
