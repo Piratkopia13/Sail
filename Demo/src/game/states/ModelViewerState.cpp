@@ -53,7 +53,7 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 		m_scene.addEntity(e);
 	}
 
-	ModelLoader testLoader("res/models/gladiator.fbx");
+	ModelLoader testLoader("res/models/sponza.fbx");
 	m_scene.addEntity(testLoader.getEntity());
 	/*{
 		auto e = Entity::Create("Test Model");

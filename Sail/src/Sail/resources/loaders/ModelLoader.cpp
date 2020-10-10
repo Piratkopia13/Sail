@@ -29,78 +29,114 @@ ModelLoader::ModelLoader(const std::string& filepath) {
 		aiProcess_JoinIdenticalVertices |
 		aiProcess_SortByPType |
 		aiProcess_FlipUVs |
-		aiProcess_PreTransformVertices // TODO: remove this when a scenegraph exists
+		aiProcess_ConvertToLeftHanded
 	);
 	// If the import failed, report it
 	if (!m_scene) {
 		Logger::Error(importer.GetErrorString());
+		return;
 	}
 
-	m_rootEntity = Entity::Create(filepath);
-	ParseNodesWithMeshes(m_scene->mRootNode, m_rootEntity, glm::mat4(1.0f));
+	m_rootEntity = parseNodesWithMeshes(m_scene->mRootNode, {});
+	m_rootEntity->setName(filepath);
 
 }
 
-ModelLoader::~ModelLoader() {
-
-}
+ModelLoader::~ModelLoader() { }
 
 
 Entity::SPtr ModelLoader::getEntity() {
 	return m_rootEntity;
 }
 
-Entity::SPtr ModelLoader::ParseNodesWithMeshes(const aiNode* node, Entity::SPtr parentEntity, const glm::mat4& accTransform) {
+Entity::SPtr ModelLoader::parseNodesWithMeshes(const aiNode* node, Entity::SPtr parentEntity) { 
+	auto parentEntityRelation = (parentEntity) ? parentEntity->getComponent<RelationshipComponent>() : nullptr;
+
 	Entity::SPtr parent;
-	glm::mat4 transform;
-	// if node has meshes, create a new scene object for it
-	if (node->mNumMeshes > 0) {
-		auto newEntity = Entity::Create(node->mName.C_Str());
-		//targetParent.addChild(newObject);
-		// copy the meshes
-		ParseMeshes(node, newEntity);
-		// the new object is the parent for all child nodes
-		parent = newEntity;
-		//transform.SetUnity();
-	} else {
-		// if no meshes, skip the node, but keep its transformation
-		parent = parentEntity;
-		transform = mat4_cast(node->mTransformation) * accTransform;
-	}
-	
-	auto& parentRelation = parent->addComponent<RelationshipComponent>();
-	if (parentEntity != parent)
+	if (node->mNumMeshes == 0) {
+		// Create an entity with a transform (but no mesh) to keep the hierarchy complete
+		parent = parseMesh(nullptr, mat4_cast(node->mTransformation), std::string(node->mName.C_Str()));
+		
+		auto parentRelation = parent->getComponent<RelationshipComponent>();
 		parentRelation->parent = parentEntity;
-	Entity::SPtr newChildEntity = nullptr;
-	RelationshipComponent::SPtr lastRelation = nullptr;
+		if (parentEntityRelation) {
+			parentEntityRelation->numChildren++;
+			if (!parentEntityRelation->first) parentEntityRelation->first = parent;
+		}
+	} else {
+		Entity::SPtr lastParent;
+		RelationshipComponent::SPtr lastRelation;
+		for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+			// All entities created here should have parentEntity as parent
+			// their next/prev should also be set in this loop
 
-	parentRelation->numChildren = node->mNumChildren;
+			parent = parseMesh(m_scene->mMeshes[node->mMeshes[i]], mat4_cast(node->mTransformation), std::string(node->mName.C_Str()));
 
-	// continue for all child nodes
-	for (uint32_t i = 0; i < node->mNumChildren; i++) {
-		auto& child = node->mChildren[i];
-		auto previousChildEntity = newChildEntity;
-		newChildEntity = ParseNodesWithMeshes(child, parent, transform);
-		
-		auto newRelation = newChildEntity->getComponent<RelationshipComponent>();
-		newRelation->prev = previousChildEntity;
-		
-		if (i > 0) lastRelation->next = newChildEntity;
+			auto parentRelation = parent->getComponent<RelationshipComponent>();
+			parentRelation->parent = parentEntity;
+			if (parentEntityRelation) {
+				parentEntityRelation->numChildren++;
+				if (i == 0 && !parentEntityRelation->first) parentEntityRelation->first = parent;
+			}
 
-		if (i == 0) parentRelation->first = newChildEntity;
-
-		lastRelation = newRelation;
+			parentRelation->prev = lastParent;
+			if (i > 0) lastRelation->next = parent;
+			
+			lastParent = parent;
+			lastRelation = parentRelation;
+		}
 	}
+
+	Entity::SPtr lastChild;
+	RelationshipComponent::SPtr lastRelation;
+	for (unsigned int i = 0; i < node->mNumChildren; i++) {
+		// All entities created here should have parent as parent
+		// their next/prev should also be set in this loop
+
+		auto childEntity = parseNodesWithMeshes(node->mChildren[i], parent);
+
+		auto parentRelation = childEntity->getComponent<RelationshipComponent>();
+
+		if (parentRelation->prev) {
+			// A prev is already set, this means that the child had more than one mesh
+			// We need to link the multiple meshes into the relation chain
+			Entity::SPtr firstInChildChain = parentRelation->prev;
+			RelationshipComponent::SPtr firstInChildChainRelation;
+			while (true) {
+				firstInChildChainRelation = firstInChildChain->getComponent<RelationshipComponent>();
+				if (firstInChildChainRelation->prev) firstInChildChain = firstInChildChainRelation->prev;
+				else break;
+			}
+
+			firstInChildChainRelation->prev = lastChild;
+			if (i > 0) lastRelation->next = firstInChildChain;
+		} else {
+			parentRelation->prev = lastChild;
+			if (i > 0) lastRelation->next = childEntity;
+		}
+
+		lastChild = childEntity;
+		lastRelation = parentRelation;
+	}
+
+	/*if (parentEntityRelation) {
+		assert(parentEntityRelation->numChildren > 0 && parentEntityRelation->first && "Entity with children has no \"first\" relation set!");
+	}*/
+
 	return parent;
 }
 
-void ModelLoader::ParseMeshes(const aiNode* node, Entity::SPtr entity) {
+Entity::SPtr ModelLoader::parseMesh(const aiMesh* mesh, const glm::mat4& transform, const std::string& name) {
 	
-	auto& aiMesh = m_scene->mMeshes[node->mMeshes[0]];
+	auto entity = Entity::Create(name);
+	entity->addComponent<TransformComponent>(transform);
+	entity->addComponent<RelationshipComponent>();
+	if (!mesh) return entity; // If no mesh, then just return with transform
 
+	// Create the mesh
 	Mesh::Data buildData;
-	buildData.numVertices = aiMesh->mNumVertices;
-	buildData.numIndices = aiMesh->mNumFaces * 3; // assume 3 indices per face
+	buildData.numVertices = mesh->mNumVertices;
+	buildData.numIndices = mesh->mNumFaces * 3; // assume 3 indices per face
 
 	buildData.indices = SAIL_NEW unsigned long[buildData.numIndices];
 	buildData.positions = SAIL_NEW Mesh::vec3[buildData.numVertices];
@@ -110,16 +146,16 @@ void ModelLoader::ParseMeshes(const aiNode* node, Entity::SPtr entity) {
 	buildData.bitangents = SAIL_NEW Mesh::vec3[buildData.numVertices];
 
 	for (uint32_t i = 0; i < buildData.numVertices; i++) {
-		buildData.positions[i].vec = vec3_cast(aiMesh->mVertices[i]);
-		buildData.normals[i].vec = vec3_cast(aiMesh->mNormals[i]);
-		buildData.texCoords[i].vec = vec3_cast(aiMesh->mTextureCoords[0][i]);
-		buildData.tangents[i].vec = vec3_cast(aiMesh->mTangents[i]);
-		buildData.bitangents[i].vec = vec3_cast(aiMesh->mBitangents[i]);
+		buildData.positions[i].vec = vec3_cast(mesh->mVertices[i]);
+		buildData.normals[i].vec = vec3_cast(mesh->mNormals[i]);
+		buildData.texCoords[i].vec = vec3_cast(mesh->mTextureCoords[0][i]);
+		buildData.tangents[i].vec = vec3_cast(mesh->mTangents[i]);
+		buildData.bitangents[i].vec = vec3_cast(mesh->mBitangents[i]);
 	}
 
 	uint32_t index = 0;
-	for (uint32_t i = 0; i < aiMesh->mNumFaces; i++) {
-		auto& face = aiMesh->mFaces[i];
+	for (uint32_t i = 0; i < mesh->mNumFaces; i++) {
+		auto& face = mesh->mFaces[i];
 		for (uint32_t j = 0; j < face.mNumIndices; j++) {
 			buildData.indices[index++] = face.mIndices[j];
 		}
@@ -127,10 +163,10 @@ void ModelLoader::ParseMeshes(const aiNode* node, Entity::SPtr entity) {
 
 	entity->addComponent<MeshComponent>(std::shared_ptr<Mesh>(Mesh::Create(buildData)));
 
-	entity->addComponent<TransformComponent>(mat4_cast(node->mTransformation));
+	// Parse material
 	auto pbrMat = entity->addComponent<MaterialComponent<PBRMaterial>>()->get();
 
-	auto matIndex = aiMesh->mMaterialIndex;
+	auto matIndex = mesh->mMaterialIndex;
 	auto meshMat = m_scene->mMaterials[matIndex];
 	
 	glm::vec4 color(1.0f);
@@ -171,4 +207,5 @@ void ModelLoader::ParseMeshes(const aiNode* node, Entity::SPtr entity) {
 		pbrMat->enableTransparency(true);
 	}
 
+	return entity;
 }

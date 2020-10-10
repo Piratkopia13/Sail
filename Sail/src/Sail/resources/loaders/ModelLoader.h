@@ -6,6 +6,7 @@
 class Mesh;
 struct aiScene;
 struct aiNode;
+struct aiMesh;
 
 class ModelLoader {
 public:
@@ -15,8 +16,8 @@ public:
 	Entity::SPtr getEntity();
 
 private:
-	Entity::SPtr ParseNodesWithMeshes(const aiNode* node, Entity::SPtr parentEntity, const glm::mat4& accTransform);
-	void ParseMeshes(const aiNode* node, Entity::SPtr newEntity);
+	Entity::SPtr parseNodesWithMeshes(const aiNode* node, Entity::SPtr parentEntity);
+	Entity::SPtr parseMesh(const aiMesh* mesh, const glm::mat4& transform, const std::string& name);
 
 private:
 	std::string m_filepath;
