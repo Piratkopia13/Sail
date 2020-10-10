@@ -12,6 +12,9 @@ jobs:
     steps:
     # Checkout repo
     - uses: actions/checkout@v1
+    # Checkout submodules
+    - name: Checkout submodules
+      uses: textbook/git-checkout-submodule-action@master
     # Set up environment
     - name: Enable Developer Command Prompt
       uses: ilammy/msvc-dev-cmd@v1.4.1
