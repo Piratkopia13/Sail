@@ -42,6 +42,7 @@ Win32Window::~Win32Window() {
 
 
 bool Win32Window::initialize() {
+	SAIL_PROFILE_FUNCTION();
 
 	// WNDCLASSEX
 	WNDCLASSEX wcex;
@@ -124,16 +125,19 @@ LRESULT Win32Window::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	case WM_ACTIVATE:
 		isWindowFocused = (wParam == WA_ACTIVE || wParam == WA_CLICKACTIVE);
 		// Dispatch event
-		Application::getInstance()->dispatchEvent(WindowFocusChangedEvent(isWindowFocused));
+		EventSystem::getInstance()->dispatchEvent(WindowFocusChangedEvent(isWindowFocused));
 		break;
 	case WM_SIZE:
 	{
 		if (wParam == SIZE_MINIMIZED) {
+			windowWidth = 1;
+			windowHeight = 1;
 			isWindowMinimized = true;
 			m_resized = true;
 		} else if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED) {
 			int width = LOWORD(lParam);
 			int height = HIWORD(lParam);
+			isWindowMinimized = false;
 			if (width != windowWidth || height != windowHeight) {
 				windowWidth = width;
 				windowHeight = height;

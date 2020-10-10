@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "DXILShaderCompiler.h"
 #include "../../../Sail/utils/Utils.h"
+#include <atlstr.h>
 
 DXILShaderCompiler::DXILShaderCompiler() 
 	: m_linker(nullptr)
@@ -19,13 +20,8 @@ DXILShaderCompiler::~DXILShaderCompiler() {
 }
 
 HRESULT DXILShaderCompiler::init() {
-#ifdef _WIN64
-	HMODULE dll = LoadLibraryA("dxcompiler_x64.dll");
-	if (!dll) MessageBox(0, L"dxcompiler_x64.dll is missing", L"Error", 0);
-#else
-	HMODULE dll = LoadLibraryA("dxcompiler_x86.dll");
-	if (!dll) MessageBox(0, L"dxcompiler_x86.dll is missing", L"Error", 0);
-#endif
+	HMODULE dll = LoadLibraryA("dxcompiler.dll");
+	if (!dll) MessageBox(0, L"dxcompiler.dll is missing", L"Error", 0);
 
 	DxcCreateInstanceProc pfnDxcCreateInstance = DxcCreateInstanceProc(GetProcAddress(dll, "DxcCreateInstance"));
 
@@ -101,9 +97,9 @@ HRESULT DXILShaderCompiler::compile(Desc* desc, IDxcBlob** ppResult) {
 		}
 	}
 
-	if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
-		std::string errMsg("Shader not found");
-		MessageBoxA(0, errMsg.c_str(), "", 0);
+	if (hr == HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) || hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
+		std::string errMsg("Missing shader: " + std::string(CW2A(desc->filePath)) + "\n");
+		MessageBoxA(0, errMsg.c_str(), "DXILShaderCompiler Error", 0);
 		OutputDebugStringA(errMsg.c_str());
 
 	}

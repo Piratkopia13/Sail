@@ -5,68 +5,51 @@
 #include "TextureData.h"
 #include "Sail/api/Texture.h"
 #include "ParsedScene.h"
-
-//class DeferredGeometryShader;
-class ShaderPipeline;
-class Shader;
-//class SoundManager;
+#include "Sail/api/shader/Shader.h"
+#include "Sail/api/shader/PipelineStateObject.h"
+#include "Sail/graphics/shader/Shaders.h"
 
 class ResourceManager {
+public:
+	static const std::string MISSING_TEXTURE_NAME;
+	static const std::string MISSING_TEXTURECUBE_NAME;
 public:
 	ResourceManager();
 	~ResourceManager();
 
 	// TextureData
-	void loadTextureData(const std::string& filename);
+	void loadTextureData(const std::string& filename, bool useAbsolutePath = false);
 	TextureData& getTextureData(const std::string& filename);
 	bool hasTextureData(const std::string& filename);
+	bool releaseTextureData(const std::string& filename);
 
 	// Texture
-	void loadTexture(const std::string& filename);
+	void loadTexture(const std::string& filename, bool useAbsolutePath = false);
 	Texture& getTexture(const std::string& filename);
 	bool hasTexture(const std::string& filename);
 
 	// Models
-	void loadModel(const std::string& filename, Shader* shader);
-	Model& getModel(const std::string& filename, Shader* shader);
-	bool hasModel(const std::string& filename);
+	//void loadModel(const std::string& filename, bool useAbsolutePath = false);
+	//std::shared_ptr<Model> getModel(const std::string& filename, bool useAbsolutePath = false);
+	//bool hasModel(const std::string& filename);
 
-	// ShaderSets
-	template <typename T>
-	void loadShaderSet();
+	// Shaders
+	void loadShaderSet(Shaders::ShaderIdentifier shaderIdentifier);
+	Shader& getShaderSet(Shaders::ShaderIdentifier shaderIdentifier);
+	bool hasShaderSet(Shaders::ShaderIdentifier shaderIdentifier);
+	void reloadShader(Shaders::ShaderIdentifier shaderIdentifier);
+	void reloadAllShaders();
 
-	template <typename T>
-	T& getShaderSet() {
-		auto pos = m_shaderSets.find(typeid(T).name());
-		if (pos == m_shaderSets.end()) {
-			// ShaderSet was not yet loaded, load it and return
-			loadShaderSet<T>();
-			return dynamic_cast<T&>(*(m_shaderSets.find(typeid(T).name())->second));
-		}
+	// PipelineStateObjects (PSOs)
+	// mesh may be null when shader is a compute shader
+	PipelineStateObject& getPSO(Shader* shader, Mesh* mesh = nullptr);
 
-		return dynamic_cast<T&>(*pos->second);
-	}
-	template <typename T>
-	bool hasShaderSet() {
-		return m_shaderSets.find(typeid(T).name()) != m_shaderSets.end();
-	}
-
-	template <typename T>
-	void reloadShader() {
-		std::string name = typeid(T).name();
-		auto it = m_shaderSets.find(name);
-		if (it == m_shaderSets.end()) {
-			Logger::Log("Cannot reload shader " + name + " since it is not loaded in the first place.");
-			return;
-		}
-		T* shader = dynamic_cast<T*>(it->second);
-		shader->~T();
-		shader = new (shader) T();
-		Logger::Log("Reloaded shader " + name);
-	}
-
-	// SoundManager
-	//SoundManager* getSoundManager();
+	// Storage information
+	unsigned int getTextureDataSize() const;
+	unsigned int getTextureDataCount() const;
+	unsigned int getFBXModelCount() const;
+	unsigned int getShaderCount() const;
+	unsigned int getPSOCount() const;
 
 private:
 	// Textures mapped to their filenames
@@ -74,16 +57,9 @@ private:
 	std::map<std::string, std::unique_ptr<Texture>> m_textures;
 	// Models mapped to their filenames
 	std::map<std::string, std::unique_ptr<ParsedScene>> m_fbxModels;
-	// ShaderSets mapped to their identifiers
-	std::map<std::string, Shader*> m_shaderSets;
-	// SoundManager containing all sounds
-	//std::unique_ptr<SoundManager> m_soundManager;
-
+	// Shaders mapped to their identifiers
+	std::map<Shaders::ShaderIdentifier, Shader*> m_shaders;
+	std::map<Shaders::ShaderIdentifier, Shaders::ShaderSettings> m_shaderSettings;
+	// PipelineStateObjects mapped to attribute and shader hashes
+	std::map<unsigned int, std::unique_ptr<PipelineStateObject>> m_psos;
 };
-
-template <typename T>
-void ResourceManager::loadShaderSet() {
-	// Insert and get the new ShaderSet
-	//m_shaderSets.insert({ typeid(T).name(), std::make_unique<T>() });
-	m_shaderSets.insert({ typeid(T).name(), SAIL_NEW T() });
-}

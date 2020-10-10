@@ -5,12 +5,13 @@
 
 namespace ShaderComponent {
 
-	ConstantBuffer* ConstantBuffer::Create(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot) {
+	ConstantBuffer* ConstantBuffer::Create(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot, bool inComputeShader) {
 		return SAIL_NEW DX11ConstantBuffer(initData, size, bindShader, slot);
 	}
 
 	DX11ConstantBuffer::DX11ConstantBuffer(void* initData, unsigned int size, BIND_SHADER bindShader, unsigned int slot)
-		: m_bindShader(bindShader)
+		: ConstantBuffer(slot)
+		, m_bindShader(bindShader)
 		, m_slot(slot)
 		, m_bufferSize(size)
 	{

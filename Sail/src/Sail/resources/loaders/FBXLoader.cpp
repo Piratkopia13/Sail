@@ -1,21 +1,19 @@
 #include "pch.h"
 #include "FBXLoader.h"
 
-#include <d3d11.h>
 #include "../../utils/Utils.h"
-#include "../../graphics/geometry/factory/CubeModel.h"
+#include "../../graphics/geometry/factory/Cube.h"
 #include "Sail/Application.h"
+#include "Sail/graphics/material/PhongMaterial.h"
 
 FbxManager* FBXLoader::s_manager = FbxManager::Create();
 FbxIOSettings* FBXLoader::s_ios = FbxIOSettings::Create(s_manager, IOSROOT);
 
-FBXLoader::FBXLoader(const std::string& filepath, Shader* shader)
+FBXLoader::FBXLoader(const std::string& filepath)
 	: m_filepath(filepath)
-	, m_shader(shader)
 {
 	s_manager->SetIOSettings(s_ios);
 
-	m_model = std::make_unique<Model>();
 	m_scene = parseFBX(filepath);
 	
 	// Triangulate all meshes in the scene
@@ -39,7 +37,7 @@ FBXLoader::FBXLoader(const std::string& filepath, Shader* shader)
 	} else {
 		Logger::Warning("Failed to load fbx file '" + filepath + "', using default cube.");
 		glm::vec3 halfSizes = glm::vec3(0.5, 0.5, 0.5);
-		m_model = ModelFactory::CubeModel::Create(halfSizes, shader);
+		m_mesh = MeshFactory::Cube::Create(halfSizes);
 	}
 }
 
@@ -48,8 +46,8 @@ FBXLoader::~FBXLoader() {
 		m_scene->Destroy();
 }
 
-std::unique_ptr<Model>& FBXLoader::getModel() {
-	return m_model;
+std::shared_ptr<Mesh>& FBXLoader::getMesh() {
+	return m_mesh;
 }
 
 FbxScene* FBXLoader::parseFBX(const std::string& filename) {
@@ -81,9 +79,13 @@ void FBXLoader::loadNode(FbxNode* pNode) {
 
 			Mesh::Data meshData;
 			getGeometry(mesh, meshData);
-			std::unique_ptr<Mesh> mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData, m_shader));
-			getMaterial(pNode, mesh->getMaterial());
-			m_model->addMesh(std::move(mesh));
+			m_mesh = std::unique_ptr<Mesh>(Mesh::Create(meshData));
+
+			/*if (auto* material = dynamic_cast<PhongMaterial*>(mesh->getMaterial())) {
+				getMaterial(pNode, material);
+			} else {
+				Logger::Warning("Unknown material type found for fbx parsing. Only PhongMaterial can be read from files.");
+			}*/
 
 		}
 
@@ -323,7 +325,7 @@ void FBXLoader::getGeometry(FbxMesh* mesh, Mesh::Data& buildData) {
 
 }
 
-void FBXLoader::getMaterial(FbxNode* pNode, Material* material) {
+void FBXLoader::getMaterial(FbxNode* pNode, PhongMaterial* material) {
 
 	// Gets the model's phong constants
 	if (pNode->GetSrcObjectCount<FbxSurfacePhong>() > 0) {

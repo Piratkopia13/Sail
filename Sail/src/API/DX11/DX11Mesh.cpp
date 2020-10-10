@@ -3,19 +3,17 @@
 #include "DX11VertexBuffer.h"
 #include "DX11IndexBuffer.h"
 #include "Sail/Application.h"
-#include "Sail/graphics/shader/Shader.h"
 #include "DX11API.h"
 
-Mesh* Mesh::Create(Data& buildData, Shader* shader) {
-	return SAIL_NEW DX11Mesh(buildData, shader);
+Mesh* Mesh::Create(Data& buildData) {
+	return SAIL_NEW DX11Mesh(buildData);
 }
 
-DX11Mesh::DX11Mesh(Data& buildData, Shader* shader) 
-	: Mesh(buildData, shader)
+DX11Mesh::DX11Mesh(Data& buildData) 
+	: Mesh(buildData)
 {
-	material = std::make_shared<Material>(shader);
 	// Create vertex buffer
-	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(shader->getPipeline()->getInputLayout(), buildData));
+	vertexBuffer = std::unique_ptr<VertexBuffer>(VertexBuffer::Create(buildData));
 	// Create index buffer if indices are set
 	if (buildData.numIndices > 0) {
 		indexBuffer = std::unique_ptr<IndexBuffer>(IndexBuffer::Create(buildData));
@@ -25,8 +23,18 @@ DX11Mesh::DX11Mesh(Data& buildData, Shader* shader)
 DX11Mesh::~DX11Mesh() {
 }
 
-void DX11Mesh::draw(const Renderer& renderer, void* cmdList) {
-	material->bind();
+void DX11Mesh::draw(const Renderer& renderer, Material* material, Shader* shader, void* cmdList) {
+	if (!shader) {
+		Logger::Warning("Tried to draw mesh with no shader");
+		return;
+	}
+	
+	if (material) {
+		if (shader->getMaterialType() != material->getType()) {
+			Logger::Warning("Shader requires a different material from the one given");
+			return;
+		}
+	}
 
 	vertexBuffer->bind();
 	if (indexBuffer)

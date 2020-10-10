@@ -1,0 +1,63 @@
+#define PI 3.14159265359
+#define M_1_PI 0.318309886183790671538
+
+#define NUM_POINT_LIGHTS 8
+
+struct PointLight {
+	float3 color;
+    float attRadius;
+	float3 fragToLight;
+	float intensity;
+};
+
+struct DirectionalLight {
+	float3 color;
+	float intensity;
+	float3 direction;
+	float padding;
+};
+
+struct LightList {
+	DirectionalLight dirLight;
+    PointLight pointLights[NUM_POINT_LIGHTS];
+};
+
+struct PBRMaterial {
+	float4 modelColor;
+	
+	float metalnessScale;
+	float roughnessScale;
+	float aoIntensity;
+	int albedoTexIndex;
+	
+	int normalTexIndex;
+	int mraoTexIndex; // R/G/B = Metalness/Roughness/Ambient occlusion
+	int radianceMapTexIndex;
+	int irradianceMapTexIndex;
+	
+	int brdfLutTexIndex;
+	float3 padding;
+};
+
+struct PhongMaterial {
+	float4 modelColor;
+	float ka;
+	float kd;
+	float ks;
+	float shininess;
+	int diffuseTexIndex;
+	int normalTexIndex;
+	int specularTexIndex;
+	float padding;
+};
+
+struct PhongInput {
+	PhongMaterial mat;
+	float4 diffuseColor;
+	float3 normal;
+	float3 specMap;
+	float3 fragToCam;
+	
+	DirectionalLight dirLight;
+    PointLight pointLights[NUM_POINT_LIGHTS];
+};

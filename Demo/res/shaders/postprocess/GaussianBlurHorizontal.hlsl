@@ -1,60 +1,81 @@
-#define BLOOM_THRESHOLD 0.5
+//=============================================================================
+// Highly inspired by Frank Luna
+//
+// Performs a separable blur with a blur radius defined in included file.  
+//=============================================================================
+#include "GaussianBlurCommon.hlsl"
 
-// Kernel from http://dev.theomader.com/gaussian-kernel-calculator/
-//    0.382925f, 0.24173f, 0.060598f, 0.005977f, 0.000229f
-// Offsets and weights calculated using formula provided by Daniel Rákos
-// https://web.archive.org/web/20170926040515/http://rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/
-static const float offset[3] = {
-    0.f, 1.20043793f, 3.03689977f
-};
-static const float weight[3] = {
-    0.382925f, 0.302328f, 0.006206f
-};
+RWTexture2D<unorm float4> inoutput : register(u10) : SAIL_NO_RESOURCE;
 
-
-float getBrightness(float3 color) {
-  return dot(color, float3(0.2126, 0.7152, 0.0722));
+#ifdef _SAIL_VK
+// VK ONLY
+[[vk::push_constant]]
+struct {
+	float textureSizeDifference;
+} CSData;
+#else
+// NOT VK
+cbuffer VSPSConsts : SAIL_CONSTANT {
+	float textureSizeDifference;
 }
+#endif
 
-struct VSIn {
-    float4 position : POSITION0;
-};
+// cbuffer CSData : register(b0) {
+//     float textureSizeDifference;
+// }
 
-struct PSIn {
-    float4 position : SV_Position;
-    float2 texCoord : TEXCOORD0;
-};
+[numthreads(N, 1, 1)]
+void CSMain(int3 groupThreadID : SV_GroupThreadID,
+				int3 dispatchThreadID : SV_DispatchThreadID)
+{
+	//
+	// Fill local thread storage to reduce bandwidth.  To blur 
+	// N pixels, we will need to load N + 2*BlurRadius pixels
+	// due to the blur radius.
+	//
 
-cbuffer PSPixelSize : register(b0) {
-  float invWindowWidth;
-  float invWindowHeight;
-}
+#ifdef _SAIL_VK
+	float texSizeDiff = CSData.textureSizeDifference;
+#else
+	float texSizeDiff = textureSizeDifference;
+#endif
 
-PSIn VSMain(VSIn input) {
-    PSIn output;
+	float2 inputSize;
+	inoutput.GetDimensions(inputSize.x, inputSize.y);
 
-    input.position.w = 1.f;
-	// input position is already in clip space coordinates
-    output.position = input.position;
-    output.texCoord.x = input.position.x / 2.f + 0.5f;
-    output.texCoord.y = -input.position.y / 2.f + 0.5f;
+	// This thread group runs N threads.  To get the extra 2*BlurRadius pixels, 
+	// have 2*BlurRadius threads sample an extra pixel.
+	if(groupThreadID.x < blurRadius) {
+		// Clamp out of bound samples that occur at image borders.
+		int x = max(dispatchThreadID.x - blurRadius, 0);
+		cache[groupThreadID.x] = inoutput[int2(x, dispatchThreadID.y) * texSizeDiff];
+		// cache[groupThreadID.x] = float4(0, 0.5, 0, 1);
+	}
+	if(groupThreadID.x >= N-blurRadius) {
+		// Clamp out of bound samples that occur at image borders.
+		int x = min(dispatchThreadID.x + blurRadius, inputSize.x-1);
+		cache[groupThreadID.x+2*blurRadius] = inoutput[int2(x, dispatchThreadID.y) * texSizeDiff];
+		// cache[groupThreadID.x] = float4(0, 0.5, 0, 1);
+	}
 
-    return output;
+	// Clamp out of bound samples that occur at image borders.
+	cache[groupThreadID.x+blurRadius] = inoutput[min(dispatchThreadID.xy, inputSize.xy-1) * texSizeDiff];
 
-}
+	// Wait for all threads to finish.
+	GroupMemoryBarrierWithGroupSync();
+	
+	//
+	// Now blur each pixel.
+	//
 
-Texture2D tex : register(t0);
-SamplerState PSss : register(s0);
-
-float4 PSMain(PSIn input) : SV_Target0 {
-
-    float4 color = tex.Sample(PSss, input.texCoord) * weight[0];
-
-    for (int x = 1; x < 3; x++) {
-        color += tex.Sample(PSss, input.texCoord + float2(offset[x] * invWindowWidth, 0.f)) * weight[x];
-        color += tex.Sample(PSss, input.texCoord - float2(offset[x] * invWindowWidth, 0.f)) * weight[x];
-    }
-
-    return color;
-
+	float4 blurColor = float4(0, 0, 0, 0);
+	
+	[unroll]
+	for(int i = -blurRadius; i <= blurRadius; ++i) {
+		int k = groupThreadID.x + blurRadius + i;
+		
+		blurColor += weights[i+blurRadius] * cache[k];
+	}
+	
+	inoutput[dispatchThreadID.xy] = blurColor;
 }

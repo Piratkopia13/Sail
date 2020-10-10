@@ -2,13 +2,12 @@
 
 #include "../entities/Entity.h"
 #include "camera/Camera.h"
-#include "../events/Events.h"
-//#include "postprocessing/PostProcessPipeline.h"
+#include "material/OutlineMaterial.h"
 
-class LightSetup;
 class Renderer;
-// TODO: make this class virtual and have the actual scene in the demo/game project
-class Scene : public IEventListener {
+class Environment;
+
+class Scene {
 public:
 	Scene();
 	~Scene();
@@ -16,19 +15,20 @@ public:
 	// Adds an entity to later be drawn
 	// This takes shared ownership of the entity
 	void addEntity(Entity::SPtr entity);
-	void setLightSetup(LightSetup* lights);
 	void draw(Camera& camera);
 
-	virtual bool onEvent(Event& event) override;
+	std::vector<Entity::SPtr>& getEntites();
+	Environment* getEnvironment();
 
 private:
-	bool onResize(WindowResizeEvent& event);
+	void submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDXR, const glm::mat4& parentTransform);
 
 private:
+	std::unique_ptr<Environment> m_environment;
 	std::vector<Entity::SPtr> m_entities;
-	std::unique_ptr<Renderer> m_renderer;
-	//DeferredRenderer m_renderer;
-	//std::unique_ptr<DX11RenderableTexture> m_deferredOutputTex;
-	//PostProcessPipeline m_postProcessPipeline;
+	std::unique_ptr<Renderer> m_deferredRenderer;
+	std::unique_ptr<Renderer> m_forwardRenderer;
+	std::unique_ptr<Renderer> m_raytracingRenderer;
 
+	OutlineMaterial m_outlineMaterial;
 };

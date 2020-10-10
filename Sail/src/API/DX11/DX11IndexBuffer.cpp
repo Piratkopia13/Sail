@@ -38,7 +38,7 @@ ID3D11Buffer* const* DX11IndexBuffer::getBuffer() const {
 	return &m_buffer;
 }
 
-void DX11IndexBuffer::bind(void* cmdList) const {
+void DX11IndexBuffer::bind(void* cmdList) {
 	// TODO: is 32 bits too much for indices? nah
 	Application::getInstance()->getAPI<DX11API>()->getDeviceContext()->IASetIndexBuffer(m_buffer, DXGI_FORMAT_R32_UINT, 0);
 }

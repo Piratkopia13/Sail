@@ -5,7 +5,8 @@
 
 Application* Application::m_instance = nullptr;
 
-Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance, API api) {
+Application::Application(int windowWidth, int windowHeight, const char* windowTitle, HINSTANCE hInstance) {
+	SAIL_PROFILE_FUNCTION();
 
 	// Set up instance if not set
 	if (m_instance) {
@@ -13,6 +14,8 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 		return;
 	}
 	m_instance = this;
+
+	m_pauseRendering = false;
 
 	// Set up window
 	Window::WindowProps windowProps;
@@ -47,9 +50,9 @@ Application::Application(int windowWidth, int windowHeight, const char* windowTi
 	// Register devices to use raw input from hardware
 	//m_input.registerRawDevices(*m_window.getHwnd());
 
-	// Load the missing texture texture
-	m_resourceManager.loadTexture("missing.tga");
-
+	// Load the missing texture textures
+	m_resourceManager.loadTexture(ResourceManager::MISSING_TEXTURE_NAME);
+	m_resourceManager.loadTexture(ResourceManager::MISSING_TEXTURECUBE_NAME);
 }
 
 Application::~Application() {
@@ -57,7 +60,6 @@ Application::~Application() {
 }
 
 int Application::startGameLoop() {
-
 	// Start delta timer
 	m_timer.startTimer();
 	
@@ -81,6 +83,7 @@ int Application::startGameLoop() {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		} else {
+			SAIL_PROFILE_SCOPE("Frame");
 
 			// Handle window resizing
 			if (m_window->hasBeenResized()) {
@@ -88,21 +91,29 @@ int Application::startGameLoop() {
 				UINT newHeight = m_window->getWindowHeight();
 				bool isMinimized = m_window->isMinimized();
 				// Send resize event
-				dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
+				EventSystem::getInstance()->dispatchEvent(WindowResizeEvent(newWidth, newHeight, isMinimized));
 			}
+
+			// Execute any scheduled functions
+			for (const auto& func : m_scheduledFuncsForNextFrame) {
+				func();
+			}
+			m_scheduledFuncsForNextFrame.clear();
 			
 			// Get delta time from last frame
 			float delta = static_cast<float>(m_timer.getFrameTime());
 			delta = std::min(delta, 0.04f);
 
 			// Update fps counter
-			secCounter += delta;
-			frameCounter++;
+			if (!m_pauseRendering) {
+				secCounter += delta;
+				frameCounter++;
 
-			if (secCounter >= 1) {
-				m_fps = frameCounter;
-				frameCounter = 0;
-				secCounter = 0.f;
+				if (secCounter >= 1) {
+					m_fps = frameCounter;
+					frameCounter = 0;
+					secCounter = 0.f;
+				}
 			}
 
 			// Update input states
@@ -119,18 +130,15 @@ int Application::startGameLoop() {
 
 			// Update
 #ifdef _DEBUG
-			/*if (m_input.getKeyboardState().Escape)
-				PostQuitMessage(0);*/
+			if (Input::IsKeyPressed(SAIL_KEY_ESCAPE))
+				PostQuitMessage(0);
 
 
 			//if(delta > 0.0166)
 			//	Logger::Warning(std::to_string(elapsedTime) + " delta over 0.0166: " + std::to_string(delta));
 #endif
 			updateTimer += delta;
-
 			int maxCounter = 0;
-		
-
 			while (updateTimer >= timeBetweenUpdates) {
 				if (maxCounter >= 4)
 					break;
@@ -140,7 +148,8 @@ int Application::startGameLoop() {
 			}
 
 			// Render
-			render(delta);
+			if (!m_pauseRendering)
+				render(delta);
 			
 			// Reset just pressed keys
 			Input::GetInstance()->endFrame();
@@ -162,23 +171,32 @@ Application* Application::getInstance() {
 	return m_instance;
 }
 
-void Application::dispatchEvent(Event& event) {
-	m_api->onEvent(event);
-	Input::GetInstance()->onEvent(event);
-}
-
 GraphicsAPI* const Application::getAPI() {
 	return m_api.get();
 }
 Window* const Application::getWindow() {
 	return m_window.get();
 }
+
+void Application::scheduleForNextFrame(std::function<void()> func) {
+	m_scheduledFuncsForNextFrame.emplace_back(func);
+}
+
+void Application::pauseRendering(bool pause) {
+	m_pauseRendering = pause;
+}
+
 ImGuiHandler* const Application::getImGuiHandler() {
 	return m_imguiHandler.get();
 }
 ResourceManager& Application::getResourceManager() {
 	return m_resourceManager;
 }
+
+Settings& Application::getSettings() {
+	return m_settings;
+}
+
 const UINT Application::getFPS() const {
 	return m_fps;
 }

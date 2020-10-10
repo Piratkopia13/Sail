@@ -1,45 +1,42 @@
 #include "pch.h"
 #include "LightSetup.h"
+#include "Sail/entities/components/PointLightComponent.h"
+#include "Sail/entities/components/DirectionalLightComponent.h"
 
-LightSetup::LightSetup()
-	: m_numPls(0)
-{ }
+LightSetup::LightSetup() {
+	m_plData.resize(MAX_POINTLIGHTS_FORWARD_RENDERING);
+	m_numPls = 0;
+}
 LightSetup::~LightSetup() {}
 
-void LightSetup::addPointLight(const PointLight& pl) {
-	m_pls.push_back(pl);
-	updateBufferData();
-}
-void LightSetup::setDirectionalLight(const DirectionalLight& dl) {
-	m_dl = dl;
-	updateBufferData();
+void LightSetup::addPointLight(PointLightComponent* plComp) {
+	if (m_numPls >= m_plData.size()) return;
+
+	auto& pl = m_plData[m_numPls++];
+	pl.attRadius = plComp->getAttenuationRadius();
+	pl.color = plComp->getColor();
+	pl.position = plComp->getPosition();
+	pl.intensity = plComp->getIntensity();
 }
 
-const DirectionalLight& LightSetup::getDL() const {
-	return m_dl;
-}
-const std::vector<PointLight>& LightSetup::getPLs() const {
-	return m_pls;
+void LightSetup::setDirectionalLight(DirectionalLightComponent* dl) {
+	m_dlData.color = dl->getColor();
+	m_dlData.direction = dl->getDirection();
+	m_dlData.intensity = dl->getIntensity();
 }
 
-const LightSetup::DirLightBuffer& LightSetup::getDirLightData() const {
+const LightSetup::DirLightBuffer& LightSetup::getDirLight() const {
 	return m_dlData;
 }
 
-const LightSetup::PointLightsBuffer& LightSetup::getPointLightsData() const {
-	return m_plData;
+std::tuple<void*, unsigned int> LightSetup::getDirLightData() const {
+	return { (void*)&m_dlData, sizeof(DirLightBuffer) };
 }
 
-void LightSetup::updateBufferData() {
-	m_dlData.color = m_dl.getColor();
-	m_dlData.direction = m_dl.getDirection();
-	// Copy the x first lights into the buffer
-	for (unsigned int i = 0; i < MAX_POINTLIGHTS_FORWARD_RENDERING; i++) {
-		if (i >= m_pls.size()) break;
-		m_plData.pLights[i].attConstant = m_pls[i].getAttenuation().constant;
-		/*m_plData.pLights[i].attLinear = m_pls[i].getAttenuation().linear;
-		m_plData.pLights[i].attQuadratic = m_pls[i].getAttenuation().quadratic;*/
-		m_plData.pLights[i].color = m_pls[i].getColor();
-		m_plData.pLights[i].position = m_pls[i].getPosition();
-	}
+std::tuple<void*, unsigned int> LightSetup::getPointLightsData() const {
+	return { (void*)m_plData.data(), sizeof(PointLightStruct) * MAX_POINTLIGHTS_FORWARD_RENDERING };
+}
+
+unsigned int LightSetup::getNumPLs() const {
+	return m_numPls;
 }

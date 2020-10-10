@@ -2,7 +2,7 @@
 
 #include "Event.h"
 
-class IEventListener{
+class IEventListener {
 public:
 	virtual bool onEvent(Event& event) = 0;
 };

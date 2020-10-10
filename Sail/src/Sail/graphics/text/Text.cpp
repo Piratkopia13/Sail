@@ -2,7 +2,7 @@
 #include "Text.h"
 
 #include "SailFont.h"
-#include "Sail/api/shader/ShaderPipeline.h"
+#include "Sail/api/shader/PipelineStateObject.h"
 
 Text::Ptr Text::Create(const std::wstring& text, const glm::vec2& pos, const glm::vec4& color) {
 	return std::make_unique<Text>(text, pos, color);

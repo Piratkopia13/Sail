@@ -1,8 +1,6 @@
 #pragma once
 
-#include <d3d11.h>
 #include <string>
-#include "loaders/TGALoader.h"
 #include "ResourceFormat.h"
 
 class TextureData {
@@ -11,16 +9,24 @@ public:
 
 public:
 	TextureData();
-	TextureData(const std::string& filename);
+	TextureData(const std::string& filename, bool useAbsolutePath = false);
 	~TextureData();
 
-	void load(const std::string& filename);
+	void load(const std::string& filename, bool useAbsolutePath = false);
 
+	ResourceFormat::TextureFormat getFormat() const;
 	unsigned int getWidth() const;
 	unsigned int getHeight() const;
 	unsigned int getBytesPerPixel() const;
-	unsigned char* getTextureData() const;
+	void* getData() const;
 	glm::vec4 getPixel(unsigned int x, unsigned int y);
+	bool isCubeMap() const;
+	bool isSRGB() const;
+	int getMipLevels() const;
+	const std::vector<glm::int2>& getMipExtents() const;
+	const std::vector<unsigned int>& getMipOffsets() const;
+
+	unsigned int getAllocatedMemorySize() const;
 
 private:
 	ResourceFormat::TextureData m_data;

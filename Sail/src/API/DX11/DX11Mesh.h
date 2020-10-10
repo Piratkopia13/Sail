@@ -1,15 +1,11 @@
 #pragma once
 
-#include <d3d11.h>
 #include "Sail/api/Mesh.h"
 
 class DX11Mesh : public Mesh {
 public:
-	DX11Mesh(Data& buildData, Shader* shader);
+	DX11Mesh(Data& buildData);
 	~DX11Mesh();
 
-	virtual void draw(const Renderer& renderer, void* cmdList) override;
-
-private:
-
+	virtual void draw(const Renderer& renderer, Material* material, Shader* shader, void* cmdList = nullptr) override;
 };

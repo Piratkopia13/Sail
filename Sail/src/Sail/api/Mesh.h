@@ -2,9 +2,10 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include "Sail/graphics/geometry/Material.h"
 #include "Sail/api/Renderer.h"
+#include "Sail/graphics/material/Material.h"
 
+class Shader;
 class VertexBuffer;
 class IndexBuffer;
 
@@ -18,11 +19,17 @@ public:
 		vec2(float x = 0.f, float y = 0.f) {
 			this->vec.x = x; this->vec.y = y;
 		}
+		const bool operator==(const vec2& other) const {
+			return this->vec == other.vec;
+		}
 	};
 	struct vec3 {
 		glm::vec3 vec;
 		vec3(float x = 0.f, float y = 0.f, float z = 0.f) {
 			this->vec.x = x; this->vec.y = y; this->vec.z = z;
+		}
+		const bool operator==(const vec3& other) const{
+			return this->vec == other.vec;
 		}
 	};
 	struct vec4 {
@@ -30,11 +37,15 @@ public:
 		vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) {
 			this->vec.x = x; this->vec.y = y; this->vec.z = z; this->vec.w = w;
 		}
+		const bool operator==(const vec4& other) const {
+			return this->vec == other.vec;
+		}
 	};
 
 	struct Data {
 		Data() : numIndices(0), numInstances(0), indices(nullptr), numVertices(0), normals(nullptr), positions(nullptr), colors(nullptr), texCoords(nullptr), tangents(nullptr), bitangents(nullptr) {};
 		void deepCopy(const Data& other);
+		//unsigned int calculateVertexStride() const;
 		unsigned int numIndices;
 		unsigned long* indices;
 		unsigned int numVertices;
@@ -48,23 +59,22 @@ public:
 	};
 
 public:
-	static Mesh* Create(Data& buildData, Shader* shader);
-	Mesh(Data& buildData, Shader* shader);
+	static Mesh* Create(Data& buildData);
+	Mesh(Data& buildData);
 	virtual ~Mesh();
 
-	virtual void draw(const Renderer& renderer, void* cmdList = nullptr) = 0;
+	virtual void draw(const Renderer& renderer, Material* material, Shader* shader, void* cmdList = nullptr) = 0;
 
-	Material* getMaterial();
+	// Returns a unique hash for the combination of vertex data used in the mesh (positions, normals, etc)
+	unsigned int getAttributesHash();
 
 	unsigned int getNumVertices() const;
 	unsigned int getNumIndices() const;
 	unsigned int getNumInstances() const;
-	const VertexBuffer& getVertexBuffer() const;
-	const IndexBuffer& getIndexBuffer() const;
+	VertexBuffer& getVertexBuffer() const;
+	IndexBuffer& getIndexBuffer() const;
 
 protected:
-	Material::SPtr material;
-
 	std::unique_ptr<VertexBuffer> vertexBuffer;
 	std::unique_ptr<IndexBuffer> indexBuffer;
 	Data meshData;

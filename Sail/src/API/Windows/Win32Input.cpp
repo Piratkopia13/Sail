@@ -15,9 +15,12 @@ Win32Input::Win32Input()
 	, m_cursorHidden(false)
 	, m_stopInput(false)
 {
+	EventSystem::getInstance()->subscribeToEvent(Event::WINDOW_FOCUS_CHANGED, this);
 }
 
-Win32Input::~Win32Input() {}
+Win32Input::~Win32Input() {
+	EventSystem::getInstance()->unsubscribeFromEvent(Event::WINDOW_FOCUS_CHANGED, this);
+}
 
 bool Win32Input::isKeyPressedImpl(int keycode) {
 	return m_keys[keycode];
@@ -48,7 +51,7 @@ void Win32Input::hideCursorImpl(bool hide) {
 	if (hide)
 		while (ShowCursor(false) >= 0);
 	else
-		ShowCursor(true);
+		while (ShowCursor(true) < 0);
 }
 
 bool Win32Input::isCursorHiddenImpl() {
@@ -164,6 +167,6 @@ bool Win32Input::onEvent(Event& event) {
 		}
 		return true;
 	};
-	EventHandler::dispatch<WindowFocusChangedEvent>(event, handleFocusChange);
+	EventHandler::HandleType<WindowFocusChangedEvent>(event, handleFocusChange);
 	return true;
 }

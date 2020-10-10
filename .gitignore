@@ -60,3 +60,6 @@ plan\.txt
 
 #bin
 bin/*
+
+# Cached SPIR-V shaders
+*.spv

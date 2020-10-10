@@ -69,18 +69,12 @@ class StateStack {
 		std::map<States::ID, std::function<State::Ptr()>> m_factories;
 
 		bool m_renderImgui;
-
-
-public:
-	void onEvent(Event& event);
 };
 
 template <typename T>
 void StateStack::registerState(States::ID stateID) {
-	
 	// Store a function to initialize a new pointer to the state
 	m_factories[stateID] = [this]() {
-		return State::Ptr(new T(*this));
+		return State::Ptr(SAIL_NEW T(*this));
 	};
-
 }

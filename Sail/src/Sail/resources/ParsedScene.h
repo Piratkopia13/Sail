@@ -1,20 +1,18 @@
 #pragma once
 
-#include "loaders/FBXLoader.h"
-
-class Model;
+class Mesh;
 
 class ParsedScene {
 public:
 	static const std::string DEFAULT_MODEL_LOCATION;
 
 public:
-	ParsedScene(const std::string& filename, Shader* shader);
+	ParsedScene(const std::string& filename, bool useAbsolutePath = false);
 
 	~ParsedScene();
-	Model* getModel();
+	std::shared_ptr<Mesh> getMesh();
 
 private:
-	std::unique_ptr<Model> m_model;
+	std::shared_ptr<Mesh> m_mesh;
 
 };

@@ -2,10 +2,29 @@
 #include "Texture.h"
 #include "Sail/Application.h"
 
-TextureData& Texture::getTextureData(const std::string& filename) const {
+Texture::Texture(const std::string& filename)
+	: m_name(filename)
+	, texIsCubeMap(false)
+	, readyToUse(false)
+{ }
+
+const std::string& Texture::getName() const {
+	return m_name;
+}
+
+bool Texture::isCubeMap() const {
+	return texIsCubeMap;
+}
+
+bool Texture::isReadyToUse() const {
+	return readyToUse;
+}
+
+TextureData& Texture::getTextureData(const std::string& filename, bool useAbsolutePath) const {
 	// Load the texture file it if is not loaded already
-	if (!Application::getInstance()->getResourceManager().hasTextureData(filename)) {
-		Application::getInstance()->getResourceManager().loadTextureData(filename);
+	auto& rm = Application::getInstance()->getResourceManager();
+	if (!rm.hasTextureData(filename)) {
+		rm.loadTextureData(filename, useAbsolutePath);
 	}
-	return Application::getInstance()->getResourceManager().getTextureData(filename);
+	return rm.getTextureData(filename);
 }

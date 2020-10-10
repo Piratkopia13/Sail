@@ -6,10 +6,9 @@ namespace States {
 
 	enum ID {
 		None,
-		MainMenu,
 		Game,
-		Pause,
-		Score
+		Editor,
+		Empty
 	};
 
 }

@@ -1,117 +1,155 @@
 #include "GameState.h"
 #include "imgui.h"
+#include "Sail/debug/Instrumentor.h"
+#include "Sail/graphics/material/PhongMaterial.h"
 
 GameState::GameState(StateStack& stack)
 : State(stack)
-//, m_cam(20.f, 20.f, 0.1f, 5000.f)
 , m_cam(90.f, 1280.f / 720.f, 0.1f, 5000.f)
 , m_camController(&m_cam)
 {
+	SAIL_PROFILE_FUNCTION();
 
 	// Get the Application instance
 	m_app = Application::getInstance();
-	//m_scene = std::make_unique<Scene>(AABB(glm::vec3(-100.f, -100.f, -100.f), glm::vec3(100.f, 100.f, 100.f)));
 
 	// Textures needs to be loaded before they can be used
 	// TODO: automatically load textures when needed so the following can be removed
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	/*Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");*/
 
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
 	m_camController.lookAt(glm::vec3(0.f));
-	
-	// Add a directional light
-	glm::vec3 color(1.0f, 1.0f, 1.0f);
- 	glm::vec3 direction(0.4f, -0.2f, 1.0f);
-	direction = glm::normalize(direction);
-	m_lights.setDirectionalLight(DirectionalLight(color, direction));
-	// Add four point lights
-	{
-		PointLight pl;
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(-4.0f, 0.1f, -4.0f));
-		m_lights.addPointLight(pl);
-
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
-		m_lights.addPointLight(pl);
-
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
-		m_lights.addPointLight(pl);
-
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
-		m_lights.addPointLight(pl);
-	}
-
-	// Set up the scene
-	//m_scene->addSkybox(L"skybox_space_512.dds"); //TODO
-	m_scene.setLightSetup(&m_lights);
 
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
-	auto* shader = &m_app->getResourceManager().getShaderSet<MaterialShader>();
-
 	// Create/load models
-	m_cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f), shader);
-	m_cubeModel->getMesh(0)->getMaterial()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-	m_planeModel = ModelFactory::PlaneModel::Create(glm::vec2(5.f), shader, glm::vec2(3.0f));
-	m_planeModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	m_planeModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	m_planeModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-	
-	Model* fbxModel = &m_app->getResourceManager().getModel("sphere.fbx", shader);
-	fbxModel->getMesh(0)->getMaterial()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	fbxModel->getMesh(0)->getMaterial()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	fbxModel->getMesh(0)->getMaterial()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	auto cubeMesh = MeshFactory::Cube::Create(glm::vec3(0.5f));
+	auto planeMesh = MeshFactory::Plane::Create(glm::vec2(50.f), glm::vec2(30.0f));
+	//auto fbxModel = m_app->getResourceManager().getModel("sphere.fbx");
 
 	// Create entities
-	auto e = Entity::Create("Static cube");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
-	m_scene.addEntity(e);
 
-	e = Entity::Create("Floor");
-	e->addComponent<ModelComponent>(m_planeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-	m_scene.addEntity(e);
+	// Lights
+	{
+		// Add a directional light
+		auto e = Entity::Create("Directional light");
+		glm::vec3 color(1.0f, 1.0f, 1.0f);
+		glm::vec3 direction(0.4f, -0.2f, 1.0f);
+		direction = glm::normalize(direction);
+		e->addComponent<DirectionalLightComponent>(color, direction);
+		m_scene.addEntity(e);
 
-	e = Entity::Create("Clingy cube");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
-	m_scene.addEntity(e);
+		// Add four point lights
+		e = Entity::Create("Point light 1");
+		auto& pl = e->addComponent<PointLightComponent>();
+		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl->setPosition(glm::vec3(-4.0f, 0.1f, -4.0f));
+		m_scene.addEntity(e);
 
-	// Add some cubes which are connected through parenting
-	m_texturedCubeEntity = Entity::Create("Textured parent cube");
-	m_texturedCubeEntity->addComponent<ModelComponent>(fbxModel);
-	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>());
-	m_texturedCubeEntity->setName("MovingCube");
-	m_scene.addEntity(m_texturedCubeEntity);
-	e->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>());
+		e = Entity::Create("Point light 2");
+		pl = e->addComponent<PointLightComponent>();
+		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl->setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
+		m_scene.addEntity(e);
 
-	e = Entity::Create("CubeRoot");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
-	m_scene.addEntity(e);
-	m_transformTestEntities.push_back(e);
+		e = Entity::Create("Point light 3");
+		pl = e->addComponent<PointLightComponent>();
+		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl->setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
+		m_scene.addEntity(e);
 
-	e = Entity::Create("CubeChild");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>());
-	m_scene.addEntity(e);
-	m_transformTestEntities.push_back(e);
+		e = Entity::Create("Point light 4");
+		pl = e->addComponent<PointLightComponent>();
+		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
+		pl->setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
+		m_scene.addEntity(e);
+	}
+	{
+		auto e = Entity::Create("Static cube");
+		e->addComponent<MeshComponent>(cubeMesh);
+		e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
+		auto mat = e->addComponent<MaterialComponent<PhongMaterial>>();
+		mat->get()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+		m_scene.addEntity(e);
+	}
 
-	e = Entity::Create("CubeChildChild");
-	e->addComponent<ModelComponent>(m_cubeModel.get());
-	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>());
-	m_scene.addEntity(e);
-	m_transformTestEntities.push_back(e);
+	{
+		auto e = Entity::Create("Floor");
+		e->addComponent<MeshComponent>(planeMesh);
+		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		auto mat = e->addComponent<MaterialComponent<PhongMaterial>>();
+		mat->get()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+		mat->get()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+		mat->get()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+		m_scene.addEntity(e);
+	}
 
+	Entity::SPtr parentEntity;
+	{
+		parentEntity = Entity::Create("Clingy cube");
+		parentEntity->addComponent<MeshComponent>(cubeMesh);
+		parentEntity->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+		parentEntity->addComponent<MaterialComponent<PhongMaterial>>();
+		m_scene.addEntity(parentEntity);
+	}
+	//{
+	//	// Add some cubes which are connected through parenting
+	//	m_texturedCubeEntity = Entity::Create("Textured parent cube");
+	//	m_texturedCubeEntity->addComponent<MeshComponent>(fbxModel);
+	//	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>().get());
+	//	auto mat = m_texturedCubeEntity->addComponent<MaterialComponent<PhongMaterial>>();
+	//	mat->get()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+	//	mat->get()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+	//	mat->get()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+	//	m_texturedCubeEntity->setName("MovingCube");
+	//	m_scene.addEntity(m_texturedCubeEntity);
+	//	parentEntity->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>().get());
+	//}
+	//{
+	//	auto e = Entity::Create("CubeRoot");
+	//	e->addComponent<MeshComponent>(cubeMesh);
+	//	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+	//	e->addComponent<MaterialComponent<PhongMaterial>>();
+	//	m_scene.addEntity(e);
+	//	m_transformTestEntities.push_back(e);
+	//}
+	//{
+	//	auto e = Entity::Create("CubeChild");
+	//	e->addComponent<MeshComponent>(cubeMesh);
+	//	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>().get());
+	//	e->addComponent<MaterialComponent<PhongMaterial>>();
+	//	m_scene.addEntity(e);
+	//	m_transformTestEntities.push_back(e);
+	//}
+	//{
+	//	auto e = Entity::Create("CubeChildChild");
+	//	e->addComponent<MeshComponent>(cubeMesh);
+	//	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>().get());
+	//	e->addComponent<MaterialComponent<PhongMaterial>>();
+	//	m_scene.addEntity(e);
+	//	m_transformTestEntities.push_back(e);
+	//}
+	
+	// Random cube maze
+	const unsigned int mazeStart = 5;
+	const unsigned int mazeSize = 20;
+	const float wallSize = 1.1f;
+	for (unsigned int x = 0; x < mazeSize; x++) {
+		for (unsigned int y = 0; y < mazeSize; y++) {
+			/*if (Utils::rnd() > 0.5f)
+				continue;*/
+
+			auto e = Entity::Create();
+			e->addComponent<MeshComponent>(cubeMesh);
+			e->addComponent<TransformComponent>(glm::vec3(x * wallSize + mazeStart, 0.5f, y * wallSize + mazeStart));
+			e->addComponent<MaterialComponent<PhongMaterial>>();
+			m_scene.addEntity(e);
+		}
+	}
 }
 
 GameState::~GameState() {
@@ -119,62 +157,21 @@ GameState::~GameState() {
 
 // Process input for the state
 bool GameState::processInput(float dt) {
-
-#ifdef _DEBUG
-	// Add point light at camera pos
-	if (Input::WasKeyJustPressed(SAIL_KEY_E)) {
-		PointLight pl;
-		pl.setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
-		pl.setPosition(m_cam.getPosition());
-		pl.setAttenuation(.0f, 0.1f, 0.02f);
-		m_lights.addPointLight(pl);
-	}
-
-	if (Input::WasKeyJustPressed(SAIL_KEY_1)) {
-		Logger::Log("Setting parent");
-		m_transformTestEntities[2]->getComponent<TransformComponent>()->setParent(m_transformTestEntities[1]->getComponent<TransformComponent>());
-	}
-	if (Input::WasKeyJustPressed(SAIL_KEY_2)) {
-		Logger::Log("Removing parent");
-		m_transformTestEntities[2]->getComponent<TransformComponent>()->removeParent();
-	}
-#endif
-
-	if (Input::IsKeyPressed(SAIL_KEY_G)) {
-		glm::vec3 color(1.0f, 1.0f, 1.0f);;
-		m_lights.setDirectionalLight(DirectionalLight(color, m_cam.getDirection()));
-	}
+	SAIL_PROFILE_FUNCTION();
 
 	// Update the camera controller from input devices
 	m_camController.update(dt);
 
 	// Reload shaders
 	if (Input::WasKeyJustPressed(SAIL_KEY_R)) {
-		m_app->getResourceManager().reloadShader<MaterialShader>();
-		Event e(Event::POTATO);
-		m_app->dispatchEvent(e);
+		m_app->getResourceManager().reloadAllShaders();
 	}
 
 	return true;
 }
 
-bool GameState::onEvent(Event& event) {
-	Logger::Log("Received event: " + std::to_string(event.getType()));
-
-	EventHandler::dispatch<WindowResizeEvent>(event, SAIL_BIND_EVENT(&GameState::onResize));
-
-	// Forward events
-	m_scene.onEvent(event);
-
-	return true;
-}
-
-bool GameState::onResize(WindowResizeEvent& event) {
-	m_cam.resize(event.getWidth(), event.getHeight());
-	return true;
-}
-
 bool GameState::update(float dt) {
+	SAIL_PROFILE_FUNCTION();
 
 	std::wstring fpsStr = std::to_wstring(m_app->getFPS());
 
@@ -208,6 +205,7 @@ bool GameState::update(float dt) {
 
 // Renders the state
 bool GameState::render(float dt) {
+	SAIL_PROFILE_FUNCTION();
 
 	// Clear back buffer
 	m_app->getAPI()->clear({0.1f, 0.2f, 0.3f, 1.0f});
@@ -219,6 +217,7 @@ bool GameState::render(float dt) {
 }
 
 bool GameState::renderImgui(float dt) {
+	SAIL_PROFILE_FUNCTION();
 	// The ImGui window is rendered when activated on F10
 	ImGui::ShowDemoWindow();
 	return false;
