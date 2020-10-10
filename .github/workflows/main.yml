@@ -10,11 +10,10 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    # Checkout repo
-    - uses: actions/checkout@v1
-    # Checkout submodules
-    - name: Checkout submodules
-      uses: textbook/git-checkout-submodule-action@master
+    # Checkout repo with submodules
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'true'
     # Set up environment
     - name: Enable Developer Command Prompt
       uses: ilammy/msvc-dev-cmd@v1.4.1
