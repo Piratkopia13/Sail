@@ -1,0 +1,23 @@
+name: MSVC Build
+on:
+  push:
+    branches: [ master, dev ]
+  pull_request:
+    branches: [ master, dev ]
+    
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    # Checkout repo
+    - uses: actions/checkout@v1
+    # Set up environment
+    - name: Enable Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1.4.1
+      with:
+        arch: x64
+    # Run premake and build
+    - name: Build DX12 Release X64
+      run: |
+        .\premake\premake5.exe vs2019
+        msbuild Sail.sln /p:Configuration=Release /p:Platform="DX12 x64" /verbosity:minimal
