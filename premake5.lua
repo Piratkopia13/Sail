@@ -193,17 +193,17 @@ project "Sail"
 		"%{IncludeDir.ImGui}"
 	}
 	if VulkankSDKPath then
-		includedirs {
-			"%{IncludeDir.vulkan}"
-		}
+		includedirs { "%{IncludeDir.vulkan}" }
 	end
 
 	links {
 		"libfbxsdk",
 		"GLFW",
-		"ImGui",
-		"vulkan-1"
+		"ImGui"
 	}
+	if VulkankSDKPath then
+		links { "vulkan-1" }
+	end
 
 	flags { "MultiProcessorCompile" }
 
