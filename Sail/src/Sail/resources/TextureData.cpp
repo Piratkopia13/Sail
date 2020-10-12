@@ -3,8 +3,7 @@
 #include "loaders/TGAImageLoader.h"
 #include "loaders/STBImageLoader.h"
 #include "loaders/DDSKTXImageLoader.h"
-
-const std::string TextureData::DEFAULT_TEXTURE_LOCATION = "res/textures/";
+#include "ResourceManager.h"
 
 TextureData::TextureData() {
 	m_data.channels = 4;
@@ -20,7 +19,7 @@ TextureData::~TextureData() {
 }
 
 void TextureData::load(const std::string& filename, bool useAbsolutePath) {
-	std::string path = (useAbsolutePath) ? filename : DEFAULT_TEXTURE_LOCATION + filename;
+	std::string path = (useAbsolutePath) ? filename : ResourceManager::DEFAULT_TEXTURE_LOCATION + filename;
 
 	auto ext = path.substr(path.length() - 3);
 	if (ext == "hdr" || ext == "jpg" || ext == "png" || ext == "tga") {

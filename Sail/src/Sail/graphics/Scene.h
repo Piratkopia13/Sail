@@ -1,31 +1,41 @@
 #pragma once
 
-#include "../entities/Entity.h"
 #include "camera/Camera.h"
 #include "material/OutlineMaterial.h"
 
+#include <entt.hpp>
+
 class Renderer;
 class Environment;
+class Entity;
 
 class Scene {
+public:
+	// Allows a few classes to access the entt registry
+	friend class Entity;
+	friend class EntitiesGui;
+
 public:
 	Scene();
 	~Scene();
 
-	// Adds an entity to later be drawn
-	// This takes shared ownership of the entity
-	void addEntity(Entity::SPtr entity);
+	// Creates an entity in the scene and returns a handle to it
+	Entity Scene::createEntity(const std::string& name = "Unnamed");
+	// Removes an entity with all its components from the scene
+	// This also handles relation dependencies
+	// All children entites will also be destroyed
+	void Scene::destroyEntity(Entity& entity);
 	void draw(Camera& camera);
 
-	std::vector<Entity::SPtr>& getEntites();
 	Environment* getEnvironment();
 
+	entt::registry m_registry;
 private:
-	void submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDXR, const glm::mat4& parentTransform);
+	void submitEntity(Entity& entity, bool doDXR, const glm::mat4& parentTransform);
+	entt::registry& getEnttRegistry();
 
 private:
 	std::unique_ptr<Environment> m_environment;
-	std::vector<Entity::SPtr> m_entities;
 	std::unique_ptr<Renderer> m_deferredRenderer;
 	std::unique_ptr<Renderer> m_forwardRenderer;
 	std::unique_ptr<Renderer> m_raytracingRenderer;

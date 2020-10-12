@@ -22,8 +22,7 @@ private:
 	PerspectiveCamera m_cam;
 	FlyingCameraController m_camController;
 
-	Entity::SPtr m_texturedCubeEntity;
-	std::vector<Entity::SPtr> m_transformTestEntities;
-
+	Entity m_texturedCubeEntity;
+	std::vector<Entity> m_transformTestEntities;
 	Scene m_scene;
 };

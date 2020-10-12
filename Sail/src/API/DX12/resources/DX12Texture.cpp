@@ -8,17 +8,17 @@
 
 #include <filesystem>
 
-Texture* Texture::Create(const std::string& filename, bool useAbsolutePath) {
-	return SAIL_NEW DX12Texture(filename, useAbsolutePath);
+Texture* Texture::Create(const std::string& filepath) {
+	return SAIL_NEW DX12Texture(filepath);
 }
 
 uint32_t DX12Texture::s_mipGenCBufferIndex = 0;
 
-DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
-	: Texture(filename)
+DX12Texture::DX12Texture(const std::string& filepath)
+	: Texture(filepath)
 	, m_isUploaded(false)
 	, m_initFenceVal(UINT64_MAX)
-	, m_filename(filename)
+	, m_filename(filepath)
 {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
@@ -26,11 +26,10 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 	// Don't create one resource per swap buffer
 	useOneResource = true;
 
-	if (filename.substr(filename.length() - 3) == "dds") {
+	if (filepath.substr(filepath.length() - 3) == "dds") {
 		// DDS textures are handled separately since they use DDSTextureLoad12 and create their own default buffer
 
-		std::string path = (useAbsolutePath) ? filename : TextureData::DEFAULT_TEXTURE_LOCATION + filename;
-		std::wstring wideFilename = std::wstring(path.begin(), path.end());
+		std::wstring wideFilename = std::wstring(filepath.begin(), filepath.end());
 	
 		HRESULT hr = DirectX::LoadDDSTextureFromFile(m_context->getDevice(), wideFilename.c_str(), &textureDefaultBuffers[0], m_ddsData, m_subresources, 0, nullptr, &texIsCubeMap);
 		if (FAILED(hr)) {
@@ -47,7 +46,7 @@ DX12Texture::DX12Texture(const std::string& filename, bool useAbsolutePath)
 		createSRV(true);
 	} else {
 		// Load file using the resource manager
-		auto* texData = &getTextureData(filename, useAbsolutePath);
+		auto* texData = &getTextureData(filepath, useAbsolutePath);
 
 		m_textureDesc = {};
 		m_textureDesc.Format = ConvertToDXGIFormat(texData->getFormat());

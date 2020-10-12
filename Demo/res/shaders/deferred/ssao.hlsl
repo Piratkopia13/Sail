@@ -62,6 +62,9 @@ float PSMain(PSIn input) : SV_Target0 {
 
         offset.y = 1.f - offset.y; // Flip y-coord cuz direct x
         float sampleDepth = def_positions.Sample(PSssNearestClamp, offset.xy).z;
+        if (sampleDepth == 0.0f) sampleDepth = 999.f; // Sampler border clamp color needs to be set to black
+                                                      // If the sampling was clamped, assume a far away depth 
+                                                      // to get rid of artifacts around screen border
         
         float rangeCheck = smoothstep(0.f, 1.f, radius / abs(fragPos.z - sampleDepth));
         occlusion       += (sampleDepth <= smpl.z + bias ? 1.f : 0.f) * rangeCheck;

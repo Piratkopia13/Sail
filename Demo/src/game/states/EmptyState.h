@@ -37,6 +37,6 @@ private:
 	PerspectiveCamera m_cam;
 	FlyingCameraController m_camController;
 	LightSetup m_lightSetup;
-	Environment m_environment;
+	//Environment m_environment;
 
 };

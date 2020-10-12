@@ -39,33 +39,32 @@ EmptyState::EmptyState(StateStack& stack)
 
 	{
 		// Add a directional light
-		auto e = Entity::Create("Directional light");
+		auto e = m_scene.createEntity("Directional light");
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		glm::vec3 direction(0.4f, -0.2f, 1.0f);
 		direction = glm::normalize(direction);
-		e->addComponent<DirectionalLightComponent>(color, direction);
-		m_scene.addEntity(e);
+		e.addComponent<DirectionalLightComponent>(color, direction);
 	}
 
 	{
-		auto e = Entity::Create("Static cube");
-		e->addComponent<MeshComponent>(m_mesh2);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
-		mat->get()->setRoughnessScale(0.f);
-		mat->get()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-		mat->get()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
-		m_scene.addEntity(e);
+		auto e = m_scene.createEntity("Static cube");
+		e.addComponent<MeshComponent>(m_mesh2);
+		e.addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		auto mat = std::make_shared<PBRMaterial>();
+		mat->setRoughnessScale(0.f);
+		mat->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
+		mat->setAlbedoTexture("pbr/pavingStones/albedo.tga");
+		e.addComponent<MaterialComponent>(mat);
 	}
 
 	{
-		auto e = Entity::Create("Static cube");
-		e->addComponent<MeshComponent>(m_mesh2);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, -2.f, 0.f));
-		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
-		mat->get()->setRoughnessScale(0.f);
-		mat->get()->setColor(glm::vec4(0.8f, 0.1f, 0.4f, 1.0f));
-		m_scene.addEntity(e);
+		auto e = m_scene.createEntity("Static cube");
+		e.addComponent<MeshComponent>(m_mesh2);
+		e.addComponent<TransformComponent>(glm::vec3(0.f, -2.f, 0.f));
+		auto mat = std::make_shared<PBRMaterial>();
+		mat->setRoughnessScale(0.f);
+		mat->setColor(glm::vec4(0.8f, 0.1f, 0.4f, 1.0f));
+		e.addComponent<MaterialComponent>(mat);
 	}
 }
 

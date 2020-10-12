@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Scene.h"
+#include "../entities/Entity.h"
 #include "../entities/components/Components.h"
 #include "light/LightSetup.h"
 #include "../utils/Utils.h"
@@ -24,13 +25,51 @@ Scene::Scene()  {
 
 
 	// Set up the environment
-	m_environment = std::make_unique<Environment>();
+	m_environment = std::make_unique<Environment>(this);
 }
 
 Scene::~Scene() { }
 
-void Scene::addEntity(Entity::SPtr entity) {
-	m_entities.emplace_back(entity);
+Entity Scene::createEntity(const std::string& name) {
+	Entity e = { m_registry.create(), this };
+	e.addComponent<NameComponent>(name);
+	e.addComponent<IsBeingRenderedComponent>(false);
+	e.addComponent<IsSelectedComponent>(false);
+	return e;
+}
+
+void Scene::destroyEntity(Entity& entity) {
+	// Handle relations to the entity that is about to be destroyed
+	auto relation = entity.tryGetComponent<RelationshipComponent>();
+	if (relation) {
+		if (relation->prev) {
+			Entity(relation->prev, this).getComponent<RelationshipComponent>().next = relation->next;
+		}
+		if (relation->next) {
+			Entity(relation->next, this).getComponent<RelationshipComponent>().prev = relation->prev;
+		}
+		if (relation->parent) {
+			auto& parentEnt = Entity(relation->parent, this);
+			auto& parentRel = parentEnt.getComponent<RelationshipComponent>();
+			if (entity == parentRel.first) {
+				parentRel.first = relation->next;
+			}
+		}
+
+		// Remove children recursively
+		auto curr = Entity(relation->first, this);
+		for (size_t i = 0; i < relation->numChildren; i++) {
+			// Store a copy of the ID to the next entity, since the relation component will get destroyed
+			auto& rel = curr.getComponent<RelationshipComponent>();
+			auto next = rel.next;
+			destroyEntity(curr);
+
+			curr = Entity(next, this);
+		}
+	}
+
+	// Finally destroy the entity
+	m_registry.destroy(entity);
 }
 
 void Scene::draw(Camera& camera) {
@@ -69,21 +108,53 @@ void Scene::draw(Camera& camera) {
 #if ENABLE_SKYBOX
 	// Draw skybox first for transparency to work with it
 	{
-		auto e = m_environment->getSkyboxEntity();
-		auto mesh = e->getComponent<MeshComponent>();
-		auto transform = e->getComponent<TransformComponent>();
-		auto material = e->getComponent<MaterialComponent<>>();
-		m_forwardRenderer->submit(mesh->get(), material->get()->getShader(Renderer::FORWARD), material->get(), transform->getMatrix());
+		auto view = m_registry.view<SkyboxComponent>();
+		for (auto entity : view) {
+			auto skybox = view.get<SkyboxComponent>(entity);
+			auto mesh = m_registry.get<MeshComponent>(entity);
+			auto material = m_registry.get<MaterialComponent>(entity);
+			auto transform = m_registry.get<TransformComponent>(entity);
+
+			m_forwardRenderer->submit(mesh.get(), material.get()->getShader(Renderer::FORWARD), material.get(), transform.getMatrix());
+		}
 	}
 #endif
+
+	// Add all lights to the lightSetup
+	{
+		auto plView = m_registry.view<PointLightComponent>();
+		for (auto entity : plView) {
+			Entity e(entity, this);
+			
+			auto plComp = plView.get<PointLightComponent>(entity);
+			lightSetup.addPointLight(&plComp);
+		}
+
+		auto dlView = m_registry.view<DirectionalLightComponent>();
+		for (auto entity : dlView) {
+			Entity e(entity, this);
+
+			auto dlComp = dlView.get<DirectionalLightComponent>(entity);
+			lightSetup.setDirectionalLight(&dlComp);
+		}
+	}
 
 	// Drawing of meshes
 	{
 		SAIL_PROFILE_SCOPE("Submit models");
-		for (Entity::SPtr& entity : m_entities) {
+
+		auto view = m_registry.view<TransformComponent>(entt::exclude<SkyboxComponent>);
+		for (auto entity : view) {
 			glm::mat4 parentTransform(1.0f);
-			submitEntity(entity, &lightSetup, doDXR, parentTransform);
+
+			Entity e(entity, this);
+			auto* relation = e.tryGetComponent<RelationshipComponent>();
+			// Don't draw entities with parents, since these have already been drawn
+			if (!relation || !relation->parent) {
+				submitEntity(e, doDXR, parentTransform);
+			}
 		}
+
 	}
 #if USE_DEFERRED
 	m_deferredRenderer->end();
@@ -117,36 +188,26 @@ void Scene::draw(Camera& camera) {
 	m_forwardRenderer->setLightSetup(nullptr);
 }
 
-std::vector<Entity::SPtr>& Scene::getEntites() {
-	return m_entities;
-}
-
 Environment* Scene::getEnvironment() {
 	return m_environment.get();
 }
 
-void Scene::submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDXR, const glm::mat4& parentTransform) {
+void Scene::submitEntity(Entity& entity, bool doDXR, const glm::mat4& parentTransform) {
 	auto* outlineShader = &Application::getInstance()->getResourceManager().getShaderSet(Shaders::OutlineShader);
-	
-	// Add all lights to the lightSetup
-	auto plComp = entity->getComponent<PointLightComponent>();
-	if (plComp) lightSetup->addPointLight(plComp.get());
-	auto dlComp = entity->getComponent<DirectionalLightComponent>();
-	if (dlComp) lightSetup->setDirectionalLight(dlComp.get());
 
-	auto mesh = entity->getComponent<MeshComponent>();
-	auto transform = entity->getComponent<TransformComponent>();
+	auto* mesh = entity.tryGetComponent<MeshComponent>();
+	auto* transform = entity.tryGetComponent<TransformComponent>();
 	glm::mat4 transformMatrix = parentTransform;
 	if (transform) {
 		transformMatrix *= transform->getMatrix();
 	}
 
 	// Submit a copy for rendering as outline if selected in gui
-	if (entity->isSelectedInGui() && mesh && mesh->get() && transform)
+	if (entity.isSelected() && mesh && mesh->get() && transform)
 		m_forwardRenderer->submit(mesh->get(), outlineShader, &m_outlineMaterial, transformMatrix);
 
 	Material* material = nullptr;
-	if (auto materialComp = entity->getComponent<MaterialComponent<>>())
+	if (auto* materialComp = entity.tryGetComponent<MaterialComponent>())
 		material = materialComp->get();
 
 	if (mesh && mesh->get() && transform && material) {
@@ -169,22 +230,26 @@ void Scene::submitEntity(Entity::SPtr& entity, LightSetup* lightSetup, bool doDX
 				m_forwardRenderer->submit(mesh->get(), shader, material, transformMatrix);
 		}
 
-		entity->setIsBeingRendered(true);
+		entity.setIsBeingRendered(true);
 	} else {
-		// Indicate that the entity is not being rendered for some reason, this may be shown in the gui
-		entity->setIsBeingRendered(false);
+		// Indicate that the entity is not being rendered for some reason, this may be shown in the GUI
+		entity.setIsBeingRendered(false);
 	}
 
 
 	// Draw children recursively
-	auto& relation = entity->getComponent<RelationshipComponent>();
-	if (relation) {
-		auto curr = relation->first;
+	auto* relation = entity.tryGetComponent<RelationshipComponent>();
+	if (relation) { // Don't draw entities with parents, since these have already been drawn
+		auto curr = Entity(relation->first, this);
 		for (size_t i = 0; i < relation->numChildren; ++i) {
-			submitEntity(curr, lightSetup, doDXR, transformMatrix); // Recursive call
+			submitEntity(curr, doDXR, transformMatrix); // Recursive call
 
-			curr = curr->getComponent<RelationshipComponent>()->next;
+			auto rel = curr.getComponent<RelationshipComponent>();
+			curr = Entity(rel.next, this);
 		}
 	}
 }
 
+entt::registry& Scene::getEnttRegistry() {
+	return m_registry;
+}

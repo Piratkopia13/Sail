@@ -11,8 +11,6 @@ PointLightComponent::PointLightComponent()
 	, m_intensity(10.f)
 { }
 
-PointLightComponent::~PointLightComponent() { }
-
 void PointLightComponent::setColor(const glm::vec3& color) {
 	m_color = color;
 }

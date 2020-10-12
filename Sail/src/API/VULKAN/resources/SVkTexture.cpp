@@ -6,17 +6,18 @@
 #include "Sail/utils/Utils.h"
 #include "SVkATexture.h"
 
-Texture* Texture::Create(const std::string& filename, bool useAbsolutePath) {
-	return SAIL_NEW SVkTexture(filename, useAbsolutePath);
+Texture* Texture::Create(const std::string& filepath) {
+	return SAIL_NEW SVkTexture(filepath);
 }
 
-SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
-	: Texture(filename)
+SVkTexture::SVkTexture(const std::string& filepath)
+	: Texture(filepath)
 	, SVkATexture(true)
-	, m_filename(filename)
 	, m_generateMips(false)
 {
 	auto& allocator = context->getVmaAllocator();
+
+	m_filepath = filepath.substr(filepath.find_last_of('/')+1);
 
 	textureImages.resize(1);
 	imageViews.resize(1);
@@ -33,7 +34,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 
 	{
 		// Load file using the resource manager
-		auto& data = getTextureData(filename, useAbsolutePath);
+		auto& data = getTextureData(filepath);
 		texData = data.getData();
 		bufferSize = data.getAllocatedMemorySize();
 		texWidth = data.getWidth();
@@ -102,7 +103,7 @@ SVkTexture::SVkTexture(const std::string& filename, bool useAbsolutePath)
 
 	VK_CHECK_RESULT(vmaCreateImage(allocator, &imageInfo, &allocInfo, &textureImages[0].image, &textureImages[0].allocation, nullptr));
 
-	bool isMissingTexture = (m_filename == ResourceManager::MISSING_TEXTURE_NAME || m_filename == ResourceManager::MISSING_TEXTURECUBE_NAME);
+	bool isMissingTexture = (m_filepath == ResourceManager::MISSING_TEXTURE_NAME || m_filepath == ResourceManager::MISSING_TEXTURECUBE_NAME);
 
 	auto uploadCompleteCallback = [&, mipExtents, mipLevels, vkImageFormat] {
 		// Clean up staging buffer after copy is completed

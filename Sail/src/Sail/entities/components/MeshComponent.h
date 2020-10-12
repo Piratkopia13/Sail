@@ -3,9 +3,10 @@
 #include "Component.h"
 #include "Sail/api/Mesh.h"
 
+class SailGuiWindow;
+
 class MeshComponent : public Component {
 public:
-	SAIL_COMPONENT
 	MeshComponent(Mesh::SPtr mesh);
 	~MeshComponent() { }
 

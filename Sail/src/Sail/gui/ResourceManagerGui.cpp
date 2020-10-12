@@ -15,9 +15,6 @@ void ResourceManagerGui::render() {
 		addProperty("Texture data in RAM:", [&resman] {
 			ImGui::Text("%u textures, totaling %umb", resman.getTextureDataCount(), resman.getTextureDataSize());
 		});
-		addProperty("FBX model count:", [&resman] {
-			ImGui::Text("%u", resman.getFBXModelCount());
-		});
 		addProperty("Shader count:", [&resman] {
 			ImGui::Text("%u", resman.getShaderCount());
 		});

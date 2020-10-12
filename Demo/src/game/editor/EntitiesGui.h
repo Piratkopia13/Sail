@@ -25,7 +25,7 @@ namespace AddableMaterial {
 class EntitiesGui : public SailGuiWindow {
 public:
     EntitiesGui();
-    void render(std::vector<Entity::SPtr>& entities);
+    void render(Scene* scene);
 
 private:
     // Should match order of AddableComponent
@@ -33,12 +33,12 @@ private:
 	const char* m_materialNames[AddableMaterial::NUM_MATERIALS] = { "PBR", "Phong", "Textures", "Outline" };
 
 private:
-    void selectEntity(Entity* entity);
-	void addComponent(AddableComponent::Type comp);
-	void addMaterialComponent(AddableMaterial::Type comp);
+    void selectEntity(Entity::ID entity, Scene* scene);
+	//void addComponent(AddableComponent::Type comp);
+	//void addMaterialComponent(AddableMaterial::Type comp);
 
 private:
-    Entity* m_selectedEntity;
+    Entity::ID m_selectedEntityID;
 
-    void listEntity(Entity* e, uint32_t* index, Entity** pSelectedEntity, bool entityAddedThisFrame);
+    void listEntity(Entity& e, uint32_t* index, Entity::ID* pSelectedEntity, bool entityAddedThisFrame);
 };

@@ -5,12 +5,8 @@
 
 class PointLightComponent : public Component {
 public:
-	typedef std::shared_ptr<PointLightComponent> SPtr;
-
-public:
-	SAIL_COMPONENT
 	PointLightComponent();
-	~PointLightComponent();
+	PointLightComponent(const PointLightComponent&) = default;
 
 	void setColor(const glm::vec3& color);
 	const glm::vec3& getColor() const;

@@ -20,8 +20,8 @@ public:
 	};
 	
 public:
-	static Texture* Create(const std::string& filename, bool useAbsolutePath = false);
-	Texture(const std::string& filename);
+	static Texture* Create(const std::string& filepath);
+	Texture(const std::string& filepath);
 	virtual ~Texture() {}
 
 	const std::string& getName() const;
@@ -29,7 +29,7 @@ public:
 	bool isReadyToUse() const; // Returns true when texture is ready for usage
 
 protected:
-	TextureData& getTextureData(const std::string& filename, bool useAbsolutePath) const;
+	TextureData& getTextureData(const std::string& filepath) const;
 
 protected:
 	bool readyToUse;

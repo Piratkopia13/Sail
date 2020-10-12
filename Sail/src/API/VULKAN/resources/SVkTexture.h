@@ -7,7 +7,7 @@
 
 class SVkTexture : public Texture, public SVkATexture {
 public:
-	SVkTexture(const std::string& filename, bool useAbsolutePath = false);
+	SVkTexture(const std::string& filepath);
 	~SVkTexture();
 
 private:
@@ -16,7 +16,7 @@ private:
 	void readyForUseCallback();
 
 private:
-	std::string m_filename;
+	std::string m_filepath;
 
 	SVkAPI::BufferAllocation m_stagingBuffer;
 	

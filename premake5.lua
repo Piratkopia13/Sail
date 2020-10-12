@@ -32,6 +32,7 @@ IncludeDir["GLFW"] = "libraries/glfw/include"
 IncludeDir["FBX_SDK"] = "libraries/FBX_SDK/include"
 IncludeDir["assimp"] = "libraries/assimp/include"
 IncludeDir["ImGui"] = "libraries/imgui"
+IncludeDir["entt"] = "libraries/entt"
 if VulkankSDKPath then
 	IncludeDir["vulkan"] = VulkankSDKPath.."/Include"
 end
@@ -80,7 +81,8 @@ project "Demo"
 	includedirs {
 		"libraries",
 		"Sail/src",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.entt}"
 	}
 
 	if VulkankSDKPath then
@@ -190,7 +192,8 @@ project "Sail"
 		"%{IncludeDir.FBX_SDK}",
 		"%{IncludeDir.assimp}",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.entt}"
 	}
 	if VulkankSDKPath then
 		includedirs {

@@ -2,16 +2,17 @@
 #include "Sail.h"
 #include "imgui_internal.h"
 #include "Sail/graphics/material/PhongMaterial.h"
+#include <unordered_map>
+#include "Sail/entities/components/Component.h"
 
-EntitiesGui::EntitiesGui() {
-	m_selectedEntity = nullptr;
-}
+EntitiesGui::EntitiesGui() { }
 
-void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
+void EntitiesGui::render(Scene* scene) {
 	newFrame();
 	
-	static Entity* selectedEntity = nullptr;
-	Component* selectedComponent = nullptr;
+	static Entity selectedEntity;
+	static Entity::ID selectedEntityID;
+	static Component* selectedComponent = nullptr;
 	float trashButtonWidth = 21.f;
 
 	// Entities window
@@ -26,51 +27,60 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y);
 		ImGui::AlignTextToFramePadding();
-		ImGui::Text((std::to_string(entities.size()) + " entities in the world").c_str());
+		//ImGui::Text((std::to_string(entities.size()) + " entities in the world").c_str());
 		ImGui::SameLine();
 		const char* newEntityBtnText = "Add entity";
 		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(newEntityBtnText).x - ImGui::GetStyle().ItemInnerSpacing.x * 2.f - ImGui::GetStyle().ItemSpacing.x);
 		if (ImGui::Button(newEntityBtnText)) {
-			selectEntity(entities.emplace_back(Entity::Create("New entity")).get());
+			selectEntity(scene->createEntity("New entity"), scene);
 			entityAddedThisFrame = true;
 		}
 
 
 		if (ImGui::ListBoxHeader("##hideLabel", ImVec2(ImGui::GetWindowWidth(), ImGui::GetWindowHeight() - 50.f))) {
 			uint32_t index = 0;
-			for (auto& e : entities) {
-				listEntity(e.get(), &index, &selectedEntity, entityAddedThisFrame);
-			}
+			scene->getEnttRegistry().each([&](auto& entity) {
+				Entity e(entity, scene);
+				auto* relation = e.tryGetComponent<RelationshipComponent>();
+
+				// Don't list entities with parents, since these have already been, or will be, listed
+				if (!relation || !relation->parent) {
+					listEntity(e, &index, &selectedEntityID, entityAddedThisFrame);
+				}
+			});
 			ImGui::ListBoxFooter();
 		}
 
 		// Select the entity from the list if valid
-		if (selectedEntity) {
-			selectEntity(selectedEntity);
+		if (selectedEntityID) {
+			selectEntity(selectedEntityID, scene);
 		}
 
 		ImGui::End();
 		//ImGui::PopStyleVar(3);
 
 	}
+	selectedEntity = Entity(selectedEntityID, scene);
 
 	// Components window
 	{
 		ImGui::Begin("Details");
 
-		if (!m_selectedEntity) {
+		if (!m_selectedEntityID) {
 			ImGui::Text("Select an entity to view details");
 			ImGui::End();
 			return;
 		}
 
+		Entity selected(m_selectedEntityID, scene);
+
 		// Entity renaming and removing
 		{
 			ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x);
 			char buf[256];
-			strcpy_s(buf, m_selectedEntity->getName().c_str());
+			strcpy_s(buf, selected.getName().c_str());
 			if (ImGui::InputTextWithHint("##entityName", "Entity name", buf, IM_ARRAYSIZE(buf), ImGuiInputTextFlags_AutoSelectAll)) {
-				m_selectedEntity->setName(buf);
+				selected.setName(buf);
 			}
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
@@ -79,25 +89,19 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			}
 			ImGui::SameLine();
 			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
-				std::string entityName = m_selectedEntity->getName();
-				// Remove the entity if it exists in the scene
-				auto it = std::remove_if(entities.begin(), entities.end(), [&](const auto& e) { return e.get() == m_selectedEntity; });
-				bool failed = (it == entities.end());
-				entities.erase(it, entities.end());
-				// Check if successful 
-				if (failed) {
-					Logger::Warning("Failed to removed entity " + entityName);
-				} else {
-					Logger::Log("Removed entity " + entityName);
+				std::string entityName = selected.getName();
+				// Remove the entity from the scene
+				scene->destroyEntity(selectedEntity);
+				
+				Logger::Log("Removed entity " + entityName);
 
-					// Deselect
-					selectEntity(nullptr);
-					selectedEntity = nullptr;
+				// Deselect
+				m_selectedEntityID = Entity::ID();
+				selectedEntityID = Entity::ID();
 
-					// There is no entity to render details about, just return
-					ImGui::End();
-					return;
-				}
+				// There is no entity to render details about, just return
+				ImGui::End();
+				return;
 			}
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
@@ -108,7 +112,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 		// Component count and add component button
 		{
 			ImGui::AlignTextToFramePadding();
-			ImGui::Text((std::to_string(m_selectedEntity->getAllComponents().size()) + " components").c_str());
+			ImGui::Text((std::to_string(selected.size()) + " components").c_str());
 			ImGui::SameLine();
 			const char* addComponentBtnText = "Add component";
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(addComponentBtnText).x);
@@ -120,7 +124,7 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 				popupPos.y = ImGui::GetWindowPos().y + ImGui::GetCursorPos().y;
 				ImGui::SetNextWindowPos(popupPos);
 			}
-			if (ImGui::BeginPopup("ComponentList")) {
+			/*if (ImGui::BeginPopup("ComponentList")) {
 				for (unsigned int i = 0; i < AddableComponent::NUM_COMPONENTS; i++) {
 					if (i == AddableComponent::MaterialComponent) {
 						if (ImGui::BeginMenu(m_componentNames[i])) {
@@ -138,29 +142,42 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 					}
 				}
 				ImGui::EndPopup();
-			}
+			}*/
 
 		}
 
-		static int selectedComponentIndex = -1;
 		float w = ImGui::GetWindowContentRegionWidth();
 		static float sz1 = 100.f;
 		static float sz2 = 300.f;
 		SailGuiWindow::DrawSplitter(false, 3.f, &sz1, &sz2, 20.f, 20.f, w);
 		float adjustedSz1 = sz1 - ImGui::GetStyle().FramePadding.y;
 		ImGui::BeginChild("Components", ImVec2(w, adjustedSz1));
-		if (m_selectedEntity) {
-			static int selectedComponentID = -1;
+
+		static ENTT_ID_TYPE selectedComponentID = 0;
+		if (selected) {
 			if (ImGui::ListBoxHeader("##hideLabel", ImVec2(w, adjustedSz1))) {
+				static std::unordered_map<ENTT_ID_TYPE, std::string> componentNames = {
+					{ entt::type_info<TransformComponent>::id(), "TransformComponent" },
+					{ entt::type_info<MaterialComponent>::id(), "MaterialComponent" },
+					{ entt::type_info<MeshComponent>::id(), "MeshComponent" },
+					{ entt::type_info<DirectionalLightComponent>::id(), "DirectionalLightComponent" },
+					{ entt::type_info<PointLightComponent>::id(), "PointLightComponent" },
+				};
+
 				int i = 0;
-				for (auto& item : m_selectedEntity->getAllComponents()) {
+				scene->getEnttRegistry().visit(selected, [&](const auto componentID) {
+
+					auto it = componentNames.find(componentID);
+					if (it == componentNames.end()) return;
+
+					auto componentName = it->second;
+					
 					ImGui::PushID(i);
-					const bool itemSelected = (i == selectedComponentIndex);
-					std::string& itemText = item.second->getName();
+					const bool itemSelected = (selectedComponentID == componentID);
+					std::string& itemText = componentName;
 					ImGui::SetCursorPosX(ImGui::GetStyle().ItemSpacing.x);
 					if (ImGui::Selectable(itemText.c_str(), itemSelected)) {
-						selectedComponentIndex = i;
-						selectedComponentID = item.first;
+						selectedComponentID = componentID;
 					}
 					ImGui::SameLine();
 					std::string hintText = ICON_FA_SMILE_O;
@@ -171,14 +188,29 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 						ImGui::SetItemDefaultFocus();
 					ImGui::PopID();
 					i++;
-				}
+
+				});
+
 				ImGui::ListBoxFooter();
 			}
 
-			auto& val = m_selectedEntity->getAllComponents().find(selectedComponentID);
-			if (val != m_selectedEntity->getAllComponents().end()) {
+			/*auto& val = selected.getAllComponents().find(selectedComponentID);
+			if (val != selected.getAllComponents().end()) {
 				selectedComponent = val->second.get();
+			}*/
+			if (selectedComponentID) {
+				if (selectedComponentID == entt::type_info<TransformComponent>::id())
+					selectedComponent = selectedEntity.tryGetComponent<TransformComponent>();
+				else if (selectedComponentID == entt::type_info<MaterialComponent>::id())
+					selectedComponent = selectedEntity.tryGetComponent<MaterialComponent>();
+				else if (selectedComponentID == entt::type_info<MeshComponent>::id())
+					selectedComponent = selectedEntity.tryGetComponent<MeshComponent>();
+				else if (selectedComponentID == entt::type_info<DirectionalLightComponent>::id())
+					selectedComponent = selectedEntity.tryGetComponent<DirectionalLightComponent>();
+				else if (selectedComponentID == entt::type_info<PointLightComponent>::id())
+					selectedComponent = selectedEntity.tryGetComponent<PointLightComponent>();
 			}
+
 		}
 
 		ImGui::EndChild();
@@ -194,9 +226,10 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 			// Remove component button
 			ImGui::Separator();
 			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
-				Logger::Log("Removed a component with id " + std::to_string(selectedComponent->getID()));
-				m_selectedEntity->removeComponentByID(selectedComponent->getID());
-				selectedComponentIndex = -1; // Deselect
+				//Logger::Log("Removed a component with id " + std::to_string(selectedComponent->getID()));
+				//m_selectedEntity->removeComponentByID(selectedComponent->getID());
+				//selectedEntity.removeComponent<??>();
+				selectedComponentID = 0; // Deselect
 				selectedComponent = nullptr;
 			}
 			if (ImGui::IsItemHovered()) {
@@ -214,66 +247,67 @@ void EntitiesGui::render(std::vector<Entity::SPtr>& entities) {
 	}
 }
 
-void EntitiesGui::selectEntity(Entity* entity) {
-	if (m_selectedEntity) {
-		m_selectedEntity->setIsSelectedInGui(false);
+void EntitiesGui::selectEntity(Entity::ID entity, Scene* scene) {
+	if (m_selectedEntityID) {
+		Entity(m_selectedEntityID, scene).setIsSelected(false);
 	}
-	m_selectedEntity = entity;
-	if (m_selectedEntity) {
-		m_selectedEntity->setIsSelectedInGui(true);
-	}
-}
-
-void EntitiesGui::addComponent(AddableComponent::Type comp) {
-
-	switch (comp) {
-	case AddableComponent::MeshComponent:
-		m_selectedEntity->addComponent<MeshComponent>(MeshFactory::Cube::Create(glm::vec3(0.5f)));
-		break;
-	case AddableComponent::TransformComponent:
-		m_selectedEntity->addComponent<TransformComponent>();
-		break;
-	case AddableComponent::PointLightComponent:
-		m_selectedEntity->addComponent<PointLightComponent>();
-		break;
-	case AddableComponent::DirectionalLightComponent:
-		m_selectedEntity->addComponent<DirectionalLightComponent>();
-		break;
+	m_selectedEntityID = entity;
+	if (m_selectedEntityID) {
+		Entity(m_selectedEntityID, scene).setIsSelected(true);
 	}
 }
 
-void EntitiesGui::addMaterialComponent(AddableMaterial::Type comp) {
-	switch (comp) {
-	case AddableMaterial::PBRMaterial:
-		m_selectedEntity->addComponent<MaterialComponent<PBRMaterial>>();
-		break;
-	case AddableMaterial::PhongMaterial:
-		m_selectedEntity->addComponent<MaterialComponent<PhongMaterial>>();
-		break;
-	case AddableMaterial::TexturesMaterial:
-		m_selectedEntity->addComponent<MaterialComponent<TexturesMaterial>>();
-		break;
-	case AddableMaterial::OutlineMaterial:
-		m_selectedEntity->addComponent<MaterialComponent<OutlineMaterial>>();
-		break;
-	}
-}
+//void EntitiesGui::addComponent(AddableComponent::Type comp) {
+//
+//	switch (comp) {
+//	case AddableComponent::MeshComponent:
+//		m_selectedEntity->addComponent<MeshComponent>(MeshFactory::Cube::Create(glm::vec3(0.5f)));
+//		break;
+//	case AddableComponent::TransformComponent:
+//		m_selectedEntity->addComponent<TransformComponent>();
+//		break;
+//	case AddableComponent::PointLightComponent:
+//		m_selectedEntity->addComponent<PointLightComponent>();
+//		break;
+//	case AddableComponent::DirectionalLightComponent:
+//		m_selectedEntity->addComponent<DirectionalLightComponent>();
+//		break;
+//	}
+//}
 
-void EntitiesGui::listEntity(Entity* e, uint32_t* index, Entity** pSelectedEntity, bool entityAddedThisFrame) {
+//void EntitiesGui::addMaterialComponent(AddableMaterial::Type comp) {
+//	switch (comp) {
+//	case AddableMaterial::PBRMaterial:
+//		m_selectedEntity->addComponent<MaterialComponent<PBRMaterial>>();
+//		break;
+//	case AddableMaterial::PhongMaterial:
+//		m_selectedEntity->addComponent<MaterialComponent<PhongMaterial>>();
+//		break;
+//	case AddableMaterial::TexturesMaterial:
+//		m_selectedEntity->addComponent<MaterialComponent<TexturesMaterial>>();
+//		break;
+//	case AddableMaterial::OutlineMaterial:
+//		m_selectedEntity->addComponent<MaterialComponent<OutlineMaterial>>();
+//		break;
+//	}
+//}
+
+void EntitiesGui::listEntity(Entity& e, uint32_t* index, Entity::ID* pSelectedEntity, bool entityAddedThisFrame) {
 	ImGui::PushID(*index);
 	const bool itemSelected = (e == *pSelectedEntity);
-	const char* itemText = (e->getName() != "") ? e->getName().c_str() : "Unnamed";
+	std::string eName = e.getName();
+	const char* itemText = eName.c_str();
 	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x);
 
 	// Always select newly added entities
-	if (entityAddedThisFrame && e == m_selectedEntity) {
+	if (entityAddedThisFrame && e == m_selectedEntityID) {
 		*pSelectedEntity = e;
 		ImGui::SetScrollHere();
 	}
 
 
 	size_t numChildren = 0;
-	auto& relation = e->getComponent<RelationshipComponent>();
+	auto relation = e.tryGetComponent<RelationshipComponent>();
 	if (relation) {
 		numChildren = relation->numChildren;
 	}
@@ -296,7 +330,7 @@ void EntitiesGui::listEntity(Entity* e, uint32_t* index, Entity** pSelectedEntit
 
 	ImGui::SameLine();
 	// Draw warning icon if entity is not rendered for some reason
-	if (!e->isBeingRendered()) {
+	if (!e.isBeingRendered()) {
 		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.f), ICON_FA_EXCLAMATION_TRIANGLE);
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetNextWindowSize(ImVec2(200.f, 0.f));
@@ -307,18 +341,18 @@ void EntitiesGui::listEntity(Entity* e, uint32_t* index, Entity** pSelectedEntit
 		ImGui::SameLine();
 	}
 
-	std::string hintText = std::to_string(e->getAllComponents().size()) + " components";
+	std::string hintText = std::to_string(e.size()) + " components";
 	float textWidth = ImGui::CalcTextSize(hintText.c_str()).x;
 	ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - textWidth - ImGui::GetStyle().ItemSpacing.x);
 	ImGui::TextDisabled(hintText.c_str());
 
 	if (drawChildren) {
 		// Draw children recursively
-		auto curr = relation->first;
+		Entity curr(relation->first, e.getScene());
 		for (size_t i = 0; i < numChildren; ++i) {
-			listEntity(curr.get(), index, pSelectedEntity, entityAddedThisFrame); // Recursive call
+			listEntity(curr, index, pSelectedEntity, entityAddedThisFrame); // Recursive call
 
-			curr = curr->getComponent<RelationshipComponent>()->next;
+			curr = Entity(curr.getComponent<RelationshipComponent>().next, e.getScene());
 		}
 		ImGui::TreePop();
 	}
