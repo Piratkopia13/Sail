@@ -46,7 +46,7 @@ DX12Texture::DX12Texture(const std::string& filepath)
 		createSRV(true);
 	} else {
 		// Load file using the resource manager
-		auto* texData = &getTextureData(filepath, useAbsolutePath);
+		auto* texData = &getTextureData(filepath);
 
 		m_textureDesc = {};
 		m_textureDesc.Format = ConvertToDXGIFormat(texData->getFormat());
@@ -69,7 +69,7 @@ DX12Texture::DX12Texture(const std::string& filepath)
 		// A texture rarely updates its data, if at all, so it is stored in a default heap
 		state[0] = D3D12_RESOURCE_STATE_COPY_DEST;
 		ThrowIfFailed(m_context->getDevice()->CreateCommittedResource(&DX12Utils::sDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &m_textureDesc, state[0], nullptr, IID_PPV_ARGS(&textureDefaultBuffers[0])));
-		textureDefaultBuffers[0]->SetName((std::wstring(L"Texture default buffer for ") + std::wstring(filename.begin(), filename.end())).c_str());
+		textureDefaultBuffers[0]->SetName((std::wstring(L"Texture default buffer for ") + std::wstring(filepath.begin(), filepath.end())).c_str());
 
 		auto& textureData = m_subresources.emplace_back();
 		textureData.pData = texData->getData();
