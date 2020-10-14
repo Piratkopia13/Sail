@@ -50,10 +50,10 @@ public:
 	PipelineStateObject& getPSO(Shader* shader, Mesh* mesh = nullptr);
 
 	// Storage information
-	unsigned int getTextureDataSize() const;
-	unsigned int getTextureDataCount() const;
-	unsigned int getShaderCount() const;
-	unsigned int getPSOCount() const;
+	uint32_t getTextureDataSize() const;
+	uint32_t getTextureDataCount() const;
+	uint32_t getShaderCount() const;
+	uint32_t getPSOCount() const;
 
 private:
 
@@ -69,5 +69,5 @@ private:
 	std::map<Shaders::ShaderIdentifier, Shaders::ShaderSettings> m_shaderSettings;
 
 	// PipelineStateObjects mapped to attribute and shader hashes
-	std::map<unsigned int, std::unique_ptr<PipelineStateObject>> m_psos;
+	std::map<uint32_t, std::unique_ptr<PipelineStateObject>> m_psos;
 };

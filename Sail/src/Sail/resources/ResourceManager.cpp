@@ -253,8 +253,8 @@ void ResourceManager::reloadAllShaders() {
 //
 
 PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {
-	unsigned int hash = shader->getID() * 10e5;
-	unsigned int meshHash = 0;
+	uint32_t hash = shader->getID() * 10e5;
+	uint32_t meshHash = 0;
 	if (mesh) {
 		// Return a PSO that matches the attribute order in the mesh and the shader
 		// The combination is hashed in a uint like "xxxxxyyyyy" where x is the shader id and y is the attribute hash
@@ -278,22 +278,22 @@ PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {
 // Storage information
 //
 
-unsigned int ResourceManager::getTextureDataSize() const {
-	unsigned int total = 0;
+uint32_t ResourceManager::getTextureDataSize() const {
+	uint32_t total = 0;
 	for (const auto& it : m_textureDatas) {
 		total += it.second->getAllocatedMemorySize();
 	}
 	return total;
 }
 
-unsigned int ResourceManager::getTextureDataCount() const {
+uint32_t ResourceManager::getTextureDataCount() const {
 	return m_textureDatas.size();
 }
 
-unsigned int ResourceManager::getShaderCount() const {
+uint32_t ResourceManager::getShaderCount() const {
 	return m_shaders.size();
 }
 
-unsigned int ResourceManager::getPSOCount() const {
+uint32_t ResourceManager::getPSOCount() const {
 	return m_psos.size();
 }

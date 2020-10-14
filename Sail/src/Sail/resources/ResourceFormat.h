@@ -18,14 +18,14 @@ namespace ResourceFormat {
 	};
 
 	struct TextureData {
-		unsigned int width;
-		unsigned int height;
-		unsigned int bitsPerChannel;
-		unsigned int channels;
-		unsigned int byteSize;
+		uint32_t width;
+		uint32_t height;
+		uint32_t bitsPerChannel;
+		uint32_t channels;
+		uint32_t byteSize;
 		int mipLevels = -1; // -1 means that mips shuold be generated
 		std::vector<glm::int2> mipExtents;
-		std::vector<unsigned int> mipOffsets;
+		std::vector<uint32_t> mipOffsets;
 		void* data = nullptr;
 		bool isCubeMap = false;
 		bool isSRGB = false;

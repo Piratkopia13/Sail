@@ -86,7 +86,7 @@ Entity ModelLoader::parseNodesWithMeshes(const aiNode* node, Entity::ID parentEn
 		}
 	} else {
 		Entity::ID lastParent;
-		for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+		for (uint32_t i = 0; i < node->mNumMeshes; i++) {
 			// All entities created here should have parentEntity as parent
 			// their next/prev should also be set in this loop
 
@@ -113,7 +113,7 @@ Entity ModelLoader::parseNodesWithMeshes(const aiNode* node, Entity::ID parentEn
 	}
 
 	Entity::ID lastChild;
-	for (unsigned int i = 0; i < node->mNumChildren; i++) {
+	for (uint32_t i = 0; i < node->mNumChildren; i++) {
 		// All entities created here should have parent as parent
 		// their next/prev should also be set in this loop
 

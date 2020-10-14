@@ -8,7 +8,7 @@
 FileLoader::DDSKTXImageLoader::DDSKTXImageLoader(const std::string& filename, ResourceFormat::TextureData& textureData) {
 	auto ddsData = Utils::readFileBinary(filename);
 
-	int size = ddsData.size();
+	int size = static_cast<int>(ddsData.size());
 
 	assert(!ddsData.empty());
 	ddsktx_texture_info tc = { 0 };
@@ -21,7 +21,7 @@ FileLoader::DDSKTXImageLoader::DDSKTXImageLoader(const std::string& filename, Re
 		// Load each mip level into an offset
 		textureData.data = SAIL_NEW std::byte[tc.size_bytes];
 
-		unsigned int offset = 0;
+		uint32_t offset = 0;
 		for (int mip = 0; mip < tc.num_mips; mip++) {
 			for (int face = 0; face < DDSKTX_CUBE_FACE_COUNT; face++) {
 				ddsktx_sub_data subData;
@@ -167,4 +167,5 @@ ResourceFormat::TextureFormat FileLoader::DDSKTXImageLoader::convertFormat(ddskt
 		break;
 	}
 	assert(false && "Format missing from convert method");
+	return ResourceFormat::R8G8B8A8;
 }

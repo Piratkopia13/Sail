@@ -24,6 +24,9 @@ if (componentID == entt::type_info<T>::id()) \
 		REGISTER_GUI_COMPONENT(MeshComponent);
 		REGISTER_GUI_COMPONENT(DirectionalLightComponent);
 		REGISTER_GUI_COMPONENT(PointLightComponent);
+
+		Logger::Error("Component instance not registered in EntitiesGui");
+		return nullptr;
 	};
 }
 

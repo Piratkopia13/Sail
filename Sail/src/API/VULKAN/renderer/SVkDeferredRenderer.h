@@ -26,7 +26,7 @@ private:
 		std::unique_ptr<SVkRenderableTexture> normals;
 		std::unique_ptr<SVkRenderableTexture> albedo;
 		std::unique_ptr<SVkRenderableTexture> mrao;
-		VkImageView depthView;
+		VkImageView depthView = {};
 	};
 
 	void createGeometryRenderPass();
