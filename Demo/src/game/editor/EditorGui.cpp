@@ -23,10 +23,11 @@ void EditorGui::render(float dt, FUNC(void(CallbackType type, const std::string&
 	if (ImGui::Begin("Environment")) {
 		enableColumns(90.f);
 		addProperty("Environment", [&]() {
-			const char* environments[] = { "studio", "rail", "pier" };
+			const char* environments[] = { "rail", "studio", "pier" };
 			static int currentEnvironmentIndex = 0;
-			ImGui::Combo("##hideLabel", &currentEnvironmentIndex, environments, IM_ARRAYSIZE(environments));
-			m_callback(CallbackType::ENVIRONMENT_CHANGED, environments[currentEnvironmentIndex]);
+			if (ImGui::Combo("##hideLabel", &currentEnvironmentIndex, environments, IM_ARRAYSIZE(environments))) {
+				m_callback(CallbackType::ENVIRONMENT_CHANGED, environments[currentEnvironmentIndex]);
+			}
 		});
 		disableColumns();
 	}
