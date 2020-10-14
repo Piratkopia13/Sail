@@ -13,12 +13,6 @@ GameState::GameState(StateStack& stack)
 	// Get the Application instance
 	m_app = Application::getInstance();
 
-	// Textures needs to be loaded before they can be used
-	// TODO: automatically load textures when needed so the following can be removed
-	/*Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");*/
-
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
 	m_camController.lookAt(glm::vec3(0.f));
@@ -67,20 +61,18 @@ GameState::GameState(StateStack& stack)
 		auto e = m_scene.createEntity("Static cube");
 		e.addComponent<MeshComponent>(cubeMesh);
 		e.addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
-		auto mat = std::make_shared<PhongMaterial>();
+		auto mat = e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
 		mat->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-		e.addComponent<MaterialComponent>(mat);
 	}
 
 	{
 		auto e = m_scene.createEntity("Floor");
 		e.addComponent<MeshComponent>(planeMesh);
 		e.addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		auto mat = std::make_shared<PhongMaterial>();
+		auto mat = e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
 		mat->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 		mat->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 		mat->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-		e.addComponent<MaterialComponent>(mat);
 	}
 
 	Entity parentEntity;
@@ -88,18 +80,17 @@ GameState::GameState(StateStack& stack)
 		parentEntity = m_scene.createEntity("Clingy cube");
 		parentEntity.addComponent<MeshComponent>(cubeMesh);
 		parentEntity.addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
-		parentEntity.addComponent<MaterialComponent>(std::make_shared<PhongMaterial>());
+		parentEntity.addComponent<MaterialComponent>().getAs<PhongMaterial>();
 	}
 	{
 		// Add some cubes which are connected through parenting
 		m_texturedCubeEntity = m_scene.createEntity("Textured parent cube");
 		m_texturedCubeEntity.addComponent<MeshComponent>(sphereMesh);
 		m_texturedCubeEntity.addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f));
-		auto mat = std::make_shared<PhongMaterial>();
+		auto mat = m_texturedCubeEntity.addComponent<MaterialComponent>().getAs<PhongMaterial>();
 		mat->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
 		mat->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
 		mat->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-		m_texturedCubeEntity.addComponent<MaterialComponent>(mat);
 		m_texturedCubeEntity.setName("MovingCube");
 
 		parentEntity.addComponent<RelationshipComponent>().parent = m_texturedCubeEntity;
@@ -108,14 +99,14 @@ GameState::GameState(StateStack& stack)
 		auto e = m_scene.createEntity("CubeRoot");
 		e.addComponent<MeshComponent>(cubeMesh);
 		e.addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
-		e.addComponent<MaterialComponent>(std::make_shared<PhongMaterial>());
+		e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
 		m_transformTestEntities.push_back(e);
 	}
 	{
 		auto e = m_scene.createEntity("CubeChild");
 		e.addComponent<MeshComponent>(cubeMesh);
 		e.addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f));
-		e.addComponent<MaterialComponent>(std::make_shared<PhongMaterial>());
+		e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
 		m_transformTestEntities.push_back(e);
 		e.addComponent<RelationshipComponent>().parent = m_transformTestEntities[0];
 	}
@@ -123,7 +114,7 @@ GameState::GameState(StateStack& stack)
 		auto e = m_scene.createEntity("CubeChildChild");
 		e.addComponent<MeshComponent>(cubeMesh);
 		e.addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f));
-		e.addComponent<MaterialComponent>(std::make_shared<PhongMaterial>());
+		e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
 		e.addComponent<RelationshipComponent>().parent = m_transformTestEntities[1];
 		m_transformTestEntities.push_back(e);
 	}
@@ -140,7 +131,7 @@ GameState::GameState(StateStack& stack)
 			auto e = m_scene.createEntity();
 			e.addComponent<MeshComponent>(cubeMesh);
 			e.addComponent<TransformComponent>(glm::vec3(x * wallSize + mazeStart, 0.5f, y * wallSize + mazeStart));
-			e.addComponent<MaterialComponent>(std::make_shared<PhongMaterial>());
+			e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
 		}
 	}
 }

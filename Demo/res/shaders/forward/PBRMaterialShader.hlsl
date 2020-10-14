@@ -150,7 +150,6 @@ float4 PSMain(PSIn input) : SV_Target0 {
 		pixel.albedo *= albedoSample.rgb;
 		alpha *= albedoSample.a;
 	}
-	// return float4(alpha, 0.f, 0.f, 1.0f);
 	if (alpha < 0.01f) discard;
 
 	pixel.worldNormal = input.normal;

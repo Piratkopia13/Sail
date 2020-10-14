@@ -168,7 +168,7 @@ Entity ModelLoader::parseMesh(const aiMesh* mesh, const glm::mat4& transform, co
 
 	// Parse material
 
-	std::shared_ptr<PBRMaterial> pbrMat = std::make_shared<PBRMaterial>();
+	auto pbrMat = entity.addComponent<MaterialComponent>().getAs<PBRMaterial>();
 
 	auto matIndex = mesh->mMaterialIndex;
 	auto meshMat = m_scene->mMaterials[matIndex];
@@ -216,8 +216,6 @@ Entity ModelLoader::parseMesh(const aiMesh* mesh, const glm::mat4& transform, co
 	if (meshMat->Get(AI_MATKEY_BLEND_FUNC, blendMode) == AI_SUCCESS) {
 		//Logger::Log(std::to_string(blendMode));
 	}
-
-	entity.addComponent<MaterialComponent>(pbrMat);
 
 	return entity;
 }

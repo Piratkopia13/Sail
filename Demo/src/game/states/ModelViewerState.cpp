@@ -36,20 +36,18 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 		auto e = m_scene.createEntity("Floor");
 		e.addComponent<MeshComponent>(planeMesh);
 		e.addComponent<TransformComponent>();
-		std::shared_ptr<PBRMaterial> mat = std::make_shared<PBRMaterial>();
+		auto mat = e.addComponent<MaterialComponent>().getAs<PBRMaterial>();
 		mat->setAlbedoTexture("pbr/pavingStones/albedo.tga");
 		mat->setNormalTexture("pbr/pavingStones/normal.tga");
 		mat->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
-		e.addComponent<MaterialComponent>(mat);
 	}
 	{
 		auto e = m_scene.createEntity("Window");
 		e.addComponent<MeshComponent>(MeshFactory::Cube::Create({1.f, 1.f, 1.f}));
 		e.addComponent<TransformComponent>(glm::vec3(0.f, 4.f, 4.f), glm::vec3(0.f), glm::vec3(1.f, 1.f, 0.05f));
-		std::shared_ptr<PBRMaterial> mat = std::make_shared<PBRMaterial>();
+		auto mat = e.addComponent<MaterialComponent>().getAs<PBRMaterial>();
 		mat->enableTransparency(true);
 		mat->setAlbedoTexture("colored_glass_rgba.png");
-		e.addComponent<MaterialComponent>(mat);
 	}
 
 	// Loads a model and adds it to the scene
@@ -106,12 +104,11 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 				auto& transform = e.addComponent<TransformComponent>(glm::vec3(x * cellSize - (cellSize * (gridSize - 1.0f) * 0.5f), y * cellSize + 1.0f, 0.f));
 				transform.setScale(0.5f);
 
-				std::shared_ptr<PBRMaterial> material = std::make_shared<PBRMaterial>();
+				auto material = e.addComponent<MaterialComponent>().getAs<PBRMaterial>();
 				material->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 				// Vary metalness and roughness with cell location
 				material->setRoughnessScale(1.f - (x / (float)gridSize));
 				material->setMetalnessScale(y / (float)gridSize);
-				e.addComponent<MaterialComponent>(material);
 
 			}
 		}

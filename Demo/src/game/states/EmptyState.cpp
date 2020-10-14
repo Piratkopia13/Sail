@@ -50,21 +50,19 @@ EmptyState::EmptyState(StateStack& stack)
 		auto e = m_scene.createEntity("Static cube");
 		e.addComponent<MeshComponent>(m_mesh2);
 		e.addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		auto mat = std::make_shared<PBRMaterial>();
+		auto mat = e.addComponent<MaterialComponent>().getAs<PBRMaterial>();
 		mat->setRoughnessScale(0.f);
 		mat->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 		mat->setAlbedoTexture("pbr/pavingStones/albedo.tga");
-		e.addComponent<MaterialComponent>(mat);
 	}
 
 	{
 		auto e = m_scene.createEntity("Static cube");
 		e.addComponent<MeshComponent>(m_mesh2);
 		e.addComponent<TransformComponent>(glm::vec3(0.f, -2.f, 0.f));
-		auto mat = std::make_shared<PBRMaterial>();
+		auto mat = e.addComponent<MaterialComponent>().getAs<PBRMaterial>();
 		mat->setRoughnessScale(0.f);
 		mat->setColor(glm::vec4(0.8f, 0.1f, 0.4f, 1.0f));
-		e.addComponent<MaterialComponent>(mat);
 	}
 }
 

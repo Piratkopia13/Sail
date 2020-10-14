@@ -11,12 +11,20 @@
 
 class MaterialComponent : public Component {
 public:
+	MaterialComponent() { };
 	MaterialComponent(std::shared_ptr<Material> mat) : m_material(mat) { };
 
-
 	Material* get() {
+		assert(m_material && "Instance not created, make sure to call getAs<Type> before get()");
 		return m_material.get();
-		//return nullptr;
+	}
+
+	template<typename MaterialType>
+	MaterialType* getAs() {
+		if (!m_material) {
+			m_material = std::make_shared<MaterialType>();
+		}
+		return static_cast<MaterialType*>(m_material.get());
 	}
 
 	void renderEditorGui(SailGuiWindow* window) override {

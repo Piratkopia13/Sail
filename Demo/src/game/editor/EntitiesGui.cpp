@@ -67,19 +67,15 @@ void EntitiesGui::removeComponent(Entity& entity, const char* componentName) {
 }
 
 void EntitiesGui::addMaterialComponent(Entity& entity, const char* materialName) {
-	std::shared_ptr<Material> mat;
-
 	if (strcmp(materialName, "PBR") == 0) {
-		mat = std::make_shared<PBRMaterial>();
+		entity.addOrReplaceComponent<MaterialComponent>().getAs<PBRMaterial>();
 
 	} else if (strcmp(materialName, "Phong") == 0) {
-		mat = std::make_shared<PhongMaterial>();
+		entity.addOrReplaceComponent<MaterialComponent>().getAs<PhongMaterial>();
 
 	} else {
 		Logger::Warning("Tried to add a material that is unknown to EntitiesGui");
-		return;
 	}
-	entity.addOrReplaceComponent<MaterialComponent>(mat);
 }
 
 void EntitiesGui::render(Scene* scene) {

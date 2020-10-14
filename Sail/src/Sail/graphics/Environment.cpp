@@ -15,9 +15,8 @@ Environment::Environment(Scene* scene, const std::string& folderName) {
 
 	m_skyboxEntity.addComponent<MeshComponent>(mesh);
 	m_skyboxEntity.addComponent<TransformComponent>(glm::vec3(0.f));
-	std::shared_ptr<TexturesMaterial> mat = std::make_shared<TexturesMaterial>();
+	auto mat = m_skyboxEntity.addComponent<MaterialComponent>().getAs<TexturesMaterial>();
 	mat->setForwardShader(Shaders::CubemapShader);
-	m_skyboxEntity.addComponent<MaterialComponent>(mat);
 
 	init(folderName);
 }
