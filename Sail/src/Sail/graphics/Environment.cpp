@@ -5,30 +5,26 @@
 #include "../entities/components/Components.h"
 #include "material/TexturesMaterial.h"
 
-Environment::Environment(const std::string& folderName) {
+Environment::Environment(Scene* scene, const std::string& folderName) {
 	// Create a skybox
 
-	m_skyboxMesh = MeshFactory::Cube::Create(glm::vec3(0.5f));
+	auto mesh = MeshFactory::Cube::Create(glm::vec3(0.5f));
 
-	m_skyboxEntity = Entity::Create("Skybox");
-	m_skyboxEntity->addComponent<MeshComponent>(m_skyboxMesh);
-	m_skyboxEntity->addComponent<TransformComponent>(glm::vec3(0.f));
-	auto& mat = m_skyboxEntity->addComponent<MaterialComponent<TexturesMaterial>>();
-	mat->get()->setForwardShader(Shaders::CubemapShader);
+	m_skyboxEntity = scene->createEntity("Skybox");
+	m_skyboxEntity.addComponent<SkyboxComponent>(); // Used as an identifier to allow the scene to render this before anything else
+
+	m_skyboxEntity.addComponent<MeshComponent>(mesh);
+	m_skyboxEntity.addComponent<TransformComponent>(glm::vec3(0.f));
+	auto mat = m_skyboxEntity.addComponent<MaterialComponent>().getAs<TexturesMaterial>();
+	mat->setForwardShader(Shaders::CubemapShader);
 
 	init(folderName);
 }
 
-Environment::~Environment() {
-
-}
+Environment::~Environment() { }
 
 void Environment::changeTo(const std::string& folderName) {
 	init(folderName);
-}
-
-Entity::SPtr& Environment::getSkyboxEntity() {
-	return m_skyboxEntity;
 }
 
 Texture* Environment::getIrradianceTexture() const {
@@ -53,7 +49,7 @@ void Environment::init(const std::string& folderName) {
 	resman.loadTexture(radianceFilename);
 	m_radianceMapTexture = &resman.getTexture(radianceFilename);
 
-	auto mat = m_skyboxEntity->getComponent<MaterialComponent<Material>>();
-	mat->get()->getAs<TexturesMaterial>()->clearTextures();
-	mat->get()->getAs<TexturesMaterial>()->addTexture(skyboxFilename);
+	auto mat = m_skyboxEntity.getComponent<MaterialComponent>();
+	mat.get()->getAs<TexturesMaterial>()->clearTextures();
+	mat.get()->getAs<TexturesMaterial>()->addTexture(skyboxFilename);
 }

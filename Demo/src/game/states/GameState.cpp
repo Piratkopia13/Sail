@@ -13,12 +13,6 @@ GameState::GameState(StateStack& stack)
 	// Get the Application instance
 	m_app = Application::getInstance();
 
-	// Textures needs to be loaded before they can be used
-	// TODO: automatically load textures when needed so the following can be removed
-	/*Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	Application::getInstance()->getResourceManager().loadTexture("sponza/textures/spnza_bricks_a_spec.tga");*/
-
 	// Set up camera with controllers
 	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
 	m_camController.lookAt(glm::vec3(0.f));
@@ -29,110 +23,104 @@ GameState::GameState(StateStack& stack)
 	// Create/load models
 	auto cubeMesh = MeshFactory::Cube::Create(glm::vec3(0.5f));
 	auto planeMesh = MeshFactory::Plane::Create(glm::vec2(50.f), glm::vec2(30.0f));
-	//auto fbxModel = m_app->getResourceManager().getModel("sphere.fbx");
+	auto sphereMesh = m_app->getResourceManager().getMesh("sphere.fbx");
 
 	// Create entities
 
 	// Lights
 	{
 		// Add a directional light
-		auto e = Entity::Create("Directional light");
+		auto e = m_scene.createEntity("Directional light");
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		glm::vec3 direction(0.4f, -0.2f, 1.0f);
 		direction = glm::normalize(direction);
-		e->addComponent<DirectionalLightComponent>(color, direction);
-		m_scene.addEntity(e);
+		e.addComponent<DirectionalLightComponent>(color, direction);
 
 		// Add four point lights
-		e = Entity::Create("Point light 1");
-		auto& pl = e->addComponent<PointLightComponent>();
+		e = m_scene.createEntity("Point light 1");
+		auto* pl = &e.addComponent<PointLightComponent>();
 		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl->setPosition(glm::vec3(-4.0f, 0.1f, -4.0f));
-		m_scene.addEntity(e);
 
-		e = Entity::Create("Point light 2");
-		pl = e->addComponent<PointLightComponent>();
+		e = m_scene.createEntity("Point light 2");
+		pl = &e.addComponent<PointLightComponent>();
 		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl->setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
-		m_scene.addEntity(e);
 
-		e = Entity::Create("Point light 3");
-		pl = e->addComponent<PointLightComponent>();
+		e = m_scene.createEntity("Point light 3");
+		pl = &e.addComponent<PointLightComponent>();
 		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl->setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
-		m_scene.addEntity(e);
 
-		e = Entity::Create("Point light 4");
-		pl = e->addComponent<PointLightComponent>();
+		e = m_scene.createEntity("Point light 4");
+		pl = &e.addComponent<PointLightComponent>();
 		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl->setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
-		m_scene.addEntity(e);
 	}
 	{
-		auto e = Entity::Create("Static cube");
-		e->addComponent<MeshComponent>(cubeMesh);
-		e->addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
-		auto mat = e->addComponent<MaterialComponent<PhongMaterial>>();
-		mat->get()->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
-		m_scene.addEntity(e);
+		auto e = m_scene.createEntity("Static cube");
+		e.addComponent<MeshComponent>(cubeMesh);
+		e.addComponent<TransformComponent>(glm::vec3(-4.f, 1.f, -2.f));
+		auto mat = e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		mat->setColor(glm::vec4(0.2f, 0.8f, 0.4f, 1.0f));
 	}
 
 	{
-		auto e = Entity::Create("Floor");
-		e->addComponent<MeshComponent>(planeMesh);
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
-		auto mat = e->addComponent<MaterialComponent<PhongMaterial>>();
-		mat->get()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-		mat->get()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-		mat->get()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-		m_scene.addEntity(e);
+		auto e = m_scene.createEntity("Floor");
+		e.addComponent<MeshComponent>(planeMesh);
+		e.addComponent<TransformComponent>(glm::vec3(0.f, 0.f, 0.f));
+		auto mat = e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		mat->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+		mat->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+		mat->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 	}
 
-	Entity::SPtr parentEntity;
+	Entity parentEntity;
 	{
-		parentEntity = Entity::Create("Clingy cube");
-		parentEntity->addComponent<MeshComponent>(cubeMesh);
-		parentEntity->addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
-		parentEntity->addComponent<MaterialComponent<PhongMaterial>>();
-		m_scene.addEntity(parentEntity);
+		parentEntity = m_scene.createEntity("Clingy cube");
+		parentEntity.addComponent<MeshComponent>(cubeMesh);
+		parentEntity.addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
+		auto mat = parentEntity.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		mat->setColor({0.8f, 0.2f, 0.2f, 1.0f});
 	}
-	//{
-	//	// Add some cubes which are connected through parenting
-	//	m_texturedCubeEntity = Entity::Create("Textured parent cube");
-	//	m_texturedCubeEntity->addComponent<MeshComponent>(fbxModel);
-	//	m_texturedCubeEntity->addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f), m_texturedCubeEntity->getComponent<TransformComponent>().get());
-	//	auto mat = m_texturedCubeEntity->addComponent<MaterialComponent<PhongMaterial>>();
-	//	mat->get()->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
-	//	mat->get()->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
-	//	mat->get()->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
-	//	m_texturedCubeEntity->setName("MovingCube");
-	//	m_scene.addEntity(m_texturedCubeEntity);
-	//	parentEntity->getComponent<TransformComponent>()->setParent(m_texturedCubeEntity->getComponent<TransformComponent>().get());
-	//}
-	//{
-	//	auto e = Entity::Create("CubeRoot");
-	//	e->addComponent<MeshComponent>(cubeMesh);
-	//	e->addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
-	//	e->addComponent<MaterialComponent<PhongMaterial>>();
-	//	m_scene.addEntity(e);
-	//	m_transformTestEntities.push_back(e);
-	//}
-	//{
-	//	auto e = Entity::Create("CubeChild");
-	//	e->addComponent<MeshComponent>(cubeMesh);
-	//	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[0]->getComponent<TransformComponent>().get());
-	//	e->addComponent<MaterialComponent<PhongMaterial>>();
-	//	m_scene.addEntity(e);
-	//	m_transformTestEntities.push_back(e);
-	//}
-	//{
-	//	auto e = Entity::Create("CubeChildChild");
-	//	e->addComponent<MeshComponent>(cubeMesh);
-	//	e->addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f), m_transformTestEntities[1]->getComponent<TransformComponent>().get());
-	//	e->addComponent<MaterialComponent<PhongMaterial>>();
-	//	m_scene.addEntity(e);
-	//	m_transformTestEntities.push_back(e);
-	//}
+	{
+		// Add some cubes which are connected through parenting
+		m_texturedCubeEntity = m_scene.createEntity("Textured parent cube");
+		m_texturedCubeEntity.addComponent<MeshComponent>(sphereMesh);
+		m_texturedCubeEntity.addComponent<TransformComponent>(glm::vec3(-1.f, 2.f, 0.f));
+		auto mat = m_texturedCubeEntity.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		mat->setDiffuseTexture("sponza/textures/spnza_bricks_a_diff.tga");
+		mat->setNormalTexture("sponza/textures/spnza_bricks_a_ddn.tga");
+		mat->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
+		m_texturedCubeEntity.setName("MovingCube");
+
+		parentEntity.addChild(m_texturedCubeEntity);
+	}
+	{
+		auto e = m_scene.createEntity("CubeRoot");
+		e.addComponent<MeshComponent>(cubeMesh);
+		e.addComponent<TransformComponent>(glm::vec3(10.f, 0.f, 10.f));
+		e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		m_transformTestEntities.push_back(e);
+	}
+	{
+		auto e = m_scene.createEntity("CubeChild");
+		e.addComponent<MeshComponent>(cubeMesh);
+		e.addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f));
+		auto mat = e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		mat->setColor({ 0.2f, 0.8f, 0.2f, 1.0f });
+		m_transformTestEntities.push_back(e);
+		m_transformTestEntities[0].addChild(e);
+	}
+	{
+		auto e = m_scene.createEntity("CubeChildChild");
+		e.addComponent<MeshComponent>(cubeMesh);
+		e.addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f));
+		auto mat = e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		mat->setColor({ 0.2f, 0.2f, 0.8f, 1.0f });
+		m_transformTestEntities[1].addChild(e);
+		m_transformTestEntities.push_back(e);
+	}
 	
 	// Random cube maze
 	const unsigned int mazeStart = 5;
@@ -140,14 +128,13 @@ GameState::GameState(StateStack& stack)
 	const float wallSize = 1.1f;
 	for (unsigned int x = 0; x < mazeSize; x++) {
 		for (unsigned int y = 0; y < mazeSize; y++) {
-			/*if (Utils::rnd() > 0.5f)
-				continue;*/
+			if (Utils::rnd() > 0.5f)
+				continue;
 
-			auto e = Entity::Create();
-			e->addComponent<MeshComponent>(cubeMesh);
-			e->addComponent<TransformComponent>(glm::vec3(x * wallSize + mazeStart, 0.5f, y * wallSize + mazeStart));
-			e->addComponent<MaterialComponent<PhongMaterial>>();
-			m_scene.addEntity(e);
+			auto e = m_scene.createEntity();
+			e.addComponent<MeshComponent>(cubeMesh);
+			e.addComponent<TransformComponent>(glm::vec3(x * wallSize + mazeStart, 0.5f, y * wallSize + mazeStart));
+			e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
 		}
 	}
 }
@@ -184,16 +171,16 @@ bool GameState::update(float dt) {
 	counter += dt * 2;
 	if (m_texturedCubeEntity) {
 		// Move the cubes around
-		m_texturedCubeEntity->getComponent<TransformComponent>()->setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
-		m_texturedCubeEntity->getComponent<TransformComponent>()->setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
+		m_texturedCubeEntity.getComponent<TransformComponent>().setTranslation(glm::vec3(glm::sin(counter), 1.f, glm::cos(counter)));
+		m_texturedCubeEntity.getComponent<TransformComponent>().setRotations(glm::vec3(glm::sin(counter), counter, glm::cos(counter)));
 
 		// Move the three parented cubes with identical translation, rotations and scale to show how parenting affects transforms
-		for (Entity::SPtr item : m_transformTestEntities) {
-			item->getComponent<TransformComponent>()->rotateAroundY(dt * 1.0f);
-			item->getComponent<TransformComponent>()->setScale(size);
-			item->getComponent<TransformComponent>()->setTranslation(size * 3, 1.0f, size * 3);
+		for (Entity& item : m_transformTestEntities) {
+			item.getComponent<TransformComponent>().rotateAroundY(dt * 1.0f);
+			item.getComponent<TransformComponent>().setScale(size);
+			item.getComponent<TransformComponent>().setTranslation(size * 3, 1.0f, size * 3);
 		}
-		m_transformTestEntities[0]->getComponent<TransformComponent>()->translate(2.0f, 0.0f, 2.0f);
+		m_transformTestEntities[0].getComponent<TransformComponent>().translate(2.0f, 0.0f, 2.0f);
 
 		size += change * dt;
 		if (size > 1.2f || size < 0.7f)

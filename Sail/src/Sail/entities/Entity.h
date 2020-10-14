@@ -1,80 +1,97 @@
 #pragma once
 
-#include <unordered_map>
-#include <memory>
-#include "components/Component.h"
+#include <entt.hpp>
+#include "../graphics/Scene.h"
 
 class Entity {
 public:
-	typedef std::shared_ptr<Entity> SPtr;
-	typedef std::weak_ptr<Entity> WPtr;
-	static SPtr Create(const std::string& name = "");
+	// Entity identifier
+	// This is simply entt::entity behind the scenes
+	// but has a bool operator overload for testing if the entity is null
+	struct ID {
+		entt::entity id = entt::null;
+
+		ID(entt::entity id = entt::null) : id(id) { }
+		operator bool() {
+			return id != entt::null;
+		}
+		operator entt::entity() {
+			return id;
+		}
+		operator entt::entity() const {
+			return id;
+		}
+	};
+
+
 public:
-	Entity(const std::string& name = "");
-	virtual ~Entity();
+	Entity() = default;
+	Entity(const Entity::ID& handle, Scene* scene);
 
-	template<typename T, typename... Targs>
-	std::shared_ptr<T> addComponent(Targs... args);
-	/*template<typename T>
-	std::shared_ptr<T> addComponentReference(std::shared_ptr<T> ref);*/
-	template<typename T>
-	bool removeComponent();
-	bool removeComponentByID(int id);
-	template<typename T>
-	std::shared_ptr<T> getComponent();
-	
+	template<typename Component, typename... Args>
+	Component& addComponent(Args&&... args) {
+		return m_scene->getEnttRegistry().emplace<Component>(m_handle, std::forward<Args>(args)...);
+	}
+
+	template<typename Component, typename... Args>
+	auto& addOrReplaceComponent(Args&&... args) {
+		return m_scene->getEnttRegistry().emplace_or_replace<Component>(m_handle, std::forward<Args>(args)...);
+	}
+
+	template<typename... Component>
+	bool hasComponent() const {
+		return m_scene->getEnttRegistry().has<Component...>(m_handle);
+	}
+
+	template<typename Component>
+	Component& getComponent() const {
+		return m_scene->getEnttRegistry().get<Component>(m_handle);
+	}
+
+	template<typename Component>
+	Component* tryGetComponent() const {
+		return m_scene->getEnttRegistry().try_get<Component>(m_handle);
+	}
+
+	template<typename... Component>
+	void removeComponent() {
+		m_scene->getEnttRegistry().remove<Component...>(m_handle);
+	}
+
+	std::string getName() const;
 	void setName(const std::string& name);
-	const std::string& getName() const;
 
-	void setIsBeingRendered(bool value);
+	void addChild(Entity& child);
+	void removeChild(Entity& child);
+
 	bool isBeingRendered() const;
+	void setIsBeingRendered(bool isBeingRendered);
 
-	void setIsSelectedInGui(bool value);
-	bool isSelectedInGui() const;
+	bool isSelected() const;
+	void setIsSelected(bool isSelected);
 
-	std::unordered_map<int, Component::SPtr>& getAllComponents();
+	uint32_t size() const;
+
+	Scene* getScene();
+
+	operator bool() {
+		return m_handle.id != entt::null;
+	}
+
+	bool operator==(const Entity::ID& id) {
+		return m_handle.id == id;
+	}
+
+	operator Entity::ID() {
+		return m_handle;
+	}
+
+	operator entt::entity() {
+		return m_handle.id;
+	}
 
 private:
-	std::unordered_map<int, Component::SPtr> m_components;
-	std::string m_name;
-	bool m_isBeingRendered;
-	bool m_isSelectedInGui;
+	Entity::ID m_handle = {};
+	Scene* m_scene = nullptr;
+
 };
-
-template<typename T, typename... Targs>
-std::shared_ptr<T> Entity::addComponent(Targs... args) {
-	auto res = m_components.insert({ T::getStaticID(), std::make_shared<T>(args...) });
-	if (!res.second) {
-		Logger::Warning("Tried to add a duplicate component to an entity");
-	}
-	// Return pointer to the inserted component
-	return std::static_pointer_cast<T>(res.first->second);
-}
-
-//template<typename T>
-//std::shared_ptr<T> Entity::addComponentReference(std::shared_ptr<T> ref) {
-//	auto res = m_components.insert({ T::getStaticID(), ref });
-//	if (!res.second) {
-//		Logger::Warning("Tried to add a duplicate component to an entity");
-//	}
-//	// Return pointer to the inserted component
-//	return std::static_pointer_cast<T>(res.first->second);
-//}
-
-template<typename T>
-bool Entity::removeComponent() {
-	auto res = m_components.erase(T::getStaticID());
-	// Return true if component was successfully removed
-	return res != 0;
-}
-
-template<typename T>
-std::shared_ptr<T> Entity::getComponent() {
-	// If the following line causes compile errors, then a class 
-	// deriving from component is missing public SAIL_COMPONENT macro
-	auto it = m_components.find(T::getStaticID());
-	if (it != m_components.end())
-		return std::static_pointer_cast<T>(it->second);
-
-	return nullptr;
-}

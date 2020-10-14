@@ -9,20 +9,22 @@
 #include "Sail/graphics/material/OutlineMaterial.h"
 #include "Sail/api/Texture.h"
 
-template <typename T = Material>
 class MaterialComponent : public Component {
 public:
-	SAIL_COMPONENT
-	MaterialComponent()
-		: m_textureFilter(L"All supported textures (*.tga;*.hdr;*.dds;*.jpg;*.png)\0*.tga;*.hdr;*.dds;*.jpg;*.png")
-	{
-		static_assert(std::is_base_of<Material, T>::value, "T must inherit from Material");
-		m_material.reset(new T());
-	}
-	~MaterialComponent() { }
+	MaterialComponent() { };
+	MaterialComponent(std::shared_ptr<Material> mat) : m_material(mat) { };
 
-	T* get() {
+	Material* get() {
+		assert(m_material && "Instance not created, make sure to call getAs<Type> before get()");
 		return m_material.get();
+	}
+
+	template<typename MaterialType>
+	MaterialType* getAs() {
+		if (!m_material) {
+			m_material = std::make_shared<MaterialType>();
+		}
+		return static_cast<MaterialType*>(m_material.get());
 	}
 
 	void renderEditorGui(SailGuiWindow* window) override {
@@ -67,7 +69,7 @@ private:
 		window->addProperty("Diffuse", [&]() {
 			float colWidth = ImGui::GetColumnWidth() - 10.f;
 			if (ImGui::Button(diffuseTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-				std::string filename = window->OpenFileDialog(m_textureFilter);
+				std::string filename = window->OpenFileDialog(s_textureFilter);
 				if (!filename.empty()) {
 					material->setDiffuseTexture(filename, true);
 				}
@@ -83,7 +85,7 @@ private:
 		window->addProperty("Normal", [&]() {
 			float colWidth = ImGui::GetColumnWidth() - 10.f;
 			if (ImGui::Button(normalTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-				std::string filename = window->OpenFileDialog(m_textureFilter);
+				std::string filename = window->OpenFileDialog(s_textureFilter);
 				if (!filename.empty()) {
 					material->setNormalTexture(filename, true);
 				}
@@ -99,7 +101,7 @@ private:
 		window->addProperty("Specular", [&]() {
 			float colWidth = ImGui::GetColumnWidth() - 10.f;
 			if (ImGui::Button(specularTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-				std::string filename = window->OpenFileDialog(m_textureFilter);
+				std::string filename = window->OpenFileDialog(s_textureFilter);
 				if (!filename.empty()) {
 					material->setSpecularTexture(filename, true);
 				}
@@ -130,7 +132,7 @@ private:
 		window->addProperty("Albedo", [&]() {
 			float colWidth = ImGui::GetColumnWidth() - 10.f;
 			if (ImGui::Button(diffuseTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-				std::string filename = window->OpenFileDialog(m_textureFilter);
+				std::string filename = window->OpenFileDialog(s_textureFilter);
 				if (!filename.empty()) {
 					material->setAlbedoTexture(filename, true);
 				}
@@ -146,7 +148,7 @@ private:
 		window->addProperty("Normal", [&]() {
 			float colWidth = ImGui::GetColumnWidth() - 10.f;
 			if (ImGui::Button(normalTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-				std::string filename = window->OpenFileDialog(m_textureFilter);
+				std::string filename = window->OpenFileDialog(s_textureFilter);
 				if (!filename.empty()) {
 					material->setNormalTexture(filename, true);
 				}
@@ -162,7 +164,7 @@ private:
 		window->addProperty("MRAO", [&]() {
 			float colWidth = ImGui::GetColumnWidth() - 10.f;
 			if (ImGui::Button(specularTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-				std::string filename = window->OpenFileDialog(m_textureFilter);
+				std::string filename = window->OpenFileDialog(s_textureFilter);
 				if (!filename.empty()) {
 					material->setMetalnessRoughnessAOTexture(filename, true);
 				}
@@ -189,6 +191,6 @@ private:
 		});
 	}
 private:
-	const LPCWSTR m_textureFilter;
-	std::shared_ptr<T> m_material;
+	inline static const LPCWSTR s_textureFilter = L"All supported textures (*.tga;*.hdr;*.dds;*.jpg;*.png)\0*.tga;*.hdr;*.dds;*.jpg;*.png";
+	std::shared_ptr<Material> m_material;
 };

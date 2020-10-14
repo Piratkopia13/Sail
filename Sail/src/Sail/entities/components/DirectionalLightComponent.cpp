@@ -10,8 +10,6 @@ DirectionalLightComponent::DirectionalLightComponent(const glm::vec3& color, con
 	, m_intensity(1.f)
 { }
 
-DirectionalLightComponent::~DirectionalLightComponent() { }
-
 const glm::vec3& DirectionalLightComponent::getColor() const {
 	return m_color;
 }

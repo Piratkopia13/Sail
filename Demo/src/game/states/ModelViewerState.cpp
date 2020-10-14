@@ -22,114 +22,97 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	m_app = Application::getInstance();
 	
 	// Set up camera with controllers
-	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
-	m_camController.lookAt(glm::vec3(0.f));
+	m_cam.setPosition(glm::vec3(1.6f, 6.7f, 5.4f));
+	m_camController.lookAt(glm::vec3(0.f, 4.f, 0.f));
 	
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
 
 	// Create/load models
 	auto planeMesh = MeshFactory::Plane::Create(glm::vec2(50.f), glm::vec2(30.0f));
-	//auto cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f));
 
 	// Create entities
 	{
-		auto e = Entity::Create("Floor");
-		e->addComponent<MeshComponent>(planeMesh);
-		e->addComponent<TransformComponent>();
-		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
-		mat->get()->setAlbedoTexture("pbr/pavingStones/albedo.tga");
-		mat->get()->setNormalTexture("pbr/pavingStones/normal.tga");
-		mat->get()->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
-		m_scene.addEntity(e);
+		auto e = m_scene.createEntity("Floor");
+		e.addComponent<MeshComponent>(planeMesh);
+		e.addComponent<TransformComponent>();
+		auto mat = e.addComponent<MaterialComponent>().getAs<PBRMaterial>();
+		mat->setAlbedoTexture("pbr/pavingStones/albedo.tga");
+		mat->setNormalTexture("pbr/pavingStones/normal.tga");
+		mat->setMetalnessRoughnessAOTexture("pbr/pavingStones/metalnessRoughnessAO.tga");
 	}
 	{
-		auto e = Entity::Create("Window");
-		e->addComponent<MeshComponent>(MeshFactory::Cube::Create({1.f, 1.f, 1.f}));
-		e->addComponent<TransformComponent>(glm::vec3(0.f, 4.f, 4.f), glm::vec3(0.f), glm::vec3(1.f, 1.f, 0.05f));
-		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
-		mat->get()->enableTransparency(true);
-		mat->get()->setAlbedoTexture("colored_glass_rgba.png");
-		m_scene.addEntity(e);
+		auto e = m_scene.createEntity("Window");
+		e.addComponent<MeshComponent>(MeshFactory::Cube::Create({1.f, 1.f, 1.f}));
+		e.addComponent<TransformComponent>(glm::vec3(0.f, 4.f, 4.f), glm::vec3(0.f), glm::vec3(1.f, 1.f, 0.05f));
+		auto mat = e.addComponent<MaterialComponent>().getAs<PBRMaterial>();
+		mat->enableTransparency(true);
+		mat->setAlbedoTexture("colored_glass_rgba.png");
 	}
 
-	ModelLoader testLoader("res/models/sponza.fbx");
-	m_scene.addEntity(testLoader.getEntity());
-	/*{
-		auto e = Entity::Create("Test Model");
-		e->addComponent<MeshComponent>(testLoader.getMesh());
-		e->addComponent<TransformComponent>();
-		auto mat = e->addComponent<MaterialComponent<PBRMaterial>>();
-		m_scene.addEntity(e);
-	}*/
+	// Loads a model and adds it to the scene
+	ModelLoader("sponza.fbx", &m_scene).getEntity();
 
 	// Lights
 	{
 		// Add a directional light
-		auto e = Entity::Create("Directional light");
+		auto e = m_scene.createEntity("Directional light");
 		glm::vec3 color(1.0f, 1.0f, 1.0f);
 		glm::vec3 direction(0.4f, -0.2f, 1.0f);
 		direction = glm::normalize(direction);
-		e->addComponent<DirectionalLightComponent>(color, direction);
-		m_scene.addEntity(e);
+		e.addComponent<DirectionalLightComponent>(color, direction);
 
 		// Add four point lights
-		e = Entity::Create("Point light 1");
-		auto& pl = e->addComponent<PointLightComponent>();
+		e = m_scene.createEntity("Point light 1");
+		auto* pl = &e.addComponent<PointLightComponent>();
 		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl->setPosition(glm::vec3(-4.0f, 0.1f, -4.0f));
-		m_scene.addEntity(e);
 
-		e = Entity::Create("Point light 2");
-		pl = e->addComponent<PointLightComponent>();
+		e = m_scene.createEntity("Point light 2");
+		pl = &e.addComponent<PointLightComponent>();
 		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl->setPosition(glm::vec3(-4.0f, 0.1f, 4.0f));
-		m_scene.addEntity(e);
 
-		e = Entity::Create("Point light 3");
-		pl = e->addComponent<PointLightComponent>();
+		e = m_scene.createEntity("Point light 3");
+		pl = &e.addComponent<PointLightComponent>();
 		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 		pl->setPosition(glm::vec3(4.0f, 0.1f, 4.0f));
-		m_scene.addEntity(e);
 
-		e = Entity::Create("Point light 4");
-		pl = e->addComponent<PointLightComponent>();
+		e = m_scene.createEntity("Point light 4");
+		pl = &e.addComponent<PointLightComponent>();
 		pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));	
 		pl->setPosition(glm::vec3(4.0f, 0.1f, -4.0f));
-		m_scene.addEntity(e);
 
 		/*for (unsigned int x = 0; x < 10; x++) {
 			for (unsigned int y = 0; y < 10; y++) {
-				e = Entity::Create("Another point light");
-				pl = e->addComponent<PointLightComponent>();
+				e = m_scene.createEntity("Another point light");
+				pl = &e.addComponent<PointLightComponent>();
 				pl->setColor(glm::vec3(Utils::rnd(), Utils::rnd(), Utils::rnd()));
 				pl->setPosition(glm::vec3(3.f * x, 0.1f, 3.f * y));
-				m_scene.addEntity(e);
 			}
 		}*/
 	}
 	// PBR spheres
-	//{
-	//	auto sphereModel = m_app->getResourceManager().getModel("sphere.fbx");
-	//	const unsigned int gridSize = 7;
-	//	const float cellSize = 1.3f;
-	//	for (unsigned int x = 0; x < gridSize; x++) {
-	//		for (unsigned int y = 0; y < gridSize; y++) {
-	//			auto e = Entity::Create("Sphere " + std::to_string(x * gridSize + y + 1));
-	//			auto model = e->addComponent<ModelComponent>(sphereModel);
-	//			auto transform = e->addComponent<TransformComponent>(glm::vec3(x * cellSize - (cellSize * (gridSize - 1.0f) * 0.5f), y * cellSize + 1.0f, 0.f));
-	//			transform->setScale(0.5f);
+	{
+		auto& sphereMesh = m_app->getResourceManager().loadMesh("sphere.fbx");
+		const unsigned int gridSize = 7;
+		const float cellSize = 1.3f;
+		for (unsigned int x = 0; x < gridSize; x++) {
+			for (unsigned int y = 0; y < gridSize; y++) {
+				auto e = m_scene.createEntity("Sphere " + std::to_string(x * gridSize + y + 1));
+				e.addComponent<MeshComponent>(sphereMesh);
+				auto& transform = e.addComponent<TransformComponent>(glm::vec3(x * cellSize - (cellSize * (gridSize - 1.0f) * 0.5f), y * cellSize + 1.0f, 0.f));
+				transform.setScale(0.5f);
 
-	//			PBRMaterial* material = e->addComponent<MaterialComponent<PBRMaterial>>()->get();
-	//			material->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-	//			// Vary metalness and roughness with cell location
-	//			material->setRoughnessScale(1.f - (x / (float)gridSize));
-	//			material->setMetalnessScale(y / (float)gridSize);
+				auto material = e.addComponent<MaterialComponent>().getAs<PBRMaterial>();
+				material->setColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+				// Vary metalness and roughness with cell location
+				material->setRoughnessScale(1.f - (x / (float)gridSize));
+				material->setMetalnessScale(y / (float)gridSize);
 
-	//			m_scene.addEntity(e);
-	//		}
-	//	}
-	//}
+			}
+		}
+	}
 }
 
 ModelViewerState::~ModelViewerState() {
@@ -219,7 +202,7 @@ bool ModelViewerState::renderImgui(float dt) {
 	};
 
 	m_editorGui.render(dt, callback);
-	m_entitiesGui.render(m_scene.getEntites());
+	m_entitiesGui.render(&m_scene);
 	
 	return false;
 }

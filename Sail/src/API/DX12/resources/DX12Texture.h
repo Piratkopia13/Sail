@@ -14,7 +14,7 @@ public:
 	static uint32_t s_mipGenCBufferIndex;
 
 public:
-	DX12Texture(const std::string& filename, bool useAbsolutePath = false);
+	DX12Texture(const std::string& filepath);
 	~DX12Texture();
 
 	// Returns true when the texture is uploaded to a default buffer

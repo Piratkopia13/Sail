@@ -3,9 +3,13 @@
 #include "Sail/api/shader/PipelineStateObject.h"
 #include "../api/shader/Shader.h"
 #include "../Application.h"
+#include "loaders/ModelLoader.h"
 
 const std::string ResourceManager::MISSING_TEXTURE_NAME = "missing.tga";
 const std::string ResourceManager::MISSING_TEXTURECUBE_NAME = "missing_cube.dds";
+
+const std::string ResourceManager::DEFAULT_MODEL_LOCATION = "res/models/";
+const std::string ResourceManager::DEFAULT_TEXTURE_LOCATION = "res/textures/";
 
 ResourceManager::ResourceManager() {
 	// Forward shaders
@@ -133,14 +137,15 @@ bool ResourceManager::releaseTextureData(const std::string& filename) {
 }
 
 //
-// DXTexture
+// Textures
 //
 
 void ResourceManager::loadTexture(const std::string& filename, bool useAbsolutePath) {
 	SAIL_PROFILE_FUNCTION();
 
+	std::string path = (useAbsolutePath) ? filename : DEFAULT_TEXTURE_LOCATION + filename;
 	if (!hasTexture(filename))
-		m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(filename, useAbsolutePath)) });
+		m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(path)) });
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
 	auto pos = m_textures.find(filename);
@@ -153,28 +158,38 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 	return m_textures.find(filename) != m_textures.end();
 }
 
+//
+// Meshes
+//
 
-//
-// Model
-//
+Mesh::SPtr ResourceManager::loadMesh(const std::string& filename, bool useAbsolutePath) {
+	std::string path = (useAbsolutePath) ? filename : DEFAULT_MODEL_LOCATION + filename;
+	ModelLoader loader(path);
 
-//void ResourceManager::loadModel(const std::string& filename, bool useAbsolutePath) {
-//	// Insert the new model
-//	m_fbxModels.insert({ filename, std::make_unique<ParsedScene>(filename, useAbsolutePath) });
-//}
-//std::shared_ptr<Model> ResourceManager::getModel(const std::string& filename, bool useAbsolutePath) {
-//	auto pos = m_fbxModels.find(filename);
-//	if (pos == m_fbxModels.end()) {
-//		// Model was not yet loaded, load it and return
-//		loadModel(filename, useAbsolutePath);
-//
-//		return m_fbxModels.find(filename)->second->getModel();
-//	}
-//	return pos->second->getModel();
-//}
-//bool ResourceManager::hasModel(const std::string& filename) {
-//	return m_fbxModels.find(filename) != m_fbxModels.end();
-//}
+	Mesh::SPtr mesh;
+	if (!hasMesh(filename, &mesh)) {
+		return m_meshes.insert({ filename, loader.getMesh() }).first->second;
+	} else {
+		return mesh;
+	}
+}
+
+Mesh::SPtr ResourceManager::getMesh(const std::string& filename) {
+	auto pos = m_meshes.find(filename);
+	if (pos == m_meshes.end())
+		Logger::Error("Tried to access a resource that was not loaded. (" + filename + ") \n Use Application::getInstance()->getResourceManager().loadMesh(\"" + filename + "\") before accessing it.");
+
+	return pos->second;
+}
+
+bool ResourceManager::hasMesh(const std::string& filename, Mesh::SPtr* outMesh) {
+	auto it = m_meshes.find(filename);
+	if (it != m_meshes.end()) {
+		if (outMesh) *outMesh = it->second;
+		return true;
+	}
+	return false;
+}
 
 //
 // Shader
@@ -238,8 +253,8 @@ void ResourceManager::reloadAllShaders() {
 //
 
 PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {
-	unsigned int hash = shader->getID() * 10e5;
-	unsigned int meshHash = 0;
+	uint32_t hash = shader->getID() * 10e5;
+	uint32_t meshHash = 0;
 	if (mesh) {
 		// Return a PSO that matches the attribute order in the mesh and the shader
 		// The combination is hashed in a uint like "xxxxxyyyyy" where x is the shader id and y is the attribute hash
@@ -263,26 +278,22 @@ PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {
 // Storage information
 //
 
-unsigned int ResourceManager::getTextureDataSize() const {
-	unsigned int total = 0;
+uint32_t ResourceManager::getTextureDataSize() const {
+	uint32_t total = 0;
 	for (const auto& it : m_textureDatas) {
 		total += it.second->getAllocatedMemorySize();
 	}
 	return total;
 }
 
-unsigned int ResourceManager::getTextureDataCount() const {
+uint32_t ResourceManager::getTextureDataCount() const {
 	return m_textureDatas.size();
 }
 
-unsigned int ResourceManager::getFBXModelCount() const {
-	return m_fbxModels.size();
-}
-
-unsigned int ResourceManager::getShaderCount() const {
+uint32_t ResourceManager::getShaderCount() const {
 	return m_shaders.size();
 }
 
-unsigned int ResourceManager::getPSOCount() const {
+uint32_t ResourceManager::getPSOCount() const {
 	return m_psos.size();
 }

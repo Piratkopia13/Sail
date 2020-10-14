@@ -1,22 +1,15 @@
 #pragma once
 
-#include "Component.h"
-#include "Sail/api/Mesh.h"
-
-class RelationshipComponent : public Component {
+class RelationshipComponent {
 public:
-	typedef std::shared_ptr<RelationshipComponent> SPtr;
-public:
-	SAIL_COMPONENT
 	RelationshipComponent() = default;
-	~RelationshipComponent() = default;
+	RelationshipComponent(const RelationshipComponent&) = default;
 
 	std::size_t numChildren{};
 	// TODO: change all these to Weak ptr (or uint with entt)
-	Entity::SPtr first;
-	Entity::SPtr prev;
-	Entity::SPtr next;
-	Entity::SPtr parent;
+	Entity::ID first;
+	Entity::ID prev;
+	Entity::ID next;
+	Entity::ID parent;
 
-private:
 };

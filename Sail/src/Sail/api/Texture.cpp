@@ -20,11 +20,11 @@ bool Texture::isReadyToUse() const {
 	return readyToUse;
 }
 
-TextureData& Texture::getTextureData(const std::string& filename, bool useAbsolutePath) const {
+TextureData& Texture::getTextureData(const std::string& filepath) const {
 	// Load the texture file it if is not loaded already
 	auto& rm = Application::getInstance()->getResourceManager();
-	if (!rm.hasTextureData(filename)) {
-		rm.loadTextureData(filename, useAbsolutePath);
+	if (!rm.hasTextureData(filepath)) {
+		rm.loadTextureData(filepath, true);
 	}
-	return rm.getTextureData(filename);
+	return rm.getTextureData(filepath);
 }

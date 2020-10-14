@@ -28,7 +28,7 @@ Texture* Material::loadTexture(const std::string& filename, bool useAbsolutePath
 	if (!filename.empty()) {
 		auto& resMan = Application::getInstance()->getResourceManager();
 		if (!resMan.hasTexture(filename)) {
-			Logger::Warning("Texture (" + filename + ") was not yet loaded, loading now.");
+			Logger::Log("Texture (" + filename + ") was not yet loaded, loading now.");
 			resMan.loadTexture(filename, useAbsolutePath);
 		}
 		t = &resMan.getTexture(filename);
