@@ -33,9 +33,9 @@ public:
 		return m_scene->getEnttRegistry().emplace<Component>(m_handle, std::forward<Args>(args)...);
 	}
 
-	template<typename... Args>
+	template<typename Component, typename... Args>
 	auto& addOrReplaceComponent(Args&&... args) {
-		return m_scene->getEnttRegistry().emplace_or_replace(m_handle, std::forward<Args>(args)...);
+		return m_scene->getEnttRegistry().emplace_or_replace<Component>(m_handle, std::forward<Args>(args)...);
 	}
 
 	template<typename... Component>
@@ -55,7 +55,7 @@ public:
 
 	template<typename... Component>
 	void removeComponent() {
-		m_scene->getEnttRegistry().remove<Component>(m_handle);
+		m_scene->getEnttRegistry().remove<Component...>(m_handle);
 	}
 
 	std::string getName() const;

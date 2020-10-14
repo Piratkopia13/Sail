@@ -5,11 +5,85 @@
 #include <unordered_map>
 #include "Sail/entities/components/Component.h"
 
-EntitiesGui::EntitiesGui() { }
+EntitiesGui::EntitiesGui() {
+	// Register components that should show up in the component list
+	registerComponent<TransformComponent>();
+	registerComponent<MaterialComponent>();
+	registerComponent<MeshComponent>();
+	registerComponent<DirectionalLightComponent>();
+	registerComponent<PointLightComponent>();
+
+#define REGISTER_GUI_COMPONENT(T) \
+if (componentID == entt::type_info<T>::id()) \
+	return e.tryGetComponent<T>()
+
+	// Add a line for each component that inherit Component and should be rendered in the GUI
+	m_getComponentInstanceFromID = [](Entity& e, ENTT_ID_TYPE componentID) -> Component* {
+		REGISTER_GUI_COMPONENT(TransformComponent);
+		REGISTER_GUI_COMPONENT(MaterialComponent);
+		REGISTER_GUI_COMPONENT(MeshComponent);
+		REGISTER_GUI_COMPONENT(DirectionalLightComponent);
+		REGISTER_GUI_COMPONENT(PointLightComponent);
+	};
+}
+
+void EntitiesGui::addComponent(Entity& entity, const char* componentName) {
+	if (strcmp(componentName, "MeshComponent") == 0) {
+		entity.addOrReplaceComponent<MeshComponent>(MeshFactory::Cube::Create(glm::vec3(0.5f)));
+
+	} else if (strcmp(componentName, "TransformComponent") == 0) {
+		entity.addOrReplaceComponent<TransformComponent>();
+
+	} else if (strcmp(componentName, "PointLightComponent") == 0) {
+		entity.addOrReplaceComponent<PointLightComponent>();
+
+	} else if (strcmp(componentName, "DirectionalLightComponent") == 0) {
+		entity.addOrReplaceComponent<DirectionalLightComponent>();
+
+	} else {
+		Logger::Warning("Tried to add a component that is unknown to EntitiesGui");
+	}
+}
+
+void EntitiesGui::removeComponent(Entity& entity, const char* componentName) {
+	if (strcmp(componentName, "MeshComponent") == 0) {
+		entity.removeComponent<MeshComponent>();
+
+	} else if (strcmp(componentName, "TransformComponent") == 0) {
+		entity.removeComponent<TransformComponent>();
+
+	} else if (strcmp(componentName, "PointLightComponent") == 0) {
+		entity.removeComponent<PointLightComponent>();
+
+	} else if (strcmp(componentName, "DirectionalLightComponent") == 0) {
+		entity.removeComponent<DirectionalLightComponent>();
+
+	} else if (strcmp(componentName, "MaterialComponent") == 0) {
+		entity.removeComponent<MaterialComponent>();
+
+	} else {
+		Logger::Warning("Tried to remove a component that is unknown to EntitiesGui");
+	}
+}
+
+void EntitiesGui::addMaterialComponent(Entity& entity, const char* materialName) {
+	std::shared_ptr<Material> mat;
+
+	if (strcmp(materialName, "PBR") == 0) {
+		mat = std::make_shared<PBRMaterial>();
+
+	} else if (strcmp(materialName, "Phong") == 0) {
+		mat = std::make_shared<PhongMaterial>();
+
+	} else {
+		Logger::Warning("Tried to add a material that is unknown to EntitiesGui");
+		return;
+	}
+	entity.addOrReplaceComponent<MaterialComponent>(mat);
+}
 
 void EntitiesGui::render(Scene* scene) {
 	newFrame();
-	
 	static Entity selectedEntity;
 	static Entity::ID selectedEntityID;
 	static Component* selectedComponent = nullptr;
@@ -124,25 +198,25 @@ void EntitiesGui::render(Scene* scene) {
 				popupPos.y = ImGui::GetWindowPos().y + ImGui::GetCursorPos().y;
 				ImGui::SetNextWindowPos(popupPos);
 			}
-			/*if (ImGui::BeginPopup("ComponentList")) {
-				for (unsigned int i = 0; i < AddableComponent::NUM_COMPONENTS; i++) {
-					if (i == AddableComponent::MaterialComponent) {
-						if (ImGui::BeginMenu(m_componentNames[i])) {
-							for (unsigned int j = 0; j < AddableMaterial::NUM_MATERIALS; j++) {
-								if (ImGui::MenuItem(m_materialNames[j])) {
-									addMaterialComponent((AddableMaterial::Type)j);
+			if (ImGui::BeginPopup("ComponentList")) {
+				for (auto& componentName : m_componentNameList) {
+					if (componentName == "MaterialComponent") {
+						if (ImGui::BeginMenu(componentName.c_str())) {
+							for (auto& matName : m_materialNames) {
+								if (ImGui::MenuItem(matName)) {
+									addMaterialComponent(selectedEntity, matName);
 								}
 							}
 							ImGui::EndMenu();
 						}
 					} else {
-						if (ImGui::MenuItem(m_componentNames[i])) {
-							addComponent((AddableComponent::Type)i);
+						if (ImGui::MenuItem(componentName.c_str())) {
+							addComponent(selectedEntity, componentName.c_str());
 						}
 					}
 				}
 				ImGui::EndPopup();
-			}*/
+			}
 
 		}
 
@@ -156,19 +230,12 @@ void EntitiesGui::render(Scene* scene) {
 		static ENTT_ID_TYPE selectedComponentID = 0;
 		if (selected) {
 			if (ImGui::ListBoxHeader("##hideLabel", ImVec2(w, adjustedSz1))) {
-				static std::unordered_map<ENTT_ID_TYPE, std::string> componentNames = {
-					{ entt::type_info<TransformComponent>::id(), "TransformComponent" },
-					{ entt::type_info<MaterialComponent>::id(), "MaterialComponent" },
-					{ entt::type_info<MeshComponent>::id(), "MeshComponent" },
-					{ entt::type_info<DirectionalLightComponent>::id(), "DirectionalLightComponent" },
-					{ entt::type_info<PointLightComponent>::id(), "PointLightComponent" },
-				};
 
 				int i = 0;
 				scene->getEnttRegistry().visit(selected, [&](const auto componentID) {
 
-					auto it = componentNames.find(componentID);
-					if (it == componentNames.end()) return;
+					auto it = m_componentNames.find(componentID);
+					if (it == m_componentNames.end()) return;
 
 					auto componentName = it->second;
 					
@@ -193,22 +260,8 @@ void EntitiesGui::render(Scene* scene) {
 
 				ImGui::ListBoxFooter();
 			}
-
-			/*auto& val = selected.getAllComponents().find(selectedComponentID);
-			if (val != selected.getAllComponents().end()) {
-				selectedComponent = val->second.get();
-			}*/
 			if (selectedComponentID) {
-				if (selectedComponentID == entt::type_info<TransformComponent>::id())
-					selectedComponent = selectedEntity.tryGetComponent<TransformComponent>();
-				else if (selectedComponentID == entt::type_info<MaterialComponent>::id())
-					selectedComponent = selectedEntity.tryGetComponent<MaterialComponent>();
-				else if (selectedComponentID == entt::type_info<MeshComponent>::id())
-					selectedComponent = selectedEntity.tryGetComponent<MeshComponent>();
-				else if (selectedComponentID == entt::type_info<DirectionalLightComponent>::id())
-					selectedComponent = selectedEntity.tryGetComponent<DirectionalLightComponent>();
-				else if (selectedComponentID == entt::type_info<PointLightComponent>::id())
-					selectedComponent = selectedEntity.tryGetComponent<PointLightComponent>();
+				selectedComponent = m_getComponentInstanceFromID(selectedEntity, selectedComponentID);
 			}
 
 		}
@@ -226,9 +279,9 @@ void EntitiesGui::render(Scene* scene) {
 			// Remove component button
 			ImGui::Separator();
 			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
-				//Logger::Log("Removed a component with id " + std::to_string(selectedComponent->getID()));
-				//m_selectedEntity->removeComponentByID(selectedComponent->getID());
-				//selectedEntity.removeComponent<??>();
+				auto& componentName = m_componentNames[selectedComponentID];
+				Logger::Log("Removed component " + componentName);
+				removeComponent(selectedEntity, componentName.c_str());
 				selectedComponentID = 0; // Deselect
 				selectedComponent = nullptr;
 			}
@@ -256,41 +309,6 @@ void EntitiesGui::selectEntity(Entity::ID entity, Scene* scene) {
 		Entity(m_selectedEntityID, scene).setIsSelected(true);
 	}
 }
-
-//void EntitiesGui::addComponent(AddableComponent::Type comp) {
-//
-//	switch (comp) {
-//	case AddableComponent::MeshComponent:
-//		m_selectedEntity->addComponent<MeshComponent>(MeshFactory::Cube::Create(glm::vec3(0.5f)));
-//		break;
-//	case AddableComponent::TransformComponent:
-//		m_selectedEntity->addComponent<TransformComponent>();
-//		break;
-//	case AddableComponent::PointLightComponent:
-//		m_selectedEntity->addComponent<PointLightComponent>();
-//		break;
-//	case AddableComponent::DirectionalLightComponent:
-//		m_selectedEntity->addComponent<DirectionalLightComponent>();
-//		break;
-//	}
-//}
-
-//void EntitiesGui::addMaterialComponent(AddableMaterial::Type comp) {
-//	switch (comp) {
-//	case AddableMaterial::PBRMaterial:
-//		m_selectedEntity->addComponent<MaterialComponent<PBRMaterial>>();
-//		break;
-//	case AddableMaterial::PhongMaterial:
-//		m_selectedEntity->addComponent<MaterialComponent<PhongMaterial>>();
-//		break;
-//	case AddableMaterial::TexturesMaterial:
-//		m_selectedEntity->addComponent<MaterialComponent<TexturesMaterial>>();
-//		break;
-//	case AddableMaterial::OutlineMaterial:
-//		m_selectedEntity->addComponent<MaterialComponent<OutlineMaterial>>();
-//		break;
-//	}
-//}
 
 void EntitiesGui::listEntity(Entity& e, uint32_t* index, Entity::ID* pSelectedEntity, bool entityAddedThisFrame) {
 	ImGui::PushID(*index);
