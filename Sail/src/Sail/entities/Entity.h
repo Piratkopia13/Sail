@@ -40,7 +40,7 @@ public:
 
 	template<typename... Component>
 	bool hasComponent() const {
-		return m_scene->getEnttRegistry().has<Component>(m_handle);
+		return m_scene->getEnttRegistry().has<Component...>(m_handle);
 	}
 
 	template<typename Component>
@@ -60,6 +60,9 @@ public:
 
 	std::string getName() const;
 	void setName(const std::string& name);
+
+	void addChild(Entity& child);
+	void removeChild(Entity& child);
 
 	bool isBeingRendered() const;
 	void setIsBeingRendered(bool isBeingRendered);

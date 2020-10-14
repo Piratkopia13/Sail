@@ -15,7 +15,7 @@ SSAO::SSAO() {
 
 	std::uniform_real_distribution<float> randomFloats(0.f, 1.f); // random floats between 0 - 1
 	std::default_random_engine generator;
-	for (unsigned int i = 0; i < 64; ++i) {
+	for (uint32_t i = 0; i < 64; ++i) {
 		glm::vec3 sample(
 			randomFloats(generator) * 2.f - 1.f,
 			randomFloats(generator) * 2.f - 1.f,
@@ -29,7 +29,7 @@ SSAO::SSAO() {
 		m_kernel.push_back(glm::vec4(sample, 0.0f));
 	}
 
-	for (unsigned int i = 0; i < 16; i++) {
+	for (uint32_t i = 0; i < 16; i++) {
 		glm::vec4 noise(
 			randomFloats(generator) * 2.f - 1.f,
 			randomFloats(generator) * 2.f - 1.f,
@@ -45,19 +45,19 @@ RenderableTexture* SSAO::getRenderTargetTexture() {
 	return m_outputTexture.get();
 }
 
-unsigned int SSAO::getRenderTargetWidth() const {
+uint32_t SSAO::getRenderTargetWidth() const {
 	return m_width;
 }
 
-unsigned int SSAO::getRenderTargetHeight() const {
+uint32_t SSAO::getRenderTargetHeight() const {
 	return m_height;
 }
 
-const std::tuple<void*, unsigned int> SSAO::getKernel() const {
+const std::tuple<void*, uint32_t> SSAO::getKernel() const {
 	return {(void*)m_kernel.data(), m_kernel.size() * sizeof(m_kernel[0])};
 }
 
-const std::tuple<void*, unsigned int> SSAO::getNoise() const {
+const std::tuple<void*, uint32_t> SSAO::getNoise() const {
 	return { (void*)m_noise.data(), m_noise.size() * sizeof(m_noise[0]) };
 }
 

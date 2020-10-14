@@ -41,7 +41,7 @@ void SVkForwardRenderer::begin(Camera* camera, Environment* environment) {
 }
 
 void* SVkForwardRenderer::present(Renderer::PresentFlag flags, void* skippedPrepCmdList) {
-	SAIL_PROFILE_API_SPECIFIC_FUNCTION("Forward renderer present");
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	VkCommandBuffer cmd = VK_NULL_HANDLE;
 	if (flags & Renderer::PresentFlag::SkipPreparation) {

@@ -449,13 +449,13 @@ void SVkDeferredRenderer::runGeometryPass(const VkCommandBuffer& cmd) {
 }
 
 void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
-	SAIL_PROFILE_API_SPECIFIC_FUNCTION("SSAO");
+	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 	auto& resman = Application::getInstance()->getResourceManager();
 	auto swapIndex = m_context->getSwapIndex();
 
 	auto* ssaoRenderTarget = static_cast<SVkRenderableTexture*>(m_ssao->getRenderTargetTexture());
-	float ssaoWidth = m_ssao->getRenderTargetWidth();
-	float ssaoHeight = m_ssao->getRenderTargetHeight();
+	auto ssaoWidth = m_ssao->getRenderTargetWidth();
+	auto ssaoHeight = m_ssao->getRenderTargetHeight();
 
 	{
 		// Clear values for all attachments written in the fragment shader
@@ -475,9 +475,9 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 
 		VkViewport viewport;
 		viewport.x = 0.f;
-		viewport.y = ssaoHeight;
-		viewport.width = ssaoWidth;
-		viewport.height = -ssaoHeight;
+		viewport.y = (float)ssaoHeight;
+		viewport.width = (float)ssaoWidth;
+		viewport.height = -(float)ssaoHeight;
 		viewport.minDepth = 0.f;
 		viewport.maxDepth = 1.f;
 

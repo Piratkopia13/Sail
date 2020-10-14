@@ -80,7 +80,8 @@ GameState::GameState(StateStack& stack)
 		parentEntity = m_scene.createEntity("Clingy cube");
 		parentEntity.addComponent<MeshComponent>(cubeMesh);
 		parentEntity.addComponent<TransformComponent>(glm::vec3(-1.2f, 1.f, -1.f), glm::vec3(0.f, 0.f, 1.07f));
-		parentEntity.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		auto mat = parentEntity.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		mat->setColor({0.8f, 0.2f, 0.2f, 1.0f});
 	}
 	{
 		// Add some cubes which are connected through parenting
@@ -93,7 +94,7 @@ GameState::GameState(StateStack& stack)
 		mat->setSpecularTexture("sponza/textures/spnza_bricks_a_spec.tga");
 		m_texturedCubeEntity.setName("MovingCube");
 
-		parentEntity.addComponent<RelationshipComponent>().parent = m_texturedCubeEntity;
+		parentEntity.addChild(m_texturedCubeEntity);
 	}
 	{
 		auto e = m_scene.createEntity("CubeRoot");
@@ -106,16 +107,18 @@ GameState::GameState(StateStack& stack)
 		auto e = m_scene.createEntity("CubeChild");
 		e.addComponent<MeshComponent>(cubeMesh);
 		e.addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f));
-		e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		auto mat = e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		mat->setColor({ 0.2f, 0.8f, 0.2f, 1.0f });
 		m_transformTestEntities.push_back(e);
-		e.addComponent<RelationshipComponent>().parent = m_transformTestEntities[0];
+		m_transformTestEntities[0].addChild(e);
 	}
 	{
 		auto e = m_scene.createEntity("CubeChildChild");
 		e.addComponent<MeshComponent>(cubeMesh);
 		e.addComponent<TransformComponent>(glm::vec3(1.f, 1.f, 1.f));
-		e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
-		e.addComponent<RelationshipComponent>().parent = m_transformTestEntities[1];
+		auto mat = e.addComponent<MaterialComponent>().getAs<PhongMaterial>();
+		mat->setColor({ 0.2f, 0.2f, 0.8f, 1.0f });
+		m_transformTestEntities[1].addChild(e);
 		m_transformTestEntities.push_back(e);
 	}
 	
