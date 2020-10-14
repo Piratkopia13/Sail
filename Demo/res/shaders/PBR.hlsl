@@ -15,7 +15,7 @@ float DistributionGGX(float3 N, float3 H, float roughness) {
 	
     float num   = a2;
     float denom = (NdotH2 * (a2 - 1.0f) + 1.0f);
-    denom = PI * denom * denom;
+    denom = M_PI * denom * denom;
 	
     return num / denom;
 }
@@ -38,7 +38,7 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-inline float3 shadeWithLight(PointLight light, float3 N, float3 V, float3 F0, float3 albedo, float metalness, float roughness) {
+inline float3 shadeWithLight(ShaderShared::PointLight light, float3 N, float3 V, float3 F0, float3 albedo, float metalness, float roughness) {
     float3 L = normalize(light.fragToLight);
     float3 H = normalize(V + L);
 
@@ -70,13 +70,13 @@ inline float3 shadeWithLight(PointLight light, float3 N, float3 V, float3 F0, fl
 
     // Calculate the light's outgoing reflectance value
     float NdotL = max(dot(N, L), 0.0f);
-    return (kD * albedo / PI + specular) * radiance * NdotL;
+    return (kD * albedo / M_PI + specular) * radiance * NdotL;
 }
 
 // PBR input structs
 struct PBRScene {
-    DirectionalLight dirLight;
-    PointLight pointLights[NUM_POINT_LIGHTS];
+    ShaderShared::DirectionalLight dirLight;
+    ShaderShared::PointLight pointLights[NUM_POINT_LIGHTS];
     Texture2D<float4> brdfLUT;
     TextureCube<float4> irradianceMap;
     TextureCube<float4> prefilterMap;
@@ -107,11 +107,11 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel) {
     // Do lighting from all light sources
     {
         // Directional lights
-        DirectionalLight dl = scene.dirLight;
+        ShaderShared::DirectionalLight dl = scene.dirLight;
         // Ignore light if color is black or pixel is in shadow
         if (!(all(dl.color == 0.0f) || pixel.inShadow)) {
             // Set up a point light that emulate a directional light
-            PointLight pl;
+            ShaderShared::PointLight pl;
             pl.color = dl.color;
             pl.intensity = dl.intensity;
             pl.fragToLight = -dl.direction;
@@ -120,7 +120,7 @@ float3 pbrShade(PBRScene scene, PBRPixel pixel) {
         }
 
         // Point lights
-        PointLight p;
+        ShaderShared::PointLight p;
         for(unsigned int i = 0; i < NUM_POINT_LIGHTS; i++) {
             p = scene.pointLights[i];
             // Ignore point light if color is black or intensity is zero

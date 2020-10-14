@@ -5,20 +5,10 @@
 class Texture;
 class Shader;
 
+// Shared shader defines
+#include "../Demo/res/shaders/variables.shared"
+
 class PhongMaterial : public Material {
-public:
-	// Matching shader struct
-	struct PhongSettings {
-		glm::vec4 modelColor;
-		float ka;
-		float kd;
-		float ks;
-		float shininess;
-		int diffuseTexIndex;
-		int normalTexIndex;
-		int specularTexIndex;
-		float padding;
-	};
 
 public:
 	PhongMaterial();
@@ -55,10 +45,10 @@ public:
 	*/ 
 	Texture* getTexture(unsigned int id) const;
 
-	PhongSettings& getPhongSettings();
+	ShaderShared::PhongMaterial& getPhongSettings();
 
 private:
-	PhongSettings m_phongSettings;
+	ShaderShared::PhongMaterial m_phongSettings;
 
 	unsigned int m_numTextures;
 

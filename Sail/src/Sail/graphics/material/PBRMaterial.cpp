@@ -17,7 +17,13 @@ PBRMaterial::PBRMaterial()
 	, m_numTextures(6)
 	, m_hasTransparency(false)
 {
-	textures.resize(6);
+#if ALLOW_SEPARATE_MRAO
+	m_numTextures += 3;
+	m_pbrSettings.metalnessTexIndex = -1;
+	m_pbrSettings.roughnessTexIndex = -1;
+	m_pbrSettings.aoTexIndex = -1;
+#endif
+	textures.resize(m_numTextures);
 
 	m_pbrSettings.metalnessScale = 0.f;
 	m_pbrSettings.roughnessScale = 1.f;
@@ -51,6 +57,9 @@ void PBRMaterial::setTextureIndex(unsigned int textureID, int index) {
 	else if (textureID == 3) m_pbrSettings.radianceMapTexIndex = index;
 	else if (textureID == 4) m_pbrSettings.irradianceMapTexIndex = index;
 	else if (textureID == 5) m_pbrSettings.brdfLutTexIndex = index;
+	else if (textureID == 6) m_pbrSettings.metalnessTexIndex = index;
+	else if (textureID == 7) m_pbrSettings.roughnessTexIndex = index;
+	else if (textureID == 8) m_pbrSettings.aoTexIndex = index;
 }
 
 void* PBRMaterial::getData() {
@@ -58,7 +67,7 @@ void* PBRMaterial::getData() {
 }
 
 unsigned int PBRMaterial::getDataSize() const {
-	return sizeof(PBRSettings);
+	return sizeof(ShaderShared::PBRMaterial);
 }
 
 Shader* PBRMaterial::getShader(Renderer::Type rendererType) const {
@@ -109,10 +118,22 @@ void PBRMaterial::setMetalnessRoughnessAOTexture(const std::string& filename, bo
 	textures[2] = loadTexture(filename, useAbsolutePath);
 }
 
+void PBRMaterial::setMetalnessTexture(const std::string& filename, bool useAbsolutePath) {
+	textures[6] = loadTexture(filename, useAbsolutePath);
+}
+
+void PBRMaterial::setRoughnessTexture(const std::string& filename, bool useAbsolutePath /*= false*/) {
+	textures[7] = loadTexture(filename, useAbsolutePath);
+}
+
+void PBRMaterial::setAoTexture(const std::string& filename, bool useAbsolutePath /*= false*/) {
+	textures[8] = loadTexture(filename, useAbsolutePath);
+}
+
 Texture* PBRMaterial::getTexture(unsigned int id) const {
 	return textures[id];
 }
 
-PBRMaterial::PBRSettings& PBRMaterial::getPBRSettings() {
+ShaderShared::PBRMaterial& PBRMaterial::getPBRSettings() {
 	return m_pbrSettings;
 }

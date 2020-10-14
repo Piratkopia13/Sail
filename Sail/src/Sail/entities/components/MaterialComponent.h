@@ -39,12 +39,10 @@ public:
 		}
 
 		window->disableColumns();
-		window->enableColumns(120.f);;
 		if (PBRMaterial* pbrMat = dynamic_cast<PBRMaterial*>(m_material.get())) {
 			renderPBRMaterialGui(window, pbrMat);
 			return;
 		}
-		window->disableColumns();
 
 		ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.2f, 1.0f), "Unknown material type");
 	}
@@ -114,6 +112,8 @@ private:
 		window->setOption("setWidth", true);
 	}
 	void renderPBRMaterialGui(SailGuiWindow* window, PBRMaterial* material) {
+		window->enableColumns(120.f);
+
 		window->addProperty("Metalness scale", [&] { ImGui::SliderFloat("##hideLabel", &material->getPBRSettings().metalnessScale, 0.f, 1.f); });
 		window->addProperty("Roughness scale", [&] { ImGui::SliderFloat("##hideLabel", &material->getPBRSettings().roughnessScale, 0.f, 1.f); });
 		window->addProperty("AO intensity", [&] {
@@ -128,7 +128,7 @@ private:
 		std::string diffuseTexName = (material->getTexture(0)) ? material->getTexture(0)->getName() : "None - click to load";
 		window->LimitStringLength(diffuseTexName);
 
-		window->setOption("setWidth", false);
+		//window->setOption("setWidth", false);
 		window->addProperty("Albedo", [&]() {
 			float colWidth = ImGui::GetColumnWidth() - 10.f;
 			if (ImGui::Button(diffuseTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
@@ -159,22 +159,85 @@ private:
 			}
 		});
 
-		std::string specularTexName = (material->getTexture(2)) ? material->getTexture(2)->getName() : "None - click to load";
-		window->LimitStringLength(specularTexName);
-		window->addProperty("MRAO", [&]() {
-			float colWidth = ImGui::GetColumnWidth() - 10.f;
-			if (ImGui::Button(specularTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
-				std::string filename = window->OpenFileDialog(s_textureFilter);
-				if (!filename.empty()) {
-					material->setMetalnessRoughnessAOTexture(filename, true);
-				}
-			}
-			ImGui::SameLine();
-			if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
-				material->setMetalnessRoughnessAOTexture("");
-			}
+		window->disableColumns();
+		window->enableColumns(100.f);
+		static bool useSeparateMrao = false;
+		window->addProperty("Separate MRAO", [&]() {
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - 55.f);
+			ImGui::Checkbox("", &useSeparateMrao);
 		});
-		window->setOption("setWidth", true);
+		window->disableColumns();
+		window->enableColumns();
+
+		if (useSeparateMrao) {
+
+			std::string metalnessTexName = (material->getTexture(6)) ? material->getTexture(6)->getName() : "None - click to load";
+			window->LimitStringLength(metalnessTexName);
+			window->addProperty("Metalness", [&]() {
+				float colWidth = ImGui::GetColumnWidth() - 10.f;
+				if (ImGui::Button(metalnessTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
+					std::string filename = window->OpenFileDialog(s_textureFilter);
+					if (!filename.empty()) {
+						material->setMetalnessTexture(filename, true);
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
+					material->setMetalnessTexture("");
+				}
+			});
+			std::string roughnessTexName = (material->getTexture(7)) ? material->getTexture(7)->getName() : "None - click to load";
+			window->LimitStringLength(roughnessTexName);
+			window->addProperty("Roughness", [&]() {
+				float colWidth = ImGui::GetColumnWidth() - 10.f;
+				if (ImGui::Button(roughnessTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
+					std::string filename = window->OpenFileDialog(s_textureFilter);
+					if (!filename.empty()) {
+						material->setRoughnessTexture(filename, true);
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
+					material->setRoughnessTexture("");
+				}
+			});
+			std::string aoTexName = (material->getTexture(8)) ? material->getTexture(8)->getName() : "None - click to load";
+			window->LimitStringLength(aoTexName);
+			window->addProperty("AO", [&]() {
+				float colWidth = ImGui::GetColumnWidth() - 10.f;
+				if (ImGui::Button(aoTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
+					std::string filename = window->OpenFileDialog(s_textureFilter);
+					if (!filename.empty()) {
+						material->setAoTexture(filename, true);
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
+					material->setAoTexture("");
+				}
+			});
+
+		} else {
+			std::string mraoTexName = (material->getTexture(2)) ? material->getTexture(2)->getName() : "None - click to load";
+			window->LimitStringLength(mraoTexName);
+			window->addProperty("MRAO", [&]() {
+				float colWidth = ImGui::GetColumnWidth() - 10.f;
+				if (ImGui::Button(mraoTexName.c_str(), ImVec2(colWidth - trashButtonWidth - ImGui::GetStyle().ItemSpacing.x, 0))) {
+					std::string filename = window->OpenFileDialog(s_textureFilter);
+					if (!filename.empty()) {
+						material->setMetalnessRoughnessAOTexture(filename, true);
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(ICON_FA_TRASH, ImVec2(trashButtonWidth, 0))) {
+					material->setMetalnessRoughnessAOTexture("");
+				}
+			});
+		}
+
+		//window->setOption("setWidth", true);
+
+		window->disableColumns();
 	}
 	void renderOutlineMaterialGui(SailGuiWindow* window, OutlineMaterial* material) {
 		window->addProperty("Color", [&] { 

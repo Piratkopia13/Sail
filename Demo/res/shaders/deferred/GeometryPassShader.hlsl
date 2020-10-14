@@ -39,17 +39,17 @@ cbuffer VSPSSystemCBuffer : register(b0) {
 }
 
 cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
-	PBRMaterial sys_materials[1024];
+	ShaderShared::PBRMaterial sys_materials[512];
 }
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
 #ifdef _SAIL_VK
-	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+	ShaderShared::PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 	matrix mWorld = VSPSConsts.sys_mWorld;
 #else
-	PBRMaterial mat = sys_materials[sys_materialIndex];
+	ShaderShared::PBRMaterial mat = sys_materials[sys_materialIndex];
 	matrix mWorld = sys_mWorld;
 #endif
 
@@ -103,9 +103,9 @@ float4 sampleTexture(uint index, float2 texCoords) {
 
 GBuffers PSMain(PSIn input) {
 #ifdef _SAIL_VK
-	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+	ShaderShared::PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 #else
-	PBRMaterial mat = sys_materials[sys_materialIndex];
+	ShaderShared::PBRMaterial mat = sys_materials[sys_materialIndex];
 #endif
 
 	GBuffers gbuffers;
@@ -136,6 +136,20 @@ GBuffers PSMain(PSIn input) {
 		roughness *= 1.f - mrao.g; // Invert roughness from texture to make it correct
 		ao = mrao.b + mat.aoIntensity;
 	}
+#if ALLOW_SEPARATE_MRAO
+	else {
+		// Combined mrao texture not set, sample from seperate textures instead
+		if (mat.metalnessTexIndex != -1) {
+			metalness *= sampleTexture(mat.metalnessTexIndex, input.texCoords).r;
+		}
+		if (mat.roughnessTexIndex != -1) {
+			roughness *= sampleTexture(mat.roughnessTexIndex, input.texCoords).r;
+		}
+		if (mat.aoTexIndex != -1) {
+			ao = mat.aoIntensity + sampleTexture(mat.aoTexIndex, input.texCoords).r;
+		}
+	}
+#endif
     gbuffers.mrao = float4(metalness, roughness, ao, 1.0f);
 
     return gbuffers;

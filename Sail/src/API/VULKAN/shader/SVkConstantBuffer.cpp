@@ -18,7 +18,9 @@ namespace ShaderComponent {
 															// TODO: recreate buffers after swap chain recreation
 		auto allocator = m_context->getVmaAllocator();
 
-		if (size > 65536) Logger::Warning("Created UBO larger than 64k. Make sure this is supported on the device!");
+		if (size > 65536) {
+			Logger::Warning("Created UBO larger than 64k. Make sure this is supported on the device!");
+		}
 
 		m_uniformBuffers.resize(numBuffers);
 		m_mappedData.resize(numBuffers);

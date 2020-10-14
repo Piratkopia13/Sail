@@ -1,6 +1,6 @@
 #include "../variables.shared"
 
-float4 phongShade(PhongInput input) {
+float4 phongShade(ShaderShared::PhongInput input) {
 
 	float3 ambientCoefficient = float3(0.3f, 0.3f, 0.3f);
 
@@ -28,7 +28,7 @@ float4 phongShade(PhongInput input) {
 	// Point lights
 	[unroll]
 	for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
-		PointLight p = input.pointLights[i];
+		ShaderShared::PointLight p = input.pointLights[i];
 
 		diffuseCoefficient = saturate(dot(input.normal, normalize(p.fragToLight)));
 

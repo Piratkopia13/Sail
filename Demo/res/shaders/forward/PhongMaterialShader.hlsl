@@ -39,22 +39,22 @@ cbuffer VSSystemCBuffer : register(b0) {
     float4 sys_clippingPlane;
     float3 sys_cameraPos;
 	float padding;
-	DirectionalLight dirLight;
-	PointLight pointLights[8];
+	ShaderShared::DirectionalLight dirLight;
+	ShaderShared::PointLight pointLights[8];
 }
 
 cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
-	PhongMaterial sys_materials[1024];
+	ShaderShared::PhongMaterial sys_materials[1024];
 }
 
 PSIn VSMain(VSIn input) {
 	PSIn output;
 
 #ifdef _SAIL_VK
-	PhongMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+	ShaderShared::PhongMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 	matrix mWorld = VSPSConsts.sys_mWorld;
 #else
-	PhongMaterial mat = sys_materials[sys_materialIndex];
+	ShaderShared::PhongMaterial mat = sys_materials[sys_materialIndex];
 	matrix mWorld = sys_mWorld;
 #endif
 
@@ -103,16 +103,16 @@ float4 sampleTexture(uint index, float2 texCoords) {
 float4 PSMain(PSIn input) : SV_Target0 {
 
 #ifdef _SAIL_VK
-	PhongMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+	ShaderShared::PhongMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 #else
-	PhongMaterial mat = sys_materials[sys_materialIndex];
+	ShaderShared::PhongMaterial mat = sys_materials[sys_materialIndex];
 #endif
 
-	PointLight myPointLights[NUM_POINT_LIGHTS] = pointLights;
+	ShaderShared::PointLight myPointLights[NUM_POINT_LIGHTS] = pointLights;
 	for (int i = 0; i < NUM_POINT_LIGHTS; i++)
 		myPointLights[i].fragToLight = myPointLights[i].fragToLight - input.worldPosition;
 
-	PhongInput phongInput;
+	ShaderShared::PhongInput phongInput;
 	phongInput.mat = mat;
 	phongInput.fragToCam = input.toCam;
 	phongInput.dirLight = dirLight;

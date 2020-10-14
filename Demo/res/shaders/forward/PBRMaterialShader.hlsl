@@ -37,12 +37,12 @@ cbuffer VSPSSystemCBuffer : register(b0) {
     float3 sys_cameraPos;
 	float padding;
     float4 sys_clippingPlane;
-	DirectionalLight dirLight;
-	PointLight pointLights[8];
+	ShaderShared::DirectionalLight dirLight;
+	ShaderShared::PointLight pointLights[8];
 }
 
 cbuffer VSPSMaterials : register(b1) : SAIL_BIND_ALL_MATERIALS {
-	PBRMaterial sys_materials[1024];
+	ShaderShared::PBRMaterial sys_materials[512];
 }
 
 
@@ -50,10 +50,10 @@ PSIn VSMain(VSIn input) {
 	PSIn output;
 
 #ifdef _SAIL_VK
-	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+	ShaderShared::PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 	matrix mWorld = VSPSConsts.sys_mWorld;
 #else
-	PBRMaterial mat = sys_materials[sys_materialIndex];
+	ShaderShared::PBRMaterial mat = sys_materials[sys_materialIndex];
 	matrix mWorld = sys_mWorld;
 #endif
 
@@ -108,9 +108,9 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	// return radianceMap.SampleLevel(PSss, viewDir, 0);
 
 #ifdef _SAIL_VK
-	PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
+	ShaderShared::PBRMaterial mat = sys_materials[VSPSConsts.sys_materialIndex];
 #else
-	PBRMaterial mat = sys_materials[sys_materialIndex];
+	ShaderShared::PBRMaterial mat = sys_materials[sys_materialIndex];
 #endif
 
 	float3 camToFrag = normalize(input.worldPos - sys_cameraPos);
@@ -172,6 +172,20 @@ float4 PSMain(PSIn input) : SV_Target0 {
 		pixel.roughness *= 1.f - mrao.g; // Invert roughness from texture to make it correct
 		pixel.ao = mrao.b + mat.aoIntensity;
 	}
+#if ALLOW_SEPARATE_MRAO
+	else {
+		// Combined mrao texture not set, sample from seperate textures instead
+		if (mat.metalnessTexIndex != -1) {
+			pixel.metalness *= sampleTexture(mat.metalnessTexIndex, input.texCoords).r;
+		}
+		if (mat.roughnessTexIndex != -1) {
+			pixel.roughness *= 1.f - sampleTexture(mat.roughnessTexIndex, input.texCoords).r;
+		}
+		if (mat.aoTexIndex != -1) {
+			pixel.ao = mat.aoIntensity + sampleTexture(mat.aoTexIndex, input.texCoords).r;
+		}
+	}
+#endif
 
 	// Shade
 	float3 shadedColor = pbrShade(scene, pixel);

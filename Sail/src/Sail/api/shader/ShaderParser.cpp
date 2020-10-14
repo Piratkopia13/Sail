@@ -4,6 +4,9 @@
 #include "Sail/Application.h"
 #include "API/DX12/DX12API.h"
 
+// Shared shader defines
+#include "../Demo/res/shaders/variables.shared"
+
 using namespace Utils::String;
 
 ShaderParser::ShaderParser(const std::string& filename)
@@ -271,6 +274,7 @@ void ShaderParser::parseCBuffer(const std::string& source, bool storeAsConstant)
 
 		// Push the name and byteOffset to the vector
 		vars.push_back({ name, size });
+		assert(elementsInArray != -1 && "Unbounded array found with no max size set");
 		size += getSizeOfType(type) * elementsInArray;
 
 		/*Logger::Log("Type: " + type);
@@ -539,11 +543,11 @@ UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
 		typeName == "matrix")							return 4 * 4 * 4;
 
 	if (typeName == "MipsData")							return 32;
-	if (typeName == "PhongMaterial")					return 4 * 12;
-	if (typeName == "PBRMaterial")						return 4 * 16;
+	if (typeName == "ShaderShared::PhongMaterial")		return sizeof(ShaderShared::PhongMaterial);
+	if (typeName == "ShaderShared::PBRMaterial")		return sizeof(ShaderShared::PBRMaterial);
 	if (typeName == "OutlineMaterial")					return 4 * 4;
-	if (typeName == "DirectionalLight")					return 4 * 8;
-	if (typeName == "PointLight")						return 4 * 8;
+	if (typeName == "ShaderShared::DirectionalLight")	return sizeof(ShaderShared::DirectionalLight);
+	if (typeName == "ShaderShared::PointLight")			return sizeof(ShaderShared::PointLight);
 	if (typeName == "PointLightInput")					return 4 * 8 * 128; // last 128 is NUM_POINT_LIGHTS
 	if (typeName == "DeferredPointLightData")			return 48;
 	if (typeName == "DeferredDirLightData")				return 32;

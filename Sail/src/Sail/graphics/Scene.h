@@ -27,6 +27,8 @@ public:
 	void Scene::destroyEntity(Entity& entity);
 	void draw(Camera& camera);
 
+	uint32_t getEntityCount() const;
+
 	Environment* getEnvironment();
 
 	entt::registry m_registry;

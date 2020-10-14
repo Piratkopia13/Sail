@@ -18,10 +18,13 @@ static inline glm::quat quat_cast(const aiQuaternion& q) { return glm::quat(q.w,
 static inline glm::mat4 mat4_cast(const aiMatrix4x4& m) { return glm::transpose(glm::make_mat4(&m.a1)); }
 static inline glm::mat4 mat4_cast(const aiMatrix3x3& m) { return glm::transpose(glm::make_mat3(&m.a1)); }
 
-ModelLoader::ModelLoader(const std::string& filepath, Scene* scene)
+ModelLoader::ModelLoader(const std::string& filepath, Scene* scene, bool useAbsolutePath)
 	: m_entityScene(scene)
 {
-	std::string path = ResourceManager::DEFAULT_MODEL_LOCATION + filepath;
+	std::string path = filepath;
+	if (!useAbsolutePath) {
+		path = ResourceManager::DEFAULT_MODEL_LOCATION + path;
+	}
 	Assimp::Importer importer;
 	import(&importer, path);
 

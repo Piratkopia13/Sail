@@ -4,6 +4,7 @@
 #include "Sail/graphics/material/PhongMaterial.h"
 #include <unordered_map>
 #include "Sail/entities/components/Component.h"
+#include "Sail/resources/loaders/ModelLoader.h"
 
 EntitiesGui::EntitiesGui() {
 	// Register components that should show up in the component list
@@ -100,10 +101,36 @@ void EntitiesGui::render(Scene* scene) {
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y);
 		ImGui::AlignTextToFramePadding();
-		//ImGui::Text((std::to_string(entities.size()) + " entities in the world").c_str());
+		ImGui::Text((std::to_string(scene->getEntityCount()) + " entities in the world").c_str());
 		ImGui::SameLine();
+
 		const char* newEntityBtnText = "Add entity";
-		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(newEntityBtnText).x - ImGui::GetStyle().ItemInnerSpacing.x * 2.f - ImGui::GetStyle().ItemSpacing.x);
+		auto newEntityPosX = ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(newEntityBtnText).x - ImGui::GetStyle().ItemInnerSpacing.x * 2.f - ImGui::GetStyle().ItemSpacing.x;
+		const char* loadModelBtnText = "Add model";
+		auto loadModelPosX = newEntityPosX - ImGui::CalcTextSize(loadModelBtnText).x - ImGui::GetStyle().ItemInnerSpacing.x * 2.f - ImGui::GetStyle().ItemSpacing.x;
+		{
+			ImGui::SetCursorPosX(loadModelPosX);
+			if (ImGui::Button(loadModelBtnText)) {
+				std::string modelPath = OpenFileDialog(
+					L"(*.fbx) Autodesk\0*.fbx\0"
+					L"(*.dae) Collada \0*.dae\0"
+					L"(*.gltf) glTF \0*.gltf\0"
+					L"(*.blend) Blender 3D \0*.blend\0"
+					L"(*.3ds) 3ds Max 3DS \0*.3ds\0"
+				);
+				if (!modelPath.empty()) {
+					// Load the model and add it to the scene
+					ModelLoader(modelPath, scene, true);
+				}
+			}
+			if (ImGui::IsItemHovered()) {
+				ImGui::BeginTooltip();
+				ImGui::Text("Load a model scene from file");
+				ImGui::EndTooltip();
+			}
+			ImGui::SameLine();
+		}
+		ImGui::SetCursorPosX(newEntityPosX);
 		if (ImGui::Button(newEntityBtnText)) {
 			selectEntity(scene->createEntity("New entity"), scene);
 			entityAddedThisFrame = true;

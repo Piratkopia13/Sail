@@ -5,25 +5,12 @@
 class Texture;
 class Shader;
 
+// Shared shader defines
+#include "../Demo/res/shaders/variables.shared"
+
 class PBRMaterial : public Material {
 public:
 	typedef std::shared_ptr<PBRMaterial> SPtr;
-
-public:
-	// Matching shader struct
-	struct PBRSettings {
-		glm::vec4 modelColor;
-		float metalnessScale;
-		float roughnessScale;
-		float aoIntensity;
-		int albedoTexIndex;
-		int normalTexIndex;
-		int mraoTexIndex; // R/G/B = Metalness/Roughness/Ambient occlusion
-		int radianceMapTexIndex;
-		int irradianceMapTexIndex;
-		int brdfLutTexIndex;
-		glm::vec3 padding;
-	};
 
 public:
 	PBRMaterial();
@@ -45,6 +32,10 @@ public:
 	void setAlbedoTexture(const std::string& filename, bool useAbsolutePath = false);
 	void setNormalTexture(const std::string& filename, bool useAbsolutePath = false);
 	void setMetalnessRoughnessAOTexture(const std::string& filename, bool useAbsolutePath = false);
+	void setMetalnessTexture(const std::string& filename, bool useAbsolutePath = false);
+	void setRoughnessTexture(const std::string& filename, bool useAbsolutePath = false);
+	void setAoTexture(const std::string& filename, bool useAbsolutePath = false);
+
 
 	/*	Returns a texture
 		Default texture id is as follows
@@ -54,10 +45,10 @@ public:
 	*/
 	Texture* getTexture(unsigned int id) const;
 
-	PBRSettings& getPBRSettings();
+	ShaderShared::PBRMaterial& getPBRSettings();
 
 private:
-	PBRSettings m_pbrSettings;
+	ShaderShared::PBRMaterial m_pbrSettings;
 	Texture* m_brdfLutTexture;
 	bool m_hasTransparency;	
 	UINT m_numTextures;

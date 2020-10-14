@@ -22,18 +22,6 @@ PhongMaterial::PhongMaterial()
 }
 PhongMaterial::~PhongMaterial() { }
 
-//void PhongMaterial::bind(Shader* shader, Environment* environment, void* cmdList) {
-//	shader->trySetCBufferVar("sys_material", (void*)&getPhongSettings(), sizeof(PhongSettings), cmdList);
-//
-//	// TODO: check if this causes a problem in DX12
-//	// when a normal or specular texture is bound but not a diffuse one, the order will probably be wrong in dx12 shaders
-//
-//	// Will pass nullptrs for unused textures, it is up to the pipeline to handle that
-//	shader->setTexture("sys_texDiffuse", textures[0], cmdList);
-//	shader->setTexture("sys_texNormal", textures[1], cmdList);
-//	shader->setTexture("sys_texSpecular", textures[2], cmdList);
-//}
-
 void PhongMaterial::setTextureIndex(unsigned int textureID, int index) {
 	if (textureID == 0) m_phongSettings.diffuseTexIndex = index;
 	else if (textureID == 1) m_phongSettings.normalTexIndex = index;
@@ -45,7 +33,7 @@ void* PhongMaterial::getData() {
 }
 
 unsigned int PhongMaterial::getDataSize() const {
-	return sizeof(PhongSettings);
+	return sizeof(ShaderShared::PhongMaterial);
 }
 
 Shader* PhongMaterial::getShader(Renderer::Type rendererType) const {
@@ -104,6 +92,6 @@ Texture* PhongMaterial::getTexture(unsigned int id) const {
 	return textures[id];
 }
 
-PhongMaterial::PhongSettings& PhongMaterial::getPhongSettings() {
+ShaderShared::PhongMaterial& PhongMaterial::getPhongSettings() {
 	return m_phongSettings;
 }

@@ -14,7 +14,7 @@ namespace Assimp {
 class ModelLoader {
 public:
 	// Creates an entity in the given scene with child-entities for each mesh in the model
-	ModelLoader(const std::string& filepath, Scene* scene);
+	ModelLoader(const std::string& filepath, Scene* scene, bool useAbsolutePath = false);
 	// Loads only the first mesh in the model
 	ModelLoader(const std::string& filepath);
 

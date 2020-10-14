@@ -22,8 +22,8 @@ cbuffer PSSystemCBuffer : register(b0) {
     int useSSAO;
     int useShadowTexture;
 	float3 padding;
-	DirectionalLight dirLight;
-    PointLight pointLights[8];
+	ShaderShared::DirectionalLight dirLight;
+    ShaderShared::PointLight pointLights[8];
 }
 
 PSIn VSMain(VSIn input) {

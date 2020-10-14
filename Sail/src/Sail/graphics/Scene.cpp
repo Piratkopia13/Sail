@@ -188,6 +188,10 @@ void Scene::draw(Camera& camera) {
 	m_forwardRenderer->setLightSetup(nullptr);
 }
 
+uint32_t Scene::getEntityCount() const {
+	return m_registry.alive();
+}
+
 Environment* Scene::getEnvironment() {
 	return m_environment.get();
 }

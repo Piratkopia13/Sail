@@ -16,28 +16,29 @@ Mesh* MeshComponent::get() {
 void MeshComponent::renderEditorGui(SailGuiWindow* window) {
 	
 	window->enableColumns();
-		window->addProperty("Model", [&]() {
-			std::string modelName = "This is a model name";
-			window->LimitStringLength(modelName, 30);
-			//if (ImGui::Button(modelName.c_str(), ImVec2(ImGui::GetColumnWidth(), 0))) {
-			//	std::string newModel = window->OpenFileDialog(L"FBX models (*.fbx)\0*.fbx");
-			//	if (!newModel.empty()) {
-			//		// Wait for the GPU to finish rendering using the current model
-			//		Application::getInstance()->getAPI()->waitForGPU();
+		window->addProperty("Mesh", [&]() {
+			std::string meshName = "Load new mesh";
+			window->LimitStringLength(meshName, 30);
+			if (ImGui::Button(meshName.c_str(), ImVec2(ImGui::GetColumnWidth(), 0))) {
+				std::string newMesh = window->OpenFileDialog(L"FBX meshes (*.fbx)\0*.fbx");
+				if (!newMesh.empty()) {
+					// Wait for the GPU to finish rendering using the current mesh
+					Application::getInstance()->getAPI()->waitForGPU();
 
-			//		// Load new model and replace the old one
-			//		m_model = Application::getInstance()->getResourceManager().getModel(newModel, true);
-			//	}
-			//}
-			/*if (ImGui::IsItemHovered()) {
+					// Load new mesh and replace the old one
+					auto& resman = Application::getInstance()->getResourceManager();
+					m_mesh = resman.loadMesh(newMesh, true);
+				}
+			}
+			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
-				ImGui::Text("Load a new model from file");
+				ImGui::Text("Load a new mesh from file");
 				ImGui::EndTooltip();
-			}*/
+			}
 		});
 	window->disableColumns();
 	
-	ImGui::Text("Internal references to this model: %i", m_mesh.use_count());
+	ImGui::Text("Internal references to this mesh: %i", m_mesh.use_count());
 
 	if (m_mesh) {
 		window->enableColumns(150.f);
