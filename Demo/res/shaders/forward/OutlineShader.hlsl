@@ -64,5 +64,13 @@ PSIn VSMain(VSIn input) {
 }
 
 float4 PSMain(PSIn input) : SV_TARGET {
-	return float4(input.color, 1.f);
+#if GAMMA_CORRECT
+	// Gamma correction
+    float3 output = input.color / (input.color + 1.0f);
+    // Tone mapping using the Reinhard operator
+    output = pow(output, 1.0f / 2.2f);
+	return float4(output, 1.0);
+#else
+	return float4(input.color, 1.0f);
+#endif
 }

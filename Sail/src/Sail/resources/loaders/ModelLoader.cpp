@@ -192,23 +192,29 @@ Entity ModelLoader::parseMesh(const aiMesh* mesh, const glm::mat4& transform, co
 		//pbrMat->setRoughnessScale(1.f - shininess);
 	}
 
-	Logger::Log("NewMat");
+	//Logger::Log("NewMat");
 
 	// Get Textures
 	aiString texPath;
 	if (meshMat->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), texPath) == AI_SUCCESS) {
-		Logger::Log("Diffuse: " + std::string(texPath.C_Str()));
+		//Logger::Log("Diffuse: " + std::string(texPath.C_Str()));
 		pbrMat->setAlbedoTexture(std::string(texPath.C_Str()));
+		// Ignore underlying color if there is a diffuse/albedo texture set (blender seems to do this)
+		pbrMat->setColor({1.f, 1.f, 1.f, color.a});
 	}
 	if (meshMat->Get(AI_MATKEY_TEXTURE_NORMALS(0), texPath) == AI_SUCCESS) {
-		Logger::Log("Normals: " + std::string(texPath.C_Str()));
+		//Logger::Log("Normals: " + std::string(texPath.C_Str()));
 		pbrMat->setNormalTexture(std::string(texPath.C_Str()));
 	}
 	if (meshMat->Get(AI_MATKEY_TEXTURE_SPECULAR(0), texPath) == AI_SUCCESS) {
-		Logger::Log("Specular: " + std::string(texPath.C_Str()));
+		//Logger::Log("Specular: " + std::string(texPath.C_Str()));
 	}
 	if (meshMat->Get(AI_MATKEY_TEXTURE_OPACITY(0), texPath) == AI_SUCCESS) {
 		pbrMat->enableTransparency(true);
+	}
+	aiBlendMode blendMode;
+	if (meshMat->Get(AI_MATKEY_BLEND_FUNC, blendMode) == AI_SUCCESS) {
+		//Logger::Log(std::to_string(blendMode));
 	}
 
 	entity.addComponent<MaterialComponent>(pbrMat);

@@ -117,8 +117,10 @@ bool SVkDeferredRenderer::onEvent(Event& event) {
 		}
 		createGeometryFramebuffers();
 
-		m_ssao->resize(m_width, m_height);
-		createSSAOFramebuffers();
+		if (m_ssao) {
+			m_ssao->resize(m_width, m_height);
+			createSSAOFramebuffers();
+		}
 
 		return true;
 	};

@@ -30,7 +30,6 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 
 	// Create/load models
 	auto planeMesh = MeshFactory::Plane::Create(glm::vec2(50.f), glm::vec2(30.0f));
-	//auto cubeModel = ModelFactory::CubeModel::Create(glm::vec3(0.5f));
 
 	// Create entities
 	{
