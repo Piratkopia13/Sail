@@ -33,7 +33,7 @@ namespace ShaderComponent {
 			vkAddressMode = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
 			break;
 		case Texture::CLAMP:
-			vkAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+			vkAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			break;
 		case Texture::BORDER:
 			vkAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;

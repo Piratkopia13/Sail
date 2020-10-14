@@ -126,7 +126,7 @@ void DX12PipelineStateObject::createGraphicsPipelineState() {
 			D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
 		};
 		customRTBlendDesc.BlendEnable = TRUE;
-		customRTBlendDesc.SrcBlend = D3D12_BLEND_ONE;
+		customRTBlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
 		customRTBlendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
 		customRTBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
 		customRTBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;

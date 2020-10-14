@@ -7,7 +7,7 @@ class Texture;
 // The environment holds the skybox, radiance and irradiance cubemap textures
 class Environment {
 public:
-	Environment(Scene* scene, const std::string& folderName = "studio");
+	Environment(Scene* scene, const std::string& folderName = "rail");
 	~Environment();
 
 	void changeTo(const std::string& folderName);
