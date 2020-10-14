@@ -22,8 +22,8 @@ ModelViewerState::ModelViewerState(StateStack& stack)
 	m_app = Application::getInstance();
 	
 	// Set up camera with controllers
-	m_cam.setPosition(glm::vec3(1.6f, 4.7f, 7.4f));
-	m_camController.lookAt(glm::vec3(0.f));
+	m_cam.setPosition(glm::vec3(1.6f, 6.7f, 5.4f));
+	m_camController.lookAt(glm::vec3(0.f, 4.f, 0.f));
 	
 	// Disable culling for testing purposes
 	m_app->getAPI()->setFaceCulling(GraphicsAPI::NO_CULLING);
