@@ -254,6 +254,6 @@ private:
 		});
 	}
 private:
-	inline static const LPCWSTR s_textureFilter = L"All supported textures (*.tga;*.hdr;*.dds;*.jpg;*.png)\0*.tga;*.hdr;*.dds;*.jpg;*.png";
+	inline static const LPCWSTR s_textureFilter = L"All supported textures (*.tga;*.hdr;*.dds;*.ktx;*.jpg;*.jpeg;*.png;*.bpm;*.psd;*.gif;*.pic)\0*.tga;*.hdr;*.dds;*.ktx;*.jpg;*.jpeg;*.png;*.bpm;*.psd;*.gif;*.pic";
 	std::shared_ptr<Material> m_material;
 };

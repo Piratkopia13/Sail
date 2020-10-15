@@ -111,13 +111,8 @@ void EntitiesGui::render(Scene* scene) {
 		{
 			ImGui::SetCursorPosX(loadModelPosX);
 			if (ImGui::Button(loadModelBtnText)) {
-				std::string modelPath = OpenFileDialog(
-					L"(*.fbx) Autodesk\0*.fbx\0"
-					L"(*.dae) Collada \0*.dae\0"
-					L"(*.gltf) glTF \0*.gltf\0"
-					L"(*.blend) Blender 3D \0*.blend\0"
-					L"(*.3ds) 3ds Max 3DS \0*.3ds\0"
-				);
+				auto filter = L"All supported model files (*.fbx;*.dae;*.glb;*.blend;*.3ds;*.ase;*.obj;*.ifc;*.zgl;*.ply;*.dxf;*.lwo;*.lws;*.lxo;*.stl;*.x;*.ac;*.ms3d;*.scn;*.bvh;*.csm;*.xml;*.irrmesh;*.irr;*.mdl;*.md2;*.md3;*.pk3;*.mdc;*.md5*;*.vta;*.ogex;*.3d;*.b3d;*.q3s;*.nff;*.nff;*.off;*.raw;*.ter;*.mdl;*.hmp;*.ndo)\0*.fbx;*.dae;*.glb;*.blend;*.3ds;*.ase;*.obj;*.ifc;*.zgl;*.ply;*.dxf;*.lwo;*.lws;*.lxo;*.stl;*.x;*.ac;*.ms3d;*.scn;*.bvh;*.csm;*.xml;*.irrmesh;*.irr;*.mdl;*.md2;*.md3;*.pk3;*.mdc;*.md5*;*.vta;*.ogex;*.3d;*.b3d;*.q3s;*.nff;*.nff;*.off;*.raw;*.ter;*.mdl;*.hmp;*.ndo";
+				std::string modelPath = OpenFileDialog(filter);
 				if (!modelPath.empty()) {
 					// Load the model and add it to the scene
 					ModelLoader(modelPath, scene, true);

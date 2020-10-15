@@ -22,14 +22,11 @@ void TextureData::load(const std::string& filename, bool useAbsolutePath) {
 	std::string path = (useAbsolutePath) ? filename : ResourceManager::DEFAULT_TEXTURE_LOCATION + filename;
 
 	auto ext = path.substr(path.length() - 3);
-	if (ext == "hdr" || ext == "jpg" || ext == "png" || ext == "tga") {
-		FileLoader::STBImageLoader(path, m_data);
-	} else if (ext == "dds" || ext == "ktx") {
+	if (ext == "dds" || ext == "ktx") {
 		FileLoader::DDSKTXImageLoader(path, m_data);
-	/*} else if (ext == "tga") {
-		FileLoader::TGAImageLoader TGALoader(path, m_data);*/
 	} else {
-		Logger::Error("Tried to load unsupported texture format: " + ext);
+		// Try loading using STB, note that this might fail on unsupported formats and should be handled
+		FileLoader::STBImageLoader(path, m_data);
 	}
 }
 
