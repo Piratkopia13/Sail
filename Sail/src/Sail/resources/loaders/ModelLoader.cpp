@@ -59,7 +59,8 @@ void ModelLoader::import(Assimp::Importer* importer, const std::string& filepath
 	// And have it read the given file with some example postprocessing
 	// Usually - if speed is not the most important aspect for you - you'll
 	// probably to request more postprocessing than we do in this example.
-	m_scene = importer->ReadFile(filepath,
+	m_scene = importer->ReadFile(filepath, 
+		//aiProcess_FindInvalidData
 		aiProcess_CalcTangentSpace |
 		aiProcess_Triangulate |
 		aiProcess_JoinIdenticalVertices |
@@ -163,6 +164,9 @@ Entity ModelLoader::parseMesh(const aiMesh* mesh, const glm::mat4& transform, co
 	entity.addComponent<TransformComponent>(transform);
 	entity.addComponent<RelationshipComponent>();
 	if (!mesh) return entity; // If no mesh, then just return with transform
+	if (!((aiPrimitiveType)mesh->mPrimitiveTypes & aiPrimitiveType::aiPrimitiveType_TRIANGLE)) {
+		Logger::Error("thats not a triangle");
+	}
 
 	// Create the mesh
 	Mesh::Data buildData;
@@ -195,25 +199,42 @@ Entity ModelLoader::parseMesh(const aiMesh* mesh, const glm::mat4& transform, co
 		//pbrMat->setRoughnessScale(1.f - shininess);
 	}
 
-	//Logger::Log("NewMat");
+	static const bool IMPORT_TEXTURES = true;
+
+#if 0
+	Logger::Log("Mat properties:");
+	for (uint32_t i = 0; i < meshMat->mNumProperties; i++) {
+		auto prop = meshMat->mProperties[i];
+		if (prop->mType == aiPTI_String)
+			Logger::Log("\t[" + std::string(prop->mKey.C_Str()) + "] = " + std::string(((aiString*)prop->mData)->C_Str()));
+		else if (prop->mType == aiPTI_Float)
+			Logger::Log("\t[" + std::string(prop->mKey.C_Str()) + "] = " + std::to_string(*(float*)prop->mData));
+		else if (prop->mType == aiPTI_Integer)
+			Logger::Log("\t[" + std::string(prop->mKey.C_Str()) + "] = " + std::to_string(*(int*)prop->mData));
+		else
+			Logger::Log("\t[" + std::string(prop->mKey.C_Str()) + "]");
+	}
+#endif
 
 	// Get Textures
-	aiString texPath;
-	if (meshMat->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), texPath) == AI_SUCCESS) {
-		//Logger::Log("Diffuse: " + std::string(texPath.C_Str()));
-		pbrMat->setAlbedoTexture(std::string(texPath.C_Str()));
-		// Ignore underlying color if there is a diffuse/albedo texture set (blender seems to do this)
-		pbrMat->setColor({1.f, 1.f, 1.f, color.a});
-	}
-	if (meshMat->Get(AI_MATKEY_TEXTURE_NORMALS(0), texPath) == AI_SUCCESS) {
-		//Logger::Log("Normals: " + std::string(texPath.C_Str()));
-		pbrMat->setNormalTexture(std::string(texPath.C_Str()));
-	}
-	if (meshMat->Get(AI_MATKEY_TEXTURE_SPECULAR(0), texPath) == AI_SUCCESS) {
-		//Logger::Log("Specular: " + std::string(texPath.C_Str()));
-	}
-	if (meshMat->Get(AI_MATKEY_TEXTURE_OPACITY(0), texPath) == AI_SUCCESS) {
-		pbrMat->enableTransparency(true);
+	if (IMPORT_TEXTURES) {
+		aiString texPath;
+		if (meshMat->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), texPath) == AI_SUCCESS) {
+			//Logger::Log("Diffuse: " + std::string(texPath.C_Str()));
+			pbrMat->setAlbedoTexture(std::string(texPath.C_Str()));
+			// Ignore underlying color if there is a diffuse/albedo texture set (blender seems to do this)
+			pbrMat->setColor({ 1.f, 1.f, 1.f, color.a });
+		}
+		if (meshMat->Get(AI_MATKEY_TEXTURE_NORMALS(0), texPath) == AI_SUCCESS) {
+			//Logger::Log("Normals: " + std::string(texPath.C_Str()));
+			pbrMat->setNormalTexture(std::string(texPath.C_Str()));
+		}
+		if (meshMat->Get(AI_MATKEY_TEXTURE_SPECULAR(0), texPath) == AI_SUCCESS) {
+			//Logger::Log("Specular: " + std::string(texPath.C_Str()));
+		}
+		if (meshMat->Get(AI_MATKEY_TEXTURE_OPACITY(0), texPath) == AI_SUCCESS) {
+			pbrMat->enableTransparency(true);
+		}
 	}
 	aiBlendMode blendMode;
 	if (meshMat->Get(AI_MATKEY_BLEND_FUNC, blendMode) == AI_SUCCESS) {
@@ -227,26 +248,29 @@ void ModelLoader::getBuildData(const aiMesh* mesh, Mesh::Data* outBuildData) {
 	outBuildData->numVertices = mesh->mNumVertices;
 	outBuildData->numIndices = mesh->mNumFaces * 3; // assume 3 indices per face
 
-	outBuildData->indices = SAIL_NEW unsigned long[outBuildData->numIndices];
-	outBuildData->positions = SAIL_NEW Mesh::vec3[outBuildData->numVertices];
-	outBuildData->normals = SAIL_NEW Mesh::vec3[outBuildData->numVertices];
-	outBuildData->texCoords = SAIL_NEW Mesh::vec2[outBuildData->numVertices];
-	outBuildData->tangents = SAIL_NEW Mesh::vec3[outBuildData->numVertices];
-	outBuildData->bitangents = SAIL_NEW Mesh::vec3[outBuildData->numVertices];
+	if (mesh->HasFaces())					outBuildData->indices = SAIL_NEW unsigned long[outBuildData->numIndices];
+	if (mesh->HasPositions())				outBuildData->positions = SAIL_NEW Mesh::vec3[outBuildData->numVertices];
+	if (mesh->HasNormals())					outBuildData->normals = SAIL_NEW Mesh::vec3[outBuildData->numVertices];
+	if (mesh->HasTextureCoords(0))			outBuildData->texCoords = SAIL_NEW Mesh::vec2[outBuildData->numVertices];
+	if (mesh->HasTangentsAndBitangents())	outBuildData->tangents = SAIL_NEW Mesh::vec3[outBuildData->numVertices];
+	if (mesh->HasTangentsAndBitangents())	outBuildData->bitangents = SAIL_NEW Mesh::vec3[outBuildData->numVertices];
 
 	for (uint32_t i = 0; i < outBuildData->numVertices; i++) {
-		outBuildData->positions[i].vec = vec3_cast(mesh->mVertices[i]);
-		outBuildData->normals[i].vec = vec3_cast(mesh->mNormals[i]);
-		outBuildData->texCoords[i].vec = vec3_cast(mesh->mTextureCoords[0][i]);
-		outBuildData->tangents[i].vec = vec3_cast(mesh->mTangents[i]);
-		outBuildData->bitangents[i].vec = vec3_cast(mesh->mBitangents[i]);
+		if (mesh->HasPositions())				outBuildData->positions[i].vec	= vec3_cast(mesh->mVertices[i]);
+		if (mesh->HasNormals())					outBuildData->normals[i].vec	= vec3_cast(mesh->mNormals[i]);
+		if (mesh->HasTextureCoords(0))			outBuildData->texCoords[i].vec	= vec3_cast(mesh->mTextureCoords[0][i]);
+		if (mesh->HasTangentsAndBitangents())	outBuildData->tangents[i].vec	= vec3_cast(mesh->mTangents[i]);
+		if (mesh->HasTangentsAndBitangents())	outBuildData->bitangents[i].vec = vec3_cast(mesh->mBitangents[i]);
 	}
 
-	uint32_t index = 0;
-	for (uint32_t i = 0; i < mesh->mNumFaces; i++) {
-		auto& face = mesh->mFaces[i];
-		for (uint32_t j = 0; j < face.mNumIndices; j++) {
-			outBuildData->indices[index++] = face.mIndices[j];
+	if (mesh->HasFaces()) {
+		uint32_t index = 0;
+		for (uint32_t i = 0; i < mesh->mNumFaces; i++) {
+			auto& face = mesh->mFaces[i];
+			for (uint32_t j = 0; j < face.mNumIndices; j++) {
+				assert(face.mIndices[j] < outBuildData->numIndices && "This index is too large, that shouldn't have happened. Either model file is wrong or assimp is wrong.");
+				outBuildData->indices[index++] = face.mIndices[j];
+			}
 		}
 	}
 }

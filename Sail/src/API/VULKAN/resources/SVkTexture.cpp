@@ -34,20 +34,20 @@ SVkTexture::SVkTexture(const std::string& filepath)
 
 	{
 		// Load file using the resource manager
-		auto& data = getTextureData(filepath);
-		texData = data.getData();
-		bufferSize = data.getAllocatedMemorySize();
-		texWidth = data.getWidth();
-		texHeight = data.getHeight();
-		vkImageFormat = SVkATexture::ConvertToVkFormat(data.getFormat(), data.isSRGB());
+		auto& data = getTextureData(filepath).getData();
+		texData = data.data;
+		bufferSize = data.byteSize;
+		texWidth = data.width;
+		texHeight = data.height;
+		vkImageFormat = SVkATexture::ConvertToVkFormat(data.format, data.isSRGB);
 		imageType = VK_IMAGE_TYPE_2D;
-		texIsCubeMap = data.isCubeMap();
+		texIsCubeMap = data.isCubeMap;
 
-		mipLevels = data.getMipLevels();
-		for (auto& extent : data.getMipExtents()) {
+		mipLevels = data.mipLevels;
+		for (auto& extent : data.mipExtents) {
 			mipExtents.push_back({(uint32_t)extent.x, (uint32_t)extent.y, 1});
 		}
-		mipOffsets = data.getMipOffsets();
+		mipOffsets = data.mipOffsets;
 
 		if (mipLevels == -1) {
 			m_generateMips = true;

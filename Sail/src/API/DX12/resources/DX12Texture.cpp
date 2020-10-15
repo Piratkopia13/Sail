@@ -46,12 +46,13 @@ DX12Texture::DX12Texture(const std::string& filepath)
 		createSRV(true);
 	} else {
 		// Load file using the resource manager
-		auto* texData = &getTextureData(filepath);
+		auto& tex = getTextureData(filepath);
+		auto& texData = tex.getData();
 
 		m_textureDesc = {};
-		m_textureDesc.Format = ConvertToDXGIFormat(texData->getFormat());
-		m_textureDesc.Width = texData->getWidth();
-		m_textureDesc.Height = texData->getHeight();
+		m_textureDesc.Format = ConvertToDXGIFormat(texData.format);
+		m_textureDesc.Width = texData.width;
+		m_textureDesc.Height = texData.height;
 		m_textureDesc.DepthOrArraySize = 1;
 		m_textureDesc.SampleDesc.Count = 1;
 		m_textureDesc.SampleDesc.Quality = 0;
@@ -72,9 +73,9 @@ DX12Texture::DX12Texture(const std::string& filepath)
 		textureDefaultBuffers[0]->SetName((std::wstring(L"Texture default buffer for ") + std::wstring(filepath.begin(), filepath.end())).c_str());
 
 		auto& textureData = m_subresources.emplace_back();
-		textureData.pData = texData->getData();
-		textureData.RowPitch = texData->getWidth() * texData->getBytesPerPixel();
-		textureData.SlicePitch = textureData.RowPitch * texData->getHeight();
+		textureData.pData = texData.data;
+		textureData.RowPitch = texData.width * tex.getBytesPerPixel();
+		textureData.SlicePitch = textureData.RowPitch * texData.height;
 
 		// Create a null descriptor SRV, this way the texture can be bound before it has been initialized but will show as black
 		createSRV(true);

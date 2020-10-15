@@ -5,12 +5,6 @@
 
 namespace FileLoader {
 
-	class STBImageLoader {
-
-	public:
-		STBImageLoader(const std::string& filename, ResourceFormat::TextureData& textureData);
-		~STBImageLoader();
-
-	};
+	bool STBImageLoader(const std::string& filename, ResourceFormat::TextureData& textureData);
 
 }

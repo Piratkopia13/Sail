@@ -5,7 +5,7 @@
 #define DDSKTX_IMPLEMENT
 #include "dds-ktx/dds-ktx.h"
 
-FileLoader::DDSKTXImageLoader::DDSKTXImageLoader(const std::string& filename, ResourceFormat::TextureData& textureData) {
+bool FileLoader::DDSKTXImageLoader(const std::string& filename, ResourceFormat::TextureData& textureData) {
 	auto ddsData = Utils::readFileBinary(filename);
 
 	int size = static_cast<int>(ddsData.size());
@@ -53,14 +53,14 @@ FileLoader::DDSKTXImageLoader::DDSKTXImageLoader(const std::string& filename, Re
 
 		textureData.channels = 4; // TODO: make this right
 
+		return true;
 	} else {
-		Logger::Error(err.msg);
+		Logger::Warning(err.msg);
+		return false;
 	}
 }
 
-FileLoader::DDSKTXImageLoader::~DDSKTXImageLoader() { }
-
-ResourceFormat::TextureFormat FileLoader::DDSKTXImageLoader::convertFormat(ddsktx_format ddsktxFormat) const {
+ResourceFormat::TextureFormat FileLoader::convertFormat(ddsktx_format ddsktxFormat) {
 	switch (ddsktxFormat) {
 	case DDSKTX_FORMAT_BC1:
 		break;

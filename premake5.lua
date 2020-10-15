@@ -213,7 +213,7 @@ project "Sail"
 	defines {
 		"SAIL_PLATFORM=\"%{cfg.platform}\"",
 		-- "_SAIL_BREAK_ON_WARNING",
-		"_SAIL_BREAK_ON_ERROR"
+		-- "_SAIL_BREAK_ON_ERROR"
 	}
 
 	filter "configurations:Release"

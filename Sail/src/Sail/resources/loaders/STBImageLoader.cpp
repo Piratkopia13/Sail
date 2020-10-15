@@ -9,7 +9,7 @@
 #include <stb_image.h>
 #include "Sail/utils/Utils.h"
 
-FileLoader::STBImageLoader::STBImageLoader(const std::string& filename, ResourceFormat::TextureData& textureData) {
+bool FileLoader::STBImageLoader(const std::string& filename, ResourceFormat::TextureData& textureData) {
 	textureData.channels = 4;
 	int numChannels;
 	
@@ -17,7 +17,10 @@ FileLoader::STBImageLoader::STBImageLoader(const std::string& filename, Resource
 		// Load HDR image
 
 		float* data = stbi_loadf(filename.c_str(), (int*)&textureData.width, (int*)&textureData.height, &numChannels, textureData.channels);
-		if (!data) Logger::Error("Failed to load texture (" + filename + ")");
+		if (!data) {
+			Logger::Warning("Failed to load texture (" + filename + ") with error: " + std::string(stbi__g_failure_reason));
+			return false;
+		}
 
 		textureData.bitsPerChannel = 32;
 		textureData.format = ResourceFormat::R32G32B32A32_FLOAT;
@@ -33,7 +36,10 @@ FileLoader::STBImageLoader::STBImageLoader(const std::string& filename, Resource
 		// Load LDR image
 		
 		stbi_uc* data = stbi_load(filename.c_str(), (int*)&textureData.width, (int*)&textureData.height, &numChannels, textureData.channels);
-		if (!data) Logger::Error("Failed to load texture (" + filename + ")");
+		if (!data) {
+			Logger::Warning("Failed to load texture (" + filename + ") with error: " + std::string(stbi__g_failure_reason));
+			return false;
+		}
 		//int bpp = stbi_info_from_memory(data, , (int*)&textureData.width, (int*)&textureData.height, &numChannels);
 		
 		textureData.bitsPerChannel = 8;
@@ -50,6 +56,5 @@ FileLoader::STBImageLoader::STBImageLoader(const std::string& filename, Resource
 		stbi_image_free(data);
 	}
 	
+	return true;
 }
-
-FileLoader::STBImageLoader::~STBImageLoader() { }

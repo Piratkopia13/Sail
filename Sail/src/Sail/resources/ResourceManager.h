@@ -23,13 +23,13 @@ public:
 	~ResourceManager();
 
 	// TextureData
-	void loadTextureData(const std::string& filename, bool useAbsolutePath = false);
+	bool loadTextureData(const std::string& filename, bool useAbsolutePath = false); // Returns false if loading failed
 	TextureData& getTextureData(const std::string& filename);
 	bool hasTextureData(const std::string& filename);
 	bool releaseTextureData(const std::string& filename);
 
 	// Texture
-	void loadTexture(const std::string& filename, bool useAbsolutePath = false);
+	bool loadTexture(const std::string& filename, bool useAbsolutePath = false); // Returns false if loading failed
 	Texture& getTexture(const std::string& filename);
 	bool hasTexture(const std::string& filename);
 

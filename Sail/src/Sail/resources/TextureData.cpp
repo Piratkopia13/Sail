@@ -11,46 +11,33 @@ TextureData::TextureData() {
 	m_data.width = 0;
 	m_data.data = nullptr;
 }
-TextureData::TextureData(const std::string& filename, bool useAbsolutePath) {
-	load(filename, useAbsolutePath);
-}
 TextureData::~TextureData() {
 	Memory::SafeDeleteArr(m_data.data);
 }
 
-void TextureData::load(const std::string& filename, bool useAbsolutePath) {
+bool TextureData::load(const std::string& filename, bool useAbsolutePath) {
 	std::string path = (useAbsolutePath) ? filename : ResourceManager::DEFAULT_TEXTURE_LOCATION + filename;
 
 	auto ext = path.substr(path.length() - 3);
 	if (ext == "dds" || ext == "ktx") {
-		FileLoader::DDSKTXImageLoader(path, m_data);
+		return FileLoader::DDSKTXImageLoader(path, m_data);
 	} else {
 		// Try loading using STB, note that this might fail on unsupported formats and should be handled
-		FileLoader::STBImageLoader(path, m_data);
+		return FileLoader::STBImageLoader(path, m_data);
 	}
+
+	return true;
 }
 
-ResourceFormat::TextureFormat TextureData::getFormat() const {
-	return m_data.format;
-}
-
-unsigned int TextureData::getWidth() const {
-	return m_data.width;
-}
-unsigned int TextureData::getHeight() const {
-	return m_data.height;
-}
-
-unsigned int TextureData::getBytesPerPixel() const {
+uint32_t TextureData::getBytesPerPixel() const {
 	return (m_data.channels * m_data.bitsPerChannel) / 8;
 }
 
-void* TextureData::getData() const {
-	return m_data.data;
+ResourceFormat::TextureData& TextureData::getData() {
+	return m_data;
 }
 
-glm::vec4 TextureData::getPixel(unsigned int x, unsigned int y) {
-
+glm::vec4 TextureData::getPixel(uint32_t x, uint32_t y) {
 	assert(m_data.format == ResourceFormat::R8G8B8A8); // TODO: Add support for other formats
 
 	if (x < 0 || x > m_data.width - 1) return glm::vec4(0.f);
@@ -61,29 +48,4 @@ glm::vec4 TextureData::getPixel(unsigned int x, unsigned int y) {
 						dataAsUChar[y * m_data.width * m_data.channels + (x * m_data.channels) + 1],
 						dataAsUChar[y * m_data.width * m_data.channels + (x * m_data.channels) + 2],
 						dataAsUChar[y * m_data.width * m_data.channels + (x * m_data.channels) + 3]);
-
-}
-
-bool TextureData::isCubeMap() const {
-	return m_data.isCubeMap;
-}
-
-bool TextureData::isSRGB() const {
-	return m_data.isSRGB;
-}
-
-int TextureData::getMipLevels() const {
-	return m_data.mipLevels;
-}
-
-const std::vector<glm::int2>& TextureData::getMipExtents() const {
-	return m_data.mipExtents;
-}
-
-const std::vector<unsigned int>& TextureData::getMipOffsets() const {
-	return m_data.mipOffsets;
-}
-
-unsigned int TextureData::getAllocatedMemorySize() const {
-	return m_data.byteSize;
 }

@@ -6,26 +6,13 @@
 class TextureData {
 public:
 	TextureData();
-	TextureData(const std::string& filename, bool useAbsolutePath = false);
 	~TextureData();
+	bool load(const std::string& filename, bool useAbsolutePath = false);
 
-	void load(const std::string& filename, bool useAbsolutePath = false);
-
-	ResourceFormat::TextureFormat getFormat() const;
-	unsigned int getWidth() const;
-	unsigned int getHeight() const;
-	unsigned int getBytesPerPixel() const;
-	void* getData() const;
-	glm::vec4 getPixel(unsigned int x, unsigned int y);
-	bool isCubeMap() const;
-	bool isSRGB() const;
-	int getMipLevels() const;
-	const std::vector<glm::int2>& getMipExtents() const;
-	const std::vector<unsigned int>& getMipOffsets() const;
-
-	unsigned int getAllocatedMemorySize() const;
+	glm::vec4 getPixel(uint32_t x, uint32_t y); // Only works for rgba8 textures
+	uint32_t getBytesPerPixel() const;
+	ResourceFormat::TextureData& getData();
 
 private:
 	ResourceFormat::TextureData m_data;
-
 };

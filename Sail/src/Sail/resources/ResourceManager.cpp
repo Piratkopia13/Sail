@@ -118,8 +118,12 @@ ResourceManager::~ResourceManager() {
 // TextureData
 //
 
-void ResourceManager::loadTextureData(const std::string& filename, bool useAbsolutePath) {
-	m_textureDatas.insert({ filename, std::make_unique<TextureData>(filename, useAbsolutePath) });
+bool ResourceManager::loadTextureData(const std::string& filename, bool useAbsolutePath) {
+	auto texData = std::make_unique<TextureData>();
+	if (!texData->load(filename, useAbsolutePath))
+		return false;
+	m_textureDatas.insert({ filename, std::move(texData) });
+	return true;
 }
 TextureData& ResourceManager::getTextureData(const std::string& filename) {
 	auto pos = m_textureDatas.find(filename);
@@ -140,12 +144,19 @@ bool ResourceManager::releaseTextureData(const std::string& filename) {
 // Textures
 //
 
-void ResourceManager::loadTexture(const std::string& filename, bool useAbsolutePath) {
+bool ResourceManager::loadTexture(const std::string& filename, bool useAbsolutePath) {
 	SAIL_PROFILE_FUNCTION();
 
 	std::string path = (useAbsolutePath) ? filename : DEFAULT_TEXTURE_LOCATION + filename;
-	if (!hasTexture(filename))
+	if (!hasTexture(filename)) {
+		if (!hasTextureData(filename)) {
+			if (!loadTextureData(filename, useAbsolutePath))
+				return false;
+		}
+
 		m_textures.insert({ filename, std::unique_ptr<Texture>(Texture::Create(path)) });
+	}
+	return true;
 }
 Texture& ResourceManager::getTexture(const std::string& filename) {
 	auto pos = m_textures.find(filename);
@@ -281,7 +292,7 @@ PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {
 uint32_t ResourceManager::getTextureDataSize() const {
 	uint32_t total = 0;
 	for (const auto& it : m_textureDatas) {
-		total += it.second->getAllocatedMemorySize();
+		total += it.second->getData().byteSize;
 	}
 	return total;
 }

@@ -29,7 +29,10 @@ Texture* Material::loadTexture(const std::string& filename, bool useAbsolutePath
 		auto& resMan = Application::getInstance()->getResourceManager();
 		if (!resMan.hasTexture(filename)) {
 			Logger::Log("Texture (" + filename + ") was not yet loaded, loading now.");
-			resMan.loadTexture(filename, useAbsolutePath);
+			if (!resMan.loadTexture(filename, useAbsolutePath)) {
+				Logger::Error("Failed to load texture: " + filename);
+				return nullptr;
+			}
 		}
 		t = &resMan.getTexture(filename);
 	}
