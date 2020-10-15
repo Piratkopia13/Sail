@@ -143,7 +143,7 @@ GBuffers PSMain(PSIn input) {
 			metalness *= sampleTexture(mat.metalnessTexIndex, input.texCoords).r;
 		}
 		if (mat.roughnessTexIndex != -1) {
-			roughness *= sampleTexture(mat.roughnessTexIndex, input.texCoords).r;
+			roughness *= 1.f - sampleTexture(mat.roughnessTexIndex, input.texCoords).r;
 		}
 		if (mat.aoTexIndex != -1) {
 			ao = mat.aoIntensity + sampleTexture(mat.aoTexIndex, input.texCoords).r;
