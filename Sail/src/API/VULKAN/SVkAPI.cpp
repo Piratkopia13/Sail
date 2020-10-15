@@ -4,6 +4,9 @@
 #include "../Windows/Win32Window.h"
 #include "SVkUtils.h"
 
+// New stuffs
+#include "vulkan/vulkan_beta.h"
+
 const int SVkAPI::MAX_FRAMES_IN_FLIGHT = 2;
 
 GraphicsAPI* GraphicsAPI::Create() {
@@ -11,8 +14,7 @@ GraphicsAPI* GraphicsAPI::Create() {
 }
 
 SVkAPI::SVkAPI() 
-	: m_validationLayers({	"VK_LAYER_KHRONOS_validation"	})
-	, m_deviceExtensions({	VK_KHR_SWAPCHAIN_EXTENSION_NAME	})
+	: m_validationLayers({ "VK_LAYER_KHRONOS_validation" })
 	, m_physicalDevice(VK_NULL_HANDLE)
 	, m_colorImageView(VK_NULL_HANDLE)
 	, m_currentFrame(0)
@@ -27,6 +29,16 @@ SVkAPI::SVkAPI()
 {
 	m_clearValues[0] = { 0.f, 0.0f, 0.f, 1.f }; // Default clear color
 	m_clearValues[1] = { 1.f, 0.f }; // Default clear depth
+
+	m_requiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	m_optionalDeviceExtensions = {
+		// Ray tracing extensions
+		VK_KHR_RAY_TRACING_EXTENSION_NAME,
+		VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+		VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
+		VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+		VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
+	};
 
 	Logger::Log("Initializing Vulkan...");
 }
@@ -70,7 +82,7 @@ bool SVkAPI::init(Window* window) {
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.pEngineName = "Sail";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_1;
+		appInfo.apiVersion = VK_API_VERSION_1_2;
 
 		VkInstanceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -215,8 +227,12 @@ bool SVkAPI::init(Window* window) {
 		createInfo.pEnabledFeatures = nullptr;
 		createInfo.pNext = &deviceFeatures;
 
-		createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
-		createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
+		auto deviceExtensions = getDeviceExtension(m_physicalDevice);
+		if (std::find(deviceExtensions.begin(), deviceExtensions.end(), VK_KHR_RAY_TRACING_EXTENSION_NAME) != deviceExtensions.end()) {
+			supportedFeatures |= GraphicsAPI::RAYTRACING;
+		}
+		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
 		// enabledLayerCOunt and ppEnabledLayerNames are obsolete in newer Vulkan implementations
 		if (m_enableValidationLayers) {
@@ -1190,13 +1206,33 @@ bool SVkAPI::checkDeviceExtensionSupport(const VkPhysicalDevice& device) const {
 	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
 	VK_CHECK_RESULT(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data()));
 
-	std::set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
+	std::set<std::string> requiredExtensions(m_requiredDeviceExtensions.begin(), m_requiredDeviceExtensions.end());
 
 	for (const auto& extension : availableExtensions) {
 		requiredExtensions.erase(extension.extensionName);
 	}
 
 	return requiredExtensions.empty();
+}
+
+std::vector<const char*> SVkAPI::getDeviceExtension(const VkPhysicalDevice& device) const {
+	uint32_t extensionCount;
+	VK_CHECK_RESULT(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr));
+
+	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+	VK_CHECK_RESULT(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data()));
+
+	std::vector<const char*> extensions = m_requiredDeviceExtensions;
+	for (const auto& extension : availableExtensions) {
+		// If an optional extension is available - enable it
+		for (const auto& opt : m_optionalDeviceExtensions) {
+			if (strcmp(extension.extensionName, opt) == 0) {
+				extensions.emplace_back(opt);
+			}
+		}
+	}
+
+	return extensions;
 }
 
 SVkAPI::SwapchainSupportDetails SVkAPI::querySwapchainSupport(const VkPhysicalDevice& device) const {

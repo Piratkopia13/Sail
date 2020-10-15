@@ -134,6 +134,7 @@ private:
 
 	QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device) const;
 	bool checkDeviceExtensionSupport(const VkPhysicalDevice& device) const;
+	std::vector<const char*> getDeviceExtension(const VkPhysicalDevice& device) const;
 	SwapchainSupportDetails querySwapchainSupport(const VkPhysicalDevice& device) const;
 	VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
@@ -203,7 +204,8 @@ private:
 	bool m_hasSubmittedThisFrame;
 
 	const std::vector<const char*> m_validationLayers;
-	const std::vector<const char*> m_deviceExtensions;
+	std::vector<const char*> m_requiredDeviceExtensions;
+	std::vector<const char*> m_optionalDeviceExtensions;
 
 	std::vector<std::pair< std::function<void(const VkCommandBuffer&)>, std::function<void()> >> m_scheduledCopyCommandsAndCallbacks;
 	std::vector<std::pair< std::function<void(const VkCommandBuffer&)>, std::function<void()> >> m_scheduledGraphicsCommandsAndCallbacks;
