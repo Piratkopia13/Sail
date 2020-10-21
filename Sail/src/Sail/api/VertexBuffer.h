@@ -12,23 +12,26 @@ public:
 
 	virtual void bind(void* cmdList = nullptr) = 0;
 	virtual void update(Mesh::Data& data) = 0;
+	
+	uint32_t getStride() const;
 
 protected:
 	void* mallocVertexData(const Mesh::Data& modelData);
-	unsigned int getPositionsDataSize() const;
-	unsigned int getTexCoordsDataSize() const;
-	unsigned int getNormalsDataSize() const;
-	unsigned int getTangentsDataSize() const;
-	unsigned int getBitangentsDataSize() const;
+	uint32_t getPositionsDataSize() const;
+	uint32_t getTexCoordsDataSize() const;
+	uint32_t getNormalsDataSize() const;
+	uint32_t getTangentsDataSize() const;
+	uint32_t getBitangentsDataSize() const;
 	
-	unsigned int getVertexBufferSize() const;
+	uint32_t getVertexBufferSize() const;
 
 private:
 	void* m_vertices;
-	unsigned int m_positionsByteSize;
-	unsigned int m_texCoordsByteSize;
-	unsigned int m_normalsByteSize;
-	unsigned int m_tangentsByteSize;
-	unsigned int m_bitangentsByteSize;
-	unsigned int m_byteSize;
+	uint32_t m_positionsByteSize;
+	uint32_t m_texCoordsByteSize;
+	uint32_t m_normalsByteSize;
+	uint32_t m_tangentsByteSize;
+	uint32_t m_bitangentsByteSize;
+	uint32_t m_byteSize;
+	uint32_t m_stride;
 };

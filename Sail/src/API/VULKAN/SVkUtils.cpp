@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "SVkUtils.h"
+#include "volk/volk.h"
 
 VkShaderStageFlags SVkUtils::ConvertShaderBindingToStageFlags(ShaderComponent::BIND_SHADER bindShader) {
 	VkShaderStageFlags stageFlags{};

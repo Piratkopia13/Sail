@@ -2,10 +2,11 @@
 #include "Sail/graphics/light/LightSetup.h"
 #include "../shader/SVkPipelineStateObject.h"
 #include "../shader/SVkShader.h"
+#include "../SVkUtils.h"
 
 #include "SVkForwardRenderer.h"
 #include "SVkDeferredRenderer.h"
-#include "../SVkUtils.h"
+#include "SVkRaytracingRenderer.h"
 
 Renderer* Renderer::Create(Renderer::Type type) {
 	switch (type) {
@@ -14,6 +15,9 @@ Renderer* Renderer::Create(Renderer::Type type) {
 		break;
 	case DEFERRED:
 		return new SVkDeferredRenderer();
+		break;
+	case RAYTRACED:
+		return new SVkRaytracingRenderer();
 		break;
 	default:
 		Logger::Error("Tried to create a renderer of unknown or unimplemented type: " + std::to_string(type));

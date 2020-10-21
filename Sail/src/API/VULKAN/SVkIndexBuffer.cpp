@@ -38,6 +38,7 @@ SVkIndexBuffer::SVkIndexBuffer(Mesh::Data& modelData)
 		VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 		bufferInfo.size = bufferSize;
 		bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+		bufferInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT; // TODO: only do this if vulkan 1.2 / raytracing is used
 
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -61,6 +62,11 @@ SVkIndexBuffer::SVkIndexBuffer(Mesh::Data& modelData)
 
 	// Delete indices from cpu memory
 	Memory::SafeDeleteArr(indices);
+
+	// Store the device address (Used for ray tracing)
+	VkBufferDeviceAddressInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
+	bufferInfo.buffer = m_indexBuffer.buffer;
+	m_address = vkGetBufferDeviceAddress(m_context->getDevice(), &bufferInfo);
 }
 
 SVkIndexBuffer::~SVkIndexBuffer() {
@@ -69,4 +75,8 @@ SVkIndexBuffer::~SVkIndexBuffer() {
 
 void SVkIndexBuffer::bind(void* cmdList) {
 	vkCmdBindIndexBuffer(static_cast<VkCommandBuffer>(cmdList), m_indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+}
+
+VkDeviceAddress SVkIndexBuffer::getAddress() {
+	return m_address;
 }

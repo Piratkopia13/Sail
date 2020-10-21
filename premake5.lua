@@ -204,9 +204,6 @@ project "Sail"
 		"GLFW",
 		"ImGui"
 	}
-	if VulkankSDKPath then
-		links { "vulkan-1" }
-	end
 
 	flags { "MultiProcessorCompile" }
 

@@ -45,11 +45,11 @@ public:
 	struct Data {
 		Data() : numIndices(0), numInstances(0), indices(nullptr), numVertices(0), normals(nullptr), positions(nullptr), colors(nullptr), texCoords(nullptr), tangents(nullptr), bitangents(nullptr) {};
 		void deepCopy(const Data& other);
-		//unsigned int calculateVertexStride() const;
-		unsigned int numIndices;
-		unsigned long* indices;
-		unsigned int numVertices;
-		unsigned int numInstances;
+		//uint32_t calculateVertexStride() const;
+		uint32_t numIndices;
+		uint32_t* indices;
+		uint32_t numVertices;
+		uint32_t numInstances;
 		Mesh::vec3* positions;
 		Mesh::vec3* normals;
 		Mesh::vec4* colors;
@@ -66,11 +66,11 @@ public:
 	virtual void draw(const Renderer& renderer, Material* material, Shader* shader, void* cmdList = nullptr) = 0;
 
 	// Returns a unique hash for the combination of vertex data used in the mesh (positions, normals, etc)
-	unsigned int getAttributesHash();
+	uint32_t getAttributesHash();
 
-	unsigned int getNumVertices() const;
-	unsigned int getNumIndices() const;
-	unsigned int getNumInstances() const;
+	uint32_t getNumVertices() const;
+	uint32_t getNumIndices() const;
+	uint32_t getNumInstances() const;
 	VertexBuffer& getVertexBuffer() const;
 	IndexBuffer& getIndexBuffer() const;
 

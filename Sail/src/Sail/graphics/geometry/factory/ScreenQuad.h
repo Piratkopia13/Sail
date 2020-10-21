@@ -19,7 +19,7 @@ namespace MeshFactory {
 			};
 
 			const int numIndices = 6;
-			ULONG* indices = SAIL_NEW ULONG[numIndices]{
+			auto* indices = SAIL_NEW uint32_t[numIndices]{
 				0, 1, 2, 2, 1, 3
 			};
 

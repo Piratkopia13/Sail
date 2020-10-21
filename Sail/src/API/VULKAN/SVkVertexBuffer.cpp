@@ -66,6 +66,7 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 			bufferInfo.size = bufferSize;
 			bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+			bufferInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT; // TODO: only do this if vulkan 1.2 / raytracing is used
 
 			VmaAllocationCreateInfo allocInfo = {};
 			allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -95,6 +96,14 @@ SVkVertexBuffer::SVkVertexBuffer(const Mesh::Data& modelData, bool allowUpdates)
 
 	// Delete vertices from cpu memory
 	free(vertices);
+
+	// Store the device address(es) (Used for ray tracing)
+	m_addresses.resize(m_vertexBuffers.size());
+	for (size_t i = 0; i < m_addresses.size(); i++) {
+		VkBufferDeviceAddressInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
+		bufferInfo.buffer = m_vertexBuffers[i].buffer;
+		m_addresses[i] = vkGetBufferDeviceAddress(m_context->getDevice(), &bufferInfo);
+	}
 }
 
 SVkVertexBuffer::~SVkVertexBuffer() {
@@ -120,6 +129,11 @@ void SVkVertexBuffer::bind(void* cmdList) {
 
 void SVkVertexBuffer::update(Mesh::Data& data) {
 	assert(false);
+}
+
+VkDeviceAddress SVkVertexBuffer::getAddress() {
+	auto imageIndex = (m_allowUpdates) ? m_context->getSwapIndex() : 0;
+	return m_addresses[imageIndex];
 }
 
 void SVkVertexBuffer::setAsUpdated() {

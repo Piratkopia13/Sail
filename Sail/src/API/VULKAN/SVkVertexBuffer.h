@@ -10,6 +10,8 @@ public:
 	virtual void bind(void* cmdList) override;
 	void update(Mesh::Data& data);
 
+	VkDeviceAddress getAddress();
+
 	// TODO: make these less methods into better ones that doesn't require renderers to call reset
 	void setAsUpdated();
 	bool hasBeenUpdated() const;
@@ -24,4 +26,5 @@ private:
 	SVkAPI::BufferAllocation m_stagingBuffer;
 
 	std::vector<SVkAPI::BufferAllocation> m_vertexBuffers;
+	std::vector<VkDeviceAddress> m_addresses;
 };

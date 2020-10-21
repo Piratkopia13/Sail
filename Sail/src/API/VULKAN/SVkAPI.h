@@ -1,10 +1,11 @@
 #pragma once
 #include "Sail/api/GraphicsAPI.h"
-#include <vulkan/vulkan.h>
 #include <optional>
 #include "vk_mem_alloc.h"
 #include "Sail/Application.h"
 #include <array>
+
+#include <volk/volk.h>
 
 class Win32Window;
 
@@ -49,6 +50,22 @@ public:
 			destroy();
 		}
 	};
+	struct AccelerationStructureAllocation {
+		VkAccelerationStructureKHR as = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
+
+		void destroy() {
+			if (as != VK_NULL_HANDLE) {
+				vmaDestroyAccelerationStructure(Application::getInstance()->getAPI<SVkAPI>()->getVmaAllocator(), as, allocation);
+			}
+			as = VK_NULL_HANDLE;
+			allocation = VK_NULL_HANDLE;
+		}
+		~AccelerationStructureAllocation() {
+			destroy();
+		}
+	};
+	
 
 public:
 	SVkAPI();

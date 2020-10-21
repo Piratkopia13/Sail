@@ -21,9 +21,9 @@ Mesh::~Mesh() {
 	Memory::SafeDeleteArr(meshData.texCoords);
 }
 
-unsigned int Mesh::getAttributesHash() {
-	unsigned int hash = 0;
-	unsigned int mul = 1;
+uint32_t Mesh::getAttributesHash() {
+	uint32_t hash = 0;
+	uint32_t mul = 1;
 	if (meshData.positions) {
 		hash = InputLayout::POSITION;
 		mul *= 10;
@@ -47,13 +47,13 @@ unsigned int Mesh::getAttributesHash() {
 	return hash;
 }
 
-unsigned int Mesh::getNumVertices() const {
+uint32_t Mesh::getNumVertices() const {
 	return meshData.numVertices;
 }
-unsigned int Mesh::getNumIndices() const {
+uint32_t Mesh::getNumIndices() const {
 	return meshData.numIndices;
 }
-unsigned int Mesh::getNumInstances() const {
+uint32_t Mesh::getNumInstances() const {
 	return meshData.numInstances;
 }
 VertexBuffer& Mesh::getVertexBuffer() const {
@@ -68,45 +68,45 @@ void Mesh::Data::deepCopy(const Data& other) {
 	this->numVertices = other.numVertices;
 	this->numInstances = other.numInstances;
 	if (other.indices) {
-		this->indices = SAIL_NEW unsigned long[other.numIndices];
-		for (unsigned int i = 0; i < other.numIndices; i++)
+		this->indices = SAIL_NEW uint32_t[other.numIndices];
+		for (uint32_t i = 0; i < other.numIndices; i++)
 			this->indices[i] = other.indices[i];
 	}
-	unsigned int numVerts = (other.numIndices > 0) ? other.numIndices : other.numVertices;
+	uint32_t numVerts = (other.numIndices > 0) ? other.numIndices : other.numVertices;
 	if (other.positions) {
 		this->positions = SAIL_NEW Mesh::vec3[numVerts];
-		for (unsigned int i = 0; i < numVerts; i++)
+		for (uint32_t i = 0; i < numVerts; i++)
 			this->positions[i] = other.positions[i];
 	}
 	if (other.normals) {
 		this->normals = SAIL_NEW Mesh::vec3[numVerts];
-		for (unsigned int i = 0; i < numVerts; i++)
+		for (uint32_t i = 0; i < numVerts; i++)
 			this->normals[i] = other.normals[i];
 	}
 	if (other.colors) {
 		this->colors = SAIL_NEW Mesh::vec4[numVerts];
-		for (unsigned int i = 0; i < numVerts; i++)
+		for (uint32_t i = 0; i < numVerts; i++)
 			this->colors[i] = other.colors[i];
 	}
 	if (other.texCoords) {
 		this->texCoords = SAIL_NEW Mesh::vec2[numVerts];
-		for (unsigned int i = 0; i < numVerts; i++)
+		for (uint32_t i = 0; i < numVerts; i++)
 			this->texCoords[i] = other.texCoords[i];
 	}
 	if (other.tangents) {
 		this->tangents = SAIL_NEW Mesh::vec3[numVerts];
-		for (unsigned int i = 0; i < numVerts; i++)
+		for (uint32_t i = 0; i < numVerts; i++)
 			this->tangents[i] = other.tangents[i];
 	}
 	if (other.bitangents) {
 		this->bitangents = SAIL_NEW Mesh::vec3[numVerts];
-		for (unsigned int i = 0; i < numVerts; i++)
+		for (uint32_t i = 0; i < numVerts; i++)
 			this->bitangents[i] = other.bitangents[i];
 	}
 }
 
-//unsigned int Mesh::Data::calculateVertexStride() const {
-//	unsigned int stride = 0.f;
+//uint32_t Mesh::Data::calculateVertexStride() const {
+//	uint32_t stride = 0.f;
 //	if (positions) stride += sizeof(Mesh::vec3);
 //	if (normals) stride += sizeof(Mesh::vec3);
 //	if (colors) stride += sizeof(Mesh::vec4);

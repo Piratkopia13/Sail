@@ -8,6 +8,7 @@ public:
 	~SVkIndexBuffer();
 
 	virtual void bind(void* cmdList) override;
+	VkDeviceAddress getAddress();
 
 private:
 	SVkAPI* m_context;
@@ -17,5 +18,6 @@ private:
 	SVkAPI::BufferAllocation m_stagingBuffer;
 
 	SVkAPI::BufferAllocation m_indexBuffer;
+	VkDeviceAddress m_address;
 };
 

@@ -227,7 +227,7 @@ void ModelLoader::getBuildData(const aiMesh* mesh, Mesh::Data* outBuildData) {
 	outBuildData->numVertices = mesh->mNumVertices;
 	outBuildData->numIndices = mesh->mNumFaces * 3; // assume 3 indices per face
 
-	outBuildData->indices = SAIL_NEW unsigned long[outBuildData->numIndices];
+	outBuildData->indices = SAIL_NEW uint32_t[outBuildData->numIndices];
 	outBuildData->positions = SAIL_NEW Mesh::vec3[outBuildData->numVertices];
 	outBuildData->normals = SAIL_NEW Mesh::vec3[outBuildData->numVertices];
 	outBuildData->texCoords = SAIL_NEW Mesh::vec2[outBuildData->numVertices];

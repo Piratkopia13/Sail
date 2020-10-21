@@ -1,11 +1,7 @@
 ﻿#include "pch.h"
 #include "SVkAPI.h"
-#include "vulkan/vulkan_win32.h"
 #include "../Windows/Win32Window.h"
 #include "SVkUtils.h"
-
-// New stuffs
-#include "vulkan/vulkan_beta.h"
 
 const int SVkAPI::MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -67,6 +63,11 @@ SVkAPI::~SVkAPI() {
 }
 
 bool SVkAPI::init(Window* window) {
+
+	if (volkInitialize() != VK_SUCCESS) {
+		Logger::Error("Your device or driver does not support Vulkan.");
+		return false;
+	}
 	
 	// Make sure validation layers are available if run in debug
 	if (m_enableValidationLayers && !checkValidationLayerSupport()) {
@@ -99,6 +100,8 @@ bool SVkAPI::init(Window* window) {
 		createInfo.ppEnabledExtensionNames = extensions.data();
 
 		VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &m_instance));
+
+		volkLoadInstance(m_instance);
 
 		setupDebugMessenger();
 	}
@@ -207,17 +210,22 @@ bool SVkAPI::init(Window* window) {
 		//deviceRobustnessFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
 		//deviceRobustnessFeatures.nullDescriptor = VK_TRUE; // Allow null descriptors! Used for images before they are ready to be read in shaders
 
-		VkPhysicalDeviceDescriptorIndexingFeatures deviceDescIndexFeatures{};
-		deviceDescIndexFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-		deviceDescIndexFeatures.runtimeDescriptorArray = VK_TRUE;
-
-		VkPhysicalDeviceFeatures2 deviceFeatures {};
-		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		VkPhysicalDeviceFeatures2 deviceFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
 		deviceFeatures.features.shaderClipDistance = VK_TRUE;
 		deviceFeatures.features.sampleRateShading = VK_TRUE;
 		deviceFeatures.features.samplerAnisotropy = VK_TRUE;
 		//deviceFeatures.features.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
-		deviceFeatures.pNext = &deviceDescIndexFeatures;
+		
+		// TODO: use this when vulkan 1.2 is not used
+		/*VkPhysicalDeviceDescriptorIndexingFeatures deviceDescIndexFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
+		deviceDescIndexFeatures.runtimeDescriptorArray = VK_TRUE;
+		deviceFeatures.pNext = &deviceDescIndexFeatures;*/
+
+		// TODO: only enable this feature if vk 1.2 is used
+		VkPhysicalDeviceVulkan12Features device12Features = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+		device12Features.bufferDeviceAddress = VK_TRUE; // Used for ray tracing
+		device12Features.runtimeDescriptorArray = VK_TRUE; // Used instead of VkPhysicalDeviceDescriptorIndexingFeatures above
+		deviceFeatures.pNext = &device12Features;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -256,6 +264,7 @@ bool SVkAPI::init(Window* window) {
 		allocatorInfo.physicalDevice = m_physicalDevice;
 		allocatorInfo.device = m_device;
 		allocatorInfo.instance = m_instance;
+		allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT; // TODO: only do this when vulkan 1.2 / raytracing is used
 
 		if (vmaCreateAllocator(&allocatorInfo, &m_vmaAllocator) != VK_SUCCESS) {
 			Logger::Error("Failed to create vma allocator!");

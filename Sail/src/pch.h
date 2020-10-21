@@ -10,6 +10,13 @@
 		#define WIN32_LEAN_AND_MEAN // Exclude some less used APIs to speed up the build process on windows
 	#endif
 	#include <Windows.h>
+
+	#define VK_USE_PLATFORM_WIN32_KHR
+#endif
+
+#ifdef _SAIL_VK
+#define VK_NO_PROTOTYPES // Volk handles prototypes
+#define VK_ENABLE_BETA_EXTENSIONS // Raytracing is currently considered a beta feature
 #endif
 
 // Math
