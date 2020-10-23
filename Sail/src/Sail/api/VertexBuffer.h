@@ -12,8 +12,6 @@ public:
 
 	virtual void bind(void* cmdList = nullptr) = 0;
 	virtual void update(Mesh::Data& data) = 0;
-	
-	uint32_t getStride() const;
 
 protected:
 	void* mallocVertexData(const Mesh::Data& modelData);
@@ -33,5 +31,4 @@ private:
 	uint32_t m_tangentsByteSize;
 	uint32_t m_bitangentsByteSize;
 	uint32_t m_byteSize;
-	uint32_t m_stride;
 };

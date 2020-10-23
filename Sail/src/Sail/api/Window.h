@@ -9,8 +9,8 @@ public:
 
 	struct WindowProps {
 		HINSTANCE hInstance;
-		unsigned int windowWidth = 1280;
-		unsigned int windowHeight = 720;
+		uint32_t windowWidth = 1280;
+		uint32_t windowHeight = 720;
 	};
 public:
 	static Window* Create(const WindowProps& props);
@@ -20,15 +20,15 @@ public:
 	virtual bool initialize() = 0;
 
 	virtual inline void setWindowTitle(const std::string& title) = 0;
-	virtual inline unsigned int getWindowWidth() const { return windowWidth; };
-	virtual inline unsigned int getWindowHeight() const { return windowHeight; };
+	virtual inline uint32_t getWindowWidth() const { return windowWidth; };
+	virtual inline uint32_t getWindowHeight() const { return windowHeight; };
 	virtual inline bool isMinimized() const { return isWindowMinimized; };
 	virtual inline bool isFocused() const { return isWindowFocused; };
 
 
 protected:
-	unsigned int windowWidth;
-	unsigned int windowHeight;
+	uint32_t windowWidth;
+	uint32_t windowHeight;
 	bool isWindowMinimized;
 	bool isWindowFocused;
 

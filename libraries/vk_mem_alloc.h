@@ -15090,6 +15090,7 @@ void VmaAllocator_T::GetAccelerationStructureMemoryRequirements(
         VMA_DECORATE_RAY_TRACING_CONSTANT(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO) };
     memReqInfo.type = type;
     memReqInfo.accelerationStructure = hAccelerationStructure;
+    memReqInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
 
     VkMemoryRequirements2 memReq2 = { VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
 

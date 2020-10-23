@@ -12,11 +12,12 @@ public:
 
 	virtual bool bind(void* cmdList) override;
 	const VkDescriptorSet& getDescriptorSet() const;
-
+	const VkPipeline& getPipeline() const;
 	
 private:
 	void createGraphicsPipelineState();
 	void createComputePipelineState();
+	void createRaytracingPipelineState();
 
 private:
 	SVkAPI* m_context;

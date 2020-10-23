@@ -6,6 +6,7 @@
 
 // Shared shader defines
 #include "../Demo/res/shaders/variables.shared"
+#include "../Demo/res/shaders/dxr/dxr.shared"
 
 using namespace Utils::String;
 
@@ -23,23 +24,6 @@ void ShaderParser::clearParsedData() {
 
 std::string ShaderParser::parse(const std::string& source) {
 	SAIL_PROFILE_FUNCTION();
-
-	// Find what shader types are contained in the source
-	if (source.find("VSMain") != std::string::npos) m_parsedData.hasVS = true;
-	if (source.find("PSMain") != std::string::npos) m_parsedData.hasPS = true;
-	if (source.find("GSMain") != std::string::npos) m_parsedData.hasGS = true;
-	if (source.find("DSMain") != std::string::npos) m_parsedData.hasDS = true;
-	if (source.find("HSMain") != std::string::npos) m_parsedData.hasHS = true;
-	if (source.find("CSMain") != std::string::npos) m_parsedData.hasCS = true;
-
-	if (!m_parsedData.hasVS && !m_parsedData.hasPS && !m_parsedData.hasGS && !m_parsedData.hasDS && !m_parsedData.hasHS && !m_parsedData.hasCS) {
-		Logger::Error("No main function found in shader. The main function(s) needs to be named VSMain, PSMain, GSMain, DSMain, HSMain or CSMain");
-		assert(false);
-	}
-	if (m_parsedData.hasCS && (m_parsedData.hasVS || m_parsedData.hasPS || m_parsedData.hasGS || m_parsedData.hasDS || m_parsedData.hasHS)) {
-		Logger::Error("No other shader type (PS, VS, GS, HS, DS) is allowed in the same file as a compute shader!");
-		assert(false);
-	}
 
 	// Remove comments from source
 	m_cleanSource = removeComments(source);
@@ -78,6 +62,29 @@ std::string ShaderParser::parse(const std::string& source) {
 			}
 		}
 #endif
+	}
+
+	// Find what shader types are contained in the source
+	{
+		if (source.find("VSMain") != std::string::npos) m_parsedData.hasVS = true;
+		if (source.find("PSMain") != std::string::npos) m_parsedData.hasPS = true;
+		if (source.find("GSMain") != std::string::npos) m_parsedData.hasGS = true;
+		if (source.find("DSMain") != std::string::npos) m_parsedData.hasDS = true;
+		if (source.find("HSMain") != std::string::npos) m_parsedData.hasHS = true;
+		if (source.find("CSMain") != std::string::npos) m_parsedData.hasCS = true;
+		// Ray tracing shaders
+		if (source.find("RayGenMain") != std::string::npos)				m_parsedData.hasRayGen = true;
+		if (source.find("MissMain") != std::string::npos)				m_parsedData.hasRayMiss = true;
+		if (source.find("ClosestHitTriangleMain") != std::string::npos) m_parsedData.hasRayClosestHit = true;
+
+		if (!m_parsedData.hasVS && !m_parsedData.hasPS && !m_parsedData.hasGS && !m_parsedData.hasDS && !m_parsedData.hasHS && !m_parsedData.hasCS && !m_parsedData.hasRayGen && !m_parsedData.hasRayMiss && !m_parsedData.hasRayClosestHit) {
+			Logger::Error("No main function found in shader. The main function(s) needs to be named VSMain, PSMain, GSMain, DSMain, HSMain, CSMain, RayGenMain, MissMain or ClosestHitTriangleMain");
+			assert(false);
+		}
+		if (m_parsedData.hasCS && (m_parsedData.hasVS || m_parsedData.hasPS || m_parsedData.hasGS || m_parsedData.hasDS || m_parsedData.hasHS || m_parsedData.hasRayGen || m_parsedData.hasRayMiss || m_parsedData.hasRayClosestHit)) {
+			Logger::Error("No other shader type (PS, VS, GS, HS, DS, RayGenMain, MissMain, ClosestHitTriangleMain) are allowed in the same file as a compute shader!");
+			assert(false);
+		}
 	}
 
 	const char* src;
@@ -142,11 +149,11 @@ std::string ShaderParser::parse(const std::string& source) {
 		// Constant buffers can be defined in two ways
 		src = m_cleanSource.c_str();
 		while (src = findToken("cbuffer", src, false, true)) {
-			parseCBuffer(getBlockStartingFrom(src));
+			parseCBuffer(src);
 		}
 		src = m_cleanSource.c_str();
 		while (src = findToken("ConstantBuffer", src, false, true)) {
-			parseConstantBuffer(getLineStartingFrom(src));
+			parseConstantBuffer(src);
 		}
 	}
 
@@ -154,11 +161,7 @@ std::string ShaderParser::parse(const std::string& source) {
 	// Process all push constants
 	src = m_cleanSource.c_str();
 	while (src = findToken("vk::push_constant", src, false, true)) {
-		std::string pushTokenSource = getBlockStartingFrom(src);
-		src += pushTokenSource.size();
-		const char* end = Utils::String::findToken(";", src);
-		pushTokenSource += std::string(src, end-src);
-		parseCBuffer(pushTokenSource, true);
+		parseCBuffer(src, true);
 	}
 #endif
 
@@ -183,11 +186,21 @@ std::string ShaderParser::parse(const std::string& source) {
 		parseTexture(src);
 	}
 
+	// Process Acceleration Structures
+	src = m_cleanSource.c_str();
+	while (src = findToken("RaytracingAccelerationStructure", src, false, true)) {
+		parseAccelerationStructure(src);
+	}
+
 	return m_cleanSource;
 }
 
-void ShaderParser::parseConstantBuffer(const std::string& source) {
-	const char* src = source.c_str();
+void ShaderParser::parseConstantBuffer(const char* src) {
+	const char* lineStart = getStartOfCurrentLine(src, m_cleanSource.c_str());
+
+	// We only care about the line from now on
+	auto line = getLineStartingFrom(src);
+	src = line.c_str();
 	UINT tokenSize;
 	auto type = nextTokenAsType(src, tokenSize);
 	src += tokenSize;
@@ -207,6 +220,13 @@ void ShaderParser::parseConstantBuffer(const std::string& source) {
 	int registerSlot = findNextIntOnLine(src);
 	bool isMaterialArray = (strstr(src, "SAIL_BIND_ALL_MATERIALS") != nullptr);
 
+#ifdef _SAIL_VK
+	// If [[vk::binding]] is used, parse it and use that as the slot
+	unsigned int vkSlot = registerSlot;
+	getVkBinding(lineStart, vkSlot);
+	registerSlot = vkSlot;
+#endif
+
 	// Memory align to 16 bytes
 	if (size % 16 != 0)
 		size = size - (size % 16) + 16;
@@ -218,9 +238,23 @@ void ShaderParser::parseConstantBuffer(const std::string& source) {
 	free(initData);
 }
 
-void ShaderParser::parseCBuffer(const std::string& source, bool storeAsConstant) {
-	const char* src = source.c_str();
-	const char* end = (storeAsConstant) ? findToken("}", src) - 1 : source.c_str() + source.size();
+void ShaderParser::parseCBuffer(const char* src, bool storeAsConstant) {
+	const char* lineStart = getStartOfCurrentLine(src, m_cleanSource.c_str());
+
+	std::string block;
+	if (storeAsConstant) {
+		// We only care about the block from now on
+		block = getBlockStartingFrom(src);
+		src += block.size();
+		const char* end = Utils::String::findToken(";", src);
+		block += std::string(src, end - src);
+		src = block.c_str();
+	} else {
+		// We only care about the block from now on
+		block = getBlockStartingFrom(src);
+		src = block.c_str();
+	}
+	const char* end = (storeAsConstant) ? findToken("}", src) - 1 : block.c_str() + block.size();
 
 	std::string bufferName = "Unspecified";
 	if (storeAsConstant) {
@@ -255,6 +289,13 @@ void ShaderParser::parseCBuffer(const std::string& source, bool storeAsConstant)
 	auto bindShader = getBindShaderFromName(bufferName);
 	int registerSlot = findNextIntOnLine(src);
 	bool isMaterialArray = (strstr(src, "SAIL_BIND_ALL_MATERIALS") != nullptr);
+
+#ifdef _SAIL_VK
+	// If [[vk::binding]] is used, parse it and use that as the slot
+	unsigned int vkSlot = registerSlot;
+	getVkBinding(lineStart, vkSlot);
+	registerSlot = vkSlot;
+#endif
 	
 	src = findToken("{", src); // Place ptr on same line as starting bracket
 	src = nextLine(src);
@@ -347,18 +388,25 @@ void ShaderParser::parseSampler(const char* src) {
 	unsigned int vkBinding = uslot;
 	getVkBinding(lineStart, vkBinding);
 
-	ShaderResource res(name, uslot, 1, vkBinding);
+	ShaderResource res(name, uslot, vkBinding);
 	m_parsedData.samplers.emplace_back(res, samplerInfo.addressMode, samplerInfo.filter, bindShader, slot);
 }
 
 void ShaderParser::parseTexture(const char* source) {
 	const char* lineStart = getStartOfCurrentLine(source, m_cleanSource.c_str());
 
-	if (source[0] == '<') {
-		// A type was found in the place of a name
-		// This probably means that it is a RWTexture2D and has already been handled
+	auto line = getLineStartingFrom(lineStart);
+	if (strstr(line.c_str(), "RWTexture")) {
+		// This is an RWTexture and has already been handled
 		source = nextLine(source);
 		return;
+	}
+
+	if (source[0] == '<') {
+		// Type is specified, step past it
+		UINT tokenSize = 0;
+		std::string type = nextTokenAsType(source, tokenSize);
+		source += tokenSize;
 	}
 
 	UINT tokenSize = 0;
@@ -368,7 +416,7 @@ void ShaderParser::parseTexture(const char* source) {
 
 	int slot = findNextIntOnLine(source);
 	if (slot == -1) slot = 0; // No slot specified, use 0 as default
-	auto line = getLineStartingFrom(source);
+	line = getLineStartingFrom(source);
 	bool isTexturesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURES") != nullptr);
 	bool isTextureCubesArray = (strstr(line.c_str(), "SAIL_BIND_ALL_TEXTURECUBES") != nullptr);
 
@@ -392,7 +440,8 @@ void ShaderParser::parseTexture(const char* source) {
 	unsigned int vkBinding = static_cast<unsigned int>(slot);
 	getVkBinding(lineStart, vkBinding);
 
-	m_parsedData.textures.emplace_back(name, slot, arrSize, vkBinding, isTexturesArray, isTextureCubesArray);
+	ShaderResource res(name, slot, vkBinding);
+	m_parsedData.textures.emplace_back(res, arrSize, false, isTexturesArray, isTextureCubesArray);
 }
 
 void ShaderParser::parseRWTexture(const char* source) {
@@ -421,7 +470,8 @@ void ShaderParser::parseRWTexture(const char* source) {
 
 	// Store name and slot as a texture to allow shader to manually bind this slot
 	auto uslot = static_cast<unsigned int>(slot);
-	m_parsedData.textures.emplace_back(name, uslot, arrSize, vkBinding, isTexturesArray, isTextureCubesArray, true);
+	ShaderResource res(name, uslot, vkBinding);
+	m_parsedData.textures.emplace_back(res, arrSize, true, isTexturesArray, isTextureCubesArray);
 
 	// Get texture format from source, if specified
 	ResourceFormat::TextureFormat format = ResourceFormat::R8G8B8A8;
@@ -448,7 +498,27 @@ void ShaderParser::parseRWTexture(const char* source) {
 	free(lineCopy);
 
 	std::string nameSuffix(" File: " + m_filename + " slot " + std::to_string(slot));
-	m_parsedData.renderableTextures.emplace_back(ShaderResource(name, uslot, 1, uslot), format, nameSuffix);
+	m_parsedData.renderableTextures.emplace_back(ShaderResource(name, uslot, uslot), format, nameSuffix);
+}
+
+void ShaderParser::parseAccelerationStructure(const char* source) {
+	const char* lineStart = getStartOfCurrentLine(source, m_cleanSource.c_str());
+
+	auto line = getLineStartingFrom(lineStart);
+
+	UINT tokenSize = 0;
+	int arrSize = 1;
+	std::string name = nextTokenAsName(source, tokenSize, &arrSize);
+	source += tokenSize;
+
+	int slot = findNextIntOnLine(source);
+	if (slot == -1) slot = 0; // No slot specified, use 0 as default
+	line = getLineStartingFrom(source);
+	
+	unsigned int vkBinding = static_cast<unsigned int>(slot);
+	getVkBinding(lineStart, vkBinding);
+
+	m_parsedData.accelerationStructures.emplace_back(name, slot, vkBinding);
 }
 
 bool ShaderParser::getVkBinding(const char* lineStart, unsigned int& outVkBinding) const {
@@ -523,6 +593,9 @@ ShaderComponent::BIND_SHADER ShaderParser::getBindShaderFromName(const std::stri
 	if (startsWith(name.c_str(), "DS")) return ShaderComponent::DS;
 	if (startsWith(name.c_str(), "HS")) return ShaderComponent::HS;
 	if (startsWith(name.c_str(), "CS")) return ShaderComponent::CS;
+	if (startsWith(name.c_str(), "RG")) return ShaderComponent::RAY_GEN;
+	if (startsWith(name.c_str(), "RCH")) return ShaderComponent::RAY_CLOSEST_HIT;
+	if (startsWith(name.c_str(), "RM")) return ShaderComponent::RAY_MISS;
 	Logger::Warning("Shader resource with name \"" + name + "\" not starting with VS/PS etc, using VS as default in shader: \"" + m_filename + "\"");
 	return ShaderComponent::VS; // Default to binding to VertexShader
 }
@@ -551,6 +624,7 @@ UINT ShaderParser::getSizeOfType(const std::string& typeName) const {
 	if (typeName == "PointLightInput")					return 4 * 8 * 128; // last 128 is NUM_POINT_LIGHTS
 	if (typeName == "DeferredPointLightData")			return 48;
 	if (typeName == "DeferredDirLightData")				return 32;
+	if (typeName == "SceneCBuffer")						return sizeof(DXRShaderCommon::SceneCBuffer);
 
 	Logger::Error("Found shader variable type with unknown size (" + typeName + ")");
 	return 0;

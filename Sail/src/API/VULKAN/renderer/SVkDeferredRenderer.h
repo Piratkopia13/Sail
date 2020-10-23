@@ -11,6 +11,14 @@ class SVkDeferredRenderer : public Renderer, public IEventListener {
 public:
 	static const unsigned int NUM_GBUFFERS = 4;
 
+	struct GBufferTextures {
+		std::unique_ptr<SVkRenderableTexture> positions;
+		std::unique_ptr<SVkRenderableTexture> normals;
+		std::unique_ptr<SVkRenderableTexture> albedo;
+		std::unique_ptr<SVkRenderableTexture> mrao;
+		VkImageView depthView = {};
+	};
+
 public:
 	SVkDeferredRenderer();
 	~SVkDeferredRenderer();
@@ -20,15 +28,9 @@ public:
 
 	virtual bool onEvent(Event& event) override;
 
-private:
-	struct GBufferTextures {
-		std::unique_ptr<SVkRenderableTexture> positions;
-		std::unique_ptr<SVkRenderableTexture> normals;
-		std::unique_ptr<SVkRenderableTexture> albedo;
-		std::unique_ptr<SVkRenderableTexture> mrao;
-		VkImageView depthView = {};
-	};
+	static const GBufferTextures& GetGBuffers();
 
+private:
 	void createGeometryRenderPass();
 	void createShadingRenderPass();
 	void createGeometryFramebuffers();
@@ -47,7 +49,7 @@ private:
 	SVkAPI::Command m_command;
 
 	VkRenderPass m_geometryRenderPass;
-	GBufferTextures m_gbuffers;
+	static GBufferTextures sGBuffers;
 	std::vector<VkFramebuffer> m_geometryFramebuffers;
 
 	VkRenderPass m_shadingRenderPass;

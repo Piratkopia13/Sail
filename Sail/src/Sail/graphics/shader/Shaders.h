@@ -17,6 +17,7 @@ namespace Shaders {
 		GenerateMipsComputeShader,
 		GaussianBlurHorizontalComputeShader,
 		GaussianBlurVerticalComputeShader,
+		RTShader,
 		NUM_TOTAL_SHADERS
 	};
 	static const char* shaderNames[]{ "PBRMaterialShader", "PhongMaterialShader", "OutlineMaterialShader", "CubemapShader", "-", "GenerateMipsComputeShader" };

@@ -23,6 +23,7 @@ public:
 
 	Material::Type getMaterialType() const;
 	bool isComputeShader() const;
+	bool isRayTracingShader() const;
 	unsigned int getID() const;
 	unsigned int getAttributesHash() const;
 	const Shaders::ShaderSettings& getSettings() const;
@@ -34,6 +35,9 @@ public:
 
 	// Builds (and sometimes binds) descriptors depending on the renderCommands about to be submitted
 	virtual void updateDescriptorsAndMaterialIndices(Renderer::RenderCommandList renderCommands, const Environment& environment, const PipelineStateObject* pso, void* cmdList) = 0;
+
+	virtual void setCBuffer(const std::string& name, const void* data, unsigned int size, void* cmdList);
+	//virtual bool trysetCBuffer(const std::string& name, const void* data, unsigned int size, void* cmdList);
 
 	virtual void setCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList);
 	virtual bool trySetCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList);
@@ -49,6 +53,11 @@ public:
 	void* getDsBlob() const;
 	void* getHsBlob() const;
 	void* getCsBlob() const;
+
+	// Ray tracing blobs
+	void* getRayGenBlob() const;
+	void* getRayCHitBlob() const;
+	void* getRayMissBlob() const;
 
 	const ShaderParser::ParsedData& getParsedData() const;
 
@@ -102,6 +111,10 @@ private:
 	void* m_dsBlob;
 	void* m_hsBlob;
 	void* m_csBlob;
+	// Ray tracing blobs
+	void* m_rgenBlob;
+	void* m_rchitBlob;
+	void* m_rmissBlob;
 
 	// Resources reset every frame
 	// Since the same shader can be used for multiple PSOs, they need to be stored between every call to prepareToRender() this frame

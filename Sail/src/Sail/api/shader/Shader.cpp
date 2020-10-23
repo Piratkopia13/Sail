@@ -17,6 +17,9 @@ Shader::Shader(Shaders::ShaderSettings settings)
 	, m_hsBlob(nullptr)
 	, m_gsBlob(nullptr)
 	, m_csBlob(nullptr)
+	, m_rgenBlob(nullptr)
+	, m_rchitBlob(nullptr)
+	, m_rmissBlob(nullptr)
 	, m_lastMaterialIndex(0)
 {
 	EventSystem::getInstance()->subscribeToEvent(Event::NEW_FRAME, this);
@@ -33,6 +36,10 @@ Material::Type Shader::getMaterialType() const {
 
 bool Shader::isComputeShader() const {
 	return m_csBlob != nullptr;
+}
+
+bool Shader::isRayTracingShader() const {
+	return m_rgenBlob != nullptr;
 }
 
 unsigned int Shader::getID() const {
@@ -60,6 +67,19 @@ RenderableTexture* Shader::getRenderableTexture(const std::string& name) const {
 	}
 	Logger::Error("Tried to get a RenderableTexture named \"" + name + "\" which does not exist in the Shader.");
 	return nullptr;
+}
+
+void Shader::setCBuffer(const std::string& name, const void* data, unsigned int size, void* cmdList) {
+	// TODO: make this look like the other set methods
+	// TODO: make a trySet version
+	for (auto& it : parser.getParsedData().cBuffers) {
+		if (it.name == name) {
+			ShaderComponent::ConstantBuffer& cbuffer = *it.cBuffer.get();
+			cbuffer.updateData(data, size);
+			return;
+		}
+	}
+	Logger::Warning("Tried to set CBuffer that did not exist (" + name + ")");
 }
 
 // TODO: size isn't really needed, can be read from the byteOffset of the next var
@@ -110,6 +130,18 @@ void* Shader::getHsBlob() const {
 
 void* Shader::getCsBlob() const {
 	return m_csBlob;
+}
+
+void* Shader::getRayGenBlob() const {
+	return m_rgenBlob;
+}
+
+void* Shader::getRayCHitBlob() const {
+	return m_rchitBlob;
+}
+
+void* Shader::getRayMissBlob() const {
+	return m_rmissBlob;
 }
 
 const ShaderParser::ParsedData& Shader::getParsedData() const {
@@ -169,6 +201,15 @@ void Shader::compile() {
 	}
 	if (parsedData.hasCS) {
 		m_csBlob = compileShader(source, filepath, ShaderComponent::CS);
+	}
+	if (parsedData.hasRayGen) {
+		m_rgenBlob = compileShader(source, filepath, ShaderComponent::RAY_GEN);
+	}
+	if (parsedData.hasRayClosestHit) {
+		m_rchitBlob = compileShader(source, filepath, ShaderComponent::RAY_CLOSEST_HIT);
+	}
+	if (parsedData.hasRayMiss) {
+		m_rmissBlob = compileShader(source, filepath, ShaderComponent::RAY_MISS);
 	}
 }
 
@@ -274,11 +315,11 @@ void Shader::getDescriptorUpdateInfoAndUpdateMaterialIndices(Renderer::RenderCom
 
 	for (auto& tex : parser.getParsedData().textures) {
 		if (tex.isTexturesArray) {
-			outUpdateInfo->textureArrayBinding = tex.vkBinding;
+			outUpdateInfo->textureArrayBinding = tex.res.vkBinding;
 			outUpdateInfo->bindTextureArray = true;
 			outUpdateInfo->textureArrayIsWritable = tex.isWritable;
 		} else if (tex.isTextureCubesArray) {
-			outUpdateInfo->textureCubeArrayBinding = tex.vkBinding;
+			outUpdateInfo->textureCubeArrayBinding = tex.res.vkBinding;
 			outUpdateInfo->bindTextureCubeArray = true;
 			outUpdateInfo->textureCubeArrayIsWritable = tex.isWritable;
 		}

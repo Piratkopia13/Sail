@@ -18,9 +18,14 @@ public:
 		std::vector<VkDescriptorBufferInfo> infos;
 		std::string name;
 	};
+	struct AccelerationStructureDescriptor {
+		VkWriteDescriptorSetAccelerationStructureKHR info;
+		std::string name;
+	};
 	struct Descriptors {
 		std::vector<ImageDescriptor> images;
 		std::vector<BufferDescriptor> buffers;
+		std::vector<AccelerationStructureDescriptor> accelerationStructures;
 	};
 
 public:

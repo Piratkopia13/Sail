@@ -46,7 +46,7 @@ public:
 	void reloadAllShaders();
 
 	// PipelineStateObjects (PSOs)
-	// mesh may be null when shader is a compute shader
+	// mesh may be null when shader is a compute or ray tracing shader
 	PipelineStateObject& getPSO(Shader* shader, Mesh* mesh = nullptr);
 
 	// Storage information

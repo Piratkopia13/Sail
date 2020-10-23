@@ -5,6 +5,9 @@
 #include "Sail/graphics/geometry/factory/ScreenQuad.h"
 #include "../shader/SVkShader.h"
 #include "../SVkUtils.h"
+#include "SVkRaytracingRenderer.h"
+
+SVkDeferredRenderer::GBufferTextures SVkDeferredRenderer::sGBuffers;
 
 SVkDeferredRenderer::SVkDeferredRenderer() 
 	: m_ssaoRenderPass(VK_NULL_HANDLE)
@@ -20,10 +23,10 @@ SVkDeferredRenderer::SVkDeferredRenderer()
 	m_width = app->getWindow()->getWindowWidth();
 	m_height = app->getWindow()->getWindowHeight();
 
-	m_gbuffers.positions = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R16G16B16A16_FLOAT));
-	m_gbuffers.normals	 = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R16G16B16A16_FLOAT));
-	m_gbuffers.albedo	 = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R8G8B8A8));
-	m_gbuffers.mrao		 = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R8G8B8A8));
+	sGBuffers.positions = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R16G16B16A16_FLOAT));
+	sGBuffers.normals	 = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R16G16B16A16_FLOAT));
+	sGBuffers.albedo	 = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R8G8B8A8));
+	sGBuffers.mrao		 = std::unique_ptr<SVkRenderableTexture>(SAIL_NEW SVkRenderableTexture(m_width, m_height, RenderableTexture::USAGE_SAMPLING_ACCESS, ResourceFormat::R8G8B8A8));
 
 	createGeometryRenderPass();
 	createShadingRenderPass();
@@ -48,6 +51,11 @@ SVkDeferredRenderer::SVkDeferredRenderer()
 SVkDeferredRenderer::~SVkDeferredRenderer() {
 	EventSystem::getInstance()->unsubscribeFromEvent(Event::SWAPCHAIN_RECREATED, this);
 	vkDeviceWaitIdle(m_context->getDevice());
+
+	sGBuffers.positions.reset();
+	sGBuffers.normals.reset();
+	sGBuffers.albedo.reset();
+	sGBuffers.mrao.reset();
 
 	vkDestroyRenderPass(m_context->getDevice(), m_geometryRenderPass, nullptr);
 	vkDestroyRenderPass(m_context->getDevice(), m_shadingRenderPass, nullptr);
@@ -107,10 +115,10 @@ bool SVkDeferredRenderer::onEvent(Event& event) {
 		m_width = Application::getInstance()->getWindow()->getWindowWidth();
 		m_height = Application::getInstance()->getWindow()->getWindowHeight();
 
-		m_gbuffers.positions->resize(m_width, m_height);
-		m_gbuffers.normals->resize(m_width, m_height);
-		m_gbuffers.albedo->resize(m_width, m_height);
-		m_gbuffers.mrao->resize(m_width, m_height);
+		sGBuffers.positions->resize(m_width, m_height);
+		sGBuffers.normals->resize(m_width, m_height);
+		sGBuffers.albedo->resize(m_width, m_height);
+		sGBuffers.mrao->resize(m_width, m_height);
 
 		for (auto& fb : m_geometryFramebuffers) {
 			vkDestroyFramebuffer(m_context->getDevice(), fb, nullptr);
@@ -128,6 +136,10 @@ bool SVkDeferredRenderer::onEvent(Event& event) {
 
 	EventHandler::HandleType<SwapchainRecreatedEvent>(event, e);
 	return true;
+}
+
+const SVkDeferredRenderer::GBufferTextures& SVkDeferredRenderer::GetGBuffers() {
+	return sGBuffers;
 }
 
 void SVkDeferredRenderer::createGeometryRenderPass() {
@@ -151,10 +163,10 @@ void SVkDeferredRenderer::createGeometryRenderPass() {
 	}
 
 	// Formats
-	attachmentDescs[0].format = m_gbuffers.positions->getFormat();
-	attachmentDescs[1].format = m_gbuffers.normals->getFormat();
-	attachmentDescs[2].format = m_gbuffers.albedo->getFormat();
-	attachmentDescs[3].format = m_gbuffers.mrao->getFormat();
+	attachmentDescs[0].format = sGBuffers.positions->getFormat();
+	attachmentDescs[1].format = sGBuffers.normals->getFormat();
+	attachmentDescs[2].format = sGBuffers.albedo->getFormat();
+	attachmentDescs[3].format = sGBuffers.mrao->getFormat();
 	attachmentDescs[4].format = m_context->getDepthFormat();
 
 	std::vector<VkAttachmentReference> colorReferences;
@@ -316,20 +328,20 @@ void SVkDeferredRenderer::createSSAORenderPass() {
 }
 
 void SVkDeferredRenderer::createGeometryFramebuffers() {
-	m_gbuffers.depthView = m_context->getDepthView();
+	sGBuffers.depthView = m_context->getDepthView();
 
 	//auto numBuffers = m_context->getNumSwapchainImages();
-	auto numBuffers = m_gbuffers.positions->getNumBuffers();
+	auto numBuffers = sGBuffers.positions->getNumBuffers();
 
 	m_geometryFramebuffers.resize(numBuffers);
 	for (int i = 0; i < numBuffers; i++) {
 		// Create the framebuffer
 		VkImageView attachments[] = {
-			m_gbuffers.positions->getView(i),
-			m_gbuffers.normals->getView(i),
-			m_gbuffers.albedo->getView(i),
-			m_gbuffers.mrao->getView(i),
-			m_gbuffers.depthView
+			sGBuffers.positions->getView(i),
+			sGBuffers.normals->getView(i),
+			sGBuffers.albedo->getView(i),
+			sGBuffers.mrao->getView(i),
+			sGBuffers.depthView
 		};
 
 		VkFramebufferCreateInfo framebufferInfo = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
@@ -503,14 +515,14 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 			auto& desc = descriptors.images.emplace_back();
 			desc.name = "def_positions";
 			auto& imageInfo = desc.infos.emplace_back();
-			imageInfo.imageView = m_gbuffers.positions->getView(swapIndex);
+			imageInfo.imageView = sGBuffers.positions->getView(swapIndex);
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		}
 		{
 			auto& desc = descriptors.images.emplace_back();
 			desc.name = "def_worldNormals";
 			auto& imageInfo = desc.infos.emplace_back();
-			imageInfo.imageView = m_gbuffers.normals->getView(swapIndex);
+			imageInfo.imageView = sGBuffers.normals->getView(swapIndex);
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		}
 		shader->updateDescriptors(descriptors, &pso);
@@ -647,7 +659,8 @@ void SVkDeferredRenderer::runSSAO(const VkCommandBuffer& cmd) {
 void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 	auto& resman = Application::getInstance()->getResourceManager();
 	bool useSSAO = Application::getInstance()->getSettings().getBool(Settings::Graphics_SSAO);
-	
+	bool useDXRHardShadows = Application::getInstance()->getSettings().getBool(Settings::Graphics_DXR);
+
 	// TODO:: figure out if a semaphore or barrier is still needed to sync gbuffer pass finishing before shading pass starts
 
 	{
@@ -680,14 +693,15 @@ void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 	{
 		m_shadingPassMaterial.clearTextures();
 		// This order needs to match the indexing used in the shader
-		m_shadingPassMaterial.addTexture(m_gbuffers.positions.get());
-		m_shadingPassMaterial.addTexture(m_gbuffers.normals.get());
-		m_shadingPassMaterial.addTexture(m_gbuffers.albedo.get());
-		m_shadingPassMaterial.addTexture(m_gbuffers.mrao.get());
+		m_shadingPassMaterial.addTexture(sGBuffers.positions.get());
+		m_shadingPassMaterial.addTexture(sGBuffers.normals.get());
+		m_shadingPassMaterial.addTexture(sGBuffers.albedo.get());
+		m_shadingPassMaterial.addTexture(sGBuffers.mrao.get());
 
 		if (m_ssao)
 			m_shadingPassMaterial.addTexture(m_ssaoShadingTexture);
-		//m_shadingPassMaterial.addTexture(shadows);
+		if (useDXRHardShadows)
+			m_shadingPassMaterial.addTexture(SVkRaytracingRenderer::GetOutputTexture());
 
 		m_shadingPassMaterial.addTexture(m_brdfLutTexture);
 		m_shadingPassMaterial.addTexture(environment->getRadianceTexture());
@@ -702,7 +716,7 @@ void SVkDeferredRenderer::runShadingPass(const VkCommandBuffer& cmd) {
 
 	int useSSAOInt = (int)useSSAO;
 	shader->trySetCBufferVar("useSSAO", &useSSAOInt, sizeof(int), cmd);
-	int useShadowTextureInt = 0;
+	int useShadowTextureInt = (int)useDXRHardShadows;
 	shader->trySetCBufferVar("useShadowTexture", &useShadowTextureInt, sizeof(int), cmd);
 
 	if (camera) {
@@ -734,4 +748,3 @@ void SVkDeferredRenderer::runFrameExecution(const VkCommandBuffer& cmd) {
 	// Submit the command buffer to the graphics queue
 	m_context->submitCommandBuffers({ cmd });
 }
-

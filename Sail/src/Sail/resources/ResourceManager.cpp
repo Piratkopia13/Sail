@@ -107,6 +107,15 @@ ResourceManager::ResourceManager() {
 		settings.identifier = Shaders::GaussianBlurVerticalComputeShader;
 		m_shaderSettings.insert({ settings.identifier, settings });
 	}
+
+	// Raytracing shaders
+	{
+		Shaders::ShaderSettings settings;
+		settings.filename = "dxr/HardShadows.hlsl";
+		settings.materialType = Material::PBR;
+		settings.identifier = Shaders::RTShader;
+		m_shaderSettings.insert({ settings.identifier, settings });
+	}
 }
 ResourceManager::~ResourceManager() {
 	for (auto it : m_shaders) {
@@ -164,11 +173,10 @@ bool ResourceManager::hasTexture(const std::string& filename) {
 
 Mesh::SPtr ResourceManager::loadMesh(const std::string& filename, bool useAbsolutePath) {
 	std::string path = (useAbsolutePath) ? filename : DEFAULT_MODEL_LOCATION + filename;
-	ModelLoader loader(path);
 
 	Mesh::SPtr mesh;
 	if (!hasMesh(filename, &mesh)) {
-		return m_meshes.insert({ filename, loader.getMesh() }).first->second;
+		return m_meshes.insert({ filename, ModelLoader(path).getMesh() }).first->second;
 	} else {
 		return mesh;
 	}
@@ -262,7 +270,7 @@ PipelineStateObject& ResourceManager::getPSO(Shader* shader, Mesh* mesh) {
 		assert(shader->getID() < 21473 && "Too many Shader instances exist, how did that even happen?");
 		hash += meshHash;
 	} else {
-		assert(shader->isComputeShader() && "A mesh has to be specified for all shader types except compute shaders when getting a PSO");
+		assert((shader->isComputeShader() || shader->isRayTracingShader()) && "A mesh has to be specified for all shader types except compute and ray tracing shaders when getting a PSO");
 	}
 
 	auto pos = m_psos.find(hash);

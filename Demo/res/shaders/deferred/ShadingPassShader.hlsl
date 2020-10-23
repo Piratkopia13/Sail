@@ -104,6 +104,7 @@ float4 PSMain(PSIn input) : SV_Target0 {
 	float shadows = 0.f;
 	if (useShadowTexture)
 		shadows = 1.f - texShadows.Sample(PSss, input.texCoord).r;
+	return texShadows.Sample(PSss, input.texCoord);
 	// return shadows;
 
 	PBRScene scene;

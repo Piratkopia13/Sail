@@ -77,8 +77,8 @@ void* DX12RaytracingRenderer::present(Renderer::PresentFlag flags, void* skipped
 	return cmdList;
 }
 
-std::unique_ptr<DX12RenderableTexture>* DX12RaytracingRenderer::GetOutputTexture() {
-	return &sRTOutputTexture;
+DX12RenderableTexture* DX12RaytracingRenderer::GetOutputTexture() {
+	return sRTOutputTexture.get();
 }
 
 bool DX12RaytracingRenderer::onEvent(Event& event) {

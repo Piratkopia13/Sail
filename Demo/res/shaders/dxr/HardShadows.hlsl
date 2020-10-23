@@ -2,13 +2,13 @@
 #include "dxr.shared"
 
 // Inputs
-RaytracingAccelerationStructure rtScene : register(t0);
-ConstantBuffer<SceneCBuffer> systemSceneBuffer : register(b0, space0);
-Texture2D<float4> gbuffer_positions : register(t1);
-Texture2D<float4> gbuffer_normals : register(t2);
+[[vk::binding(0)]] RaytracingAccelerationStructure rtScene : register(t0);
+[[vk::binding(1)]] ConstantBuffer<SceneCBuffer> RGSystemSceneBuffer : register(b0, space0);
+[[vk::binding(2)]] Texture2D<float4> RGGbuffer_positions : register(t1);
+[[vk::binding(3)]] Texture2D<float4> RGGbuffer_normals : register(t2);
 
 // Outputs
-RWTexture2D<float4> output : register(u0);
+[[vk::binding(4)]] RWTexture2D<float4> output : register(u0) : SAIL_NO_RESOURCE;
 
 // Generate a ray in world space for a camera pixel corresponding to an index from the dispatched 2D grid
 inline void generateCameraRay(uint2 index, out float3 origin, out float3 direction) {
@@ -19,26 +19,33 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 	screenPos.y = -screenPos.y;
 
 	// Unproject the pixel coordinate into a ray.
-	float4 world = mul(systemSceneBuffer.projectionToWorld, float4(screenPos, 0, 1));
+	float4 world = mul(RGSystemSceneBuffer.projectionToWorld, float4(screenPos, 0, 1));
 
 	world.xyz /= world.w;
-	origin = systemSceneBuffer.cameraPosition;
+	origin = RGSystemSceneBuffer.cameraPosition;
 	direction = normalize(world.xyz - origin);
 }
 
 [shader("raygeneration")]
-void rayGen() {
+void RayGenMain() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
+
+	// Test, remove this
+	output[launchIndex] = 1.f;
+	output[launchIndex].rgb = RGSystemSceneBuffer.cameraPosition / 10.f;
+	// if ((launchIndex.x + launchIndex.y) % 2 == 0)
+	// 	output[launchIndex].r = 1.f;
+	return;
 
 	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
 	// generateCameraRay(launchIndex, ray.Origin, ray.Direction);
 
-	float3 pixelWorldPos = mul(systemSceneBuffer.viewToWorld, gbuffer_positions[launchIndex]).xyz;
-	float3 pixelWorldNormal = gbuffer_normals[launchIndex].xyz;
+	float3 pixelWorldPos = mul(RGSystemSceneBuffer.viewToWorld, RGGbuffer_positions[launchIndex]).xyz;
+	float3 pixelWorldNormal = RGGbuffer_normals[launchIndex].xyz;
     
 	// Cast a shadow ray from the directional light
 	RayDesc ray;
-	ray.Direction = -systemSceneBuffer.dirLightDirection;
+	ray.Direction = -RGSystemSceneBuffer.dirLightDirection;
 	ray.Origin = pixelWorldPos;
 	ray.Origin += pixelWorldNormal * 0.1f; // Offset slightly to avoid self-shadowing
 										   // This should preferably be done with the vertex normal and not a normal-mapped normal
@@ -61,12 +68,12 @@ void rayGen() {
 }
 
 [shader("miss")]
-void miss(inout RayPayload payload) {
+void MissMain(inout RayPayload payload) {
 
 }
 
 [shader("closesthit")]
-void closestHitTriangle(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
+void ClosestHitTriangleMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs) {
 	payload.recursionDepth++;
 	
 

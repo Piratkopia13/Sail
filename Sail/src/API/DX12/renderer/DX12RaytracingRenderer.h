@@ -13,7 +13,7 @@ public:
 	void begin(Camera* camera, Environment* environment) override;
 	void* present(Renderer::PresentFlag flags, void* skippedPrepCmdList = nullptr) override;
 
-	static std::unique_ptr<DX12RenderableTexture>* GetOutputTexture();
+	static DX12RenderableTexture* GetOutputTexture();
 
 	bool onEvent(Event& event) override;
 

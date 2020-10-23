@@ -128,11 +128,11 @@ private:
 	
 	Resource m_outputResource;
 
-	const WCHAR* m_rayGenName = L"rayGen";
-	const WCHAR* m_closestHitName = L"closestHitTriangle";
-	const WCHAR* m_missName = L"miss";
-	const WCHAR* m_hitGroupTriangleName = L"hitGroupTriangle";
-	const WCHAR* m_shadowMissName = L"shadowMiss";
+	const WCHAR* m_rayGenName = L"RayGenMain";
+	const WCHAR* m_closestHitName = L"ClosestHitTriangleMain";
+	const WCHAR* m_missName = L"MissMain";
+	const WCHAR* m_hitGroupTriangleName = L"HitGroupTriangleMain";
+	const WCHAR* m_shadowMissName = L"ShadowMissMain";
 
 	std::unique_ptr<DX12Utils::RootSignature> m_dxrGlobalRootSignature;
 	std::unique_ptr<DX12Utils::RootSignature> m_localSignatureRayGen;

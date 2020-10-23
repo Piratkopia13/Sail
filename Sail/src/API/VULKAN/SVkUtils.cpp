@@ -9,7 +9,10 @@ VkShaderStageFlags SVkUtils::ConvertShaderBindingToStageFlags(ShaderComponent::B
 	stageFlags |= (bindShader & ShaderComponent::HS) ? VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT : 0;
 	stageFlags |= (bindShader & ShaderComponent::DS) ? VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT : 0;
 	stageFlags |= (bindShader & ShaderComponent::GS) ? VK_SHADER_STAGE_GEOMETRY_BIT : 0;
-	stageFlags |= (bindShader & ShaderComponent::CS) ? VK_SHADER_STAGE_COMPUTE_BIT: 0;
+	stageFlags |= (bindShader & ShaderComponent::CS) ? VK_SHADER_STAGE_COMPUTE_BIT : 0;
+	stageFlags |= (bindShader & ShaderComponent::RAY_GEN) ? VK_SHADER_STAGE_RAYGEN_BIT_KHR : 0;
+	stageFlags |= (bindShader & ShaderComponent::RAY_CLOSEST_HIT) ? VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR : 0;
+	stageFlags |= (bindShader & ShaderComponent::RAY_MISS) ? VK_SHADER_STAGE_MISS_BIT_KHR : 0;
 	return stageFlags;
 }
 
@@ -80,6 +83,18 @@ void SVkUtils::TransitionImageLayout(const VkCommandBuffer& cmd, const VkImage& 
 
 		sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	} else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR; // TODO: make this work for any shader stage
+	} else if (oldLayout == VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; // TODO: make this work for any shader stage
 	} else {
 		Logger::Error("Unsupported layout transition!");
 	}

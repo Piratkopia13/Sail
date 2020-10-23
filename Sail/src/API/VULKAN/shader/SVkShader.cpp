@@ -36,17 +36,17 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 		b.binding = static_cast<uint32_t>(cbuffer.cBuffer->getSlot());
 		b.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		b.descriptorCount = 1;
-		//b.stageFlags = SVkUtils::ConvertShaderBindingToStageFlags(cbuffer.bindShader); // TODO: find out why this sometimes breaks things
-		b.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
-		b.pImmutableSamplers = nullptr; // Optional
+		b.stageFlags = SVkUtils::ConvertShaderBindingToStageFlags(cbuffer.bindShader); // TODO: find out why this sometimes breaks things
+		//b.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
 	}
 
 	for (auto& texture : parsed.textures) {
 		auto& b = bindings.emplace_back();
-		b.binding = static_cast<uint32_t>(texture.vkBinding);
+		b.binding = static_cast<uint32_t>(texture.res.vkBinding);
 		b.descriptorType = (texture.isWritable) ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		b.descriptorCount = (texture.isTexturesArray || texture.isTextureCubesArray) ? TEXTURE_ARRAY_DESCRIPTOR_COUNT : (texture.arraySize == -1) ? 64 : texture.arraySize; // an array size of -1 means it is sizeless in the shader, set some max number
 		b.stageFlags = (parsed.hasCS) ? VK_SHADER_STAGE_COMPUTE_BIT : VK_SHADER_STAGE_FRAGMENT_BIT; // TODO: add support for the other stages
+		if (parsed.hasRayGen) b.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
 		b.pImmutableSamplers = nullptr; // Optional
 	}
 
@@ -57,6 +57,14 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 		b.descriptorCount = 1;
 		b.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		b.pImmutableSamplers = nullptr; // Optional
+	}
+
+	for (auto& as : parsed.accelerationStructures) {
+		auto& b = bindings.emplace_back();
+		b.binding = static_cast<uint32_t>(as.vkBinding);
+		b.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		b.descriptorCount = 1;
+		b.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR; // TODO: add support for the other stages
 	}
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -85,7 +93,6 @@ SVkShader::SVkShader(Shaders::ShaderSettings settings)
 	pipelineLayoutInfo.pPushConstantRanges = pcRanges.data();
 
 	VK_CHECK_RESULT(vkCreatePipelineLayout(m_context->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
-
 }
 
 SVkShader::~SVkShader() {
@@ -109,6 +116,9 @@ SVkShader::~SVkShader() {
 	safeDestroyModule(getDsBlob());
 	safeDestroyModule(getHsBlob());
 	safeDestroyModule(getCsBlob());
+	safeDestroyModule(getRayGenBlob());
+	safeDestroyModule(getRayCHitBlob());
+	safeDestroyModule(getRayMissBlob());
 }
 
 void* SVkShader::compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) {
@@ -143,6 +153,7 @@ void* SVkShader::compileShader(const std::string& source, const std::string& fil
 		path = outputPath;
 	}
 #else
+#error "ShaderConductor for this platform is currently not supported"
 #endif
 
 	auto shaderCode = Utils::readFileBinary(path);
@@ -280,13 +291,13 @@ void SVkShader::updateDescriptors(const Descriptors& descriptors, const SVkPipel
 
 	// Handle Image Descriptors
 	{
-		auto addImageDescSet = [&sets, &pso](const ShaderParser::ShaderResource& res, const std::vector<VkDescriptorImageInfo>& imageInfos) {
+		auto addImageDescSet = [&sets, &pso](const ShaderParser::ShaderTexture& tex, const std::vector<VkDescriptorImageInfo>& imageInfos) {
 			auto& s = sets.emplace_back();
 			s.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			s.dstSet = pso->getDescriptorSet();
-			s.dstBinding = res.vkBinding;
+			s.dstBinding = tex.res.vkBinding;
 			s.dstArrayElement = 0;
-			s.descriptorType = (res.isWritable) ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			s.descriptorType = (tex.isWritable) ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 			s.descriptorCount = static_cast<uint32_t>(imageInfos.size());
 			s.pImageInfo = imageInfos.data();
 		};
@@ -294,7 +305,7 @@ void SVkShader::updateDescriptors(const Descriptors& descriptors, const SVkPipel
 			// Handle desc if it's a texture
 			{
 				auto& it = std::find_if(parsed.textures.begin(), parsed.textures.end(),
-					[&desc](const ShaderParser::ShaderResource& x) { return x.name == desc.name; });
+					[&desc](const ShaderParser::ShaderTexture& x) { return x.res.name == desc.name; });
 				if (it != parsed.textures.end()) {
 					addImageDescSet(*it, desc.infos);
 					continue;
@@ -336,6 +347,27 @@ void SVkShader::updateDescriptors(const Descriptors& descriptors, const SVkPipel
 		}
 	}
 
+	// Handle Acceleration Structures
+	{
+		for (auto& desc : descriptors.accelerationStructures) {
+			auto& it = std::find_if(parsed.accelerationStructures.begin(), parsed.accelerationStructures.end(),
+				[&desc](const ShaderParser::ShaderResource& x) { return x.name == desc.name; });
+			if (it != parsed.accelerationStructures.end()) {
+				auto& s = sets.emplace_back();
+				s.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				s.dstSet = pso->getDescriptorSet();
+				s.dstBinding = it->vkBinding;
+				s.dstArrayElement = 0;
+				s.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+				s.descriptorCount = 1;
+				s.pNext = &desc.info; // pNext is used for acceleration structures since they done have their own struct var
+				continue;
+			} else {
+				Logger::Error("Descriptor name not found in shader");
+			}
+		}
+	}
+
 	vkUpdateDescriptorSets(m_context->getDevice(), (uint32_t)sets.size(), sets.data(), 0, nullptr);
 }
 
@@ -370,6 +402,9 @@ void SVkShader::recompile() {
 	safeDestroyModule(getDsBlob());
 	safeDestroyModule(getHsBlob());
 	safeDestroyModule(getCsBlob());
+	safeDestroyModule(getRayGenBlob());
+	safeDestroyModule(getRayCHitBlob());
+	safeDestroyModule(getRayMissBlob());
 
 	parser.clearParsedData();
 	compile();

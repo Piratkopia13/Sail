@@ -12,7 +12,6 @@ class DX12DeferredRenderer : public Renderer, public IEventListener {
 public:
 	static const unsigned int NUM_GBUFFERS = 4; // depth not accounted for
 
-public:
 	struct GBufferTextures {
 		std::unique_ptr<DX12RenderableTexture> positions;
 		std::unique_ptr<DX12RenderableTexture> normals;

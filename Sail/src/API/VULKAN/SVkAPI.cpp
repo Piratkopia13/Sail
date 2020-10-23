@@ -227,6 +227,10 @@ bool SVkAPI::init(Window* window) {
 		device12Features.runtimeDescriptorArray = VK_TRUE; // Used instead of VkPhysicalDeviceDescriptorIndexingFeatures above
 		deviceFeatures.pNext = &device12Features;
 
+		VkPhysicalDeviceRayTracingFeaturesKHR deviceRTFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR };
+		deviceRTFeatures.rayTracing = VK_TRUE;
+		device12Features.pNext = &deviceRTFeatures;
+
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -362,7 +366,7 @@ bool SVkAPI::init(Window* window) {
 
 	// Create descriptor pool
 	{
-		std::array<VkDescriptorPoolSize, 4> poolSizes{};
+		std::array<VkDescriptorPoolSize, 5> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10000; // TODO: make these dynamic? or just allocate a bunch
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -371,6 +375,8 @@ bool SVkAPI::init(Window* window) {
 		poolSizes[2].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10000;
 		poolSizes[3].type = VK_DESCRIPTOR_TYPE_SAMPLER;
 		poolSizes[3].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10000;
+		poolSizes[4].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		poolSizes[4].descriptorCount = static_cast<uint32_t>(m_swapchainImages.size()) * 10;
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

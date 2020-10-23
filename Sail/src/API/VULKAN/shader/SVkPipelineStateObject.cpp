@@ -19,6 +19,8 @@ SVkPipelineStateObject::SVkPipelineStateObject(Shader* shader, unsigned int attr
 	// Create a compute pipeline state if it has a compute shader
 	if (shader->isComputeShader()) {
 		createComputePipelineState();
+	} else if (shader->isRayTracingShader()) {
+		createRaytracingPipelineState();
 	} else {
 		createGraphicsPipelineState();
 	}
@@ -39,7 +41,9 @@ bool SVkPipelineStateObject::bind(void* cmdList) {
 	// TODO: This returns false if pipeline is already bound, maybe do something with that
 	bindInternal(cmdList, true);
 
-	VkPipelineBindPoint bindPoint = (shader->isComputeShader()) ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
+	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	if (shader->isComputeShader()) bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+	if (shader->isRayTracingShader()) bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
 
 	vkCmdBindPipeline(static_cast<VkCommandBuffer>(cmdList), bindPoint, m_pipeline);
 
@@ -51,6 +55,10 @@ bool SVkPipelineStateObject::bind(void* cmdList) {
 const VkDescriptorSet& SVkPipelineStateObject::getDescriptorSet() const {
 	auto imageIndex = m_context->getSwapIndex();
 	return m_descriptorSets[imageIndex];
+}
+
+const VkPipeline& SVkPipelineStateObject::getPipeline() const {
+	return m_pipeline;
 }
 
 void SVkPipelineStateObject::createGraphicsPipelineState() {
@@ -238,4 +246,58 @@ void SVkPipelineStateObject::createComputePipelineState() {
 	pipelineInfo.basePipelineIndex = -1;  // Optional
 
 	VK_CHECK_RESULT(vkCreateComputePipelines(m_context->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
+}
+
+void SVkPipelineStateObject::createRaytracingPipelineState() {
+	// TODO: allow multiple miss/hit groups
+	// TODO: make this more dynamic
+
+	VkShaderModule* rgenModule = static_cast<VkShaderModule*>(shader->getRayGenBlob());
+	VkShaderModule* rchitModule = static_cast<VkShaderModule*>(shader->getRayCHitBlob());
+	VkShaderModule* rmissModule = static_cast<VkShaderModule*>(shader->getRayMissBlob());
+
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+	auto createShaderStageInfo = [](VkShaderStageFlagBits stage, VkShaderModule* shaderModule, const char* entrypoint) {
+		VkPipelineShaderStageCreateInfo shaderStageInfo = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+		shaderStageInfo.stage = stage;
+		shaderStageInfo.module = *shaderModule;
+		shaderStageInfo.pName = entrypoint;
+
+		return shaderStageInfo;
+	};
+
+	shaderStages.emplace_back(createShaderStageInfo(VK_SHADER_STAGE_RAYGEN_BIT_KHR, rgenModule, "RayGenMain"));
+	shaderStages.emplace_back(createShaderStageInfo(VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, rgenModule, "ClosestHitTriangleMain"));
+	shaderStages.emplace_back(createShaderStageInfo(VK_SHADER_STAGE_MISS_BIT_KHR, rgenModule, "MissMain"));
+
+	std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
+	auto createShaderGroupInfo = [](VkRayTracingShaderGroupTypeKHR type, VkShaderStageFlagBits stage, uint32_t stageIndex) {
+		VkRayTracingShaderGroupCreateInfoKHR shaderGroupInfo = { VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR };
+		shaderGroupInfo.type = type;
+		shaderGroupInfo.generalShader = (stage == VK_SHADER_STAGE_RAYGEN_BIT_KHR || stage == VK_SHADER_STAGE_MISS_BIT_KHR) ? stageIndex : VK_SHADER_UNUSED_KHR;
+		shaderGroupInfo.closestHitShader = (stage == VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) ? stageIndex : VK_SHADER_UNUSED_KHR;
+		shaderGroupInfo.anyHitShader = (stage == VK_SHADER_STAGE_ANY_HIT_BIT_KHR) ? stageIndex : VK_SHADER_UNUSED_KHR;
+		shaderGroupInfo.intersectionShader = (stage == VK_SHADER_STAGE_INTERSECTION_BIT_KHR) ? stageIndex : VK_SHADER_UNUSED_KHR;
+
+		return shaderGroupInfo;
+	};
+
+	shaderGroups.emplace_back(createShaderGroupInfo(VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0));
+	shaderGroups.emplace_back(createShaderGroupInfo(VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, 1));
+	shaderGroups.emplace_back(createShaderGroupInfo(VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR, VK_SHADER_STAGE_MISS_BIT_KHR, 2));
+
+	//assert(false && "Not fully implemented");
+
+	VkRayTracingPipelineCreateInfoKHR pipelineInfo = { VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR };
+	pipelineInfo.stageCount = shaderStages.size();
+	pipelineInfo.pStages = shaderStages.data();
+	pipelineInfo.groupCount = shaderGroups.size();
+	pipelineInfo.pGroups = shaderGroups.data();
+	pipelineInfo.maxRecursionDepth = 1; // TODO: change
+	pipelineInfo.libraries = { VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR };
+	pipelineInfo.layout = m_vkShader->getPipelineLayout();
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+	pipelineInfo.basePipelineIndex = -1;  // Optional
+
+	VK_CHECK_RESULT(vkCreateRayTracingPipelinesKHR(m_context->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
 }

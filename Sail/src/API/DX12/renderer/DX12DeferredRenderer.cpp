@@ -370,7 +370,7 @@ void DX12DeferredRenderer::runShadingPass(ID3D12GraphicsCommandList4* cmdList) {
 		}
 
 		if (useDXRHardShadows) {
-			dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), DX12RaytracingRenderer::GetOutputTexture()->get()->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			dev->CopyDescriptorsSimple(1, heap->getNextCPUDescriptorHandle(), DX12RaytracingRenderer::GetOutputTexture()->getSrvCDH(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		} else {
 			// Skip this slot in the heap
 			heap->getAndStepIndex(1);

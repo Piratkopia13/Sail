@@ -11,18 +11,24 @@
 class ShaderParser {
 public:
 	struct ShaderResource {
-		ShaderResource(const std::string& name, unsigned int slot, unsigned int arraySize, unsigned int vkBinding, bool isTexturesArray = false, bool isTextureCubesArray = false, bool isWritable = false)
+		ShaderResource(const std::string& name, unsigned int slot, unsigned int vkBinding)
 			: name(name)
 			, slot(slot)
-			, arraySize(arraySize)
 			, vkBinding(vkBinding)
-			, isTexturesArray(isTexturesArray)
-			, isTextureCubesArray(isTextureCubesArray)
-			, isWritable(isWritable)
 		{ }
 		std::string name;
 		unsigned int slot;
 		unsigned int vkBinding;
+	};
+	struct ShaderTexture {
+		ShaderTexture(const ShaderResource& res, unsigned int arraySize = 1, bool isWritable = false, bool isTexturesArray = false, bool isTextureCubesArray = false)
+			: res(res)
+			, arraySize(arraySize)
+			, isWritable(isWritable)
+			, isTexturesArray(isTexturesArray)
+			, isTextureCubesArray(isTextureCubesArray) 
+		{ }
+		ShaderResource res;
 		unsigned int arraySize;
 		bool isWritable;
 		bool isTexturesArray; // True if all 2D textures used in the scene should be bound to this
@@ -48,7 +54,7 @@ public:
 		bool isMaterialArray;
 	};
 	struct ShaderSampler {
-		ShaderSampler(ShaderResource res, Texture::ADDRESS_MODE adressMode, Texture::FILTER filter, ShaderComponent::BIND_SHADER bindShader, unsigned int slot)
+		ShaderSampler(const ShaderResource& res, Texture::ADDRESS_MODE adressMode, Texture::FILTER filter, ShaderComponent::BIND_SHADER bindShader, unsigned int slot)
 			: res(res) {
 			sampler = std::unique_ptr<ShaderComponent::Sampler>(ShaderComponent::Sampler::Create(adressMode, filter, bindShader, slot));
 
@@ -57,7 +63,7 @@ public:
 		std::unique_ptr<ShaderComponent::Sampler> sampler;
 	};
 	struct ShaderRenderableTexture {
-		ShaderRenderableTexture(ShaderResource res, ResourceFormat::TextureFormat format, const std::string& nameSuffix = "")
+		ShaderRenderableTexture(const ShaderResource& res, ResourceFormat::TextureFormat format, const std::string& nameSuffix = "")
 			: res(res) {
 			renderableTexture = std::unique_ptr<RenderableTexture>(RenderableTexture::Create(320, 180, RenderableTexture::USAGE_GENERAL, "Renderable Texture owned by a ShaderPipeline" + nameSuffix, format));
 		}
@@ -75,16 +81,17 @@ public:
 		ShaderComponent::BIND_SHADER bindShader;
 	};
 	struct ParsedData {
-		bool hasVS = false, hasPS = false, hasGS = false, hasDS = false, hasHS = false, hasCS = false;
+		bool hasVS = false, hasPS = false, hasGS = false, hasDS = false, hasHS = false, hasCS = false, hasRayGen = false, hasRayClosestHit = false, hasRayMiss = false;
 		unsigned int attributesHash = 0;
 		std::vector<ShaderCBuffer> cBuffers;
 		std::vector<ShaderSampler> samplers;
-		std::vector<ShaderResource> textures;
+		std::vector<ShaderTexture> textures;
 		std::vector<ShaderRenderableTexture> renderableTextures;
 		std::vector<ShaderConstant> constants; // Called root constants in DX12
+		std::vector<ShaderResource> accelerationStructures;
 		void clear() {
 			attributesHash = 0;
-			hasVS = false; hasPS = false; hasGS = false; hasDS = false; hasHS = false, hasCS = false;
+			hasVS = false; hasPS = false; hasGS = false; hasDS = false; hasHS = false, hasCS = false, hasRayGen = false, hasRayClosestHit = false, hasRayMiss = false;
 			cBuffers.clear();
 			samplers.clear();
 			textures.clear();
@@ -102,11 +109,12 @@ public:
 	int findSlotFromName(const std::string& name, const std::vector<ShaderResource>& resources) const;
 
 private:
-	void parseConstantBuffer(const std::string& source); // Parses the first way cbuffers can be defined
-	void parseCBuffer(const std::string& source, bool storeAsConstant = false); // Parses the second way cbuffers can be defined
+	void parseConstantBuffer(const char* src); // Parses the first way cbuffers can be defined
+	void parseCBuffer(const char* src, bool storeAsConstant = false); // Parses the second way cbuffers can be defined
 	void parseSampler(const char* sourceChar); // This method is allowed to change m_cleanSource!
 	void parseTexture(const char* source);
 	void parseRWTexture(const char* source);
+	void parseAccelerationStructure(const char* source);
 
 	bool getVkBinding(const char* lineStart, unsigned int& outVkBinding) const;
 	std::string nextTokenAsName(const char* source, unsigned int& outTokenSize, int* arrayElements = nullptr) const;
