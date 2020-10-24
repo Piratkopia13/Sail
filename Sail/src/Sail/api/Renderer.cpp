@@ -14,7 +14,6 @@ void Renderer::begin(Camera* camera, Environment* environment) {
 }
 
 void Renderer::submit(Mesh* mesh, Shader* shader, Material* material, const glm::mat4& modelMatrix) {
-
 	std::vector<RenderCommand>* cmdVector;
 	
 	if (shader) {

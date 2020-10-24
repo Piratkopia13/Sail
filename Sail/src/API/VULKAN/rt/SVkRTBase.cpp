@@ -19,6 +19,8 @@ SVkRTBase::SVkRTBase() {
 	m_tlasAllocations.resize(numBuffers);
 	m_instancesAllocations.resize(numBuffers);
 	m_bottomInstances.resize(numBuffers);
+	m_tlasScratchBufferAllocations.resize(numBuffers);
+	m_blasScratchBufferAllocations.resize(numBuffers);
 
 	// Get raytracing limit properties for this device
 	if (m_context->supportsFeature(GraphicsAPI::RAYTRACING)) {
@@ -153,6 +155,93 @@ void SVkRTBase::update(const Renderer::RenderCommandList sceneGeometry, Camera* 
 
 }
 
+void SVkRTBase::dispatch(SVkRenderableTexture* outputTexture, Camera* cam, LightSetup* lights, VkCommandBuffer cmd) {
+
+	auto swapIndex = m_context->getSwapIndex();
+	auto& pso = static_cast<SVkPipelineStateObject&>(Application::getInstance()->getResourceManager().getPSO(m_shader));
+
+	// Bind TLAS to shader descriptor set
+	SVkShader::Descriptors descriptors;
+	auto& as = descriptors.accelerationStructures.emplace_back();
+	as.name = "rtScene";
+	as.info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+	as.info.accelerationStructureCount = 1;
+	as.info.pAccelerationStructures = &m_tlasAllocations[swapIndex].as;
+
+	auto& gbuffers = SVkDeferredRenderer::GetGBuffers();
+	assert(gbuffers.positions && gbuffers.normals);
+
+	// Bind GBuffer textures to set
+	auto& gPositions = descriptors.images.emplace_back();
+	gPositions.name = "RGGbuffer_positions";
+	auto& gPositionsInfos = gPositions.infos.emplace_back();
+	gPositionsInfos.imageView = gbuffers.positions->getView();
+	gPositionsInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+	auto& gNormals = descriptors.images.emplace_back();
+	gNormals.name = "RGGbuffer_normals";
+	auto& gNormalsInfos = gNormals.infos.emplace_back();
+	gNormalsInfos.imageView = gbuffers.normals->getView();
+	gNormalsInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+	// Bind output texture to set
+	auto& output = descriptors.images.emplace_back();
+	output.name = "output";
+	auto& outputInfo = output.infos.emplace_back();
+	outputInfo.imageView = outputTexture->getView();
+	outputInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+	m_shader->updateDescriptors(descriptors, &pso);
+
+	// Update cbuffer
+	{
+		DXRShaderCommon::SceneCBuffer newData = {};
+		if (cam) {
+			newData.cameraPosition = cam->getPosition();
+			newData.projectionToWorld = glm::inverse(cam->getViewProjection());
+			newData.viewToWorld = glm::inverse(cam->getViewMatrix());
+		}
+
+		if (lights) {
+			newData.dirLightDirection = lights->getDirLight().direction;
+		}
+		m_shader->setCBuffer("RGSystemSceneBuffer", &newData, sizeof(newData), cmd);
+	}
+
+	pso.bind(cmd);
+
+	// Set offsets into the SBT where the different shader groups can be found
+	// TODO: make dynamic
+	VkDeviceSize progSize = m_limitProperties.shaderGroupBaseAlignment; // Size of a program identifier
+	VkDeviceSize rayGenOffset = 0u * progSize; // NOTE: hardcoded to first slot
+	VkDeviceSize missOffset = 1u * progSize; // NOTE: hardcoded to second slot
+	VkDeviceSize missStride = progSize;
+	VkDeviceSize hitGroupOffset = 2u * progSize; // NOTE: hardcoded to third slot
+	VkDeviceSize hitGroupStride = progSize;
+
+	VkStridedBufferRegionKHR raygenSBT;
+	raygenSBT.buffer = m_sbtAllocation.buffer;
+	raygenSBT.offset = rayGenOffset;
+	raygenSBT.stride = 0;
+	raygenSBT.size = progSize;
+
+	VkStridedBufferRegionKHR missSBT = raygenSBT;
+	missSBT.offset = missOffset;
+	missSBT.stride = missStride;
+
+	VkStridedBufferRegionKHR hitSBT = raygenSBT;
+	hitSBT.offset = hitGroupOffset;
+	hitSBT.stride = hitGroupStride;
+
+	VkStridedBufferRegionKHR callableSBT = {};
+
+	auto* window = Application::getInstance()->getWindow();
+	uint32_t width = window->getWindowWidth();
+	uint32_t height = window->getWindowHeight();
+
+	vkCmdTraceRaysKHR(cmd, &raygenSBT, &missSBT, &hitSBT, &callableSBT, width, height, 1);
+}
+
 SVkRTBase::InstanceList& SVkRTBase::addBLAS(const Mesh* mesh, VkBuildAccelerationStructureFlagBitsKHR flags) {
 	auto swapIndex = m_context->getSwapIndex();
 
@@ -255,22 +344,32 @@ void SVkRTBase::buildBLASes(VkCommandBuffer cmd) {
 	// TODO: set a max buffer size, if the max is exceeded - run over multiple frames
 	// NOTE: if the max size is set too low / too many blases are built every frame this could mean that some blases will never be built
 
-	// Allocate a large scratch buffer and use that to launch multiple builds simultaneously
-	static SVkAPI::BufferAllocation scratchBufferAllocation;
+	// NOTE: current implementation re-uses the largest scratch buffer
+	//		 Consider testing if this is actually worth the vram-cost over the cost of creating a new buffer every time
 
-	VkBufferCreateInfo scratchCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-	scratchCreateInfo.size = scratchTotalSize;
-	scratchCreateInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+	// Get the size of the current buffer
+	VmaAllocationInfo allocInfo = {};
+	if (m_blasScratchBufferAllocations[swapIndex].allocation)
+		vmaGetAllocationInfo(allocator, m_blasScratchBufferAllocations[swapIndex].allocation, &allocInfo);
 
-	VmaAllocationCreateInfo allocInfo = {};
-	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY; // TODO: this might not be right
+	if (!m_blasScratchBufferAllocations[swapIndex].allocation || scratchTotalSize > allocInfo.size) {
+		// We need a larger scratch buffer than we currently have - destroy the current and allocate a larger one
+		m_blasScratchBufferAllocations[swapIndex].destroy();
 
-	Logger::Log("Allocating scratch buffer for BLASes with size: " + std::to_string(scratchTotalSize) + " Swap index: " + std::to_string(swapIndex));
-	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &scratchCreateInfo, &allocInfo, &scratchBufferAllocation.buffer, &scratchBufferAllocation.allocation, nullptr));
+		VkBufferCreateInfo scratchCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+		scratchCreateInfo.size = scratchTotalSize;
+		scratchCreateInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		Logger::Log("Allocating scratch buffer for BLASes with size: " + std::to_string(scratchTotalSize) + " Swap index: " + std::to_string(swapIndex));
+		VK_CHECK_RESULT(vmaCreateBuffer(allocator, &scratchCreateInfo, &allocInfo, &m_blasScratchBufferAllocations[swapIndex].buffer, &m_blasScratchBufferAllocations[swapIndex].allocation, nullptr));
+	}
 
 	// Get the device address to the scratch buffer
 	VkBufferDeviceAddressInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
-	bufferInfo.buffer = scratchBufferAllocation.buffer;
+	bufferInfo.buffer = m_blasScratchBufferAllocations[swapIndex].buffer;
 	VkDeviceAddress scratchAddress = vkGetBufferDeviceAddress(m_context->getDevice(), &bufferInfo);
 
 	// Build the BLASes simultaneously
@@ -328,20 +427,39 @@ void SVkRTBase::buildTLAS(uint32_t numInstances, VkBuildAccelerationStructureFla
 	tlas.destroy(); // Destroy the old TLAS (if it exists)
 	VK_CHECK_RESULT(vmaCreateAccelerationStructure(allocator, &asCreateInfo, &vmaInfo, &tlas.as, &tlas.allocation, nullptr));
 
-	// Allocate a scratch buffer
-	static SVkAPI::BufferAllocation scratchBufferAllocation;
+	// Fetch scratch buffer size requirement and allocate a larger buffer if needed
+	VkAccelerationStructureMemoryRequirementsInfoKHR memReqInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR };
+	memReqInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR;
+	memReqInfo.accelerationStructure = tlas.as;
+	memReqInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
 
-	VkBufferCreateInfo scratchCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-	scratchCreateInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+	VkMemoryRequirements2 memReq = { VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
 
-	VmaAllocationCreateInfo allocInfo = {};
-	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	vkGetAccelerationStructureMemoryRequirementsKHR(m_context->getDevice(), &memReqInfo, &memReq);
 
-	VK_CHECK_RESULT(vmaCreateAccelerationStructureScratchBuffer(allocator, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR, tlas.as, &scratchCreateInfo, &allocInfo, &scratchBufferAllocation.buffer, &scratchBufferAllocation.allocation, nullptr));
+	// Get the size of the current buffer
+	VmaAllocationInfo allocInfo = {};
+	if (m_tlasScratchBufferAllocations[swapIndex].allocation)
+		vmaGetAllocationInfo(allocator, m_tlasScratchBufferAllocations[swapIndex].allocation, &allocInfo);
+
+	if (!m_tlasScratchBufferAllocations[swapIndex].allocation || memReq.memoryRequirements.size > allocInfo.size) {
+		// We need a larger scratch buffer than we currently have - destroy the current and allocate a larger one
+		m_tlasScratchBufferAllocations[swapIndex].destroy();
+
+		VkBufferCreateInfo scratchCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+		scratchCreateInfo.size = memReq.memoryRequirements.size;
+		scratchCreateInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		Logger::Log("Allocating scratch buffer for TLAS with size: " + std::to_string(scratchCreateInfo.size) + " Swap index: " + std::to_string(swapIndex));
+		VK_CHECK_RESULT(vmaCreateBuffer(allocator, &scratchCreateInfo, &allocInfo, &m_tlasScratchBufferAllocations[swapIndex].buffer, &m_tlasScratchBufferAllocations[swapIndex].allocation, nullptr));
+	}
 
 	// Get scratch buffer device address
 	VkBufferDeviceAddressInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
-	bufferInfo.buffer = scratchBufferAllocation.buffer;
+	bufferInfo.buffer = m_tlasScratchBufferAllocations[swapIndex].buffer;
 	VkDeviceAddress scratchAddress = vkGetBufferDeviceAddress(m_context->getDevice(), &bufferInfo);
 
 	// Upload instance descriptions and build the tlas
@@ -470,9 +588,6 @@ void SVkRTBase::buildTLAS(uint32_t numInstances, VkBuildAccelerationStructureFla
 		offset.primitiveCount = numInstances;
 		auto* pOffset = &offset;
 		vkCmdBuildAccelerationStructureKHR(cmd, 1, &tlasInfo, &pOffset);
-
-		// TODO: destroy scratch buffer when TLAS has been created
-		//scratchBufferAllocation.destroy();
 	}
 
 	// Make sure TLAS build is done before it is used
@@ -480,94 +595,6 @@ void SVkRTBase::buildTLAS(uint32_t numInstances, VkBuildAccelerationStructureFla
 	barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
 	barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &barrier, 0, nullptr, 0, nullptr);
-}
-
-void SVkRTBase::dispatch(SVkRenderableTexture* outputTexture, Camera* cam, LightSetup* lights, VkCommandBuffer cmd) {
-
-	auto swapIndex = m_context->getSwapIndex();
-	auto& pso = static_cast<SVkPipelineStateObject&>(Application::getInstance()->getResourceManager().getPSO(m_shader));
-
-	// Bind TLAS to shader descriptor set
-	SVkShader::Descriptors descriptors;
-	auto& as = descriptors.accelerationStructures.emplace_back();
-	as.name = "rtScene";
-	as.info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-	as.info.accelerationStructureCount = 1;
-	as.info.pAccelerationStructures = &m_tlasAllocations[swapIndex].as;
-
-	auto& gbuffers = SVkDeferredRenderer::GetGBuffers();
-	assert(gbuffers.positions && gbuffers.normals);
-
-	// Bind GBuffer textures to set
-	auto& gPositions = descriptors.images.emplace_back();
-	gPositions.name = "RGGbuffer_positions";
-	auto& gPositionsInfos = gPositions.infos.emplace_back();
-	gPositionsInfos.imageView = gbuffers.positions->getView();
-	gPositionsInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-	auto& gNormals = descriptors.images.emplace_back();
-	gNormals.name = "RGGbuffer_normals";
-	auto& gNormalsInfos = gNormals.infos.emplace_back();
-	gNormalsInfos.imageView = gbuffers.normals->getView();
-	gNormalsInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-	// Bind output texture to set
-	auto& output = descriptors.images.emplace_back();
-	output.name = "output";
-	auto& outputInfo = output.infos.emplace_back();
-	outputInfo.imageView = outputTexture->getView();
-	outputInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-	m_shader->updateDescriptors(descriptors, &pso);
-
-	// Update cbuffer
-	{
-		DXRShaderCommon::SceneCBuffer newData = {};
-		if (cam) {
-			newData.cameraPosition = cam->getPosition();
-			newData.projectionToWorld = glm::inverse(cam->getViewProjection());
-			newData.viewToWorld = glm::inverse(cam->getViewMatrix());
-		}
-
-		if (lights) {
-			newData.dirLightDirection = lights->getDirLight().direction;
-		}
-		m_shader->setCBuffer("RGSystemSceneBuffer", &newData, sizeof(newData), cmd);
-	}
-
-	pso.bind(cmd);
-
-	// Set offsets into the SBT where the different shader groups can be found
-	// TODO: make dynamic
-	VkDeviceSize progSize = m_limitProperties.shaderGroupBaseAlignment; // Size of a program identifier
-	VkDeviceSize rayGenOffset = 0u * progSize; // NOTE: hardcoded to first slot
-	VkDeviceSize missOffset = 1u * progSize; // NOTE: hardcoded to second slot
-	VkDeviceSize missStride = progSize;
-	VkDeviceSize hitGroupOffset = 2u * progSize; // NOTE: hardcoded to third slot
-	VkDeviceSize hitGroupStride = progSize;
-
-	VkStridedBufferRegionKHR raygenSBT;
-	raygenSBT.buffer = m_sbtAllocation.buffer;
-	raygenSBT.offset = rayGenOffset;
-	raygenSBT.stride = 0;
-	raygenSBT.size = progSize;
-
-	VkStridedBufferRegionKHR missSBT = raygenSBT;
-	missSBT.offset = missOffset;
-	missSBT.stride = missStride;
-
-	VkStridedBufferRegionKHR hitSBT = raygenSBT;
-	hitSBT.offset = hitGroupOffset;
-	hitSBT.stride = hitGroupStride;
-
-	VkStridedBufferRegionKHR callableSBT = {};
-
-	auto* window = Application::getInstance()->getWindow();
-	uint32_t width = window->getWindowWidth();
-	uint32_t height = window->getWindowHeight();
-
-	vkCmdTraceRaysKHR(cmd, &raygenSBT, &missSBT, &hitSBT, &callableSBT, width, height, 1);
-
 }
 
 void SVkRTBase::updateSceneCBuffer(Camera* cam, LightSetup* lights) {

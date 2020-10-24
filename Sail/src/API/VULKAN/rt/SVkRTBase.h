@@ -36,8 +36,8 @@ private:
 private:
 	InstanceList& addBLAS(const Mesh* mesh, VkBuildAccelerationStructureFlagBitsKHR flags);
 	void buildBLASes(VkCommandBuffer cmd);
-
 	void buildTLAS(uint32_t numInstances, VkBuildAccelerationStructureFlagBitsKHR flags, VkCommandBuffer cmd);
+	void updateSceneCBuffer(Camera* cam, LightSetup* lights);
 
 private:
 	SVkAPI* m_context;
@@ -48,6 +48,8 @@ private:
 	// One for each swap frame
 	std::vector<SVkAPI::AccelerationStructureAllocation> m_tlasAllocations;
 	std::vector<SVkAPI::BufferAllocation> m_instancesAllocations;
+	std::vector<SVkAPI::BufferAllocation> m_tlasScratchBufferAllocations;
+	std::vector<SVkAPI::BufferAllocation> m_blasScratchBufferAllocations;
 
 	SVkAPI::BufferAllocation m_sbtAllocation; // Shader Binding Table buffer
 
@@ -56,5 +58,4 @@ private:
 	std::vector<std::unordered_map<const Mesh*, InstanceList>> m_bottomInstances; // Each entry in the map is a unique BLAS.
 																			// Each instance inside the instance list is an instance of this BLAS 
 																			// with its own transformation matrix that will be put into the TLAS.
-	void updateSceneCBuffer(Camera* cam, LightSetup* lights);
 };
