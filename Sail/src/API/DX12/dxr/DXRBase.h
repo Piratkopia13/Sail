@@ -37,14 +37,14 @@ protected:
 	struct DescriptorTableData {
 		Resource* resource;
 		D3D12_DESCRIPTOR_RANGE_TYPE type;
-		unsigned int shaderRegister;
-		unsigned int space;
-		unsigned int numDescriptors;
+		uint32_t shaderRegister;
+		uint32_t space;
+		uint32_t numDescriptors;
 	};
 	struct ConstantData {
 		ShaderComponent::DX12ConstantBuffer* cbuffer;
-		unsigned int shaderRegister;
-		unsigned int space;
+		uint32_t shaderRegister;
+		uint32_t space;
 	};
 
 protected:
@@ -88,7 +88,7 @@ private:
 
 private:
 	// Acceleration structures
-	void createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList);
+	void createTLAS(uint32_t numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList);
 	void createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags, ID3D12GraphicsCommandList4* cmdList, AccelerationStructureBuffers* sourceBufferForUpdate = nullptr);
 
 	void updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList);

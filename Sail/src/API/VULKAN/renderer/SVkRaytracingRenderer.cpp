@@ -15,6 +15,7 @@ SVkRaytracingRenderer::SVkRaytracingRenderer() {
 
 	//m_testMesh = MeshFactory::Cube::Create({ .5f, .5f, .5f });
 	m_testMesh = Application::getInstance()->getResourceManager().loadMesh("sphere.fbx");
+	m_testMesh2 = Application::getInstance()->getResourceManager().loadMesh("Cerberus_LP.fbx");
 }
 
 SVkRaytracingRenderer::~SVkRaytracingRenderer() {
@@ -40,14 +41,29 @@ void* SVkRaytracingRenderer::present(Renderer::PresentFlag flags, void* skippedP
 	//VK_CHECK_RESULT(a);
 
 
-	static bool asBuilt = false;
-	if (!asBuilt) {
+	//static bool asBuilt = false;
+	//if (!asBuilt) {
 
-		m_rtBase.createBLAS(m_testMesh.get(), VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR, cmd);
-		m_rtBase.createTLAS(VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR, cmd);
+		std::vector<Renderer::RenderCommand> testList;
+		{
+			auto& rcmd = testList.emplace_back();
+			rcmd.dxrFlags = MESH_STATIC;
+			rcmd.mesh = m_testMesh.get();
+			rcmd.transform = glm::mat4(1.0f);
+		}
+		{
+			auto& rcmd = testList.emplace_back();
+			rcmd.dxrFlags = MESH_STATIC;
+			rcmd.mesh = m_testMesh2.get();
+			rcmd.transform = glm::translate(glm::vec3(0.f, 1.f, 0.f));
+		}
 
-		asBuilt = true;
-	}
+		m_rtBase.update(testList, camera, lightSetup, cmd);
+		/*m_rtBase.createBLAS(m_testMesh.get(), VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR, cmd);
+		m_rtBase.createTLAS(VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR, cmd);*/
+
+		//asBuilt = true;
+	//}
 
 	SVkUtils::TransitionImageLayout(cmd, sRTOutputTexture->getImage(), sRTOutputTexture->getFormat(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 	m_rtBase.dispatch(sRTOutputTexture.get(), camera, lightSetup, cmd);

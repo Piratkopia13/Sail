@@ -14,6 +14,12 @@
 SVkRTBase::SVkRTBase() {
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
 
+	auto numBuffers = m_context->getNumSwapBuffers();
+
+	m_tlasAllocations.resize(numBuffers);
+	m_instancesAllocations.resize(numBuffers);
+	m_bottomInstances.resize(numBuffers);
+
 	// Get raytracing limit properties for this device
 	if (m_context->supportsFeature(GraphicsAPI::RAYTRACING)) {
 		VkPhysicalDeviceProperties2 props = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
@@ -21,8 +27,6 @@ SVkRTBase::SVkRTBase() {
 		props.pNext = &m_limitProperties;
 		vkGetPhysicalDeviceProperties2(m_context->getPhysicalDevice(), &props);
 	}
-
-	auto flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 
 	m_shader = static_cast<SVkShader*>(&Application::getInstance()->getResourceManager().getShaderSet(Shaders::RTShader));
 
@@ -73,80 +77,195 @@ SVkRTBase::~SVkRTBase() {
 	m_sbtAllocation.destroy();
 }
 
-void SVkRTBase::createBLAS(const Mesh* mesh, VkBuildAccelerationStructureFlagBitsKHR flags, VkCommandBuffer cmd) {
-	auto& allocator = m_context->getVmaAllocator();
+void SVkRTBase::update(const Renderer::RenderCommandList sceneGeometry, Camera* cam, LightSetup* lights, VkCommandBuffer cmd) {
+	updateSceneCBuffer(cam, lights);
 
-	// Create blas construction info
-	VkAccelerationStructureCreateGeometryTypeInfoKHR geometryInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR };
-	VkAccelerationStructureGeometryKHR asGeometry = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
-	VkAccelerationStructureBuildOffsetInfoKHR offset = { };
-	{
-		geometryInfo.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-		geometryInfo.maxPrimitiveCount = (mesh->getNumIndices() > 0) ? mesh->getNumIndices() / 3 : mesh->getNumVertices() / 3;
-		geometryInfo.indexType = (mesh->getNumIndices() > 0) ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_NONE_KHR;
-		geometryInfo.maxVertexCount = mesh->getNumVertices();
-		geometryInfo.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-		geometryInfo.allowsTransforms = false;
+	auto swapIndex = m_context->getSwapIndex();
+	uint32_t numInstances = 0;
 
-		VkAccelerationStructureGeometryTrianglesDataKHR triangles = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR };
-		triangles.vertexFormat = geometryInfo.vertexFormat;
-		triangles.vertexData.deviceAddress = static_cast<SVkVertexBuffer&>(mesh->getVertexBuffer()).getAddress();
-		triangles.vertexStride = sizeof(glm::vec3); // Vertices are not interleaved, meaning all positions are located next to each other
-		triangles.indexType = geometryInfo.indexType;
-		if (mesh->getNumIndices() > 0)
-			triangles.indexData.deviceAddress = static_cast<SVkIndexBuffer&>(mesh->getIndexBuffer()).getAddress();
-		triangles.transformData = {}; // Optional
+	static auto flagFastTrace = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+	static auto flagFastBuild = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+	static auto flagAllowUpdate = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 
-		asGeometry.geometryType = geometryInfo.geometryType;
-		asGeometry.geometry.triangles = triangles;
-		asGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-
-		offset.primitiveCount = geometryInfo.maxPrimitiveCount;
-		offset.primitiveOffset = 0;
-		offset.firstVertex = 0;
-		offset.transformOffset = 0;
+	// Clear old instance lists
+	// TODO: make this more efficient
+	for (auto& it : m_bottomInstances[swapIndex]) {
+		it.second.instanceTransforms.clear();
 	}
 
-	// Create blas
-	// This should iterate all blas instances to be created
-	VkDeviceSize maxScratch = 0;
-	{
+	// Iterate render commands and build BLASes for meshes that are new since the last call to this method
+	for (auto& renderCommand : sceneGeometry) {
+		// Ignore command if no dxr flags are set
+		if (!renderCommand.dxrFlags) continue;
+
+		auto flags = flagFastTrace;
+		if (renderCommand.dxrFlags & Renderer::DXRRenderFlag::MESH_DYNAMIC)
+			flags = VkBuildAccelerationStructureFlagBitsKHR(flagFastBuild | flagAllowUpdate);
+
+		auto& it = m_bottomInstances[swapIndex].find(renderCommand.mesh);
+		bool hasMesh = (it != m_bottomInstances[swapIndex].end());
+		if (!hasMesh) {
+			auto& instanceList = addBLAS(renderCommand.mesh, flags);
+			instanceList.instanceTransforms.emplace_back((glm::mat3x4)renderCommand.transform);
+		} else {
+			// TODO: make this a thing
+			/*if (renderCommand.hasUpdatedSinceLastFrame) {
+				rebuildBLAS()
+			} else*/
+
+			// Mesh already has a BLAS - add transform to instance list
+			it->second.instanceTransforms.emplace_back((glm::mat3x4)renderCommand.transform);
+		}
+		numInstances++;
+	}
+
+	// Remove existing BLASes that are no longer in the scene
+	// Currently O(n^2), TODO: make this more efficient
+	for (auto it = std::begin(m_bottomInstances[swapIndex]); it != std::end(m_bottomInstances[swapIndex]);) {
+		bool destroy = true;
+		for (auto& renderCommand : sceneGeometry) {
+			Mesh* mesh = renderCommand.mesh;
+
+			if (it->first == mesh) {
+				destroy = false;
+				++it;
+				break;
+			}
+		}
+		if (destroy) {
+			it = m_bottomInstances[swapIndex].erase(it);
+		}
+	}
+
+	buildBLASes(cmd);
+	buildTLAS(numInstances, flagFastTrace, cmd);
+
+	/*iterate all meshes
+		if !map[mesh]
+			createBLAS(flags depending on static / dynamic)
+		else
+			if mesh vertices have updated since last frame
+				rebuildBLAS(flags depending on static / dynamic)
+
+		remove existing BLASes that are no longer in the scene
+		createTLAS()
+		update sbt if needed(? )*/
+
+}
+
+SVkRTBase::InstanceList& SVkRTBase::addBLAS(const Mesh* mesh, VkBuildAccelerationStructureFlagBitsKHR flags) {
+	auto swapIndex = m_context->getSwapIndex();
+
+	// Create blas construction info
+	auto& blasInfo = m_blasesToBuild.emplace_back();
+	// We need to fill all variables in the BlasBuildInfo struct
+
+	blasInfo.mesh = mesh;
+	blasInfo.flags = flags;
+
+	// Create the map entry
+	auto& instanceList = m_bottomInstances[swapIndex].insert({ blasInfo.mesh, {} }).first->second;
+	blasInfo.asAllocation = &instanceList.asAllocation;
+
+	blasInfo.geometryInfo.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+	blasInfo.geometryInfo.maxPrimitiveCount = (mesh->getNumIndices() > 0) ? mesh->getNumIndices() / 3 : mesh->getNumVertices() / 3;
+	blasInfo.geometryInfo.indexType = (mesh->getNumIndices() > 0) ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_NONE_KHR;
+	blasInfo.geometryInfo.maxVertexCount = mesh->getNumVertices();
+	blasInfo.geometryInfo.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+	blasInfo.geometryInfo.allowsTransforms = false;
+
+	auto& triangles = blasInfo.asGeometry.geometry.triangles;
+	triangles.vertexFormat = blasInfo.geometryInfo.vertexFormat;
+	triangles.vertexData.deviceAddress = static_cast<SVkVertexBuffer&>(mesh->getVertexBuffer()).getAddress();
+	triangles.vertexStride = sizeof(glm::vec3); // Vertices are not interleaved, meaning all positions are located next to each other
+	triangles.indexType = blasInfo.geometryInfo.indexType;
+	if (mesh->getNumIndices() > 0)
+		triangles.indexData.deviceAddress = static_cast<SVkIndexBuffer&>(mesh->getIndexBuffer()).getAddress();
+	triangles.transformData = {}; // Optional
+
+	blasInfo.asGeometry.geometryType = blasInfo.geometryInfo.geometryType;
+	blasInfo.asGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+
+	blasInfo.offset.primitiveCount = blasInfo.geometryInfo.maxPrimitiveCount;
+	blasInfo.offset.primitiveOffset = 0;
+	blasInfo.offset.firstVertex = 0;
+	blasInfo.offset.transformOffset = 0;
+
+	return instanceList;
+}
+
+void SVkRTBase::buildBLASes(VkCommandBuffer cmd) {
+	// Create all blases contained in m_blasesToBuild
+
+	if (m_blasesToBuild.empty()) return;
+
+	auto swapIndex = m_context->getSwapIndex();
+	auto& allocator = m_context->getVmaAllocator();
+
+	//VkDeviceSize maxScratch = 0;
+	std::vector<VkAccelerationStructureKHR*> blasRefs(m_blasesToBuild.size());
+	std::vector<VkDeviceSize> scratchOffsets(m_blasesToBuild.size());
+	VkDeviceSize scratchTotalSize = 0;
+	uint32_t i = 0;
+	for (auto& blasInfo : m_blasesToBuild) {
+		//// Create the map entry
+		//InstanceList& instance = m_bottomInstances[swapIndex].insert({ blasInfo.mesh, {} }).first->second;
+		//instance.instanceTransforms.emplace_back(transformation);
+
 		VkAccelerationStructureCreateInfoKHR info = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
 		info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		info.flags = flags;
+		info.flags = blasInfo.flags;
 		info.maxGeometryCount = 1;
-		info.pGeometryInfos = &geometryInfo;
+		info.pGeometryInfos = &blasInfo.geometryInfo;
 
 		VmaAllocationCreateInfo vmaInfo = {};
 		vmaInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-		m_blasAllocation.destroy(); // Destroy the old BLAS (if it exists)
-		VK_CHECK_RESULT(vmaCreateAccelerationStructure(allocator, &info, &vmaInfo, &m_blasAllocation.as, &m_blasAllocation.allocation, nullptr));
+		blasInfo.asAllocation->destroy(); // Destroy the old BLAS (if it exists)
+		VK_CHECK_RESULT(vmaCreateAccelerationStructure(allocator, &info, &vmaInfo, &blasInfo.asAllocation->as, &blasInfo.asAllocation->allocation, nullptr));
+
+		// Store a reference to the AS, this is used in the next loop where the actual build happens
+		blasRefs[i] = &blasInfo.asAllocation->as;
 
 		// Figure out how large the scratch buffer has to be for this guy
 		{
 			VkAccelerationStructureMemoryRequirementsInfoKHR memReqInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR };
 			memReqInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR;
 			memReqInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
-			memReqInfo.accelerationStructure = m_blasAllocation.as;
+			memReqInfo.accelerationStructure = blasInfo.asAllocation->as;
 
 			VkMemoryRequirements2 memReq = { VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
 			vkGetAccelerationStructureMemoryRequirementsKHR(m_context->getDevice(), &memReqInfo, &memReq);
 
-			maxScratch = std::max(maxScratch, memReq.memoryRequirements.size);
+			//maxScratch = std::max(maxScratch, memReq.memoryRequirements.size);
+
+			// Align
+			VkDeviceSize alignedSize = memReq.memoryRequirements.size;
+			if (memReq.memoryRequirements.alignment != 0 && alignedSize % memReq.memoryRequirements.alignment != 0)
+				alignedSize = alignedSize - (alignedSize % memReq.memoryRequirements.alignment) + memReq.memoryRequirements.alignment;
+
+			assert(memReq.memoryRequirements.alignment == 0 || scratchTotalSize % memReq.memoryRequirements.alignment != 0 && "Memory alignment requirement differs between BLASes - this won't work with the current strategy.");
+
+			scratchOffsets[i] = scratchTotalSize; // Requires all alignments to be the same
+			scratchTotalSize += alignedSize;
 		}
+
+		i++;
 	}
 
-	// Allocate a scratch buffer using the maximum size for any single blas
-	// This buffer will be used for all blas creations this frame
+	// TODO: set a max buffer size, if the max is exceeded - run over multiple frames
+	// NOTE: if the max size is set too low / too many blases are built every frame this could mean that some blases will never be built
+
+	// Allocate a large scratch buffer and use that to launch multiple builds simultaneously
 	static SVkAPI::BufferAllocation scratchBufferAllocation;
 
 	VkBufferCreateInfo scratchCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-	scratchCreateInfo.size = maxScratch;
+	scratchCreateInfo.size = scratchTotalSize;
 	scratchCreateInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
 	VmaAllocationCreateInfo allocInfo = {};
 	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY; // TODO: this might not be right
 
+	Logger::Log("Allocating scratch buffer for BLASes with size: " + std::to_string(scratchTotalSize) + " Swap index: " + std::to_string(swapIndex));
 	VK_CHECK_RESULT(vmaCreateBuffer(allocator, &scratchCreateInfo, &allocInfo, &scratchBufferAllocation.buffer, &scratchBufferAllocation.allocation, nullptr));
 
 	// Get the device address to the scratch buffer
@@ -154,40 +273,48 @@ void SVkRTBase::createBLAS(const Mesh* mesh, VkBuildAccelerationStructureFlagBit
 	bufferInfo.buffer = scratchBufferAllocation.buffer;
 	VkDeviceAddress scratchAddress = vkGetBufferDeviceAddress(m_context->getDevice(), &bufferInfo);
 
-	// Builds the BLASes
-	// This should iterate all blases
-	{
-		auto* pGeometry = &asGeometry;
-		VkAccelerationStructureBuildGeometryInfoKHR blasInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
-		blasInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		blasInfo.flags = flags;
-		blasInfo.dstAccelerationStructure = m_blasAllocation.as;
-		blasInfo.geometryArrayOfPointers = false;
-		blasInfo.geometryCount = 1; // TODO: change
-		blasInfo.ppGeometries = &pGeometry;
-		blasInfo.scratchData.deviceAddress = scratchAddress;
+	// Build the BLASes simultaneously
+	i = 0;
+	for (auto& blasInfo : m_blasesToBuild) {
+		auto* pGeometry = &blasInfo.asGeometry;
+		VkAccelerationStructureBuildGeometryInfoKHR buildInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
+		buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+		buildInfo.flags = blasInfo.flags;
+		buildInfo.dstAccelerationStructure = *blasRefs[i];
+		buildInfo.geometryArrayOfPointers = false;
+		buildInfo.geometryCount = 1; // TODO: change?
+		buildInfo.ppGeometries = &pGeometry;
+		buildInfo.scratchData.deviceAddress = scratchAddress + scratchOffsets[i];
 
-		auto* pOffset = &offset;
-		vkCmdBuildAccelerationStructureKHR(cmd, 1, &blasInfo, &pOffset);
-		// Since the scratch buffer is reused across builds, we need a barrier to ensure one build is finished before starting the next one
-		VkMemoryBarrier barrier = { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
-		barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-		barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &barrier, 0, nullptr, 0, nullptr);
+		auto* pOffset = &blasInfo.offset;
+		vkCmdBuildAccelerationStructureKHR(cmd, 1, &buildInfo, &pOffset);
+
+		i++;
 	}
+	// Barrier to ensure all builds are finished before using any of them
+	VkMemoryBarrier barrier = { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
+	barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+	barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &barrier, 0, nullptr, 0, nullptr);
 
 	// TODO: perform compaction here
 
 	// TODO: destroy scratch buffer when the BLAS has been created
 	//scratchBufferAllocation.destroy();
+
+	m_blasesToBuild.clear();
 }
 
-void SVkRTBase::createTLAS(VkBuildAccelerationStructureFlagBitsKHR flags, VkCommandBuffer cmd) {
+void SVkRTBase::buildTLAS(uint32_t numInstances, VkBuildAccelerationStructureFlagBitsKHR flags, VkCommandBuffer cmd) {
+	auto swapIndex = m_context->getSwapIndex();
 	auto& allocator = m_context->getVmaAllocator();
+
+	auto& tlas = m_tlasAllocations[swapIndex];
+	auto& instancesAlloc = m_instancesAllocations[swapIndex];
 
 	VkAccelerationStructureCreateGeometryTypeInfoKHR geometryInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR };
 	geometryInfo.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-	geometryInfo.maxPrimitiveCount = 1; // TODO: change
+	geometryInfo.maxPrimitiveCount = numInstances; // Number of BLAS instances
 	geometryInfo.allowsTransforms = true;
 
 	VkAccelerationStructureCreateInfoKHR asCreateInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
@@ -198,8 +325,8 @@ void SVkRTBase::createTLAS(VkBuildAccelerationStructureFlagBitsKHR flags, VkComm
 
 	VmaAllocationCreateInfo vmaInfo = {};
 	vmaInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-	m_tlasAllocation.destroy(); // Destroy the old TLAS (if it exists)
-	VK_CHECK_RESULT(vmaCreateAccelerationStructure(allocator, &asCreateInfo, &vmaInfo, &m_tlasAllocation.as, &m_tlasAllocation.allocation, nullptr));
+	tlas.destroy(); // Destroy the old TLAS (if it exists)
+	VK_CHECK_RESULT(vmaCreateAccelerationStructure(allocator, &asCreateInfo, &vmaInfo, &tlas.as, &tlas.allocation, nullptr));
 
 	// Allocate a scratch buffer
 	static SVkAPI::BufferAllocation scratchBufferAllocation;
@@ -208,9 +335,9 @@ void SVkRTBase::createTLAS(VkBuildAccelerationStructureFlagBitsKHR flags, VkComm
 	scratchCreateInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
 	VmaAllocationCreateInfo allocInfo = {};
-	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY; // TODO: this might not be right
+	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	VK_CHECK_RESULT(vmaCreateAccelerationStructureScratchBuffer(allocator, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR, m_tlasAllocation.as, &scratchCreateInfo, &allocInfo, &scratchBufferAllocation.buffer, &scratchBufferAllocation.allocation, nullptr));
+	VK_CHECK_RESULT(vmaCreateAccelerationStructureScratchBuffer(allocator, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR, tlas.as, &scratchCreateInfo, &allocInfo, &scratchBufferAllocation.buffer, &scratchBufferAllocation.allocation, nullptr));
 
 	// Get scratch buffer device address
 	VkBufferDeviceAddressInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
@@ -219,28 +346,28 @@ void SVkRTBase::createTLAS(VkBuildAccelerationStructureFlagBitsKHR flags, VkComm
 
 	// Upload instance descriptions and build the tlas
 	{
-		VkAccelerationStructureInstanceKHR instance = {};
+		std::vector<VkAccelerationStructureInstanceKHR> instances;
+		instances.reserve(numInstances);
 		// TODO: move this to a helper function(?)
-		{
-			VkAccelerationStructureDeviceAddressInfoKHR addressInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR };
-			addressInfo.accelerationStructure = m_blasAllocation.as;
+		for (auto& it : m_bottomInstances[swapIndex]) {
+			auto& instanceList = it.second;
+			VkAccelerationStructureDeviceAddressInfoKHR addressInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR };
+			addressInfo.accelerationStructure = instanceList.asAllocation.as;
 			VkDeviceAddress blasAddress = vkGetAccelerationStructureDeviceAddressKHR(m_context->getDevice(), &addressInfo);
-			// The matrices for the instance transforms are row-major, instead of
-			// column-major in the rest of the application
-			glm::mat4 transp = glm::transpose(glm::mat4(1.0f)); // Id matrix only used for testing, replace with blas matrix
-			// The instance transform value only contains 12 values, corresponding to a 4x3
-			// matrix, hence saving the last row that is anyway always (0,0,0,1). Since
-			// the matrix is row-major, we simply copy the first 12 values of the
-			// original 4x4 matrix
-			memcpy(&instance.transform, &transp, sizeof(instance.transform));
-			instance.instanceCustomIndex = 0;
-			instance.mask = 0xff;
-			instance.instanceShaderBindingTableRecordOffset = 0;
-			instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-			instance.accelerationStructureReference = blasAddress;
+			
+			// Iterate all instances using this BLAS
+			for (auto& transform : instanceList.instanceTransforms) {
+				auto& instance = instances.emplace_back();
+				memcpy(&instance.transform, &transform, sizeof(instance.transform));
+				instance.instanceCustomIndex = 0;
+				instance.mask = 0xff;
+				instance.instanceShaderBindingTableRecordOffset = 0;
+				instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR; // TODO: allow different flags
+				instance.accelerationStructureReference = blasAddress;
+			}
 		}
 
-		VkDeviceSize instanceDescsSize = 1 * sizeof(VkAccelerationStructureInstanceKHR); // TODO: change 1
+		VkDeviceSize instanceDescsSize = instances.size() * sizeof(VkAccelerationStructureInstanceKHR);
 
 		//{
 		//	// Allocate the instance buffer
@@ -289,6 +416,8 @@ void SVkRTBase::createTLAS(VkBuildAccelerationStructureFlagBitsKHR flags, VkComm
 		//	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &barrier, 0, nullptr, 0, nullptr);
 		//}
 		// cpu only memory
+		// TODO: see if this is faster than uploading to GPU only memory through a staging buffer
+		//		 Measure both tlas build times (should be slower) and dispatch times (should be faster)
 		{
 			// Allocate the instance buffer
 			VkBufferCreateInfo instanceCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
@@ -299,14 +428,14 @@ void SVkRTBase::createTLAS(VkBuildAccelerationStructureFlagBitsKHR flags, VkComm
 			allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 			// TODO: copy content to default buffer and delete staging buffer
 			// NOTE: when this is done, remember to change geometry.instances.data below
-			m_instancesAllocation.destroy(); // Destroy the old buffer (if it exists)
-			VK_CHECK_RESULT(vmaCreateBuffer(allocator, &instanceCreateInfo, &allocInfo, &m_instancesAllocation.buffer, &m_instancesAllocation.allocation, nullptr));
+			instancesAlloc.destroy(); // Destroy the old buffer (if it exists)
+			VK_CHECK_RESULT(vmaCreateBuffer(allocator, &instanceCreateInfo, &allocInfo, &instancesAlloc.buffer, &instancesAlloc.allocation, nullptr));
 
 			// Copy instance data to the buffer
 			void* data;
-			vmaMapMemory(allocator, m_instancesAllocation.allocation, &data);
-			memcpy(data, &instance, instanceDescsSize);
-			vmaUnmapMemory(allocator, m_instancesAllocation.allocation);
+			vmaMapMemory(allocator, instancesAlloc.allocation, &data);
+			memcpy(data, instances.data(), instanceDescsSize);
+			vmaUnmapMemory(allocator, instancesAlloc.allocation);
 
 			// Make sure the copy of the instance buffer are copied before triggering the acceleration structure build
 			VkMemoryBarrier barrier = { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
@@ -316,7 +445,7 @@ void SVkRTBase::createTLAS(VkBuildAccelerationStructureFlagBitsKHR flags, VkComm
 		}
 
 		// Get instance buffer device address
-		bufferInfo.buffer = m_instancesAllocation.buffer;
+		bufferInfo.buffer = instancesAlloc.buffer;
 		VkDeviceAddress instanceAddress = vkGetBufferDeviceAddress(m_context->getDevice(), &bufferInfo);
 		
 		// Build tlas
@@ -331,14 +460,14 @@ void SVkRTBase::createTLAS(VkBuildAccelerationStructureFlagBitsKHR flags, VkComm
 		VkAccelerationStructureBuildGeometryInfoKHR tlasInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
 		tlasInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 		tlasInfo.flags = flags;
-		tlasInfo.dstAccelerationStructure = m_tlasAllocation.as;
+		tlasInfo.dstAccelerationStructure = tlas.as;
 		tlasInfo.geometryArrayOfPointers = false;
 		tlasInfo.geometryCount = 1;
 		tlasInfo.ppGeometries = &pGeometry;
 		tlasInfo.scratchData.deviceAddress = scratchAddress;
 
 		VkAccelerationStructureBuildOffsetInfoKHR offset = {};
-		offset.primitiveCount = 1;
+		offset.primitiveCount = numInstances;
 		auto* pOffset = &offset;
 		vkCmdBuildAccelerationStructureKHR(cmd, 1, &tlasInfo, &pOffset);
 
@@ -355,6 +484,7 @@ void SVkRTBase::createTLAS(VkBuildAccelerationStructureFlagBitsKHR flags, VkComm
 
 void SVkRTBase::dispatch(SVkRenderableTexture* outputTexture, Camera* cam, LightSetup* lights, VkCommandBuffer cmd) {
 
+	auto swapIndex = m_context->getSwapIndex();
 	auto& pso = static_cast<SVkPipelineStateObject&>(Application::getInstance()->getResourceManager().getPSO(m_shader));
 
 	// Bind TLAS to shader descriptor set
@@ -363,7 +493,7 @@ void SVkRTBase::dispatch(SVkRenderableTexture* outputTexture, Camera* cam, Light
 	as.name = "rtScene";
 	as.info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 	as.info.accelerationStructureCount = 1;
-	as.info.pAccelerationStructures = &m_tlasAllocation.as;
+	as.info.pAccelerationStructures = &m_tlasAllocations[swapIndex].as;
 
 	auto& gbuffers = SVkDeferredRenderer::GetGBuffers();
 	assert(gbuffers.positions && gbuffers.normals);
@@ -438,4 +568,18 @@ void SVkRTBase::dispatch(SVkRenderableTexture* outputTexture, Camera* cam, Light
 
 	vkCmdTraceRaysKHR(cmd, &raygenSBT, &missSBT, &hitSBT, &callableSBT, width, height, 1);
 
+}
+
+void SVkRTBase::updateSceneCBuffer(Camera* cam, LightSetup* lights) {
+	DXRShaderCommon::SceneCBuffer newData = {};
+	if (cam) {
+		newData.cameraPosition = cam->getPosition();
+		newData.projectionToWorld = glm::inverse(cam->getViewProjection());
+		newData.viewToWorld = glm::inverse(cam->getViewMatrix());
+	}
+
+	if (lights) {
+		newData.dirLightDirection = lights->getDirLight().direction;
+	}
+	m_shader->setCBuffer("RGSystemSceneBuffer", &newData, sizeof(newData));
 }

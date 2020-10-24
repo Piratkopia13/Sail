@@ -1,3 +1,6 @@
+// Compile to spirv:
+// dxc -T lib_6_4 HardShadows.hlsl -spirv -Fo HardShadows-cs.spv -fvk-use-scalar-layout -fspv-target-env=vulkan1.2
+
 #define HLSL
 #include "dxr.shared"
 
@@ -30,12 +33,12 @@ inline void generateCameraRay(uint2 index, out float3 origin, out float3 directi
 void RayGenMain() {
 	uint2 launchIndex = DispatchRaysIndex().xy;
 
-	// Test, remove this
-	output[launchIndex] = 1.f;
-	output[launchIndex].rgb = RGSystemSceneBuffer.cameraPosition / 10.f;
-	// if ((launchIndex.x + launchIndex.y) % 2 == 0)
-	// 	output[launchIndex].r = 1.f;
-	return;
+	// // Test, remove this
+	// output[launchIndex] = 1.f;
+	// output[launchIndex].rgb = RGSystemSceneBuffer.cameraPosition / 10.f;
+	// // if ((launchIndex.x + launchIndex.y) % 2 == 0)
+	// // 	output[launchIndex].r = 1.f;
+	// return;
 
 	// Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
 	// generateCameraRay(launchIndex, ray.Origin, ray.Direction);
@@ -68,8 +71,8 @@ void RayGenMain() {
 }
 
 [shader("miss")]
-void MissMain(inout RayPayload payload) {
-
+void MissMain(inout ShadowRayPayload payload) {
+    payload.isHit = false;
 }
 
 [shader("closesthit")]

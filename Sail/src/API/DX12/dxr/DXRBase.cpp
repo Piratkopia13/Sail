@@ -47,8 +47,8 @@ DXRBase::~DXRBase() {
 void DXRBase::updateAccelerationStructures(Renderer::RenderCommandList sceneGeometry, ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
-	unsigned int frameIndex = context->getSwapIndex();
-	unsigned int totalNumInstances = 0;
+	uint32_t frameIndex = context->getSwapIndex();
+	uint32_t totalNumInstances = 0;
 
 	auto flagNone = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
 	auto flagFastTrace = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
@@ -146,7 +146,7 @@ void DXRBase::updateAccelerationStructures(Renderer::RenderCommandList sceneGeom
 }
 
 void DXRBase::dispatch(DX12RenderableTexture* outputTexture, ID3D12GraphicsCommandList4* cmdList) {
-	unsigned int frameIndex = context->getSwapIndex();
+	uint32_t frameIndex = context->getSwapIndex();
 
 	auto copyDescriptor = [&](DX12RenderableTexture* texture, D3D12_CPU_DESCRIPTOR_HANDLE* cdh) {
 		// Copy output texture uav to heap
@@ -199,12 +199,12 @@ void DXRBase::reloadShaders() {
 	createRaytracingPSO();
 }
 
-void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList) {
+void DXRBase::createTLAS(uint32_t numInstanceDescriptors, ID3D12GraphicsCommandList4* cmdList) {
 	SAIL_PROFILE_API_SPECIFIC_FUNCTION();
 
 	// Always rebuilds TLAS instead of updating it according to nvidia recommendations
 
-	unsigned int frameIndex = context->getSwapIndex();
+	uint32_t frameIndex = context->getSwapIndex();
 
 	// First, get the size of the TLAS buffers and create them
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
@@ -234,8 +234,8 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 
 		D3D12_RAYTRACING_INSTANCE_DESC* pInstanceDesc = (D3D12_RAYTRACING_INSTANCE_DESC*)mappedInstanceBuffer;
 
-		unsigned int blasIndex = 0;
-		unsigned int instanceID = 0;
+		uint32_t blasIndex = 0;
+		uint32_t instanceID = 0;
 
 		for (auto& it : m_bottomBuffers[frameIndex]) {
 			auto& instanceList = it.second;
@@ -274,7 +274,7 @@ void DXRBase::createTLAS(unsigned int numInstanceDescriptors, ID3D12GraphicsComm
 }
 
 void DXRBase::createBLAS(const Renderer::RenderCommand& renderCommand, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags, ID3D12GraphicsCommandList4* cmdList, AccelerationStructureBuffers* sourceBufferForUpdate) {
-	unsigned int frameIndex = context->getSwapIndex();
+	uint32_t frameIndex = context->getSwapIndex();
 	Mesh* mesh = renderCommand.mesh;
 
 	bool performInplaceUpdate = (sourceBufferForUpdate) ? true : false;
@@ -377,7 +377,7 @@ void DXRBase::createInitialShaderResources(bool remake) {
 
 		// The first slots in the heap will be used for resources that never changes
 		auto storeHandle = [&](Resource& res) {
-			for (unsigned int i = 0; i < 2; i++) {
+			for (uint32_t i = 0; i < 2; i++) {
 				auto index = m_descriptorHeap->getAndStepIndex();
 				res.cpuHandle[i] = m_descriptorHeap->getCPUDescriptorHandleForIndex(index);
 				res.gpuHandle[i] = m_descriptorHeap->getGPUDescriptorHandleForIndex(index);
@@ -390,10 +390,10 @@ void DXRBase::createInitialShaderResources(bool remake) {
 		addInitialShaderResources(m_descriptorHeap.get());
 
 		// TODO: tweak these
-		unsigned int uploadBufferByteSize = 1024 * 30;
-		unsigned int defaultBufferUAByteSize = 1024 * 50;
-		unsigned int defaultBufferRTASByteSize = 1024 * 100;
-		for (unsigned int i = 0; i < context->getNumSwapBuffers(); i++) {
+		uint32_t uploadBufferByteSize = 1024 * 30;
+		uint32_t defaultBufferUAByteSize = 1024 * 50;
+		uint32_t defaultBufferRTASByteSize = 1024 * 100;
+		for (uint32_t i = 0; i < context->getNumSwapBuffers(); i++) {
 			m_defaultBufferUA.emplace_back(new DX12Utils::GPUOnlyBuffer(context->getDevice(), defaultBufferUAByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 			m_defaultBufferRTAS.emplace_back(new DX12Utils::GPUOnlyBuffer(context->getDevice(), defaultBufferRTASByteSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE));
 			m_uploadBuffer.emplace_back(new DX12Utils::CPUSharedBuffer(context->getDevice(), uploadBufferByteSize));
@@ -402,7 +402,7 @@ void DXRBase::createInitialShaderResources(bool remake) {
 }
 
 void DXRBase::updateDescriptorHeap(ID3D12GraphicsCommandList4* cmdList) {
-	unsigned int frameIndex = context->getSwapIndex();
+	uint32_t frameIndex = context->getSwapIndex();
 		
 }
 
@@ -456,7 +456,7 @@ void DXRBase::updateShaderTables() {
 		UINT numInstances = (UINT)m_bottomBuffers[frameIndex].size() * 2U; // * 2 for shadow rays (all NULL)
 		DXRUtils::ShaderTableBuilder tableBuilder(numInstances, m_pipelineState.Get(), 64U);
 
-		unsigned int blasIndex = 0;
+		uint32_t blasIndex = 0;
 
 		for (auto& it : m_bottomBuffers[frameIndex]) {
 			auto& instanceList = it.second;

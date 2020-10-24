@@ -24,6 +24,7 @@ private:
 	SVkAPI::Command m_command;
 
 	Mesh::SPtr m_testMesh;
+	Mesh::SPtr m_testMesh2;
 
 	static std::unique_ptr<SVkRenderableTexture> sRTOutputTexture;
 

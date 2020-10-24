@@ -70,16 +70,11 @@ RenderableTexture* Shader::getRenderableTexture(const std::string& name) const {
 }
 
 void Shader::setCBuffer(const std::string& name, const void* data, unsigned int size, void* cmdList) {
-	// TODO: make this look like the other set methods
-	// TODO: make a trySet version
-	for (auto& it : parser.getParsedData().cBuffers) {
-		if (it.name == name) {
-			ShaderComponent::ConstantBuffer& cbuffer = *it.cBuffer.get();
-			cbuffer.updateData(data, size);
-			return;
-		}
-	}
-	Logger::Warning("Tried to set CBuffer that did not exist (" + name + ")");
+	setCBufferInternal(name, data, size);
+}
+
+bool Shader::trySetCBuffer(const std::string& name, const void* data, unsigned int size, void* cmdList) {
+	return trySetCBufferInternal(name, data, size);
 }
 
 // TODO: size isn't really needed, can be read from the byteOffset of the next var
@@ -213,26 +208,6 @@ void Shader::compile() {
 	}
 }
 
-bool Shader::findConstant(const std::string& name, uint32_t* outOffset, ShaderComponent::BIND_SHADER* outBindShader) const {
-	// Check if name matches a push constant
-	bool wasPushConstant = false;
-	for (auto& pc : parser.getParsedData().constants) {
-		for (auto& var : pc.vars) {
-			if (var.name == name) {
-				*outBindShader = pc.bindShader;
-				*outOffset = var.byteOffset;
-				wasPushConstant = true;
-				break;
-			}
-		}
-	}
-	return wasPushConstant;
-}
-
-void Shader::setMaterialType(Material::Type type) {
-	m_materialType = type;
-}
-
 bool Shader::trySetCBufferVarInternal(const std::string& name, const void* data, unsigned int size) {
 	for (auto& it : parser.getParsedData().cBuffers) {
 		for (auto& var : it.vars) {
@@ -250,6 +225,27 @@ void Shader::setCBufferVarInternal(const std::string& name, const void* data, un
 	bool success = Shader::trySetCBufferVarInternal(name, data, size);
 	if (!success)
 		Logger::Warning("Tried to set CBuffer variable that did not exist (" + name + ")");
+}
+
+bool Shader::trySetCBufferInternal(const std::string& name, const void* data, unsigned int size) {
+	for (auto& it : parser.getParsedData().cBuffers) {
+		if (it.name == name) {
+			ShaderComponent::ConstantBuffer& cbuffer = *it.cBuffer.get();
+			cbuffer.updateData(data, size);
+			return true;
+		}
+	}
+	return false;
+}
+
+void Shader::setCBufferInternal(const std::string& name, const void* data, unsigned int size) {
+	bool success = Shader::trySetCBufferInternal(name, data, size);
+	if (!success)
+		Logger::Warning("Tried to set CBuffer that did not exist (" + name + ")");
+}
+
+void Shader::setMaterialType(Material::Type type) {
+	m_materialType = type;
 }
 
 void Shader::getDescriptorUpdateInfoAndUpdateMaterialIndices(Renderer::RenderCommandList renderCommands, const Environment& environment, DescriptorUpdateInfo* outUpdateInfo) {
@@ -346,3 +342,20 @@ void Shader::getDescriptorUpdateInfoAndUpdateMaterialIndices(Renderer::RenderCom
 		}
 	}
 }
+
+bool Shader::findConstant(const std::string& name, uint32_t* outOffset, ShaderComponent::BIND_SHADER* outBindShader) const {
+	// Check if name matches a push constant
+	bool wasPushConstant = false;
+	for (auto& pc : parser.getParsedData().constants) {
+		for (auto& var : pc.vars) {
+			if (var.name == name) {
+				*outBindShader = pc.bindShader;
+				*outOffset = var.byteOffset;
+				wasPushConstant = true;
+				break;
+			}
+		}
+	}
+	return wasPushConstant;
+}
+

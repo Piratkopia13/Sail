@@ -36,11 +36,11 @@ public:
 	// Builds (and sometimes binds) descriptors depending on the renderCommands about to be submitted
 	virtual void updateDescriptorsAndMaterialIndices(Renderer::RenderCommandList renderCommands, const Environment& environment, const PipelineStateObject* pso, void* cmdList) = 0;
 
-	virtual void setCBuffer(const std::string& name, const void* data, unsigned int size, void* cmdList);
-	//virtual bool trysetCBuffer(const std::string& name, const void* data, unsigned int size, void* cmdList);
+	virtual void setCBuffer(const std::string& name, const void* data, unsigned int size, void* cmdList = nullptr);
+	virtual bool trySetCBuffer(const std::string& name, const void* data, unsigned int size, void* cmdList = nullptr);
 
-	virtual void setCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList);
-	virtual bool trySetCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList);
+	virtual void setCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList = nullptr);
+	virtual bool trySetCBufferVar(const std::string& name, const void* data, unsigned int size, void* cmdList = nullptr);
 
 	virtual void setConstantVar(const std::string& name, const void* data, unsigned int size, void* cmdList);
 	virtual bool trySetConstantVar(const std::string& name, const void* data, unsigned int size, void* cmdList);
@@ -81,19 +81,22 @@ protected:
 	};
 
 protected:
-
 	// filepath is used for include paths and error messages 
 	virtual void* compileShader(const std::string& source, const std::string& filepath, ShaderComponent::BIND_SHADER shaderType) = 0;
 	// Compiles shaders into blobs
 	virtual void compile();
 	// Called by (try)setConstantVar
 	virtual bool setConstantDerived(const std::string& name, const void* data, uint32_t size, ShaderComponent::BIND_SHADER bindShader, uint32_t byteOffset, void* cmdList = nullptr) = 0;
-	
+	// Called by (try)setCBufferVar
+	bool trySetCBufferVarInternal(const std::string& name, const void* data, unsigned int size);
+	void setCBufferVarInternal(const std::string& name, const void* data, unsigned int size);
+	// Called by (try)setCBuffer
+	bool trySetCBufferInternal(const std::string& name, const void* data, unsigned int size);
+	void setCBufferInternal(const std::string& name, const void* data, unsigned int size);
+
 	void bindInternal(void* cmdList) const;
 	void setMaterialType(Material::Type type);
 
-	bool trySetCBufferVarInternal(const std::string& name, const void* data, unsigned int size);
-	void setCBufferVarInternal(const std::string& name, const void* data, unsigned int size);
 
 	void getDescriptorUpdateInfoAndUpdateMaterialIndices(Renderer::RenderCommandList renderCommands, const Environment& environment, DescriptorUpdateInfo* outUpdateInfo);
 
