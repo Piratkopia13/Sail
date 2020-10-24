@@ -6,6 +6,8 @@
 std::unique_ptr<SVkRenderableTexture> SVkRaytracingRenderer::sRTOutputTexture;
 
 SVkRaytracingRenderer::SVkRaytracingRenderer() {
+	EventSystem::getInstance()->subscribeToEvent(Event::SWAPCHAIN_RECREATED, this);
+
 	m_context = Application::getInstance()->getAPI<SVkAPI>();
 	m_context->initCommand(m_command);
 
@@ -19,6 +21,7 @@ SVkRaytracingRenderer::SVkRaytracingRenderer() {
 }
 
 SVkRaytracingRenderer::~SVkRaytracingRenderer() {
+	EventSystem::getInstance()->unsubscribeFromEvent(Event::SWAPCHAIN_RECREATED, this);
 	vkDeviceWaitIdle(m_context->getDevice());
 	sRTOutputTexture.reset();
 }
@@ -41,29 +44,8 @@ void* SVkRaytracingRenderer::present(Renderer::PresentFlag flags, void* skippedP
 	//VK_CHECK_RESULT(a);
 
 
-	//static bool asBuilt = false;
-	//if (!asBuilt) {
 
-		std::vector<Renderer::RenderCommand> testList;
-		{
-			auto& rcmd = testList.emplace_back();
-			rcmd.dxrFlags = MESH_STATIC;
-			rcmd.mesh = m_testMesh.get();
-			rcmd.transform = glm::mat4(1.0f);
-		}
-		{
-			auto& rcmd = testList.emplace_back();
-			rcmd.dxrFlags = MESH_STATIC;
-			rcmd.mesh = m_testMesh2.get();
-			rcmd.transform = glm::translate(glm::vec3(0.f, 1.f, 0.f));
-		}
-
-		m_rtBase.update(testList, camera, lightSetup, cmd);
-		/*m_rtBase.createBLAS(m_testMesh.get(), VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR, cmd);
-		m_rtBase.createTLAS(VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR, cmd);*/
-
-		//asBuilt = true;
-	//}
+	m_rtBase.update(commandQueueCustom, camera, lightSetup, cmd);
 
 	SVkUtils::TransitionImageLayout(cmd, sRTOutputTexture->getImage(), sRTOutputTexture->getFormat(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 	m_rtBase.dispatch(sRTOutputTexture.get(), camera, lightSetup, cmd);
@@ -83,5 +65,16 @@ SVkRenderableTexture* SVkRaytracingRenderer::GetOutputTexture() {
 }
 
 bool SVkRaytracingRenderer::onEvent(Event& event) {
+	auto e = [&](SwapchainRecreatedEvent& event) {
+		auto width = Application::getInstance()->getWindow()->getWindowWidth();
+		auto height = Application::getInstance()->getWindow()->getWindowHeight();
+
+		sRTOutputTexture->resize(width, height);
+
+		return true;
+	};
+
+
+	EventHandler::HandleType<SwapchainRecreatedEvent>(event, e);
 	return true;
 }
