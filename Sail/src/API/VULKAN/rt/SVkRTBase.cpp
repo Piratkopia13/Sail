@@ -21,6 +21,8 @@ SVkRTBase::SVkRTBase() {
 	m_bottomInstances.resize(numBuffers);
 	m_tlasScratchBufferAllocations.resize(numBuffers);
 	m_blasScratchBufferAllocations.resize(numBuffers);
+	m_blasesToCompact.resize(numBuffers);
+	m_compactedBlases.resize(numBuffers);
 
 	// Get raytracing limit properties for this device
 	if (m_context->supportsFeature(GraphicsAPI::RAYTRACING)) {
@@ -88,6 +90,7 @@ void SVkRTBase::update(const Renderer::RenderCommandList sceneGeometry, Camera* 
 	static auto flagFastTrace = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 	static auto flagFastBuild = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
 	static auto flagAllowUpdate = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+	static auto flagAllowCompaction = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR;
 
 	// Clear old instance lists
 	// TODO: make this more efficient
@@ -100,7 +103,7 @@ void SVkRTBase::update(const Renderer::RenderCommandList sceneGeometry, Camera* 
 		// Ignore command if no dxr flags are set
 		if (!renderCommand.dxrFlags) continue;
 
-		auto flags = flagFastTrace;
+		auto flags = VkBuildAccelerationStructureFlagBitsKHR(flagFastTrace | flagAllowCompaction); // Used when mesh is not dynamic
 		if (renderCommand.dxrFlags & Renderer::DXRRenderFlag::MESH_DYNAMIC)
 			flags = VkBuildAccelerationStructureFlagBitsKHR(flagFastBuild | flagAllowUpdate);
 
@@ -135,24 +138,28 @@ void SVkRTBase::update(const Renderer::RenderCommandList sceneGeometry, Camera* 
 			}
 		}
 		if (destroy) {
+			// Handle the rare case that the BLAS has been marked for compaction but has not yet been compacted or applied
+			std::remove_if(m_blasesToCompact[swapIndex].buildInfo.begin(), m_blasesToCompact[swapIndex].buildInfo.end(), [&it](const BlasBuildInfo& buildInfo) {
+				return buildInfo.asAllocation == &it->second.asAllocation;
+			});
+			std::remove_if(m_compactedBlases[swapIndex].begin(), m_compactedBlases[swapIndex].end(), [&it](const CompactedBlasInfo& compactInfo) {
+				return compactInfo.oldASAllocation == &it->second.asAllocation;
+			});
+
 			it = m_bottomInstances[swapIndex].erase(it);
 		}
 	}
-
+	
+	// Important that applyCompactBLASes is called before compactBLASes
+	// Otherwise some compacted BLASes may be destroyed before applied
+	applyCompactedBLASes(cmd);
+	// Important that compact is called before build
+	// Otherwise compaction may get triggered on BLASes that have not finished building
+	compactBLASes(cmd);
 	buildBLASes(cmd);
 	buildTLAS(numInstances, flagFastTrace, cmd);
-
-	/*iterate all meshes
-		if !map[mesh]
-			createBLAS(flags depending on static / dynamic)
-		else
-			if mesh vertices have updated since last frame
-				rebuildBLAS(flags depending on static / dynamic)
-
-		remove existing BLASes that are no longer in the scene
-		createTLAS()
-		update sbt if needed(? )*/
-
+	
+	//update sbt (?)
 }
 
 void SVkRTBase::dispatch(SVkRenderableTexture* outputTexture, Camera* cam, LightSetup* lights, VkCommandBuffer cmd) {
@@ -283,6 +290,76 @@ SVkRTBase::InstanceList& SVkRTBase::addBLAS(const Mesh* mesh, VkBuildAcceleratio
 	return instanceList;
 }
 
+void SVkRTBase::applyCompactedBLASes(VkCommandBuffer cmd) {
+	// Since this is always called before new compactions are built
+	// we know that all compactions in m_compactedBlases[swapIndex] have been built and are ready for use
+
+	auto swapIndex = m_context->getSwapIndex();
+	if (m_compactedBlases[swapIndex].empty()) return;
+
+	for (auto& compactInfo : m_compactedBlases[swapIndex]) {
+		compactInfo.oldASAllocation->destroy();
+		*compactInfo.oldASAllocation = compactInfo.compactedASAllocation;
+
+		// Manually set these to null handles to make sure they are not deleted during the destuctor called in clear() below
+		compactInfo.compactedASAllocation.allocation = VK_NULL_HANDLE;
+		compactInfo.compactedASAllocation.as = VK_NULL_HANDLE;
+	}
+
+	m_compactedBlases[swapIndex].clear();
+}
+
+void SVkRTBase::compactBLASes(VkCommandBuffer cmd) {
+	// Since this is always called before new BLASes are built this frame
+	// we know that the compact size queries have completed and can be read
+
+	auto swapIndex = m_context->getSwapIndex();
+	auto& allocator = m_context->getVmaAllocator();
+	if (m_blasesToCompact[swapIndex].buildInfo.empty()) return;
+
+	// Reserve vector size beforehand to make sure the vector does not expand during the loop
+	m_compactedBlases[swapIndex].reserve(m_blasesToCompact[swapIndex].buildInfo.size());
+
+	// Get the compact size query results
+	std::vector<VkDeviceSize> compactSizes(m_blasesToCompact[swapIndex].buildInfo.size());
+	VK_CHECK_RESULT(vkGetQueryPoolResults(m_context->getDevice(), m_blasesToCompact[swapIndex].queryPool, 0, (uint32_t)compactSizes.size(), compactSizes.size() * sizeof(VkDeviceSize), compactSizes.data(), sizeof(VkDeviceSize), VK_QUERY_RESULT_WAIT_BIT));
+	// We are now done with the query pool
+	vkDestroyQueryPool(m_context->getDevice(), m_blasesToCompact[swapIndex].queryPool, nullptr);
+
+	uint32_t totalCompactedSize = 0;
+	uint32_t i = 0;
+	for (auto& buildInfo : m_blasesToCompact[swapIndex].buildInfo) {
+		totalCompactedSize += compactSizes[i];
+
+		// Create the compact version of the AS
+		VkAccelerationStructureCreateInfoKHR info = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
+		info.compactedSize = compactSizes[i];
+		info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+		info.flags = buildInfo.flags;
+		info.flags &= ~VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR; // Remove allow compaction flag since it makes no sense to keep it
+		
+		auto& compactedInfo = m_compactedBlases[swapIndex].emplace_back();
+
+		VmaAllocationCreateInfo vmaInfo = {};
+		vmaInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		VK_CHECK_RESULT(vmaCreateAccelerationStructure(allocator, &info, &vmaInfo, &compactedInfo.compactedASAllocation.as, &compactedInfo.compactedASAllocation.allocation, nullptr));
+
+		// Copy the original BLAS to the compact version
+		VkCopyAccelerationStructureInfoKHR copyInfo = { VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR };
+		copyInfo.src = buildInfo.asAllocation->as;
+		copyInfo.dst = compactedInfo.compactedASAllocation.as;
+		copyInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR;
+		vkCmdCopyAccelerationStructureKHR(cmd, &copyInfo);
+		compactedInfo.oldASAllocation = buildInfo.asAllocation;
+
+		i++;
+	}
+	auto& totalUncompactedSize = m_blasesToCompact[swapIndex].totalUncompactedSize;
+	Logger::Log("Compacted " + std::to_string(compactSizes.size()) + " BLASes. Original size was: " + std::to_string(totalUncompactedSize / (1024*1024)) + "MB, compacted size is: " + std::to_string(totalCompactedSize / (1024 * 1024)) + "MB - saving " + std::to_string(((float)totalCompactedSize / totalUncompactedSize)*100) + "%. " + "Swap index: " + std::to_string(swapIndex));
+
+	m_blasesToCompact[swapIndex].buildInfo.clear();
+}
+
 void SVkRTBase::buildBLASes(VkCommandBuffer cmd) {
 	// Create all blases contained in m_blasesToBuild
 
@@ -291,16 +368,12 @@ void SVkRTBase::buildBLASes(VkCommandBuffer cmd) {
 	auto swapIndex = m_context->getSwapIndex();
 	auto& allocator = m_context->getVmaAllocator();
 
-	//VkDeviceSize maxScratch = 0;
-	std::vector<VkAccelerationStructureKHR*> blasRefs(m_blasesToBuild.size());
 	std::vector<VkDeviceSize> scratchOffsets(m_blasesToBuild.size());
 	VkDeviceSize scratchTotalSize = 0;
+	uint32_t totalUncompactedSize = 0;
+	uint32_t numCompactions = 0;
 	uint32_t i = 0;
 	for (auto& blasInfo : m_blasesToBuild) {
-		//// Create the map entry
-		//InstanceList& instance = m_bottomInstances[swapIndex].insert({ blasInfo.mesh, {} }).first->second;
-		//instance.instanceTransforms.emplace_back(transformation);
-
 		VkAccelerationStructureCreateInfoKHR info = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
 		info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 		info.flags = blasInfo.flags;
@@ -312,9 +385,6 @@ void SVkRTBase::buildBLASes(VkCommandBuffer cmd) {
 		blasInfo.asAllocation->destroy(); // Destroy the old BLAS (if it exists)
 		VK_CHECK_RESULT(vmaCreateAccelerationStructure(allocator, &info, &vmaInfo, &blasInfo.asAllocation->as, &blasInfo.asAllocation->allocation, nullptr));
 
-		// Store a reference to the AS, this is used in the next loop where the actual build happens
-		blasRefs[i] = &blasInfo.asAllocation->as;
-
 		// Figure out how large the scratch buffer has to be for this guy
 		{
 			VkAccelerationStructureMemoryRequirementsInfoKHR memReqInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR };
@@ -325,8 +395,6 @@ void SVkRTBase::buildBLASes(VkCommandBuffer cmd) {
 			VkMemoryRequirements2 memReq = { VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
 			vkGetAccelerationStructureMemoryRequirementsKHR(m_context->getDevice(), &memReqInfo, &memReq);
 
-			//maxScratch = std::max(maxScratch, memReq.memoryRequirements.size);
-
 			// Align
 			VkDeviceSize alignedSize = memReq.memoryRequirements.size;
 			if (memReq.memoryRequirements.alignment != 0 && alignedSize % memReq.memoryRequirements.alignment != 0)
@@ -336,6 +404,15 @@ void SVkRTBase::buildBLASes(VkCommandBuffer cmd) {
 
 			scratchOffsets[i] = scratchTotalSize; // Requires all alignments to be the same
 			scratchTotalSize += alignedSize;
+
+			// Get the uncompacted size
+			memReqInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR;
+			vkGetAccelerationStructureMemoryRequirementsKHR(m_context->getDevice(), &memReqInfo, &memReq);
+			totalUncompactedSize += memReq.memoryRequirements.size;
+		}
+
+		if (blasInfo.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR) {
+			numCompactions++;
 		}
 
 		i++;
@@ -379,9 +456,9 @@ void SVkRTBase::buildBLASes(VkCommandBuffer cmd) {
 		VkAccelerationStructureBuildGeometryInfoKHR buildInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
 		buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 		buildInfo.flags = blasInfo.flags;
-		buildInfo.dstAccelerationStructure = *blasRefs[i];
+		buildInfo.dstAccelerationStructure = blasInfo.asAllocation->as;
 		buildInfo.geometryArrayOfPointers = false;
-		buildInfo.geometryCount = 1; // TODO: change?
+		buildInfo.geometryCount = 1;
 		buildInfo.ppGeometries = &pGeometry;
 		buildInfo.scratchData.deviceAddress = scratchAddress + scratchOffsets[i];
 
@@ -390,16 +467,38 @@ void SVkRTBase::buildBLASes(VkCommandBuffer cmd) {
 
 		i++;
 	}
+
 	// Barrier to ensure all builds are finished before using any of them
 	VkMemoryBarrier barrier = { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
 	barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
 	barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &barrier, 0, nullptr, 0, nullptr);
 
-	// TODO: perform compaction here
+	BlasCompactInfo* compactInfo = nullptr;
+	if (numCompactions > 0) {
+		assert(m_blasesToCompact[swapIndex].buildInfo.empty() && "There are uncompacted BLASes in the queue! Is there a missing call to compactBLASes?");
 
-	// TODO: destroy scratch buffer when the BLAS has been created
-	//scratchBufferAllocation.destroy();
+		compactInfo = &m_blasesToCompact[swapIndex];
+		compactInfo->buildInfo.reserve(numCompactions);
+		compactInfo->totalUncompactedSize = totalUncompactedSize;
+
+		// Create a query pool to query compacted size
+		// TODO: Consider reusing pools instead of creating new ones every time
+		VkQueryPoolCreateInfo queryPoolInfo = { VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
+		queryPoolInfo.queryCount = numCompactions;
+		queryPoolInfo.queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR;
+		VK_CHECK_RESULT(vkCreateQueryPool(m_context->getDevice(), &queryPoolInfo, nullptr, &compactInfo->queryPool));
+	}
+
+	numCompactions = 0;
+	for (auto& blasInfo : m_blasesToBuild) {
+		// Queue BLAS for compaction if allowed
+		if (blasInfo.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR) {
+			// Query the compact size, this has to be done after the BLASes have been built
+			vkCmdWriteAccelerationStructuresPropertiesKHR(cmd, 1, &blasInfo.asAllocation->as, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, compactInfo->queryPool, numCompactions++);
+			compactInfo->buildInfo.emplace_back(blasInfo);
+		}
+	}
 
 	m_blasesToBuild.clear();
 }
